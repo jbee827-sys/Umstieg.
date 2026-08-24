@@ -1,41 +1,72 @@
-# Umstiegs-Navigator
+# Umstiegs-Navigator („Umstieg.")
 
 Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum Abfahrtsgleis liefert – als Schritt-für-Schritt-Anweisung und Karte – und live bewertet, ob der Anschluss erreichbar ist.
 
 **Konzept:** [`2026-08-24-umstiegs-navigator-design.md`](./2026-08-24-umstiegs-navigator-design.md)
-**Implementierungsplan:** [`docs/plans/2026-08-24-umsetzungsplan-mvp.md`](./docs/plans/2026-08-24-umsetzungsplan-mvp.md)
+**Implementierungsplan (17 Tasks):** [`docs/plans/2026-08-24-umsetzungsplan-mvp.md`](./docs/plans/2026-08-24-umsetzungsplan-mvp.md)
+**UI-Design (Claude Design Import):** [`design/Umstieg.dc.html`](./design/Umstieg.dc.html)
 
 ## Architektur
 
-- **Backend:** Node.js ≥ 20, Fastify 5, TypeScript. Zustandslos, keine Datenbank, RAM-LRU-Cache. Holt zur Laufzeit OSM-Geometrie (Overpass) und DB-Live-Daten (Marketplace-APIs).
-- **Frontend:** React + Vite + TypeScript, MapLibre GL. Mobil zuerst, große Schrift, Text vor Karte.
-- **Betrieb:** ein Docker-Container (Backend liefert Frontend statisch aus).
+- **Backend:** Node.js ≥ 20, Fastify 5, TypeScript (strict). Zustandslos, keine Datenbank, RAM-LRU-Cache. Holt zur Laufzeit OSM-Geometrie (Overpass) und DB-Live-Daten (Marketplace-APIs).
+- **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
+- **Betrieb:** ein Docker-Container (Backend liefert Frontend statisch aus) – noch nicht gebaut.
 
-## Projektstand
+## Projektstand (24.08.2026)
 
 | Arbeitspaket | Status |
 |---|---|
-| Task 1 – Repo + Backend-Gerüst (Fastify, /api/health) | 🔄 in Arbeit |
-| Task 2 – Frontend-Gerüst (Vite React TS) | ⬜ offen |
-| Task 3–5 – Overpass-Client, Graphbau, Klassifikation | ⬜ offen |
-| Task 6 – **Datenrealitäts-Spike** (Entscheidungstor) | ⬜ offen |
-| Task 7–10 – Routing, Gehzeit/Ampel, Textgen, Synthesemodell | ⬜ offen |
-| Task 11–12 – DB-Stations-Client, REST-API | ⬜ offen |
-| Task 13–14 – Frontend-Ansichten, Karte | ⬜ offen |
-| Task 15–16 – Live-Daten, SSE-Überwachung | ⬜ offen |
-| Task 17 – Härtung, Docker | ⬜ offen |
+| Task 1 – Repo + Backend-Gerüst (Fastify, `/api/health`, vitest) | ✅ fertig, getestet |
+| Task 2 – Frontend-Gerüst (Vite React TS, Proxy) | 🔶 Scaffold liegt in `frontend/`, bewusst zurückgestellt |
+| Task 3 – Overpass-Client (Fallback/Retry) + Fixture-Recorder + 3 echte Fixtures | ✅ fertig, 5 Tests grün |
+| Task 4 – Graphbau aus OSM (inkl. Bahnsteig-**Relationen**, Ebenen-Instanzen) | ✅ fertig, 8 Tests grün |
+| Task 5 – Klassifikation Stufe 1/2/3 + Verbundenheitsanalyse | ✅ fertig, 7 Tests grün |
+| Task 6 – **Datenrealitäts-Spike** (40 Bahnhöfe) | 🔶 Script + Bahnhofsliste fertig, **Lauf noch nicht ausgeführt** |
+| Task 7–12 – Routing, Gehzeit/Ampel, Textgen, Synthesemodell, DB-Client, REST-API | ⬜ offen |
+| Task 13–14 – Frontend-Umsetzung des Designs, Karte | ⬜ offen (Design importiert, siehe unten) |
+| Task 15–17 – Live-Daten, SSE, Härtung, Docker | ⬜ offen |
+
+**Tests:** `cd backend && npm test` → 21 Tests grün (Stand dieses Commits). `npm run lint` sauber.
+
+## UI-Design (importiert aus Claude Design, 24.08.2026)
+
+Vollständig gesichert unter `design/` (Projekt „Umstieg mobile app design", `Umstieg.dc.html` + Modernist-Design-System + iOS-Frame + dc-Runtime). Kernpunkte für die Umsetzung in Task 13/14:
+
+- **6 Screens:** Onboarding (Von/Nach + Ticket-PDF-Import), Dashboard (Gleise, Ampel, Routenwahl), Navigation (SVG-Karte + Schritt-Sheet), Störung/Gleiswechsel, Wagenreihung, Angekommen.
+- **Design-Tokens:** Modernist-System (`design/_ds/.../styles.css`) – Akzent `#ec3013`, Hintergrund `#f3f2f2`, Text `#201e1d`, Font „Archivo" (Heading 800), Grün `#0f7a4f`, Gelb `#e08a00`.
+- **Wichtig – Ampellogik im Design ist RELATIV zur Gehzeit** (nicht absolut wie im Konzept 6.4): Grün ≥ 2× Gehzeit, Gelb 1–2× Gehzeit, Rot < 1× Gehzeit. Bei Task 8 so übernehmen (Konzeptkorrektur, im Plan nachziehen).
+- Mock-Szenario im Prototyp: RE 3 Stralsund → Berlin Hbf Gl. 6 (Ebene −2) → ICE 1006 Hamburg Gl. 14 (Ebene +1), Wagen 26/Platz 61, Abschnitt C.
+- Prototyp enthält Ticket-PDF-Import als UI-Flow (laut Konzept Stufe 2 – UI schon da, Backend später).
 
 ## Entwicklung starten
 
 ```bash
-cd backend && npm install && npm run dev   # Backend auf :3001
-cd frontend && npm install && npm run dev  # Frontend auf :5173 (Proxy → :3001)
+cd backend && npm install && npm run dev   # Backend auf :3001 (nur /api/health bisher)
+cd backend && npm test                     # Testsuite
+npx tsx scripts/spike-datenrealitaet.ts    # Datenrealitäts-Spike (im Ordner backend/, dauert ~5 min, cached)
+npx tsx scripts/record-fixture.ts <name> <lat> <lon>  # neues Overpass-Fixture
 ```
 
-Tests: `cd backend && npm test`
+Frontend (`frontend/`, zurückgestellt): `npm install && npm run dev` → :5173, Proxy auf :3001.
+
+## Nächste Schritte (in dieser Reihenfolge geplant)
+
+1. **Task 6 ausführen:** `npx tsx scripts/spike-datenrealitaet.ts` → Report `docs/spike-datenrealitaet-ergebnis.md`, Entscheidungstor auswerten (Stufe-1-Anteil < 20 % → Priorität aufs Synthesemodell).
+2. Task 7–10: Routing-Kern, Gehzeit/Ampel (relativ, s. o.), Textgenerierung, Synthesemodell – alles gegen Fixtures, ohne API-Schlüssel.
+3. Task 11–12: DB-Stations-Client (Env-Guard) + REST-API.
+4. Task 13–14: Design aus `design/Umstieg.dc.html` als React-Komponenten umsetzen (Tokens → CSS, 6 Screens, SVG-Karte → später MapLibre/GeoJSON aus Task 12).
+5. Task 15–17: Live-Daten (Polling **pro EVA**), SSE, Härtung, Docker.
 
 ## Offene Punkte / Blocker
 
-- **DB API Marketplace:** Registrierung ausstehend → `DB_CLIENT_ID`/`DB_CLIENT_SECRET` in `.env` eintragen (Vorlage: `.env.example`). Bis dahin: Entwicklung gegen Fixtures, Live-Pfade degradieren transparent.
-- **GitHub-Remote:** `gh` CLI nicht installiert – Repo ist nur lokal versioniert.
-- **Vercel:** bewusst nicht verwendet (bestehendes VITA-Projekt bleibt unberührt); Deployment-Ziel ist Docker.
+- **DB API Marketplace:** Registrierung ausstehend → `DB_CLIENT_ID`/`DB_CLIENT_SECRET` in `.env` (Vorlage `.env.example`). Bis dahin degradiert alles transparent auf Fixtures/Synthese.
+- **GitHub-Remote:** `gh` CLI nicht installiert – Repo nur lokal (`main` = Doku-Basis, Arbeit auf `feat/mvp`). Für Push: `winget install GitHub.cli` + `gh auth login`, oder leeres Repo anlegen und URL mitteilen.
+- **Vercel:** bewusst nicht verwendet (VITA-Projekt bleibt unberührt); Deployment-Ziel ist Docker.
+- **Spike-Rohdaten** (`backend/test/fixtures/spike/`) sind gitignored – über das Script reproduzierbar.
+
+## Konzeptkorrekturen (aus Analyse + Design übernommen)
+
+1. Live-Polling **pro EVA-Nummer** bündeln statt pro Route (Ratenlimits).
+2. Stufe 3 (Synthesemodell) ohne präzise Meterangaben – „ca."-Formulierungen.
+3. Frontend hält berechnete Route offline-fähig im Speicher; SSE-Reconnect fordert Route neu an.
+4. **Ampel relativ zur Gehzeit** (aus dem Design übernommen, ersetzt absolute 2-min-Schwelle).

@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-e387140d-24f0-4d26-b84a-3b78b1a2c904/styles.css">
+<script src="_ds/modernist-e387140d-24f0-4d26-b84a-3b78b1a2c904/_ds_bundle.js"></script>
+<style>
+body{margin:0;background:#f3f2f2}
+a{color:#ec3013}a:hover{color:#ae1800}
+@keyframes umsIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes umsUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes umsPulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes umsFlow{to{stroke-dashoffset:-24}}
+@keyframes umsIce{0%{transform:translateX(5px)}100%{transform:translateX(-5px)}}
+@keyframes umsSpin{to{transform:rotate(360deg)}}
+@keyframes umsPing{0%{transform:scale(.6);opacity:.65}100%{transform:scale(2.3);opacity:0}}
+.ums-screen{animation:umsIn .34s cubic-bezier(.22,.7,.2,1) both}
+.ums-sheet{animation:umsUp .38s cubic-bezier(.22,.7,.2,1) both}
+.ums-tap{transition:background .18s ease,color .18s ease,transform .12s ease,box-shadow .18s ease}
+.ums-tap:active{transform:scale(.985)}
+.ums-scroll{flex:1;overflow:auto;-webkit-overflow-scrolling:touch}
+.ums-scroll::-webkit-scrollbar{width:0}
+</style>
+</helmet>
+
+<div style="min-height:100vh;padding:40px 44px 64px;font-family:var(--font-body);color:var(--color-text);display:flex;gap:44px;align-items:flex-start;justify-content:center;flex-wrap:wrap">
+
+  <div style="display:flex;flex-direction:column;gap:18px">
+    <div style="display:flex;align-items:baseline;gap:12px">
+      <h1 style="font-size:38px;margin:0;letter-spacing:-.03em">Umstieg.</h1>
+      <span style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-600)">Prototyp · iOS</span>
+    </div>
+    <div style="height:2px;background:var(--color-divider);width:402px;border-radius:2px"></div>
+
+    <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+
+      <sc-if value="{{ isOnboarding }}" hint-placeholder-val="{{ false }}">
+        <div class="ums-screen" style="width:402px;height:874px;display:flex;flex-direction:column;background:var(--color-bg);position:relative">
+          <div class="ums-scroll" style="padding:74px 20px 120px;display:flex;flex-direction:column;gap:18px">
+            <div>
+              <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent)">Umstieg.</div>
+              <h2 style="font-size:30px;margin:6px 0 4px;letter-spacing:-.025em">Deine Reise</h2>
+              <p style="margin:0;font-size:14px;color:var(--color-neutral-700)">Gib die Fahrt ein oder importiere dein Ticket als PDF.</p>
+            </div>
+            <div style="height:2px;background:var(--color-divider);border-radius:2px"></div>
+            <div class="field"><label>Von</label>
+              <div class="input" style="display:flex;align-items:center;min-height:48px;font-size:16px;border-radius:14px">Stralsund Hbf</div>
+            </div>
+            <div class="field"><label>Nach</label>
+              <div class="input" style="display:flex;align-items:center;min-height:48px;font-size:16px;border-radius:14px">Hamburg-Altona</div>
+            </div>
+            <div style="border:1px solid var(--color-neutral-300);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:14px;background:var(--color-neutral-100)">
+              <div style="display:flex;align-items:center;gap:12px">
+                <div style="width:38px;height:38px;background:var(--color-accent);border-radius:12px;display:grid;place-items:center;flex:none">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f3f2f2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M19 21H5V3h9l5 5v13z"/><path d="M9 13h6M9 17h4"/></svg>
+                </div>
+                <div>
+                  <div style="font-family:var(--font-heading);font-weight:800;font-size:16px">Ticket-PDF importieren</div>
+                  <div style="font-size:12px;color:var(--color-neutral-600)">Sitzplatz, Wagen und Anschluss werden erkannt</div>
+                </div>
+              </div>
+              <sc-if value="{{ pdfIdle }}" hint-placeholder-val="{{ true }}">
+                <button class="btn btn-secondary ums-tap" style="min-height:46px;border-radius:12px;justify-content:flex-start;background:var(--color-bg)" onClick="{{ importPdf }}">PDF auswählen</button>
+              </sc-if>
+              <sc-if value="{{ pdfLoading }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--color-neutral-700);min-height:46px">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ec3013" stroke-width="2.5" stroke-linecap="round" style="animation:umsSpin 900ms linear infinite"><path d="M12 3a9 9 0 1 0 9 9"/></svg>
+                  Ticket wird gelesen …
+                </div>
+              </sc-if>
+              <sc-if value="{{ pdfDone }}" hint-placeholder-val="{{ false }}">
+                <div class="ums-sheet" style="display:flex;flex-direction:column;gap:10px">
+                  <div style="display:flex;flex-wrap:wrap;gap:6px">
+                    <span class="tag tag-accent" style="border-radius:999px">RE 3 · Gleis 6</span>
+                    <span class="tag tag-accent" style="border-radius:999px">ICE 1006 · Gleis 14</span>
+                    <span class="tag tag-neutral" style="border-radius:999px">Wagen 26 · Platz 61</span>
+                  </div>
+                  <div style="font-size:13px;color:var(--color-neutral-700)">Umstieg in <strong>Berlin Hbf</strong>, {{ startMinuten }} Minuten Puffer.</div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+          <div style="position:absolute;left:20px;right:20px;bottom:20px;display:flex;pointer-events:none;z-index:5">
+            <button class="btn btn-primary ums-tap" style="pointer-events:auto;flex:1;min-height:58px;font-size:17px;border-radius:999px;justify-content:space-between;padding:0 26px;box-shadow:var(--shadow-lg)" onClick="{{ goDash }}">
+              <span>Umstieg starten</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isDash }}" hint-placeholder-val="{{ true }}">
+        <div class="ums-screen" style="width:402px;height:874px;display:flex;flex-direction:column;background:var(--color-bg);position:relative">
+          <div class="ums-scroll">
+
+            <div style="padding:70px 20px 14px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between">
+                <div>
+                  <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent)">Umstieg in</div>
+                  <h2 style="font-size:32px;margin:4px 0 0;letter-spacing:-.03em">Berlin Hbf</h2>
+                </div>
+                <div style="font-size:13px;color:var(--color-neutral-600);font-variant-numeric:tabular-nums">{{ uhrzeit }}</div>
+              </div>
+              <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
+                <div class="field"><label style="font-size:11px">Aktuelles Gleis / Zug</label>
+                  <div class="input ums-tap" style="display:flex;align-items:center;gap:10px;min-height:48px;font-size:15px;border-radius:14px;background:var(--color-bg)">
+                    <strong style="font-family:var(--font-heading);font-weight:800;white-space:nowrap">Gl. 6</strong>
+                    <span style="width:1px;height:18px;background:var(--color-neutral-300)"></span>
+                    <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">RE 3 aus Stralsund · an 14:22</span>
+                  </div>
+                </div>
+                <div class="field"><label style="font-size:11px">Zielgleis / Anschlusszug</label>
+                  <div class="input ums-tap" style="display:flex;align-items:center;gap:10px;min-height:48px;font-size:15px;border-radius:14px;background:var(--color-bg);border-color:var(--color-accent)">
+                    <strong style="font-family:var(--font-heading);font-weight:800;color:var(--color-accent-700);white-space:nowrap">Gl. {{ zielGleis }}</strong>
+                    <span style="width:1px;height:18px;background:var(--color-neutral-300)"></span>
+                    <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">ICE 1006 nach Hamburg · ab {{ abfahrt }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="padding:18px 20px 0">
+              <div style="display:flex;align-items:center;gap:12px">
+                <div style="display:flex;gap:5px;padding:6px 9px;background:#201e1d;border-radius:999px;flex:none">
+                  <div style="width:11px;height:11px;border-radius:50%;background: {{ lampGreen }};transition:background .5s ease;box-shadow: {{ glowGreen }}"></div>
+                  <div style="width:11px;height:11px;border-radius:50%;background: {{ lampAmber }};transition:background .5s ease;box-shadow: {{ glowAmber }}"></div>
+                  <div style="width:11px;height:11px;border-radius:50%;background: {{ lampRed }};transition:background .5s ease;box-shadow: {{ glowRed }};animation: {{ animRed }}"></div>
+                </div>
+                <div style="font-family:var(--font-heading);font-weight:800;font-size:30px;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums;color: {{ ampelInk }};transition:color .5s ease">{{ restText }}</div>
+                <div style="flex:1;min-width:0;font-size:12px;color:var(--color-neutral-700);text-align:right">Gehzeit {{ gehzeitText }}</div>
+              </div>
+              <div style="margin-top:10px;height:4px;border-radius:999px;background:var(--color-neutral-300);overflow:hidden">
+                <div style="height:4px;border-radius:999px;width: {{ barWidth }};background: {{ ampelInk }};transition:width .9s cubic-bezier(.22,.7,.2,1),background .5s ease"></div>
+              </div>
+              <div style="margin-top:7px;font-size:12px;font-weight:600;color: {{ ampelInk }};transition:color .5s ease">{{ ampelLabel }}</div>
+            </div>
+
+            <div style="padding:16px 20px 0;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div style="border:1px solid var(--color-neutral-300);border-radius:18px;padding:14px">
+                <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-neutral-600)">Du kommst an</div>
+                <div style="font-family:var(--font-heading);font-weight:800;font-size:17px;margin-top:6px">RE 3</div>
+                <div style="font-size:12px;color:var(--color-neutral-700);margin-bottom:10px">aus Stralsund · an 14:22</div>
+                <div style="font-family:var(--font-heading);font-weight:800;font-size:38px;line-height:1;letter-spacing:-.035em">Gl. 6</div>
+                <div style="font-size:12px;color:var(--color-neutral-700)">Ebene −2 · tief</div>
+              </div>
+              <div style="border:1px solid var(--color-accent-300);border-radius:18px;padding:14px;background:var(--color-accent-100)">
+                <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-accent-700)">Dein Anschluss</div>
+                <div style="font-family:var(--font-heading);font-weight:800;font-size:17px;margin-top:6px">ICE 1006</div>
+                <div style="font-size:12px;color:var(--color-neutral-700);margin-bottom:10px">Hamburg · ab {{ abfahrt }}</div>
+                <div style="font-family:var(--font-heading);font-weight:800;font-size:38px;line-height:1;letter-spacing:-.035em;color:var(--color-accent-700)">Gl. {{ zielGleis }}</div>
+                <div style="font-size:12px;color:var(--color-neutral-700)">Ebene +1 · Abschnitt {{ abschnitt }}</div>
+              </div>
+            </div>
+
+            <div style="padding:18px 20px 0">
+              <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:10px">Route</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <sc-for list="{{ routen }}" as="r" hint-placeholder-count="3">
+                  <button class="ums-tap" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:13px 14px;min-height:56px;border:1px solid {{ r.border }};border-radius:16px;cursor:pointer;font-family:var(--font-body);background: {{ r.bg }};color: {{ r.ink }};box-shadow: {{ r.shadow }}" onClick="{{ r.pick }}">
+                    <span style="width:20px;height:20px;border-radius:50%;border:2px solid currentColor;flex:none;display:grid;place-items:center">
+                      <span style="width:10px;height:10px;border-radius:50%;background:currentColor;opacity: {{ r.dot }};transition:opacity .2s ease"></span>
+                    </span>
+                    <span style="flex:1;font-size:15px;font-weight:600">{{ r.name }}</span>
+                    <span style="font-size:14px;font-variant-numeric:tabular-nums">{{ r.min }} min</span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="padding:18px 20px 120px;display:flex;gap:10px">
+              <button class="btn btn-secondary ums-tap" style="flex:1;min-height:48px;border-radius:14px;justify-content:flex-start" onClick="{{ goWagen }}">Wagenreihung</button>
+              <button class="btn btn-secondary ums-tap" style="flex:1;min-height:48px;border-radius:14px;justify-content:flex-start" onClick="{{ goStoer }}">Störung</button>
+            </div>
+          </div>
+
+          <div style="position:absolute;left:20px;right:20px;bottom:20px;display:flex;pointer-events:none;z-index:5">
+            <button class="btn btn-primary ums-tap" style="pointer-events:auto;flex:1;min-height:58px;font-size:17px;border-radius:999px;justify-content:space-between;padding:0 26px;box-shadow:var(--shadow-lg)" onClick="{{ startNav }}">
+              <span>Navigation starten</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isNav }}" hint-placeholder-val="{{ false }}">
+        <div class="ums-screen" style="width:402px;height:874px;display:flex;flex-direction:column;background:var(--color-bg);position:relative">
+          <div style="padding:70px 16px 12px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--color-neutral-300)">
+            <button class="btn btn-icon btn-secondary ums-tap" style="flex:none;border-radius:999px" onClick="{{ goDash }}">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+            </button>
+            <div style="flex:1;min-width:0">
+              <div style="font-family:var(--font-heading);font-weight:800;font-size:17px">Gleis {{ zielGleis }} · Abschnitt {{ abschnitt }}</div>
+              <div style="font-size:12px;color:var(--color-neutral-700)">ICE 1006 · ab {{ abfahrt }} · {{ restWalkText }}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;background: {{ ampelTint }};transition:background .5s ease">
+              <span style="width:12px;height:12px;border-radius:50%;background: {{ ampelInk }};animation: {{ animRed }}"></span>
+              <span style="font-family:var(--font-heading);font-weight:800;font-size:17px;font-variant-numeric:tabular-nums;color: {{ ampelInk }}">{{ restText }}</span>
+            </div>
+          </div>
+
+          <div style="flex:1;position:relative;background:var(--color-neutral-100);overflow:hidden">
+            <svg viewBox="0 0 340 430" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="display:block">
+              <g style="transition:transform 1s cubic-bezier(.22,.7,.2,1)" transform="{{ mapTransform }}">
+                <g stroke="#d7d3d3" stroke-width="1">
+                  <rect x="16" y="16" width="308" height="120" rx="14" fill="#eae7e7"/>
+                  <rect x="16" y="154" width="308" height="120" rx="14" fill="#eae7e7"/>
+                  <rect x="16" y="292" width="308" height="120" rx="14" fill="#eae7e7"/>
+                </g>
+                <g font-family="Archivo, sans-serif" font-size="9" font-weight="800" letter-spacing="1.2" fill="#9b9797">
+                  <text x="26" y="33">EBENE +1 · GLEISE 11–16</text>
+                  <text x="26" y="171">EBENE 0 · HAUPTHALLE</text>
+                  <text x="26" y="309">EBENE −2 · GLEISE 1–8</text>
+                </g>
+                <g stroke="#bab6b6" stroke-width="2" stroke-linecap="round">
+                  <path d="M30 52h280M30 110h280M30 340h280M30 388h280"/>
+                </g>
+                <rect x="30" y="62" width="280" height="22" rx="11" fill="#d7d3d3"/>
+                <rect x="30" y="352" width="280" height="22" rx="11" fill="#d7d3d3"/>
+                <g font-family="Archivo, sans-serif" font-size="10" font-weight="800" fill="#605d5d">
+                  <text x="286" y="47">14</text><text x="286" y="124">13</text>
+                  <text x="290" y="335">6</text><text x="290" y="403">5</text>
+                </g>
+                <g stroke="#cfcaca" stroke-width="1.5" fill="#f8f4f4">
+                  <rect x="58" y="196" width="56" height="32" rx="10"/><rect x="148" y="196" width="48" height="32" rx="10"/><rect x="230" y="196" width="62" height="32" rx="10"/>
+                </g>
+                <g font-family="Archivo, sans-serif" font-size="8" fill="#7d7979">
+                  <text x="64" y="216">Anzeige</text><text x="154" y="216">Kiosk</text><text x="236" y="216">Aufzüge</text>
+                </g>
+
+                <path d="M70 362 L210 362 L210 210 L120 210 L120 70 L232 70" fill="none" stroke="#ffc4b8" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M70 362 L210 362 L210 210 L120 210 L120 70 L232 70" pathLength="100" fill="none" stroke="#ec3013" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="100" stroke-dashoffset="{{ dashOffset }}" style="transition:stroke-dashoffset 1s cubic-bezier(.22,.7,.2,1)"/>
+                <path d="M70 362 L210 362 L210 210 L120 210 L120 70 L232 70" fill="none" stroke="#f8f4f4" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="3 9" style="animation:umsFlow 1.1s linear infinite"/>
+
+                <g stroke="#605d5d" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M203 300 l7 -9 7 9"/><path d="M203 158 l7 -9 7 9"/>
+                </g>
+                <rect x="222" y="60" width="20" height="20" rx="6" fill="#201e1d"/>
+                <text x="228" y="74" font-family="Archivo, sans-serif" font-size="11" font-weight="800" fill="#f3f2f2">{{ abschnitt }}</text>
+
+                <circle cx="{{ dotX }}" cy="{{ dotY }}" r="16" fill="#ec3013" fill-opacity=".22" style="transform-box:fill-box;transform-origin:center;animation:umsPing 1.8s ease-out infinite"/>
+                <circle cx="{{ dotX }}" cy="{{ dotY }}" r="9" fill="#ec3013" stroke="#f8f4f4" stroke-width="3.5" style="transition:cx 1s cubic-bezier(.22,.7,.2,1),cy 1s cubic-bezier(.22,.7,.2,1)"/>
+              </g>
+            </svg>
+            <div style="position:absolute;top:14px;right:14px;background:rgba(248,244,244,.92);backdrop-filter:blur(6px);border:1px solid var(--color-neutral-300);border-radius:999px;padding:7px 14px;font-size:12px;font-weight:700;white-space:nowrap">{{ ebeneLabel }}</div>
+          </div>
+
+          <div class="ums-sheet" style="background:var(--color-bg);border-radius:24px 24px 0 0;margin-top:-20px;position:relative;padding:18px 0 0;display:flex;flex-direction:column;gap:14px;box-shadow:0 -10px 30px rgba(45,43,43,.1)">
+            <div style="display:flex;gap:14px;align-items:flex-start;padding:0 20px">
+              <div style="width:54px;height:54px;background:var(--color-accent);border-radius:16px;display:grid;place-items:center;flex:none">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#f3f2f2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="{{ stepIcon }}"/></svg>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-600)">Schritt {{ stepNr }} von {{ stepTotal }}</div>
+                <div style="font-family:var(--font-heading);font-weight:800;font-size:21px;line-height:1.15;margin-top:4px;text-wrap:pretty">{{ stepTitel }}</div>
+                <div style="font-size:14px;color:var(--color-neutral-700);margin-top:4px;text-wrap:pretty">{{ stepDetail }}</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:5px;padding:0 20px">
+              <sc-for list="{{ progressBars }}" as="p" hint-placeholder-count="6">
+                <div style="flex:1;height:6px;border-radius:999px;background: {{ p.bg }};transition:background .4s ease"></div>
+              </sc-for>
+            </div>
+            <div style="display:flex;gap:10px;padding:0 20px 20px">
+              <button class="btn btn-secondary ums-tap" style="min-height:58px;width:66px;justify-content:center;border-radius:999px" onClick="{{ prevStep }}">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+              </button>
+              <button class="btn btn-primary ums-tap" style="flex:1;min-height:58px;font-size:17px;border-radius:999px;justify-content:space-between;padding:0 26px;box-shadow:var(--shadow-md)" onClick="{{ nextStep }}">
+                <span>{{ nextLabel }}</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isStoer }}" hint-placeholder-val="{{ false }}">
+        <div class="ums-screen" style="width:402px;height:874px;display:flex;flex-direction:column;background:var(--color-bg);position:relative">
+          <div class="ums-scroll">
+            <div style="padding:70px 20px 24px;background:var(--color-accent);color:var(--color-bg);border-radius:0 0 28px 28px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="animation:umsPulse 1.4s ease-in-out infinite"><path d="M12 3l9 17H3L12 3z"/><path d="M12 9v5M12 17h.01"/></svg>
+                <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase">Änderung auf deiner Fahrt</div>
+              </div>
+              <h2 style="font-size:32px;margin:12px 0 4px;letter-spacing:-.03em;color:var(--color-bg)">Gleiswechsel</h2>
+              <p style="margin:0;font-size:15px;opacity:.92">ICE 1006 fährt heute von einem anderen Gleis. Deine Route wird neu berechnet.</p>
+            </div>
+
+            <div style="padding:20px;display:flex;align-items:center;gap:18px">
+              <div>
+                <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-neutral-600)">Alt</div>
+                <div style="font-family:var(--font-heading);font-weight:800;font-size:38px;line-height:1;text-decoration:line-through;color:var(--color-neutral-500)">Gl. 14</div>
+              </div>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#201e1d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              <div>
+                <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-accent-700)">Neu</div>
+                <div style="font-family:var(--font-heading);font-weight:800;font-size:38px;line-height:1;color:var(--color-accent-700)">Gl. 12</div>
+              </div>
+            </div>
+
+            <div style="padding:0 20px">
+              <div style="border:1px solid var(--color-neutral-300);border-radius:18px;overflow:hidden">
+                <div style="display:flex;justify-content:space-between;font-size:15px;padding:13px 16px;border-bottom:1px solid var(--color-neutral-300)">
+                  <span style="color:var(--color-neutral-700)">Neue Gehzeit</span><strong>8 min · Abschnitt B</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:15px;padding:13px 16px;border-bottom:1px solid var(--color-neutral-300)">
+                  <span style="color:var(--color-neutral-700)">Abfahrt</span><strong>14:32 · 4 min früher</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:15px;padding:13px 16px">
+                  <span style="color:var(--color-neutral-700)">Restzeit danach</span><strong style="color:#c81f00">4:10 — knapp</strong>
+                </div>
+              </div>
+            </div>
+
+            <div style="padding:16px 20px 120px">
+              <div style="padding:16px;border-radius:18px;background:var(--color-surface);display:flex;gap:14px;align-items:center">
+                <div style="width:48px;padding:7px 0;background:#201e1d;border-radius:999px;display:flex;flex-direction:column;align-items:center;gap:7px;flex:none">
+                  <div style="width:26px;height:26px;border-radius:50%;background:#ec3013;box-shadow:0 0 14px rgba(236,48,19,.85);animation:umsPulse 1.2s ease-in-out infinite"></div>
+                  <div style="width:26px;height:26px;border-radius:50%;background:#4a4443"></div>
+                  <div style="width:26px;height:26px;border-radius:50%;background:#4a4443"></div>
+                </div>
+                <div style="font-size:14px;color:var(--color-neutral-800);text-wrap:pretty">Die Ampel springt auf <strong>Rot</strong>: du hast nach dem Wechsel weniger Puffer als Gehzeit. Geh direkt los.</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="position:absolute;left:20px;right:20px;bottom:20px;display:flex;align-items:center;gap:12px;pointer-events:none;z-index:5">
+            <sc-if value="{{ recalc }}" hint-placeholder-val="{{ false }}">
+              <div style="pointer-events:auto;flex:1;display:flex;align-items:center;gap:10px;min-height:58px;padding:0 24px;border-radius:999px;background:var(--color-accent-100);font-size:15px;font-weight:600;box-shadow:var(--shadow-lg)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ec3013" stroke-width="2.5" stroke-linecap="round" style="animation:umsSpin 800ms linear infinite"><path d="M12 3a9 9 0 1 0 9 9"/></svg>
+                Neu berechnen …
+              </div>
+            </sc-if>
+            <sc-if value="{{ notRecalc }}" hint-placeholder-val="{{ true }}">
+              <button class="btn btn-primary ums-tap" style="pointer-events:auto;flex:1;min-height:58px;font-size:17px;border-radius:999px;justify-content:space-between;padding:0 26px;box-shadow:var(--shadow-lg)" onClick="{{ acceptStoer }}">
+                <span>Route übernehmen</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </button>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isWagen }}" hint-placeholder-val="{{ false }}">
+        <div class="ums-screen" style="width:402px;height:874px;display:flex;flex-direction:column;background:var(--color-bg);position:relative">
+          <div style="padding:70px 16px 12px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--color-neutral-300)">
+            <button class="btn btn-icon btn-secondary ums-tap" style="flex:none;border-radius:999px" onClick="{{ goDash }}">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+            </button>
+            <div>
+              <div style="font-family:var(--font-heading);font-weight:800;font-size:17px">Wagenreihung ICE 1006</div>
+              <div style="font-size:12px;color:var(--color-neutral-700)">Gleis {{ zielGleis }} · ab {{ abfahrt }} · aus deinem Ticket</div>
+            </div>
+          </div>
+
+          <div class="ums-scroll" style="padding:20px 20px 120px">
+            <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:10px">Dein Platz</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px">
+              <span class="tag tag-accent" style="border-radius:999px;font-size:13px;padding:7px 14px;white-space:nowrap">Wagen 26</span>
+              <span class="tag tag-accent" style="border-radius:999px;font-size:13px;padding:7px 14px;white-space:nowrap">Platz 61 · Fenster</span>
+              <span class="tag tag-outline" style="border-radius:999px;font-size:13px;padding:7px 14px;white-space:nowrap">{{ abschnittLabel }}</span>
+            </div>
+
+            <div style="display:flex;align-items:stretch;gap:4px;margin-bottom:8px">
+              <sc-for list="{{ wagen }}" as="w" hint-placeholder-count="7">
+                <div style="flex: {{ w.flex }};min-width:0;background: {{ w.bg }};color: {{ w.ink }};border:1px solid {{ w.border }};border-radius:12px;padding:11px 4px;text-align:center;transition:background .3s ease">
+                  <div style="font-family:var(--font-heading);font-weight:800;font-size:14px">{{ w.nr }}</div>
+                  <div style="font-size:9px;letter-spacing:.05em">{{ w.kl }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;gap:4px">
+              <sc-for list="{{ abschnitte }}" as="a" hint-placeholder-count="7">
+                <div style="flex:1;text-align:center;padding:6px 0;border-radius:999px;font-family:var(--font-heading);font-weight:800;font-size:12px;background: {{ a.bg }};color: {{ a.ink }}">{{ a.name }}</div>
+              </sc-for>
+            </div>
+            <div style="margin-top:10px;font-size:12px;color:var(--color-neutral-700)">Bahnsteig Gleis {{ zielGleis }} · Abschnitte A–G von West nach Ost</div>
+
+            <div style="margin-top:20px;padding:16px;border-radius:18px;background:var(--color-surface);display:flex;gap:12px;align-items:flex-start">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ec3013" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+              <div style="font-size:14px;text-wrap:pretty">Stell dich in <strong>Abschnitt {{ abschnitt }}</strong> hin — dort hält Wagen 26. Die Rolltreppe aus Ebene 0 kommt genau dort an.</div>
+            </div>
+          </div>
+
+          <div style="position:absolute;left:20px;right:20px;bottom:20px;display:flex;pointer-events:none;z-index:5">
+            <button class="btn btn-primary ums-tap" style="pointer-events:auto;flex:1;min-height:58px;font-size:17px;border-radius:999px;justify-content:space-between;padding:0 26px;box-shadow:var(--shadow-lg)" onClick="{{ startNav }}">
+              <span>Dorthin navigieren</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isAnkunft }}" hint-placeholder-val="{{ false }}">
+        <div class="ums-screen" style="width:402px;height:874px;display:flex;flex-direction:column;background:var(--color-bg);position:relative">
+          <div class="ums-scroll">
+            <div style="padding:80px 20px 26px;background:#0f7a4f;color:#f3f2f2;border-radius:0 0 28px 28px">
+              <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="animation:umsUp .5s cubic-bezier(.22,.7,.2,1) both"><path d="M4 13l6 6L21 6"/></svg>
+              <h2 style="font-size:34px;margin:18px 0 4px;letter-spacing:-.03em;color:#f3f2f2">Du bist da.</h2>
+              <p style="margin:0;font-size:16px;opacity:.93">Gleis {{ zielGleis }}, Abschnitt {{ abschnitt }} — genau hier hält dein Wagen.</p>
+            </div>
+
+            <div style="padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div style="border:1px solid var(--color-neutral-300);border-radius:18px;padding:14px">
+                <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-neutral-600)">Puffer</div>
+                <div style="font-family:var(--font-heading);font-weight:800;font-size:32px;line-height:1.1;font-variant-numeric:tabular-nums">{{ restText }}</div>
+              </div>
+              <div style="border:1px solid var(--color-neutral-300);border-radius:18px;padding:14px">
+                <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-neutral-600)">Abfahrt</div>
+                <div style="font-family:var(--font-heading);font-weight:800;font-size:32px;line-height:1.1;font-variant-numeric:tabular-nums">{{ abfahrt }}</div>
+              </div>
+            </div>
+
+            <div style="padding:0 20px 120px">
+              <div style="padding:16px;border-radius:18px;background:var(--color-surface);font-size:14px;text-wrap:pretty">Wagen <strong>26</strong>, Platz <strong>61</strong>. Der Zug fährt in Fahrtrichtung rechts — Einstieg vorne.</div>
+            </div>
+          </div>
+
+          <div style="position:absolute;left:20px;right:20px;bottom:20px;display:flex;align-items:center;gap:10px;pointer-events:none;z-index:5">
+            <button class="btn btn-primary ums-tap" style="pointer-events:auto;flex:1;min-height:58px;font-size:17px;border-radius:999px;justify-content:flex-start;padding:0 26px;box-shadow:var(--shadow-lg)" onClick="{{ restart }}">Neue Reise</button>
+            <button class="btn btn-secondary ums-tap" style="pointer-events:auto;min-height:58px;border-radius:999px;padding:0 22px;background:var(--color-bg);box-shadow:var(--shadow-md)" onClick="{{ goWagen }}">Wagenreihung</button>
+          </div>
+        </div>
+      </sc-if>
+
+    </x-import>
+  </div>
+
+  <div style="width:320px;display:flex;flex-direction:column;gap:22px;padding-top:6px">
+    <div>
+      <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent)">Screens</div>
+      <div style="height:2px;background:var(--color-divider);margin:8px 0 12px;border-radius:2px"></div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <sc-for list="{{ screensNav }}" as="s" hint-placeholder-count="6">
+          <button class="ums-tap" style="display:flex;align-items:center;gap:10px;text-align:left;padding:11px 14px;border:1px solid {{ s.border }};border-radius:12px;cursor:pointer;font-family:var(--font-body);font-size:14px;font-weight:600;background: {{ s.bg }};color: {{ s.ink }}" onClick="{{ s.go }}">
+            <span style="font-size:11px;font-variant-numeric:tabular-nums;opacity:.55">{{ s.nr }}</span>{{ s.name }}
+          </button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent)">Ampel</div>
+      <div style="height:2px;background:var(--color-divider);margin:8px 0 12px;border-radius:2px"></div>
+      <p style="font-size:13px;color:var(--color-neutral-800);margin:0 0 10px">Relativ zur Gehzeit der gewählten Route, nicht absolut:</p>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+        <div style="display:flex;align-items:center;gap:10px"><span style="width:14px;height:14px;border-radius:50%;background:#0f7a4f;flex:none"></span>Grün — mindestens doppelte Gehzeit</div>
+        <div style="display:flex;align-items:center;gap:10px"><span style="width:14px;height:14px;border-radius:50%;background:#e08a00;flex:none"></span>Gelb — 1× bis 2× Gehzeit</div>
+        <div style="display:flex;align-items:center;gap:10px"><span style="width:14px;height:14px;border-radius:50%;background:#ec3013;flex:none"></span>Rot — weniger als die Gehzeit</div>
+      </div>
+      <p style="font-size:13px;color:var(--color-neutral-700);margin:12px 0 0">Der Countdown läuft live. Eine andere Route oder ein Gleiswechsel verschiebt die Schwellen sofort.</p>
+    </div>
+
+    <div>
+      <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent)">Simulation</div>
+      <div style="height:2px;background:var(--color-divider);margin:8px 0 12px;border-radius:2px"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <button class="btn btn-secondary ums-tap" style="min-height:40px;border-radius:999px" onClick="{{ simGruen }}">Grün</button>
+        <button class="btn btn-secondary ums-tap" style="min-height:40px;border-radius:999px" onClick="{{ simGelb }}">Gelb</button>
+        <button class="btn btn-secondary ums-tap" style="min-height:40px;border-radius:999px" onClick="{{ simRot }}">Rot</button>
+        <button class="btn btn-secondary ums-tap" style="min-height:40px;border-radius:999px" onClick="{{ toggleLive }}">{{ liveLabel }}</button>
+      </div>
+      <p style="font-size:13px;color:var(--color-neutral-700);margin:12px 0 0">Szenario: RE 3 aus Stralsund, Gleis 6 (Ebene −2) → ICE 1006 nach Hamburg-Altona, Gleis 14 (Ebene +1).</p>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startRestMinuten&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:16,&quot;min&quot;:2,&quot;max&quot;:40,&quot;unit&quot;:&quot;min&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Szenario&quot;},&quot;liveCountdown&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Szenario&quot;}}">
+const ROUTEN = [
+  { name: 'Schnellste Route', min: 5 },
+  { name: 'Barrierefrei (Aufzug)', min: 9 },
+  { name: 'Mit Stopp: WC & Kiosk', min: 12 }
+];
+const PTS = [[70,362],[210,362],[210,210],[120,210],[120,70],[232,70]];
+const STEPS = [
+  { t: 'Bahnsteig Gleis 6 verlassen', d: 'Geh nach links Richtung Ausgang Nord — die Rolltreppe liegt am Ende des Bahnsteigs.', e: '−2', i: 'M5 12h14M13 6l6 6-6 6' },
+  { t: 'Rolltreppe hoch zur Ebene 0', d: 'Zwei Rolltreppen nach oben in die Haupthalle. Aufzug direkt daneben.', e: '−2 → 0', i: 'M12 19V5M6 11l6-6 6 6' },
+  { t: 'Haupthalle Richtung Osten', d: 'Über die Halle, vorbei an der großen Abfahrtstafel. Kiosk links.', e: '0', i: 'M5 12h14M13 6l6 6-6 6' },
+  { t: 'Weiter hoch zur Ebene +1', d: 'Rolltreppe zur Ringbahn-Ebene. Oben rechts halten.', e: '0 → +1', i: 'M12 19V5M6 11l6-6 6 6' },
+  { t: 'Bahnsteig Gleis 13/14', d: 'Rechts auf den Bahnsteig. Gleis 14 ist die rechte Seite.', e: '+1', i: 'M9 6l6 6-6 6' },
+  { t: 'Abschnitt C — hier warten', d: 'Hier hält Wagen 26 mit deinem Platz 61.', e: '+1', i: 'M12 21s7-6.6 7-11a7 7 0 1 0-14 0c0 4.4 7 11 7 11z' }
+];
+const AB = ['A','B','C','D','E','F','G'];
+const WG = [
+  { nr: '21', kl: '1. KL' }, { nr: '22', kl: '1. KL' }, { nr: '23', kl: 'BORD' },
+  { nr: '24', kl: '2. KL' }, { nr: '25', kl: '2. KL' }, { nr: '26', kl: '2. KL' },
+  { nr: '27', kl: '2. KL' }, { nr: '28', kl: '2. KL' }
+];
+
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    const startMin = this.props.startRestMinuten ?? 16;
+    this.state = {
+      screen: 'dash', rest: startMin * 60, route: 0, step: 0,
+      live: this.props.liveCountdown ?? true, pdf: 'idle', recalc: false
+    };
+  }
+  componentDidMount() {
+    this.timer = setInterval(() => {
+      if (!this.state.live) return;
+      this.setState(s => ({ rest: Math.max(0, s.rest - 1) }));
+    }, 1000);
+  }
+  componentWillUnmount() { clearInterval(this.timer); }
+
+  go(screen) { this.setState({ screen }); }
+  fmt(sec) {
+    const m = Math.floor(sec / 60), s = sec % 60;
+    return m + ':' + String(s).padStart(2, '0');
+  }
+  ampel() {
+    const geh = ROUTEN[this.state.route].min * 60;
+    const ratio = this.state.rest / geh;
+    if (ratio >= 2) return { key: 'g', ink: '#0f7a4f', label: 'Entspannt — du hast reichlich Zeit', tint: '#e2f2ea' };
+    if (ratio >= 1) return { key: 'y', ink: '#b26c00', label: 'Zügig gehen — Puffer wird knapp', tint: '#fdf1dc' };
+    return { key: 'r', ink: '#c81f00', label: 'Knapp — jetzt direkt losgehen', tint: '#ffe0d9' };
+  }
+
+  renderVals() {
+    const st = this.state, a = this.ampel(), geh = ROUTEN[st.route].min;
+    const startMin = this.props.startRestMinuten ?? 16;
+    const abfMin = 14 * 60 + 22 + startMin;
+    const pad = n => String(n).padStart(2, '0');
+    const hhmm = t => pad(Math.floor(t / 60) % 24) + ':' + pad(t % 60);
+    const nowT = abfMin - Math.ceil(st.rest / 60);
+    const pct = st.step / (STEPS.length - 1);
+    const [dx, dy] = PTS[Math.min(st.step, PTS.length - 1)];
+    const off = ['g', 'y'].indexOf(a.key);
+
+    return {
+      isOnboarding: st.screen === 'onboarding', isDash: st.screen === 'dash',
+      isNav: st.screen === 'nav', isStoer: st.screen === 'stoer',
+      isWagen: st.screen === 'wagen', isAnkunft: st.screen === 'ankunft',
+
+      startMinuten: startMin, uhrzeit: hhmm(nowT), abfahrt: hhmm(abfMin),
+      zielGleis: 14, abschnitt: 'C', abschnittLabel: 'Abschnitt C',
+      ebeneLabel: 'Ebene ' + STEPS[st.step].e,
+      restText: this.fmt(st.rest), ampelInk: a.ink, ampelLabel: a.label, ampelTint: a.tint,
+      gehzeitText: geh + ' min',
+      restWalkText: 'noch ' + Math.max(0, STEPS.length - 1 - st.step) + ' Schritte',
+      barWidth: Math.max(2, Math.min(100, (st.rest / (startMin * 60)) * 100)) + '%',
+
+      lampRed: a.key === 'r' ? '#ec3013' : '#4a4443',
+      lampAmber: a.key === 'y' ? '#e08a00' : '#4a4443',
+      lampGreen: a.key === 'g' ? '#12a069' : '#4a4443',
+      glowRed: a.key === 'r' ? '0 0 16px rgba(236,48,19,.9)' : 'none',
+      glowAmber: a.key === 'y' ? '0 0 16px rgba(224,138,0,.85)' : 'none',
+      glowGreen: a.key === 'g' ? '0 0 16px rgba(18,160,105,.8)' : 'none',
+      animRed: a.key === 'r' ? 'umsPulse 1.2s ease-in-out infinite' : 'none',
+
+      routen: ROUTEN.map((r, i) => ({
+        name: r.name, min: r.min,
+        bg: i === st.route ? '#201e1d' : 'var(--color-bg)',
+        ink: i === st.route ? '#f3f2f2' : 'var(--color-text)',
+        border: i === st.route ? '#201e1d' : 'var(--color-neutral-300)',
+        shadow: i === st.route ? 'var(--shadow-sm)' : 'none',
+        dot: i === st.route ? 1 : 0,
+        pick: () => this.setState({ route: i })
+      })),
+
+      stepNr: st.step + 1, stepTotal: STEPS.length,
+      stepTitel: STEPS[st.step].t, stepDetail: STEPS[st.step].d,
+      stepEbene: STEPS[st.step].e, stepIcon: STEPS[st.step].i,
+      nextLabel: st.step === STEPS.length - 1 ? 'Angekommen' : 'Nächster Schritt',
+      dashOffset: 100 - pct * 100, dotX: dx, dotY: dy,
+      mapTransform: 'translate(0 0)',
+      progressBars: STEPS.map((_, i) => ({ bg: i <= st.step ? '#ec3013' : 'var(--color-neutral-300)' })),
+      nextStep: () => st.step === STEPS.length - 1 ? this.go('ankunft') : this.setState({ step: st.step + 1 }),
+      prevStep: () => this.setState({ step: Math.max(0, st.step - 1) }),
+
+      wagen: WG.map(w => ({
+        nr: w.nr, kl: w.kl, flex: 1,
+        bg: w.nr === '26' ? '#ec3013' : 'var(--color-neutral-100)',
+        ink: w.nr === '26' ? '#f3f2f2' : 'var(--color-neutral-800)',
+        border: w.nr === '26' ? '#ec3013' : 'var(--color-neutral-300)'
+      })),
+      abschnitte: AB.map(n => ({
+        name: n,
+        bg: n === 'C' ? '#201e1d' : 'transparent',
+        ink: n === 'C' ? '#f3f2f2' : 'var(--color-neutral-600)'
+      })),
+
+      pdfIdle: st.pdf === 'idle', pdfLoading: st.pdf === 'loading', pdfDone: st.pdf === 'done',
+      importPdf: () => { this.setState({ pdf: 'loading' }); setTimeout(() => this.setState({ pdf: 'done' }), 1400); },
+      recalc: st.recalc, notRecalc: !st.recalc,
+      acceptStoer: () => { this.setState({ recalc: true }); setTimeout(() => this.setState({ recalc: false, screen: 'nav', step: 0, rest: 4 * 60 + 10 }), 1300); },
+
+      goDash: () => this.go('dash'), goStoer: () => this.go('stoer'), goWagen: () => this.go('wagen'),
+      startNav: () => this.setState({ screen: 'nav', step: 0 }),
+      restart: () => this.setState({ screen: 'onboarding', pdf: 'idle', step: 0, rest: startMin * 60 }),
+
+      screensNav: [
+        ['Onboarding & Ticket-PDF', 'onboarding'], ['Dashboard', 'dash'],
+        ['Navigation', 'nav'], ['Störung: Gleiswechsel', 'stoer'],
+        ['Wagenreihung', 'wagen'], ['Angekommen', 'ankunft']
+      ].map((s, i) => ({
+        nr: '0' + (i + 1), name: s[0],
+        bg: st.screen === s[1] ? '#201e1d' : 'var(--color-bg)',
+        ink: st.screen === s[1] ? '#f3f2f2' : 'var(--color-text)',
+        border: st.screen === s[1] ? '#201e1d' : 'var(--color-neutral-300)',
+        go: () => this.go(s[1])
+      })),
+
+      simGruen: () => this.setState({ rest: geh * 60 * 2 + 40 }),
+      simGelb: () => this.setState({ rest: Math.round(geh * 60 * 1.4) }),
+      simRot: () => this.setState({ rest: Math.round(geh * 60 * 0.7) }),
+      liveLabel: st.live ? 'Pause' : 'Weiter',
+      toggleLive: () => this.setState({ live: !st.live }),
+      _off: off
+    };
+  }
+}
+
+</script>
+</body>
+</html>

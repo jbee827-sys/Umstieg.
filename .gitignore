@@ -2,3 +2,5 @@ node_modules/
 dist/
 .env
 *.log
+# Spike-Rohdaten: reproduzierbar über scripts/spike-datenrealitaet.ts
+backend/test/fixtures/spike/
