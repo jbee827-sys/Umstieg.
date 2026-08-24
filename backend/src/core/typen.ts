@@ -14,6 +14,7 @@ export interface OsmElement {
   lat?: number; // nur node
   lon?: number; // nur node
   nodes?: number[]; // nur way
+  members?: { type: 'node' | 'way' | 'relation'; ref: number; role: string }[]; // nur relation
   tags?: Record<string, string>;
 }
 
@@ -30,6 +31,7 @@ export interface GraphKnoten {
   level: number; // OSM level-Tag; 0 wenn unbekannt
   gleis?: string; // an Bahnsteigpunkten: "7", "7a"
   abschnitt?: string; // "A".."F" | "anfang" | "mitte" | "ende"
+  bahnsteigId?: string; // gleicher Wert = gleicher physischer Bahnsteig
 }
 
 export interface GraphKante {

@@ -11,15 +11,18 @@ export function baueOverpassQL(lat: number, lon: number, radiusM: number): strin
   // Elementklassen gemäß Konzept 4.1: Bahnsteige (+ ref-Gleisnummern),
   // Fußwege/Treppen/Korridore, Aufzüge, Rolltreppen (conveying), inkl. aller
   // Tags (level, wheelchair, tunnel, bridge kommen als way-Tags automatisch mit).
+  // Große Bahnhöfe mappen Bahnsteige oft als Multipolygon-RELATION – deshalb
+  // relation[railway=platform] plus >> (rekursiv bis zu den Member-Nodes).
   return `[out:json][timeout:25];
 (
   way["railway"="platform"](${um});
+  relation["railway"="platform"](${um});
   way["highway"~"footway|steps|corridor"](${um});
   node["highway"="elevator"](${um});
   way["highway"="elevator"](${um});
   way["conveying"](${um});
 );
-(._;>;);
+(._;>>;);
 out body;`;
 }
 

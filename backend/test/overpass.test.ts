@@ -11,7 +11,8 @@ function jsonResponse(body: unknown, status = 200): Response {
 describe('baueOverpassQL', () => {
   it('enthält alle relevanten Elementklassen und die Koordinaten', () => {
     const ql = baueOverpassQL(52.5, 13.4, 400);
-    expect(ql).toContain('"railway"="platform"');
+    expect(ql).toContain('way["railway"="platform"]');
+    expect(ql).toContain('relation["railway"="platform"]');
     expect(ql).toContain('footway|steps|corridor');
     expect(ql).toContain('"highway"="elevator"');
     expect(ql).toContain('conveying');
