@@ -21,7 +21,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 | Task 3 – Overpass-Client (Fallback/Retry) + Fixture-Recorder + 3 echte Fixtures | ✅ fertig, 5 Tests grün |
 | Task 4 – Graphbau aus OSM (inkl. Bahnsteig-**Relationen**, Ebenen-Instanzen) | ✅ fertig, 8 Tests grün |
 | Task 5 – Klassifikation Stufe 1/2/3 + Verbundenheitsanalyse | ✅ fertig, 7 Tests grün |
-| Task 6 – **Datenrealitäts-Spike** (40 Bahnhöfe) | 🔶 Läufe ausgeführt, Overpass-Ausfälle bei ~11 Bahnhöfen – Report folgt |
+| Task 6 – **Datenrealitäts-Spike** (40 Bahnhöfe) | ✅ ausgeführt (27/40 erfasst, Rest Overpass-Ausfälle) – **Tor: keine Prioritätsverschiebung** |
 | Task 7 – Routing (Dijkstra, 3 Varianten, Abbiege-Malus) | ✅ fertig, 17 Tests grün |
 | Task 8 – Gehzeit + Ampel **relativ zur Gehzeit** | ✅ fertig, 11 Tests grün |
 | Task 9 – Textgenerierung (Richtungsskala, Zusammenfassung, ca.-Flag) | ✅ fertig, 6 Tests grün |
@@ -65,13 +65,19 @@ npx tsx scripts/record-fixture.ts <name> <lat> <lon>  # neues Overpass-Fixture
 
 Frontend (`frontend/`, zurückgestellt): `npm install && npm run dev` → :5173, Proxy auf :3001.
 
+## Spike-Ergebnis (Task 6, 25.08.2026)
+
+Report: [`docs/spike-datenrealitaet-ergebnis.md`](./docs/spike-datenrealitaet-ergebnis.md). Kernzahlen (27 von 40 Bahnhöfen erfasst, 13 wegen Overpass-Überlastung offen – Koordinatenliste bleibt, Wiederholung füllt den Cache nach):
+
+- **Stufe 1: 74 %** (groß: 8/8, mittel: 8/11, klein: 4/8) → **Entscheidungstor NICHT ausgelöst**, Stufe-1-Pfad wie geplant.
+- Abschnittsmarker (A–F) nur an 52 % der Bahnhöfe in OSM → Wagenpositions-Feature primär über DB-Stationsdaten (bestätigt Konzept).
+- DB-Abschnittsdaten-Check weiterhin **blockiert auf Marketplace-Registrierung**.
+
 ## Nächste Schritte (in dieser Reihenfolge geplant)
 
-1. **Task 6 ausführen:** `npx tsx scripts/spike-datenrealitaet.ts` → Report `docs/spike-datenrealitaet-ergebnis.md`, Entscheidungstor auswerten (Stufe-1-Anteil < 20 % → Priorität aufs Synthesemodell).
-2. Task 7–10: Routing-Kern, Gehzeit/Ampel (relativ, s. o.), Textgenerierung, Synthesemodell – alles gegen Fixtures, ohne API-Schlüssel.
-3. Task 11–12: DB-Stations-Client (Env-Guard) + REST-API.
-4. Task 13–14: Design aus `design/Umstieg.dc.html` als React-Komponenten umsetzen (Tokens → CSS, 6 Screens, SVG-Karte → später MapLibre/GeoJSON aus Task 12).
-5. Task 15–17: Live-Daten (Polling **pro EVA**), SSE, Härtung, Docker.
+1. Task 13–14: Design aus `design/Umstieg.dc.html` als React-Komponenten umsetzen (Tokens → CSS, 6 Screens, SVG-Karte → MapLibre/GeoJSON aus Task 12).
+2. Task 15–17: Live-Daten (Polling **pro EVA**), SSE, Härtung, Docker.
+3. Spike-Nachlauf: fehlende 13 Bahnhöfe erneut abfragen, sobald Overpass wieder stabil antwortet (`npx tsx scripts/spike-datenrealitaet.ts`, cached).
 
 ## Offene Punkte / Blocker
 
