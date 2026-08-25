@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- HANDGEBAUTES Fixture nach Timetables-Doku (IRIS-Format, Endpunkt /fchg/{evaNo}):
+     ICE 1006 mit Gleiswechsel 14 -> 12 und Verspaetung der Abfahrt.
+     Vor Live-Betrieb gegen echte API-Antworten verifizieren! -->
+<timetable station="Berlin Hbf">
+  <s id="8011160-260825-1">
+    <ar ct="2608251429"/>
+    <dp ct="2608251435" cp="12"/>
+  </s>
+</timetable>

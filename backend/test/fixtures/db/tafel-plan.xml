@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- HANDGEBAUTES Fixture nach Timetables-Doku (IRIS-Format, Endpunkt /plan/{evaNo}/{date}/{hour}).
+     Vor Live-Betrieb gegen echte API-Antworten verifizieren! -->
+<timetable station="Berlin Hbf">
+  <s id="8011160-260825-1">
+    <tl f="F" t="p" o="80" c="ICE" n="1006"/>
+    <ar pt="2608251422" pp="6" ppth="Stralsund Hbf|Pasewalk|Prenzlau"/>
+    <dp pt="2608251426" pp="14" ppth="Hamburg Hbf|Hamburg-Altona"/>
+  </s>
+  <s id="8011160-260825-2">
+    <tl f="N" t="p" o="800157" c="RE" n="3"/>
+    <ar pt="2608251422" pp="6" ppth="Stralsund Hbf|Greifswald"/>
+  </s>
+  <s id="8011160-260825-3">
+    <tl f="N" t="p" o="800157" c="RB" n="23"/>
+    <dp pt="2608251440" pp="12" ppth="Potsdam Hbf|Golm"/>
+  </s>
+</timetable>

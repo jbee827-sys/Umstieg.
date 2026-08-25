@@ -1,6 +1,8 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import { overpassQuery } from './clients/overpass.js';
 import { holeStationsInfo, sucheBahnhoefe } from './clients/stations.js';
+import { holeTafel } from './clients/timetables.js';
+import { holeWagenposition } from './clients/wagenreihung.js';
 import { registriereApiRouten, type ApiClients } from './routes/api.js';
 
 // App-Factory ohne listen(): per app.inject() testbar; Clients injizierbar
@@ -16,6 +18,9 @@ export function buildApp(clients: Partial<ApiClients> = {}): FastifyInstance {
       sucheBahnhoefe: (q) => sucheBahnhoefe(q),
       holeStationsInfo: (eva) => holeStationsInfo(eva),
     },
+    tafel: clients.tafel ?? ((eva, typ) => holeTafel(eva, typ)),
+    wagenposition:
+      clients.wagenposition ?? ((zug, datum, wagen) => holeWagenposition(zug, datum, wagen)),
   });
 
   return app;
