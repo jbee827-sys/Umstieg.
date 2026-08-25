@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { sucheStationen } from '../api/client'
-import type { BahnhofTreffer, Gehprofil, RoutenVariante } from '../api/typen'
+import type { BahnhofTreffer, Gehprofil, RoutenVariante, TafelEintrag } from '../api/typen'
+import { Zugauswahl } from './Zugauswahl'
 
 export interface EingabeWerte {
   eva: string
@@ -10,6 +11,15 @@ export interface EingabeWerte {
   wagen: string
   profil: Gehprofil
   variante: RoutenVariante
+  /** Zugnummer des Ankunftszugs (für die Wagenreihung), z. B. "3" aus "RE 3" */
+  zugAn?: string
+  ankunftZeit?: string
+  abfahrtZeit?: string
+}
+
+/** "ICE 1006" → "1006" */
+function zugnummer(zug: string): string | undefined {
+  return zug.split(' ').pop() || undefined
 }
 
 interface EingabeProps {
@@ -44,6 +54,8 @@ export function Eingabe({ laden, fehler, onBerechnen }: EingabeProps) {
   const [wagen, setWagen] = useState('')
   const [profil, setProfil] = useState<Gehprofil>('normal')
   const [variante, setVariante] = useState<RoutenVariante>('schnellste')
+  const [zugAnkunft, setZugAnkunft] = useState<TafelEintrag | null>(null)
+  const [zugAbfahrt, setZugAbfahrt] = useState<TafelEintrag | null>(null)
   const suchTimer = useRef<number | undefined>(undefined)
 
   // Bahnhofssuche mit Entprellung; 503 → Freitext-Fallback (EVA direkt eingeben)
@@ -79,6 +91,9 @@ export function Eingabe({ laden, fehler, onBerechnen }: EingabeProps) {
       wagen: wagen.trim(),
       profil,
       variante,
+      zugAn: zugAnkunft ? zugnummer(zugAnkunft.zug) : undefined,
+      ankunftZeit: zugAnkunft ? (zugAnkunft.zeitIst ?? zugAnkunft.zeitSoll) : undefined,
+      abfahrtZeit: zugAbfahrt ? (zugAbfahrt.zeitIst ?? zugAbfahrt.zeitSoll) : undefined,
     })
   }
 
@@ -141,6 +156,34 @@ export function Eingabe({ laden, fehler, onBerechnen }: EingabeProps) {
           </div>
         )}
       </div>
+
+      {eva !== '' && (
+        <div className="feld">
+          <label>Züge aus der Live-Tafel übernehmen (optional)</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <Zugauswahl
+              eva={eva}
+              typ="arr"
+              label="Ankunftszug wählen"
+              auswahl={zugAnkunft}
+              onAuswahl={(eintrag) => {
+                setZugAnkunft(eintrag)
+                if (eintrag) setGleisAn(eintrag.gleisIst ?? eintrag.gleisSoll)
+              }}
+            />
+            <Zugauswahl
+              eva={eva}
+              typ="dep"
+              label="Anschlusszug wählen"
+              auswahl={zugAbfahrt}
+              onAuswahl={(eintrag) => {
+                setZugAbfahrt(eintrag)
+                if (eintrag) setGleisAb(eintrag.gleisIst ?? eintrag.gleisSoll)
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="gleis-zeile">
         <div className="feld">

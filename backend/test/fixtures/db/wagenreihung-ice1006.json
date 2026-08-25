@@ -1,0 +1,18 @@
+{
+  "_hinweis": "HANDGEBAUTES Fixture nach ist-wr.noncd.db.de/wagenreihung/1.0 (istformation). Vor Live-Betrieb gegen echte Antworten verifizieren!",
+  "data": {
+    "istformation": {
+      "zuggattung": "ICE",
+      "zugnummer": "1006",
+      "allFahrzeuggruppe": [
+        {
+          "allFahrzeug": [
+            { "wagenordnungsnummer": "25", "fahrzeugsektor": "B" },
+            { "wagenordnungsnummer": "26", "fahrzeugsektor": "C" },
+            { "wagenordnungsnummer": "27", "fahrzeugsektor": "C" }
+          ]
+        }
+      ]
+    }
+  }
+}

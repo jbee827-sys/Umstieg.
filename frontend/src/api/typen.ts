@@ -28,10 +28,21 @@ export interface BahnhofTreffer {
   lon: number;
 }
 
+export interface TafelEintrag {
+  zug: string;
+  zeitSoll: string;
+  zeitIst?: string;
+  gleisSoll: string;
+  gleisIst?: string;
+  ziel: string;
+}
+
 export interface RouteParameter {
   eva: string;
   gleisAn: string;
   gleisAb: string;
+  zugAn?: string;
+  wagen?: string;
   abschnitt?: string;
   profil: Gehprofil;
   variante: RoutenVariante;

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import './App.css'
 import { holeRoute, RouteFehler } from './api/client'
 import type { RouteErgebnis } from './api/typen'
@@ -23,6 +23,24 @@ const STUFEN_TEXT: Record<number, string> = {
   3: 'Standardmodell (ca.-Angaben)',
 }
 
+/** 'HH:MM' → heutiger Zeitpunkt; kurz nach Mitternacht zählt eine frühe Abfahrt als morgen. */
+function heuteUm(hhmm: string): Date {
+  const [h, m] = hhmm.split(':').map(Number)
+  const zeitpunkt = new Date()
+  zeitpunkt.setHours(h, m, 0, 0)
+  if (zeitpunkt.getTime() < Date.now() - 6 * 3600 * 1000) {
+    zeitpunkt.setDate(zeitpunkt.getDate() + 1)
+  }
+  return zeitpunkt
+}
+
+/** Ampel relativ zur Gehzeit (identische Formel wie backend gehzeit.ts). */
+function ampelFarbe(restSek: number, gehzeitSek: number): 'gruen' | 'gelb' | 'rot' {
+  if (restSek < gehzeitSek || restSek < 0) return 'rot'
+  if (restSek >= 2 * gehzeitSek) return 'gruen'
+  return 'gelb'
+}
+
 function App() {
   const [ansicht, setAnsicht] = useState<'eingabe' | 'route'>('eingabe')
   // Route bleibt nach Berechnung vollständig im Speicher – die Anzeige
@@ -31,6 +49,14 @@ function App() {
   const [werte, setWerte] = useState<EingabeWerte | null>(null)
   const [laden, setLaden] = useState(false)
   const [fehler, setFehler] = useState<string | null>(null)
+  const [, setTick] = useState(0)
+
+  // Live-Countdown: mit bekannter Abfahrtszeit alle 10 s neu rendern
+  useEffect(() => {
+    if (ansicht !== 'route' || !werte?.abfahrtZeit) return
+    const timer = window.setInterval(() => setTick((t) => t + 1), 10000)
+    return () => window.clearInterval(timer)
+  }, [ansicht, werte?.abfahrtZeit])
 
   async function berechne(eingabe: EingabeWerte) {
     setLaden(true)
@@ -42,6 +68,8 @@ function App() {
         gleisAb: eingabe.gleisAb,
         profil: eingabe.profil,
         variante: eingabe.variante,
+        zugAn: eingabe.zugAn,
+        wagen: eingabe.wagen || undefined,
       })
       setWerte(eingabe)
       setRoute(ergebnis)
@@ -56,9 +84,13 @@ function App() {
   }
 
   if (ansicht === 'route' && route && werte) {
+    const restSek = werte.abfahrtZeit
+      ? (heuteUm(werte.abfahrtZeit).getTime() - Date.now()) / 1000
+      : undefined
+    const farbe = restSek === undefined ? null : ampelFarbe(restSek, route.gehzeitSek)
     return (
       <main className="app">
-        <Ampel farbe={null} gehzeitSek={route.gehzeitSek} />
+        <Ampel farbe={farbe} gehzeitSek={route.gehzeitSek} restSek={restSek} />
         <div className="routen-kopf">
           <div>
             <div className="kicker">{werte.bahnhofName || 'Umstieg'}</div>

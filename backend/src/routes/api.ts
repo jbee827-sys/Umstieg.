@@ -15,6 +15,7 @@ import type {
   RoutenVariante,
   StationGraph,
   StationsInfo,
+  TafelEintrag,
 } from '../core/typen.js';
 
 export type OverpassFn = (lat: number, lon: number, radiusM: number) => Promise<OverpassAntwort>;
@@ -24,9 +25,19 @@ export interface StationsClient {
   holeStationsInfo(eva: string): Promise<StationsInfo>;
 }
 
+export type TafelFn = (eva: string, typ: 'arr' | 'dep') => Promise<TafelEintrag[]>;
+
+export type WagenpositionFn = (
+  zugnummer: string,
+  datum: string,
+  wagen: string,
+) => Promise<{ abschnitt: string } | null>;
+
 export interface ApiClients {
   overpass: OverpassFn;
   stations: StationsClient;
+  tafel: TafelFn;
+  wagenposition: WagenpositionFn;
 }
 
 const OVERPASS_RADIUS_M = 400;
@@ -43,10 +54,18 @@ interface RouteQuery {
   eva?: string;
   gleisAn?: string;
   gleisAb?: string;
-  wagen?: string; // Wagenposition → Abschnitt kommt mit Task 15 (Wagenreihung)
+  zugAn?: string; // Zugnummer des Ankunftszugs – für die Wagenreihung
+  wagen?: string;
   abschnitt?: string;
   profil?: string;
   variante?: string;
+}
+
+function heuteJJJJMMTT(): string {
+  const jetzt = new Date();
+  const mm = String(jetzt.getMonth() + 1).padStart(2, '0');
+  const tt = String(jetzt.getDate()).padStart(2, '0');
+  return `${jetzt.getFullYear()}${mm}${tt}`;
 }
 
 export function registriereApiRouten(app: FastifyInstance, clients: ApiClients): void {
@@ -67,8 +86,28 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
     }
   });
 
+  app.get<{ Params: { eva: string }; Querystring: { type?: string } }>(
+    '/api/board/:eva',
+    async (req, reply) => {
+      const typ = req.query.type;
+      if (typ !== 'arr' && typ !== 'dep') {
+        return reply
+          .code(400)
+          .send({ fehler: 'parameter-ungueltig', detail: 'type muss arr oder dep sein' });
+      }
+      try {
+        return await clients.tafel(req.params.eva, typ);
+      } catch (e) {
+        if (e instanceof FehlendeZugangsdatenError) {
+          return reply.code(503).send({ fehler: 'db-zugang-fehlt' });
+        }
+        throw e;
+      }
+    },
+  );
+
   app.get<{ Querystring: RouteQuery }>('/api/route', async (req, reply) => {
-    const { eva, gleisAn, gleisAb, abschnitt } = req.query;
+    const { eva, gleisAn, gleisAb, zugAn, wagen, abschnitt } = req.query;
     const profil = (req.query.profil ?? 'normal') as Gehprofil;
     const variante = (req.query.variante ?? 'schnellste') as RoutenVariante;
     if (!eva || !gleisAn || !gleisAb) {
@@ -99,6 +138,18 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
     const hinweise = [...eintrag.hinweise];
     let graph = eintrag.graph;
 
+    // Wagenreihung: liefert den Gleisabschnitt des Wagens; keine Daten sind
+    // der Normalfall → Bahnsteigmitte mit transparentem Hinweis (Konzept 7).
+    let abschnittEffektiv = abschnitt;
+    if (wagen && zugAn) {
+      const position = await clients.wagenposition(zugAn, heuteJJJJMMTT(), wagen);
+      if (position) {
+        abschnittEffektiv = position.abschnitt;
+      } else {
+        hinweise.push('Wagenposition unbekannt – Route startet an der Bahnsteigmitte.');
+      }
+    }
+
     // Sonderfall: beide Gleise am selben physischen Bahnsteig
     if (istGleicherBahnsteig(graph, gleisAn, gleisAb)) {
       const ergebnis = gleicherBahnsteigErgebnis(gleisAb, graph.stufe);
@@ -109,7 +160,7 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
     let start: { knoten: GraphKnoten; hinweis?: string };
     let ziel: { knoten: GraphKnoten; hinweis?: string };
     try {
-      start = findeStartknoten(graph, gleisAn, abschnitt);
+      start = findeStartknoten(graph, gleisAn, abschnittEffektiv);
       ziel = findeStartknoten(graph, gleisAb);
     } catch {
       if (graph.stufe !== 3) {
@@ -118,7 +169,7 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
           'Gleis nicht im Kartenmaterial gefunden – Standardmodell mit ungefähren Angaben.',
         );
         try {
-          start = findeStartknoten(graph, gleisAn, abschnitt);
+          start = findeStartknoten(graph, gleisAn, abschnittEffektiv);
           ziel = findeStartknoten(graph, gleisAb);
         } catch {
           return reply.code(404).send({ fehler: 'gleis-unbekannt' });

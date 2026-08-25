@@ -9,19 +9,18 @@ export class FehlendeZugangsdatenError extends Error {
   }
 }
 
-function zugangsdaten(): { id: string; secret: string } {
+/** Marketplace-Auth-Header; wirft ohne Env-Schlüssel (auch von timetables.ts genutzt). */
+export function dbAuthHeader(): { 'DB-Client-Id': string; 'DB-Api-Key': string } {
   const id = process.env.DB_CLIENT_ID;
   const secret = process.env.DB_CLIENT_SECRET;
   if (!id || !secret) throw new FehlendeZugangsdatenError();
-  return { id, secret };
+  return { 'DB-Client-Id': id, 'DB-Api-Key': secret };
 }
 
 async function dbGet(url: string, fetchFn: typeof fetch): Promise<unknown> {
-  const { id, secret } = zugangsdaten();
   const antwort = await fetchFn(url, {
     headers: {
-      'DB-Client-Id': id,
-      'DB-Api-Key': secret,
+      ...dbAuthHeader(),
       Accept: 'application/json',
     },
     signal: AbortSignal.timeout(15000),

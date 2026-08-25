@@ -1,4 +1,4 @@
-import type { BahnhofTreffer, RouteErgebnis, RouteParameter } from './typen';
+import type { BahnhofTreffer, RouteErgebnis, RouteParameter, TafelEintrag } from './typen';
 
 export type SuchErgebnis =
   | { ok: true; treffer: BahnhofTreffer[] }
@@ -34,6 +34,8 @@ export async function holeRoute(p: RouteParameter): Promise<RouteErgebnis> {
     variante: p.variante,
   });
   if (p.abschnitt) params.set('abschnitt', p.abschnitt);
+  if (p.zugAn) params.set('zugAn', p.zugAn);
+  if (p.wagen) params.set('wagen', p.wagen);
 
   let res: Response;
   try {
@@ -46,4 +48,19 @@ export async function holeRoute(p: RouteParameter): Promise<RouteErgebnis> {
     throw new RouteFehler(body.fehler ?? `http-${res.status}`, body.detail);
   }
   return (await res.json()) as RouteErgebnis;
+}
+
+export type TafelErgebnis =
+  | { ok: true; eintraege: TafelEintrag[] }
+  | { ok: false; fehler: 'db-zugang-fehlt' | 'netz' };
+
+export async function holeTafel(eva: string, typ: 'arr' | 'dep'): Promise<TafelErgebnis> {
+  try {
+    const res = await fetch(`/api/board/${encodeURIComponent(eva)}?type=${typ}`);
+    if (res.status === 503) return { ok: false, fehler: 'db-zugang-fehlt' };
+    if (!res.ok) return { ok: false, fehler: 'netz' };
+    return { ok: true, eintraege: (await res.json()) as TafelEintrag[] };
+  } catch {
+    return { ok: false, fehler: 'netz' };
+  }
 }

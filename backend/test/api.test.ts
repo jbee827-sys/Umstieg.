@@ -19,7 +19,7 @@ const ministadt: StationsInfo = {
   gleise: [{ gleis: '1' }, { gleis: '2' }],
 };
 
-function macheClients({ overpassWirft = false } = {}) {
+function macheClients({ overpassWirft = false, abschnitt = null as string | null } = {}) {
   return {
     overpass: vi.fn(async (): Promise<OverpassAntwort> => {
       if (overpassWirft) throw new Error('Overpass nicht erreichbar (Test)');
@@ -31,6 +31,17 @@ function macheClients({ overpassWirft = false } = {}) {
         { name: 'Ministadt', eva: '8000001', lat: 52.0, lon: 12.0 },
       ]),
     },
+    tafel: vi.fn(async () => [
+      {
+        zug: 'ICE 1006',
+        zeitSoll: '14:26',
+        zeitIst: '14:35',
+        gleisSoll: '14',
+        gleisIst: '12',
+        ziel: 'Hamburg-Altona',
+      },
+    ]),
+    wagenposition: vi.fn(async () => (abschnitt ? { abschnitt } : null)),
   };
 }
 
@@ -85,6 +96,70 @@ describe('GET /api/route', () => {
     });
     expect(res.statusCode).toBe(404);
     expect(res.json().fehler).toBe('gleis-unbekannt');
+  });
+});
+
+describe('GET /api/route – Wagenposition', () => {
+  it('nutzt die Wagenposition für den Startabschnitt', async () => {
+    const clients = macheClients({ abschnitt: 'anfang' });
+    const app = buildApp(clients);
+    const res = await app.inject({
+      method: 'GET',
+      url: `${ROUTE_URL}&zugAn=1006&wagen=26`,
+    });
+    expect(res.statusCode).toBe(200);
+    expect(clients.wagenposition).toHaveBeenCalledTimes(1);
+    const [zugnummer, datum, wagen] = clients.wagenposition.mock.calls[0] as unknown as [
+      string,
+      string,
+      string,
+    ];
+    expect(zugnummer).toBe('1006');
+    expect(datum).toMatch(/^\d{8}$/);
+    expect(wagen).toBe('26');
+  });
+
+  it('keine Wagenreihungsdaten → Bahnsteigmitte mit transparentem Hinweis', async () => {
+    const app = buildApp(macheClients({ abschnitt: null }));
+    const res = await app.inject({ method: 'GET', url: `${ROUTE_URL}&zugAn=1006&wagen=26` });
+    expect(res.statusCode).toBe(200);
+    const ergebnis = res.json() as RouteErgebnis;
+    expect(ergebnis.hinweise.some((h) => h.includes('Bahnsteigmitte'))).toBe(true);
+  });
+
+  it('ohne wagen-Parameter wird die Wagenreihung nicht abgefragt', async () => {
+    const clients = macheClients();
+    const app = buildApp(clients);
+    await app.inject({ method: 'GET', url: ROUTE_URL });
+    expect(clients.wagenposition).not.toHaveBeenCalled();
+  });
+});
+
+describe('GET /api/board/:eva', () => {
+  it('liefert die Tafel über den injizierten Client', async () => {
+    const clients = macheClients();
+    const app = buildApp(clients);
+    const res = await app.inject({ method: 'GET', url: '/api/board/8000001?type=dep' });
+    expect(res.statusCode).toBe(200);
+    const tafel = res.json() as { zug: string; gleisIst?: string }[];
+    expect(tafel[0].zug).toBe('ICE 1006');
+    expect(tafel[0].gleisIst).toBe('12');
+    expect(clients.tafel).toHaveBeenCalledWith('8000001', 'dep');
+  });
+
+  it('ungültiger type → 400', async () => {
+    const app = buildApp(macheClients());
+    const res = await app.inject({ method: 'GET', url: '/api/board/8000001?type=xyz' });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('ohne DB-Zugangsdaten → 503', async () => {
+    vi.stubEnv('DB_CLIENT_ID', '');
+    vi.stubEnv('DB_CLIENT_SECRET', '');
+    const app = buildApp(); // echte Clients ohne Schlüssel
+    const res = await app.inject({ method: 'GET', url: '/api/board/8000001?type=dep' });
+    expect(res.statusCode).toBe(503);
+    expect(res.json()).toEqual({ fehler: 'db-zugang-fehlt' });
   });
 });
 
