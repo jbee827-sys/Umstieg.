@@ -244,9 +244,9 @@ describe('app', () => {
 - Test: `backend/test/gehzeit.test.ts`
 
 **Interfaces:**
-- Produces: `gehzeitSekunden(pfad: RoutenPfad, profil: Gehprofil): number` (Geschwindigkeiten 1.4/1.0/0.6 m/s; Zuschläge je Ebenenwechsel-Kante: treppe +20, rolltreppe +10, aufzug +60, rampe +0); `ampel(pufferSek: number): 'gruen'|'gelb'|'rot'` (grün ≥ 120, gelb 0–119, rot < 0); `berechnePuffer(abfahrt: Date, ankunft: Date, gehzeitSek: number): number`.
+- Produces: `gehzeitSekunden(pfad: RoutenPfad, profil: Gehprofil): number` (Geschwindigkeiten 1.4/1.0/0.6 m/s; Zuschläge je Ebenenwechsel-Kante: treppe +20, rolltreppe +10, aufzug +60, rampe +0); `ampel(umstiegszeitSek: number, gehzeitSek: number): 'gruen'|'gelb'|'rot'` – **relativ zur Gehzeit** (Konzeptkorrektur 4 aus dem Design: grün ≥ 2× Gehzeit, gelb 1–2× Gehzeit, rot < 1× Gehzeit); `berechnePuffer(abfahrt: Date, ankunft: Date, gehzeitSek: number): number` (Sekunden Umstiegszeit minus Gehzeit).
 
-- [ ] **Step 1: Failing Tests mit exakten Zahlen** (100 m eben normal = 100 s; 100 m + Treppe hoch zügig = round(100/1.4)+20 = 91 s; ampel(120)=gruen, ampel(0)=gelb, ampel(-1)=rot)
+- [ ] **Step 1: Failing Tests mit exakten Zahlen** (100 m eben normal = 100 s; 100 m + Treppe hoch zügig = round(100/1.4)+20 = 91 s; ampel(200,100)=gruen, ampel(150,100)=gelb, ampel(99,100)=rot, Grenzen inklusiv bei 2×/1×)
 - [ ] **Step 2: Rot** · **Step 3: Implementieren** · **Step 4: Grün** · **Step 5: Commit**
 
 ### Task 9: Textgenerierung
