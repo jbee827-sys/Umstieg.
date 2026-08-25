@@ -79,6 +79,9 @@ describe('stations-Client', () => {
       expect(info.eva).toBe('8011160');
       expect(info.name).toBe('Berlin Hbf');
       expect(info.gleise.map((g) => g.gleis)).toEqual(['7', '8', '11', '12']);
+      // Stationskoordinaten für den Overpass-Abruf (Task 12)
+      expect(info.lat).toBeCloseTo(52.524925, 5);
+      expect(info.lon).toBeCloseTo(13.369629, 5);
     });
 
     it('ohne Zugangsdaten → FehlendeZugangsdatenError', async () => {

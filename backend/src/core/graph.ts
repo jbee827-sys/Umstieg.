@@ -4,6 +4,7 @@ import type {
   KantenTyp,
   OsmElement,
   OverpassAntwort,
+  RoutenPfad,
   StationGraph,
 } from './typen.js';
 
@@ -375,4 +376,73 @@ export function baueGraph(osm: OverpassAntwort): StationGraph {
 
   // Stufe wird erst durch die Klassifikation (Task 5) gesetzt – Start: 3.
   return { knoten, adjazenz, stufe: 3, gleise };
+}
+
+// --- GeoJSON-Export fuer das Kartenfeld (Task 12) ---
+
+interface GeoFeature {
+  type: 'Feature';
+  geometry: { type: 'LineString' | 'Point'; coordinates: unknown };
+  properties: Record<string, unknown>;
+}
+
+/**
+ * Route als GeoJSON je Ebene (Schluessel = level als String): Routen-Liniensegmente
+ * pro Ebene plus Start-/Zielmarker. Koordinatenreihenfolge GeoJSON-konform [lon, lat].
+ */
+export function graphZuGeoJSON(
+  graph: StationGraph,
+  pfad: RoutenPfad,
+): Record<string, { type: 'FeatureCollection'; features: GeoFeature[] }> {
+  if (pfad.knoten.length === 0) return {};
+
+  const proEbene = new Map<number, GeoFeature[]>();
+  const featuresFuer = (level: number): GeoFeature[] => {
+    if (!proEbene.has(level)) proEbene.set(level, []);
+    return proEbene.get(level)!;
+  };
+
+  // Routenlinie in Segmente gleicher Ebene zerlegen
+  let segment: GraphKnoten[] = [pfad.knoten[0]];
+  const schliesseSegment = (): void => {
+    if (segment.length >= 2) {
+      featuresFuer(segment[0].level).push({
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: segment.map((k) => [k.lon, k.lat]),
+        },
+        properties: { route: true, level: segment[0].level },
+      });
+    }
+  };
+  for (let i = 1; i < pfad.knoten.length; i++) {
+    const knoten = pfad.knoten[i];
+    if (knoten.level === segment[segment.length - 1].level) {
+      segment.push(knoten);
+    } else {
+      schliesseSegment();
+      segment = [knoten];
+    }
+  }
+  schliesseSegment();
+
+  const start = pfad.knoten[0];
+  const ziel = pfad.knoten[pfad.knoten.length - 1];
+  featuresFuer(start.level).push({
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [start.lon, start.lat] },
+    properties: { rolle: 'start', gleis: start.gleis ?? null, level: start.level },
+  });
+  featuresFuer(ziel.level).push({
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [ziel.lon, ziel.lat] },
+    properties: { rolle: 'ziel', gleis: ziel.gleis ?? null, level: ziel.level },
+  });
+
+  const ergebnis: Record<string, { type: 'FeatureCollection'; features: GeoFeature[] }> = {};
+  for (const [level, features] of proEbene) {
+    ergebnis[String(level)] = { type: 'FeatureCollection', features };
+  }
+  return ergebnis;
 }

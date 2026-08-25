@@ -85,6 +85,8 @@ export interface BahnhofTreffer {
 export interface StationsInfo {
   eva: string;
   name: string;
+  lat?: number; // Stationsposition (für den Overpass-Abruf)
+  lon?: number;
   gleise: { gleis: string; lat?: number; lon?: number }[];
 }
 
