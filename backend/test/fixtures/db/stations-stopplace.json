@@ -1,0 +1,6 @@
+{
+  "_hinweis": "HANDGEBAUTES Fixture nach RIS::Stations-Doku (Stand 25.08.2026, Endpunkt GET /stop-places/{evaNumber}). Vor Live-Betrieb gegen echte API-Antworten verifizieren!",
+  "evaNumber": "8011160",
+  "names": { "DE": { "nameLong": "Berlin Hbf" } },
+  "position": { "latitude": 52.524925, "longitude": 13.369629 }
+}

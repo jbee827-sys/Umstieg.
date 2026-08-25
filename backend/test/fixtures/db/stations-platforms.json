@@ -1,0 +1,9 @@
+{
+  "_hinweis": "HANDGEBAUTES Fixture nach RIS::Stations-Doku (Stand 25.08.2026, Endpunkt GET /platforms/{evaNumber}). Vor Live-Betrieb gegen echte API-Antworten verifizieren!",
+  "platforms": [
+    { "name": "7", "length": 430 },
+    { "name": "8", "length": 430 },
+    { "name": "11", "length": 320 },
+    { "name": "12", "length": 320 }
+  ]
+}
