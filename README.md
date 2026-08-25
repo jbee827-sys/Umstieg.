@@ -29,7 +29,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 | Task 11 – RIS::Stations-Client hinter Env-Guard | ✅ fertig, 6 Tests grün (Endpunkte verifiziert 25.08.2026) |
 | Task 12 – REST-API `/api/route` + `/api/stations` + LRU-Cache + GeoJSON | ✅ fertig, 8 Tests grün |
 | Task 13 – Frontend: Eingabe, Schrittliste, Ampel (Design-Tokens) | ✅ fertig (Ampel grau bis Zugauswahl/Task 15; manuelle Browser-Sichtprüfung auf Mobilgerät empfohlen) |
-| Task 14 – Karte (MapLibre, Ebenen) | ⬜ offen |
+| Task 14 – Karte (MapLibre, Ebenen-Umschalter, lazy geladen) | ✅ fertig (WebGL-Sichtprüfung im Browser empfohlen) |
 | Task 15–17 – Live-Daten, SSE, Härtung, Docker | ⬜ offen |
 
 **Tests:** `cd backend && npm test` → 77 Tests grün (Stand dieses Commits). `npm run lint` sauber.
@@ -77,9 +77,10 @@ Report: [`docs/spike-datenrealitaet-ergebnis.md`](./docs/spike-datenrealitaet-er
 
 ## Nächste Schritte (in dieser Reihenfolge geplant)
 
-1. Task 13–14: Design aus `design/Umstieg.dc.html` als React-Komponenten umsetzen (Tokens → CSS, 6 Screens, SVG-Karte → MapLibre/GeoJSON aus Task 12).
-2. Task 15–17: Live-Daten (Polling **pro EVA**), SSE, Härtung, Docker.
-3. Spike-Nachlauf: fehlende 13 Bahnhöfe erneut abfragen, sobald Overpass wieder stabil antwortet (`npx tsx scripts/spike-datenrealitaet.ts`, cached).
+1. Task 15: Live-Tafeln + Zugauswahl + Wagenreihung (Timetables-XML, Fixtures) → Ampel wird farbig.
+2. Task 16: SSE-Überwachung (Polling **pro EVA**), Gleiswechsel-Rerouting, FaSta.
+3. Task 17: Degradationstests, Docker (ein Container), Mobile-Feinschliff.
+4. Spike-Nachlauf: fehlende 13 Bahnhöfe erneut abfragen, sobald Overpass wieder stabil antwortet (`npx tsx scripts/spike-datenrealitaet.ts`, cached).
 
 ## Offene Punkte / Blocker
 
