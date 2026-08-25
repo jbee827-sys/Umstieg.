@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import './App.css'
 import { holeRoute, RouteFehler } from './api/client'
 import type { RouteErgebnis } from './api/typen'
 import { Ampel } from './components/Ampel'
 import { Eingabe, type EingabeWerte } from './components/Eingabe'
 import { Schrittliste } from './components/Schrittliste'
+
+// MapLibre ist groß und die Karte standardmäßig eingeklappt → erst bei Bedarf laden.
+const Karte = lazy(() => import('./components/Karte').then((m) => ({ default: m.Karte })))
 
 const FEHLER_TEXTE: Record<string, string> = {
   'db-zugang-fehlt':
@@ -67,6 +70,11 @@ function App() {
         </div>
         <hr className="trennlinie" />
         <Schrittliste schritte={route.schritte} />
+        {route.karte && (
+          <Suspense fallback={<div className="lade-hinweis">Karte wird geladen …</div>}>
+            <Karte karte={route.karte} />
+          </Suspense>
+        )}
         {route.hinweise.length > 0 && (
           <ul className="hinweisliste">
             {route.hinweise.map((hinweis) => (
