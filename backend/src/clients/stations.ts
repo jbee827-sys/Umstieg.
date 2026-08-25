@@ -77,6 +77,8 @@ export async function holeStationsInfo(
   return {
     eva,
     name: stopPlace.names?.DE?.nameLong ?? `EVA ${eva}`,
+    lat: stopPlace.position?.latitude,
+    lon: stopPlace.position?.longitude,
     gleise,
   };
 }

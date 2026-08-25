@@ -1,0 +1,173 @@
+import type { FastifyInstance } from 'fastify';
+import { erzeugeCache, GRAPH_TTL_MS } from '../cache/lru.js';
+import { FehlendeZugangsdatenError } from '../clients/stations.js';
+import { gehzeitSekunden } from '../core/gehzeit.js';
+import { baueGraph, graphZuGeoJSON } from '../core/graph.js';
+import { klassifiziere } from '../core/klassifikation.js';
+import { berechneRoute, findeStartknoten, istGleicherBahnsteig } from '../core/routing.js';
+import { gleicherBahnsteigErgebnis, syntheseGraph } from '../core/synthmodell.js';
+import { generiereSchritte } from '../core/textgen.js';
+import type {
+  BahnhofTreffer,
+  Gehprofil,
+  GraphKnoten,
+  OverpassAntwort,
+  RoutenVariante,
+  StationGraph,
+  StationsInfo,
+} from '../core/typen.js';
+
+export type OverpassFn = (lat: number, lon: number, radiusM: number) => Promise<OverpassAntwort>;
+
+export interface StationsClient {
+  sucheBahnhoefe(q: string): Promise<BahnhofTreffer[]>;
+  holeStationsInfo(eva: string): Promise<StationsInfo>;
+}
+
+export interface ApiClients {
+  overpass: OverpassFn;
+  stations: StationsClient;
+}
+
+const OVERPASS_RADIUS_M = 400;
+const GEHPROFILE: Gehprofil[] = ['zuegig', 'normal', 'langsam'];
+const VARIANTEN: RoutenVariante[] = ['schnellste', 'einfachste', 'barrierefrei'];
+
+interface GraphEintrag {
+  graph: StationGraph;
+  info: StationsInfo;
+  hinweise: string[];
+}
+
+interface RouteQuery {
+  eva?: string;
+  gleisAn?: string;
+  gleisAb?: string;
+  wagen?: string; // Wagenposition → Abschnitt kommt mit Task 15 (Wagenreihung)
+  abschnitt?: string;
+  profil?: string;
+  variante?: string;
+}
+
+export function registriereApiRouten(app: FastifyInstance, clients: ApiClients): void {
+  const graphCache = erzeugeCache<GraphEintrag>(100, GRAPH_TTL_MS);
+
+  app.get<{ Querystring: { q?: string } }>('/api/stations', async (req, reply) => {
+    const q = req.query.q?.trim();
+    if (!q) {
+      return reply.code(400).send({ fehler: 'parameter-fehlt', detail: 'q ist erforderlich' });
+    }
+    try {
+      return await clients.stations.sucheBahnhoefe(q);
+    } catch (e) {
+      if (e instanceof FehlendeZugangsdatenError) {
+        return reply.code(503).send({ fehler: 'db-zugang-fehlt' });
+      }
+      throw e;
+    }
+  });
+
+  app.get<{ Querystring: RouteQuery }>('/api/route', async (req, reply) => {
+    const { eva, gleisAn, gleisAb, abschnitt } = req.query;
+    const profil = (req.query.profil ?? 'normal') as Gehprofil;
+    const variante = (req.query.variante ?? 'schnellste') as RoutenVariante;
+    if (!eva || !gleisAn || !gleisAb) {
+      return reply
+        .code(400)
+        .send({ fehler: 'parameter-fehlt', detail: 'eva, gleisAn und gleisAb sind erforderlich' });
+    }
+    if (!GEHPROFILE.includes(profil) || !VARIANTEN.includes(variante)) {
+      return reply.code(400).send({ fehler: 'parameter-ungueltig' });
+    }
+
+    // Graph beschaffen (Cache 24 h je EVA)
+    let eintrag = graphCache.get(eva);
+    if (!eintrag) {
+      let info: StationsInfo;
+      try {
+        info = await clients.stations.holeStationsInfo(eva);
+      } catch (e) {
+        if (e instanceof FehlendeZugangsdatenError) {
+          return reply.code(503).send({ fehler: 'db-zugang-fehlt' });
+        }
+        throw e;
+      }
+      eintrag = await baueGraphEintrag(info, clients.overpass);
+      graphCache.set(eva, eintrag);
+    }
+
+    const hinweise = [...eintrag.hinweise];
+    let graph = eintrag.graph;
+
+    // Sonderfall: beide Gleise am selben physischen Bahnsteig
+    if (istGleicherBahnsteig(graph, gleisAn, gleisAb)) {
+      const ergebnis = gleicherBahnsteigErgebnis(gleisAb, graph.stufe);
+      return { ...ergebnis, hinweise: [...hinweise, ...ergebnis.hinweise] };
+    }
+
+    // Startpunkt/Ziel bestimmen; fehlt ein Gleis im OSM-Graphen → Synthese-Rückfall
+    let start: { knoten: GraphKnoten; hinweis?: string };
+    let ziel: { knoten: GraphKnoten; hinweis?: string };
+    try {
+      start = findeStartknoten(graph, gleisAn, abschnitt);
+      ziel = findeStartknoten(graph, gleisAb);
+    } catch {
+      if (graph.stufe !== 3) {
+        graph = syntheseGraph(eintrag.info);
+        hinweise.push(
+          'Gleis nicht im Kartenmaterial gefunden – Standardmodell mit ungefähren Angaben.',
+        );
+        try {
+          start = findeStartknoten(graph, gleisAn, abschnitt);
+          ziel = findeStartknoten(graph, gleisAb);
+        } catch {
+          return reply.code(404).send({ fehler: 'gleis-unbekannt' });
+        }
+      } else {
+        return reply.code(404).send({ fehler: 'gleis-unbekannt' });
+      }
+    }
+    if (start.hinweis) hinweise.push(start.hinweis);
+
+    const pfad = berechneRoute(graph, start.knoten.id, ziel.knoten.id, variante);
+    if (!pfad) {
+      return reply.code(404).send({
+        fehler: 'keine-route',
+        detail:
+          variante === 'barrierefrei'
+            ? 'Keine barrierefreie Route gefunden (Treppen gesperrt, kein nutzbarer Aufzug).'
+            : 'Keine Route zwischen den Gleisen gefunden.',
+        hinweise,
+      });
+    }
+
+    return {
+      stufe: graph.stufe,
+      schritte: generiereSchritte(pfad, { ungefaehr: graph.stufe === 3 }),
+      gehzeitSek: gehzeitSekunden(pfad, profil),
+      karte: graphZuGeoJSON(graph, pfad),
+      hinweise,
+    };
+  });
+}
+
+/** OSM-Graph bauen; bei Overpass-Ausfall oder unbrauchbaren Daten → Synthesemodell. */
+async function baueGraphEintrag(info: StationsInfo, overpass: OverpassFn): Promise<GraphEintrag> {
+  if (info.lat !== undefined && info.lon !== undefined) {
+    try {
+      const osm = await overpass(info.lat, info.lon, OVERPASS_RADIUS_M);
+      const graph = baueGraph(osm);
+      graph.stufe = klassifiziere(graph);
+      if (graph.stufe !== 3) {
+        return { graph, info, hinweise: [] };
+      }
+    } catch {
+      // fällt unten auf das Synthesemodell zurück
+    }
+  }
+  return {
+    graph: syntheseGraph(info),
+    info,
+    hinweise: ['Kartendaten nicht verfügbar – Standardmodell mit ungefähren Angaben.'],
+  };
+}

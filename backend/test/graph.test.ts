@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { baueGraph, haversineM } from '../src/core/graph.js';
+import { baueGraph, graphZuGeoJSON, haversineM } from '../src/core/graph.js';
+import { berechneRoute } from '../src/core/routing.js';
 import type { OverpassAntwort, StationGraph } from '../src/core/typen.js';
 
 function ladeFixture(name: string): OverpassAntwort {
@@ -86,5 +87,38 @@ describe('baueGraph – echte Fixtures (Smoke)', () => {
   it('Zernitz: wirft nicht, auch wenn kaum Daten vorhanden sind', () => {
     const graph = baueGraph(ladeFixture('overpass/zernitz'));
     expect(graph.knoten.size).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('graphZuGeoJSON', () => {
+  it('liefert Routenlinien je Ebene plus Start-/Zielmarker (Koordinaten [lon, lat])', () => {
+    const graph = baueGraph(ladeFixture('synthetisch/mini-bahnhof'));
+    const pfad = berechneRoute(graph, 'gleis1:mitte', 'gleis2:mitte', 'schnellste')!;
+    const geo = graphZuGeoJSON(graph, pfad) as Record<
+      string,
+      { type: string; features: { type: string; geometry: { type: string; coordinates: unknown }; properties: Record<string, unknown> }[] }
+    >;
+
+    // Route wechselt die Ebene (Unterfuehrung) -> mehrere Ebenen-Schluessel
+    expect(Object.keys(geo).length).toBeGreaterThanOrEqual(2);
+    for (const sammlung of Object.values(geo)) {
+      expect(sammlung.type).toBe('FeatureCollection');
+    }
+
+    const alleFeatures = Object.values(geo).flatMap((s) => s.features);
+    const linien = alleFeatures.filter((f) => f.geometry.type === 'LineString' && f.properties.route === true);
+    expect(linien.length).toBeGreaterThanOrEqual(2);
+
+    const start = alleFeatures.find((f) => f.properties.rolle === 'start');
+    const ziel = alleFeatures.find((f) => f.properties.rolle === 'ziel');
+    expect(start).toBeDefined();
+    expect(ziel).toBeDefined();
+    const startKnoten = pfad.knoten[0];
+    expect(start!.geometry.coordinates).toEqual([startKnoten.lon, startKnoten.lat]);
+  });
+
+  it('leerer Pfad -> leeres Objekt', () => {
+    const graph = baueGraph(ladeFixture('synthetisch/mini-bahnhof'));
+    expect(graphZuGeoJSON(graph, { knoten: [], kanten: [], laengeM: 0 })).toEqual({});
   });
 });

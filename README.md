@@ -21,12 +21,28 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 | Task 3 – Overpass-Client (Fallback/Retry) + Fixture-Recorder + 3 echte Fixtures | ✅ fertig, 5 Tests grün |
 | Task 4 – Graphbau aus OSM (inkl. Bahnsteig-**Relationen**, Ebenen-Instanzen) | ✅ fertig, 8 Tests grün |
 | Task 5 – Klassifikation Stufe 1/2/3 + Verbundenheitsanalyse | ✅ fertig, 7 Tests grün |
-| Task 6 – **Datenrealitäts-Spike** (40 Bahnhöfe) | 🔶 Script + Bahnhofsliste fertig, **Lauf noch nicht ausgeführt** |
-| Task 7–12 – Routing, Gehzeit/Ampel, Textgen, Synthesemodell, DB-Client, REST-API | ⬜ offen |
+| Task 6 – **Datenrealitäts-Spike** (40 Bahnhöfe) | 🔶 Läufe ausgeführt, Overpass-Ausfälle bei ~11 Bahnhöfen – Report folgt |
+| Task 7 – Routing (Dijkstra, 3 Varianten, Abbiege-Malus) | ✅ fertig, 17 Tests grün |
+| Task 8 – Gehzeit + Ampel **relativ zur Gehzeit** | ✅ fertig, 11 Tests grün |
+| Task 9 – Textgenerierung (Richtungsskala, Zusammenfassung, ca.-Flag) | ✅ fertig, 6 Tests grün |
+| Task 10 – Synthesemodell Stufe 3 + gleicher Bahnsteig | ✅ fertig, 6 Tests grün |
+| Task 11 – RIS::Stations-Client hinter Env-Guard | ✅ fertig, 6 Tests grün (Endpunkte verifiziert 25.08.2026) |
+| Task 12 – REST-API `/api/route` + `/api/stations` + LRU-Cache + GeoJSON | ✅ fertig, 8 Tests grün |
 | Task 13–14 – Frontend-Umsetzung des Designs, Karte | ⬜ offen (Design importiert, siehe unten) |
 | Task 15–17 – Live-Daten, SSE, Härtung, Docker | ⬜ offen |
 
-**Tests:** `cd backend && npm test` → 21 Tests grün (Stand dieses Commits). `npm run lint` sauber.
+**Tests:** `cd backend && npm test` → 77 Tests grün (Stand dieses Commits). `npm run lint` sauber.
+
+## API (Stand Task 12)
+
+- `GET /api/health` → `{ status: 'ok' }`
+- `GET /api/stations?q=<Suchtext>` → `BahnhofTreffer[]` (`{ name, eva, lat, lon }`). Ohne `DB_CLIENT_ID`/`DB_CLIENT_SECRET`: **503** `{ fehler: 'db-zugang-fehlt' }`.
+- `GET /api/route?eva=&gleisAn=&gleisAb=&abschnitt?=&profil?=&variante?=` → `RouteErgebnis`:
+  - `profil`: `zuegig | normal | langsam` (Default `normal`) · `variante`: `schnellste | einfachste | barrierefrei` (Default `schnellste`)
+  - Antwort: `{ stufe, schritte[], gehzeitSek, karte, hinweise[] }`; `karte` = GeoJSON-FeatureCollections je Ebene (Routenlinie + Start-/Zielmarker, `[lon, lat]`)
+  - Degradation: Overpass-Ausfall oder unbrauchbare OSM-Daten → Synthesemodell (`stufe: 3`, „ca."-Distanzen, Hinweis); gleicher Bahnsteig → Kurzantwort ohne Routing; `wagen`-Parameter wird ab Task 15 (Wagenreihung) ausgewertet
+  - Fehler: **400** `parameter-fehlt`/`parameter-ungueltig`, **404** `gleis-unbekannt`/`keine-route`, **503** `db-zugang-fehlt`
+  - Cache: Graph je EVA 24 h (LRU max 100), im RAM
 
 ## UI-Design (importiert aus Claude Design, 24.08.2026)
 
