@@ -1,3 +1,4 @@
+import { peilungGrad } from './textgen.js';
 import type {
   GraphKante,
   GraphKnoten,
@@ -59,14 +60,6 @@ function bahnsteigIds(graph: StationGraph, gleis: string): Set<string> {
     if (kn.gleis === gleis && kn.bahnsteigId) ids.add(kn.bahnsteigId);
   }
   return ids;
-}
-
-/** Peilung a→b in Grad (0 = Nord, 90 = Ost), äquirektangulare Näherung – Bahnhofsmaßstab. */
-function peilung(a: GraphKnoten, b: GraphKnoten): number {
-  const mittelLatRad = ((a.lat + b.lat) / 2) * (Math.PI / 180);
-  const dx = (b.lon - a.lon) * Math.cos(mittelLatRad);
-  const dy = b.lat - a.lat;
-  return (Math.atan2(dx, dy) * 180) / Math.PI;
 }
 
 /** Winkeländerung in Grad, normalisiert auf 0..180. */
@@ -157,7 +150,7 @@ export function berechneRoute(
 
       let kosten = kantenKosten(kante, variante);
       if (variante === 'einfachste' && vorherPeilung !== null) {
-        const neuePeilung = peilung(hier, naechster);
+        const neuePeilung = peilungGrad(hier, naechster);
         if (richtungswechselGrad(vorherPeilung, neuePeilung) > GEWICHTE.abbiegenSchwelleGrad) {
           kosten += GEWICHTE.abbiegenMalusSek;
         }
@@ -182,7 +175,7 @@ export function berechneRoute(
 /** Peilung, mit der eine Kante am Knoten `ankunftId` ankommt (vom anderen Ende her). */
 function peilungDerKante(graph: StationGraph, kante: GraphKante, ankunftId: string): number {
   const vonId = kante.von === ankunftId ? kante.nach : kante.von;
-  return peilung(graph.knoten.get(vonId)!, graph.knoten.get(ankunftId)!);
+  return peilungGrad(graph.knoten.get(vonId)!, graph.knoten.get(ankunftId)!);
 }
 
 function rekonstruiere(
