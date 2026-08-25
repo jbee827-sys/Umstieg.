@@ -28,7 +28,8 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 | Task 10 – Synthesemodell Stufe 3 + gleicher Bahnsteig | ✅ fertig, 6 Tests grün |
 | Task 11 – RIS::Stations-Client hinter Env-Guard | ✅ fertig, 6 Tests grün (Endpunkte verifiziert 25.08.2026) |
 | Task 12 – REST-API `/api/route` + `/api/stations` + LRU-Cache + GeoJSON | ✅ fertig, 8 Tests grün |
-| Task 13–14 – Frontend-Umsetzung des Designs, Karte | ⬜ offen (Design importiert, siehe unten) |
+| Task 13 – Frontend: Eingabe, Schrittliste, Ampel (Design-Tokens) | ✅ fertig (Ampel grau bis Zugauswahl/Task 15; manuelle Browser-Sichtprüfung auf Mobilgerät empfohlen) |
+| Task 14 – Karte (MapLibre, Ebenen) | ⬜ offen |
 | Task 15–17 – Live-Daten, SSE, Härtung, Docker | ⬜ offen |
 
 **Tests:** `cd backend && npm test` → 77 Tests grün (Stand dieses Commits). `npm run lint` sauber.
@@ -57,13 +58,14 @@ Vollständig gesichert unter `design/` (Projekt „Umstieg mobile app design", `
 ## Entwicklung starten
 
 ```bash
-cd backend && npm install && npm run dev   # Backend auf :3001 (nur /api/health bisher)
+cd backend && npm install && npm run dev   # Backend auf :3001
 cd backend && npm test                     # Testsuite
+cd frontend && npm install && npm run dev  # Frontend auf :5173, Proxy auf :3001
 npx tsx scripts/spike-datenrealitaet.ts    # Datenrealitäts-Spike (im Ordner backend/, dauert ~5 min, cached)
 npx tsx scripts/record-fixture.ts <name> <lat> <lon>  # neues Overpass-Fixture
 ```
 
-Frontend (`frontend/`, zurückgestellt): `npm install && npm run dev` → :5173, Proxy auf :3001.
+**Dev ohne DB-Zugang:** `FIXTURE_EVA=berlin npm run dev` (im Backend) → `/api/route` läuft gegen das Berlin-Hbf-Fixture (EVA 8011160, z. B. Gleis 6 → 14), `/api/stations` liefert einen festen Treffer. Keine externen Aufrufe.
 
 ## Spike-Ergebnis (Task 6, 25.08.2026)
 

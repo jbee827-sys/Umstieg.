@@ -121,6 +121,19 @@ describe('generiereSchritte', () => {
     expect(schritte[0].text).toBe('Nach Ausstieg ca. 40 m geradeaus zu Gleis 5');
   });
 
+  it('Ebenenwechsel-Richtung folgt der Laufrichtung, nicht der Kantenspeicherrichtung', () => {
+    // Kante wie im Graphbau von unten (0) nach oben (1) gespeichert: deltaLevel +1.
+    // Der Pfad begeht sie rückwärts (oben → unten) → "hinunter" zur Ebene 0.
+    const oben = xy('oben', 0, 0, 1);
+    const unten = xy('unten', 0, 15, 0, '9');
+    const treppenKante = {
+      von: 'unten', nach: 'oben', laengeM: 10, deltaLevel: 1,
+      typ: 'treppe' as const, barrierefrei: false,
+    };
+    const pfad = { knoten: [oben, unten], kanten: [treppenKante], laengeM: 10 };
+    expect(generiereSchritte(pfad)[0].text).toBe('Nach Ausstieg Treppe hinunter zur Ebene 0 zu Gleis 9');
+  });
+
   it('Rampe erhält Distanz und Ebenenwechsel-Text', () => {
     const knoten = [xy('a', 0, 0), xy('b', 0, 28, -1, '3')];
     const schritte = generiereSchritte(machePfad(knoten, [kante('a', 'b', 'rampe', 28, -1)]));

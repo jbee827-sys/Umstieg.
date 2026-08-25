@@ -74,7 +74,9 @@ function baueSegmente(pfad: RoutenPfad): Segment[] {
       laengeM: kante.laengeM,
       peilungStart: peilung,
       peilungEnde: peilung,
-      deltaLevel: kante.deltaLevel,
+      // Laufrichtung zählt: die Kante kann rückwärts begangen werden,
+      // kante.deltaLevel gilt nur für die Speicherrichtung von→nach.
+      deltaLevel: nach.level - von.level,
       zielLevel: nach.level,
     });
   }
