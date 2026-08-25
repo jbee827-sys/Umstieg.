@@ -113,6 +113,14 @@ describe('generiereSchritte', () => {
     ]);
   });
 
+  it('ungefaehr-Flag (Stufe 3): Distanzen mit ca.-Präfix', () => {
+    const knoten = [xy('a', 0, 0), xy('b', 0, 38, 0, '5')];
+    const schritte = generiereSchritte(machePfad(knoten, [kante('a', 'b', 'eben', 38)]), {
+      ungefaehr: true,
+    });
+    expect(schritte[0].text).toBe('Nach Ausstieg ca. 40 m geradeaus zu Gleis 5');
+  });
+
   it('Rampe erhält Distanz und Ebenenwechsel-Text', () => {
     const knoten = [xy('a', 0, 0), xy('b', 0, 28, -1, '3')];
     const schritte = generiereSchritte(machePfad(knoten, [kante('a', 'b', 'rampe', 28, -1)]));

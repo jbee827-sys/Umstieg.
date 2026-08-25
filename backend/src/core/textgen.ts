@@ -87,9 +87,15 @@ const TYP_NAME: Partial<Record<KantenTyp, string>> = {
   rampe: 'Rampe',
 };
 
-export function generiereSchritte(pfad: RoutenPfad): Schritt[] {
+export interface TextOptionen {
+  /** Stufe 3 (Synthesemodell): Distanzen sind Schätzungen → Präfix „ca. ". */
+  ungefaehr?: boolean;
+}
+
+export function generiereSchritte(pfad: RoutenPfad, optionen: TextOptionen = {}): Schritt[] {
   const segmente = baueSegmente(pfad);
   const schritte: Schritt[] = [];
+  const distanzPraefix = optionen.ungefaehr ? 'ca. ' : '';
   let referenzPeilung: number | null = null;
 
   for (const segment of segmente) {
@@ -106,7 +112,7 @@ export function generiereSchritte(pfad: RoutenPfad): Schritt[] {
         text = `wenige Meter ${richtung}`;
       } else {
         distanzM = rund10(segment.laengeM);
-        text = `${distanzM} m ${richtung}`;
+        text = `${distanzPraefix}${distanzM} m ${richtung}`;
       }
     } else if (segment.typ === 'aufzug') {
       text = `Aufzug zur ${ebenenName(segment.zielLevel)}`;
