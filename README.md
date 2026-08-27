@@ -3,7 +3,9 @@
 Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum Abfahrtsgleis liefert – als Schritt-für-Schritt-Anweisung und Karte – und live bewertet, ob der Anschluss erreichbar ist.
 
 **Konzept:** [`2026-08-24-umstiegs-navigator-design.md`](./2026-08-24-umstiegs-navigator-design.md)
-**Implementierungsplan (17 Tasks):** [`docs/plans/2026-08-24-umsetzungsplan-mvp.md`](./docs/plans/2026-08-24-umsetzungsplan-mvp.md)
+**Implementierungsplan MVP (17 Tasks):** [`docs/plans/2026-08-24-umsetzungsplan-mvp.md`](./docs/plans/2026-08-24-umsetzungsplan-mvp.md)
+**Spec Standort (P1):** [`docs/superpowers/specs/2026-08-27-standort-und-navigation-design.md`](./docs/superpowers/specs/2026-08-27-standort-und-navigation-design.md)
+**Plan Standort (P1, 12 Tasks):** [`docs/superpowers/plans/2026-08-27-standort-und-navigation.md`](./docs/superpowers/plans/2026-08-27-standort-und-navigation.md)
 **UI-Design (Claude Design Import):** [`design/Umstieg.dc.html`](./design/Umstieg.dc.html)
 
 ## Architektur
@@ -12,7 +14,43 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** ein Docker-Container (Backend liefert Frontend statisch aus) – noch nicht gebaut.
 
-## Projektstand (25.08.2026)
+## Hier weitermachen (Stand 27.08.2026, HEAD `7b244ee`)
+
+```bash
+cd backend && npm test        # muss 120 von 120 grün sein
+cd backend && npm run lint    # tsc --noEmit, muss sauber sein
+cd frontend && npm run build  # muss grün sein
+```
+
+Arbeitsbaum ist sauber, alles committet. Der MVP steht bis einschließlich Task 16; offen sind **MVP-Task 17** und die **Tasks 3–12 des Standort-Plans (P1)**.
+
+**Nächster Schritt:** P1 Task 3 aus [`docs/superpowers/plans/2026-08-27-standort-und-navigation.md`](./docs/superpowers/plans/2026-08-27-standort-und-navigation.md) – Frontend-Testinfrastruktur (vitest), `schwellen.ts`, `distanz.ts`. Der Plan enthält für jeden Task den fertigen Code, den Befehl und das erwartete Ergebnis.
+
+**Eine Altlast zuerst:** P1 Task 2 ist implementiert und committet (`7b244ee`, 120 Tests grün), hat aber **die Task-Review noch nicht durchlaufen** – die Sitzung endete davor. Entweder die Review nachholen (`review-package` über `df30887..7b244ee`) oder bewusst überspringen und mit Task 3 starten.
+
+| P1-Task | Status |
+|---|---|
+| 1 – Backend-Umkreissuche im stations-Client | ✅ fertig, Review sauber (`e914b87`) |
+| 2 – `/api/stations` mit `lat`/`lon` | ✅ implementiert (`7b244ee`), **Review offen** |
+| 3 – Frontend-Testinfrastruktur, Schwellen, Haversine | ⬜ offen ← **hier einsteigen** |
+| 4 – Ankunfts-Zustandsmaschine + Zielermittlung | ⬜ offen |
+| 5 – Bahnhofserkennung mit Rundung | ⬜ offen |
+| 6 – `useStandort`-Hook | ⬜ offen |
+| 7 – Bahnhof in der Eingabe vorbelegen | ⬜ offen |
+| 8 – Positionspunkt + Genauigkeitskreis auf der Karte | ⬜ offen |
+| 9 – Ankunftsvorschlag + „Angekommen"-Screen | ⬜ offen |
+| 10 – Zustand „Zug ist abgefahren" | ⬜ offen |
+| 11 – HTTPS: mkcert + Caddyfile | ⬜ offen |
+| 12 – Mobilabnahme + README | ⬜ offen |
+
+**Zwei Entscheidungen aus der Vorflug-Prüfung, die für Reviews gelten:**
+
+1. `haversineM` wird bewusst aus `backend/src/core/graph.ts` nach `frontend/src/standort/distanz.ts` gespiegelt. Getrennte npm-Pakete, kein Import über die Grenze möglich; bestehende Projektkonvention (`api/typen.ts`). **Plan gilt.**
+2. `useStandort.ts` bekommt bewusst **keine** Unit-Tests – die Datei enthält keine Entscheidungslogik, die steckt in `ankunft.ts`/`distanz.ts`/`bahnhofErkennung.ts`. Abgesichert wird sie in der Mobilabnahme (Task 12). **Plan gilt.**
+
+Der Ausführungs-Ledger liegt unter `.superpowers/sdd/2026-08-27-standort-und-navigation/progress.md` (gitignored) und hält Commits, Rulings und zurückgestellte Minor-Findings fest.
+
+## Projektstand (27.08.2026)
 
 | Arbeitspaket | Status |
 |---|---|
@@ -33,9 +71,9 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 | Task 15 – Live-Tafeln, Zugauswahl, Wagenreihung, farbige Ampel | ✅ fertig (Timetables-XML + ist-wr-JSON, hinter Env-Guard bzw. öffentlich) |
 | Task 16 – SSE-Überwachung, FaSta | ✅ fertig, 112 Tests grün |
 | Task 17 – Degradationstests, Docker, Mobile-Feinschliff | ⬜ offen |
-| P1 – Standort & Live-Navigation | 📋 Spec + Plan geschrieben, Umsetzung offen |
+| P1 – Standort & Live-Navigation (12 Tasks) | 🔶 Tasks 1–2 fertig, 3–12 offen (Tabelle oben) |
 
-**Tests:** `cd backend && npm test` → **112 von 112 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm run build` grün; `npm run lint` meldet 3 Warnungen, die alle aus Task 13/15 stammen.
+**Tests:** `cd backend && npm test` → **120 von 120 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm run build` grün; `npm run lint` meldet 3 Warnungen, die alle aus Task 13/15 stammen und vor P1 schon bestanden.
 
 **Nicht maschinell geprüft:** Die Frontend-SSE-Anbindung (`api/sse.ts`, `LiveBanner`) ist nur über TypeScript und Build abgesichert – das Frontend hat noch keine Testinfrastruktur. Der SSE-Endpunkt selbst wird dagegen in `test/live.test.ts` gegen einen echten HTTP-Server geprüft.
 
@@ -55,7 +93,7 @@ Wichtigste Erkenntnis aus dem Spike: **74 % Stufe 1** – Indoor-Routing über O
 
 - `GET /api/health` → `{ status: 'ok' }`
 - `GET /api/board/:eva?type=arr|dep` → `TafelEintrag[]` (`{ zug, zeitSoll, zeitIst?, gleisSoll, gleisIst?, ziel }`; Soll aus `/plan`, Änderungen aus `/fchg` zusammengeführt). Ohne Schlüssel: **503**.
-- `GET /api/stations?q=<Suchtext>` → `BahnhofTreffer[]` (`{ name, eva, lat, lon }`). Ohne `DB_CLIENT_ID`/`DB_CLIENT_SECRET`: **503** `{ fehler: 'db-zugang-fehlt' }`.
+- `GET /api/stations?q=<Suchtext>` **oder** `?lat=&lon=` → `BahnhofTreffer[]` (`{ name, eva, lat, lon }`). Die Koordinatenvariante (P1 Task 2) sucht im Umkreis von 1000 m; der Radius ist bewusst eine Serverentscheidung und steht in `routes/api.ts`. `q` und `lat`/`lon` schließen sich aus → **400** `parameter-ungueltig`; das gilt auch für eine einzelne Koordinate oder Werte außerhalb −90…90 bzw. −180…180. Weder noch → **400** `parameter-fehlt`. Ohne `DB_CLIENT_ID`/`DB_CLIENT_SECRET`: **503** `{ fehler: 'db-zugang-fehlt' }`.
 - `GET /api/live/:eva?zugAn=&zugAb=` → **SSE-Strom** mit den Ereignissen `gleiswechsel`, `verspaetung`, `heartbeat` (Payload `{ typ, zug?, alt?, neu?, zeitstempel }`). Gepollt wird **einmal je EVA**, unabhängig von der Zahl der Zuschauer; die Zugparameter filtern nur die Zustellung. Verbindungsabbruch meldet den Abonnenten ab, der letzte Abmelder stoppt den Poller.
 - `GET /api/route?eva=&gleisAn=&gleisAb=&zugAn?=&wagen?=&abschnitt?=&profil?=&variante?=` → `RouteErgebnis` (`zugAn`+`wagen` → Wagenreihung bestimmt den Start-Abschnitt; keine Daten → Bahnsteigmitte mit Hinweis):
   - `profil`: `zuegig | normal | langsam` (Default `normal`) · `variante`: `schnellste | einfachste | barrierefrei` (Default `schnellste`)
@@ -101,7 +139,7 @@ Report: [`docs/spike-datenrealitaet-ergebnis.md`](./docs/spike-datenrealitaet-er
 - **FaSta in `/api/route`**: nur bei `variante=barrierefrei`, weil nur dort der Betriebsstatus über die Route entscheidet. Angewendet wird auf einer **Kopie** des Graphen (`kopiereGraph`) – sonst bliebe ein gerade defekter Aufzug 24 h im Graph-Cache gesperrt, lange nachdem er wieder läuft.
 - **Frontend**: `api/sse.ts` (EventSource, Wiederverbindung fordert die Route neu an) und `components/LiveBanner.tsx`. Ein Gleiswechsel schreibt das neue Gleis in die Eingabewerte, berechnet die Route neu, zeigt den Banner und löst `navigator.vibrate` aus.
 
-**Nächster Schritt – Task 17:** Degradationstests (jede Zeile der Konzept-Tabelle Abschnitt 8 als eigener Test), `Dockerfile` + `docker-compose.yml` (Multi-Stage: Frontend-Build → Backend serviert `frontend/dist` via `@fastify/static`) – dort wird auch der in P1 angelegte `Caddyfile` als Dienst eingebunden.
+**MVP-Task 17 (offen):** Degradationstests (jede Zeile der Konzept-Tabelle Abschnitt 8 als eigener Test), `Dockerfile` + `docker-compose.yml` (Multi-Stage: Frontend-Build → Backend serviert `frontend/dist` via `@fastify/static`) – dort wird auch der `Caddyfile` als Dienst eingebunden, den P1 Task 11 anlegt. Task 17 setzt also P1 Task 11 voraus, wenn HTTPS mitkommen soll.
 
 **Unabhängig davon offen:** Spike-Nachlauf für die fehlenden 13 Bahnhöfe, sobald Overpass wieder stabil antwortet (`npx tsx scripts/spike-datenrealitaet.ts`, gecacht – fragt nur die fehlenden ab).
 
