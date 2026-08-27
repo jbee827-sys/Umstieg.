@@ -22,6 +22,9 @@ function fixtureClients(): Partial<ApiClients> {
       sucheBahnhoefe: async () => [
         { name: 'Berlin Hbf (Fixture)', eva: '8011160', lat: 52.5251, lon: 13.3694 },
       ],
+      sucheBahnhoefeNahebei: async () => [
+        { name: 'Berlin Hbf (Fixture)', eva: '8011160', lat: 52.5251, lon: 13.3694 },
+      ],
       holeStationsInfo: async (eva) => ({
         eva,
         name: 'Berlin Hbf (Fixture)',
