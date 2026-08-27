@@ -1,0 +1,21 @@
+{
+  "_hinweis": "HANDGEBAUTES Fixture nach FaSta-Doku (facilities-Endpunkt). Vor Live-Betrieb gegen echte Antworten verifizieren – insbesondere die EVA/Bahnhofsnummer-Zuordnung!",
+  "facilities": [
+    {
+      "equipmentnumber": 10499908,
+      "type": "ELEVATOR",
+      "state": "ACTIVE",
+      "description": "Aufzug zur Ebene +1",
+      "geocoordY": 52.525,
+      "geocoordX": 13.369
+    },
+    {
+      "equipmentnumber": 10499909,
+      "type": "ESCALATOR",
+      "state": "INACTIVE",
+      "description": "Rolltreppe Haupthalle",
+      "geocoordY": 52.5252,
+      "geocoordX": 13.3695
+    }
+  ]
+}

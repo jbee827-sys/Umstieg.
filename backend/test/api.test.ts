@@ -2,7 +2,12 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { buildApp } from '../src/app.js';
-import type { OverpassAntwort, RouteErgebnis, StationsInfo } from '../src/core/typen.js';
+import type {
+  FastaAnlage,
+  OverpassAntwort,
+  RouteErgebnis,
+  StationsInfo,
+} from '../src/core/typen.js';
 
 function ladeFixture(name: string): OverpassAntwort {
   const pfad = fileURLToPath(new URL(`./fixtures/${name}.json`, import.meta.url));
@@ -160,6 +165,81 @@ describe('GET /api/board/:eva', () => {
     const res = await app.inject({ method: 'GET', url: '/api/board/8000001?type=dep' });
     expect(res.statusCode).toBe(503);
     expect(res.json()).toEqual({ fehler: 'db-zugang-fehlt' });
+  });
+});
+
+describe('GET /api/route – FaSta (barrierefrei)', () => {
+  const aufzugOsm = ladeFixture('synthetisch/mini-bahnhof-aufzug');
+  // Koordinate des Aufzugs nahe Bahnsteig 1 (Knoten 131 im Fixture).
+  const AUFZUG: Omit<FastaAnlage, 'status'> = { typ: 'AUFZUG', lat: 52.00015, lon: 12.001 };
+  const BF_URL = '/api/route?eva=8000001&gleisAn=1&gleisAb=2&profil=normal&variante=barrierefrei';
+
+  function aufzugClients(fasta: () => Promise<FastaAnlage[]>) {
+    return {
+      overpass: vi.fn(async () => aufzugOsm),
+      stations: {
+        holeStationsInfo: vi.fn(async () => ministadt),
+        sucheBahnhoefe: vi.fn(async () => []),
+      },
+      tafel: vi.fn(async () => []),
+      wagenposition: vi.fn(async () => null),
+      fasta: vi.fn(fasta),
+    };
+  }
+
+  it('ohne Störung existiert eine barrierefreie Route über den Aufzug', async () => {
+    const app = buildApp(aufzugClients(async () => [{ ...AUFZUG, status: 'ACTIVE' }]));
+    const res = await app.inject({ method: 'GET', url: BF_URL });
+    expect(res.statusCode).toBe(200);
+    const ergebnis = res.json() as RouteErgebnis;
+    expect(ergebnis.schritte.some((s) => s.typ === 'aufzug')).toBe(true);
+  });
+
+  it('INACTIVE-Aufzug sperrt die barrierefreie Route', async () => {
+    const app = buildApp(aufzugClients(async () => [{ ...AUFZUG, status: 'INACTIVE' }]));
+    const res = await app.inject({ method: 'GET', url: BF_URL });
+    expect(res.statusCode).toBe(404);
+    expect(res.json().fehler).toBe('keine-route');
+  });
+
+  it('FaSta-Ausfall sperrt nichts, sondern erzeugt einen Hinweis', async () => {
+    const app = buildApp(
+      aufzugClients(async () => {
+        throw new Error('FaSta nicht erreichbar (Test)');
+      }),
+    );
+    const res = await app.inject({ method: 'GET', url: BF_URL });
+    expect(res.statusCode).toBe(200);
+    const ergebnis = res.json() as RouteErgebnis;
+    expect(ergebnis.hinweise.some((h) => h.includes('Aufzugstatus unbekannt'))).toBe(true);
+  });
+
+  it('eine Störung landet nicht im Graph-Cache', async () => {
+    // Regression: Ohne Kopie des Graphen bliebe der INACTIVE-Status 24 h im
+    // Cache stehen – der Aufzug wäre gesperrt, lange nachdem er wieder läuft.
+    let anlagen: FastaAnlage[] = [{ ...AUFZUG, status: 'INACTIVE' }];
+    const app = buildApp(aufzugClients(async () => anlagen));
+
+    const gesperrt = await app.inject({ method: 'GET', url: BF_URL });
+    expect(gesperrt.statusCode).toBe(404);
+
+    anlagen = []; // Anlage meldet sich nicht mehr → kein Status bekannt
+    const frei = await app.inject({ method: 'GET', url: BF_URL });
+    expect(frei.statusCode).toBe(200);
+  });
+
+  it('andere Varianten fragen FaSta gar nicht ab', async () => {
+    const clients = aufzugClients(async () => []);
+    const app = buildApp(clients);
+    await app.inject({ method: 'GET', url: ROUTE_URL });
+    expect(clients.fasta).not.toHaveBeenCalled();
+  });
+
+  it('fragt FaSta mit der EVA-Nummer ab', async () => {
+    const clients = aufzugClients(async () => [{ ...AUFZUG, status: 'ACTIVE' }]);
+    const app = buildApp(clients);
+    await app.inject({ method: 'GET', url: BF_URL });
+    expect(clients.fasta).toHaveBeenCalledWith('8000001');
   });
 });
 

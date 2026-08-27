@@ -2,13 +2,14 @@ import type { FastifyInstance } from 'fastify';
 import { erzeugeCache, GRAPH_TTL_MS } from '../cache/lru.js';
 import { FehlendeZugangsdatenError } from '../clients/stations.js';
 import { gehzeitSekunden } from '../core/gehzeit.js';
-import { baueGraph, graphZuGeoJSON } from '../core/graph.js';
+import { baueGraph, graphZuGeoJSON, kopiereGraph } from '../core/graph.js';
 import { klassifiziere } from '../core/klassifikation.js';
 import { berechneRoute, findeStartknoten, istGleicherBahnsteig } from '../core/routing.js';
-import { gleicherBahnsteigErgebnis, syntheseGraph } from '../core/synthmodell.js';
+import { gleicherBahnsteigErgebnis, syntheseGraph, wendeFastaAn } from '../core/synthmodell.js';
 import { generiereSchritte } from '../core/textgen.js';
 import type {
   BahnhofTreffer,
+  FastaAnlage,
   Gehprofil,
   GraphKnoten,
   OverpassAntwort,
@@ -33,11 +34,14 @@ export type WagenpositionFn = (
   wagen: string,
 ) => Promise<{ abschnitt: string } | null>;
 
+export type FastaFn = (eva: string) => Promise<FastaAnlage[]>;
+
 export interface ApiClients {
   overpass: OverpassFn;
   stations: StationsClient;
   tafel: TafelFn;
   wagenposition: WagenpositionFn;
+  fasta: FastaFn;
 }
 
 const OVERPASS_RADIUS_M = 400;
@@ -138,6 +142,22 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
     const hinweise = [...eintrag.hinweise];
     let graph = eintrag.graph;
 
+    // FaSta nur bei `barrierefrei`: Nur dort entscheidet der Betriebsstatus über
+    // die Route (kanteErlaubt in routing.ts). Ausfall sperrt nichts, sondern
+    // erzeugt einen ehrlichen Hinweis (Degradationstabelle, Konzept 8).
+    let fastaAnlagen: FastaAnlage[] = [];
+    if (variante === 'barrierefrei') {
+      try {
+        fastaAnlagen = await clients.fasta(eva);
+        // Auf einer Kopie arbeiten: Ein gerade defekter Aufzug darf nicht im
+        // 24-Stunden-Graphcache landen und dort gesperrt bleiben.
+        graph = kopiereGraph(graph);
+        wendeFastaAn(graph, fastaAnlagen);
+      } catch {
+        hinweise.push('Aufzugstatus unbekannt – Anlagendaten derzeit nicht abrufbar.');
+      }
+    }
+
     // Wagenreihung: liefert den Gleisabschnitt des Wagens; keine Daten sind
     // der Normalfall → Bahnsteigmitte mit transparentem Hinweis (Konzept 7).
     let abschnittEffektiv = abschnitt;
@@ -164,7 +184,8 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
       ziel = findeStartknoten(graph, gleisAb);
     } catch {
       if (graph.stufe !== 3) {
-        graph = syntheseGraph(eintrag.info);
+        // Anlagen weiterreichen, damit der Betriebsstatus auch im Rückfall gilt.
+        graph = syntheseGraph(eintrag.info, fastaAnlagen);
         hinweise.push(
           'Gleis nicht im Kartenmaterial gefunden – Standardmodell mit ungefähren Angaben.',
         );

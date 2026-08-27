@@ -29,6 +29,14 @@ export const epTafelPlan = (eva: string, zeitpunkt: Date): string => {
 export const epTafelAenderungen = (eva: string): string =>
   `${TIMETABLES_BASIS}/fchg/${encodeURIComponent(eva)}`;
 
+// FaSta (Aufzüge/Rolltreppen mit Betriebsstatus).
+// TODO vor Live-Betrieb: FaSta adressiert Bahnhofsnummern (StaDa), nicht
+// EVA-Nummern – Zuordnung klären; bis dahin wird die EVA durchgereicht.
+export const FASTA_BASIS = 'https://apis.deutschebahn.com/db-api-marketplace/apis/fasta/v2';
+
+export const epFastaFacilities = (stationsnummer: string): string =>
+  `${FASTA_BASIS}/facilities?stationnumber=${encodeURIComponent(stationsnummer)}`;
+
 // Wagenreihung: öffentlicher Ist-Wagenreihungs-Dienst (JSON, ohne Schlüssel).
 // Datum als JJJJMMTT.
 export const WAGENREIHUNG_BASIS = 'https://ist-wr.noncd.db.de/wagenreihung/1.0';

@@ -220,6 +220,44 @@
   font-size: 14px;
 }
 
+/* — Live-Banner (Gleiswechsel, Verspätung) — */
+
+.live-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-neutral-300);
+}
+
+/* Gleiswechsel ist der Fall, der die Route ungültig macht – deutlich absetzen. */
+.live-banner-warnung {
+  background: var(--color-accent-100);
+  border-color: var(--color-accent-300);
+  color: var(--color-accent-700);
+}
+
+.live-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 15px;
+}
+
+.live-banner-stand,
+.live-stand {
+  font-size: 12px;
+  color: var(--color-neutral-800);
+}
+
+.live-stand {
+  margin: 4px 0 0;
+}
+
 /* — Ampel (fixiert oben in der Routenansicht) — */
 
 .ampel-leiste {

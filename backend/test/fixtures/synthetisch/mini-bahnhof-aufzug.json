@@ -1,0 +1,22 @@
+{
+  "_hinweis": "Synthetisch. Wie mini-bahnhof, aber beide Ebenenwechsel sind AUFZUEGE statt Treppen - damit existiert eine barrierefreie Route, deren Sperrung durch FaSta pruefbar ist.",
+  "elements": [
+    { "type": "node", "id": 101, "lat": 52.0, "lon": 12.0 },
+    { "type": "node", "id": 102, "lat": 52.0, "lon": 12.002 },
+    { "type": "node", "id": 111, "lat": 52.0009, "lon": 12.0 },
+    { "type": "node", "id": 112, "lat": 52.0009, "lon": 12.002 },
+    { "type": "node", "id": 121, "lat": 52.0001, "lon": 12.001 },
+    { "type": "node", "id": 122, "lat": 52.0002, "lon": 12.001 },
+    { "type": "node", "id": 123, "lat": 52.0007, "lon": 12.001 },
+    { "type": "node", "id": 124, "lat": 52.0008, "lon": 12.001 },
+    { "type": "node", "id": 131, "lat": 52.00015, "lon": 12.001, "tags": { "highway": "elevator" } },
+    { "type": "node", "id": 132, "lat": 52.00075, "lon": 12.001, "tags": { "highway": "elevator" } },
+    { "type": "way", "id": 201, "nodes": [101, 102], "tags": { "railway": "platform", "ref": "1", "level": "0" } },
+    { "type": "way", "id": 202, "nodes": [111, 112], "tags": { "railway": "platform", "ref": "2", "level": "0" } },
+    { "type": "way", "id": 210, "nodes": [121, 131], "tags": { "highway": "footway", "level": "0" } },
+    { "type": "way", "id": 211, "nodes": [131, 122], "tags": { "highway": "footway", "level": "-1" } },
+    { "type": "way", "id": 204, "nodes": [122, 123], "tags": { "highway": "footway", "tunnel": "yes", "level": "-1" } },
+    { "type": "way", "id": 212, "nodes": [123, 132], "tags": { "highway": "footway", "level": "-1" } },
+    { "type": "way", "id": 213, "nodes": [132, 124], "tags": { "highway": "footway", "level": "0" } }
+  ]
+}
