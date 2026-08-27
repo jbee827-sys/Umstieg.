@@ -35,6 +35,9 @@ function macheClients({ overpassWirft = false, abschnitt = null as string | null
       sucheBahnhoefe: vi.fn(async () => [
         { name: 'Ministadt', eva: '8000001', lat: 52.0, lon: 12.0 },
       ]),
+      sucheBahnhoefeNahebei: vi.fn(async () => [
+        { name: 'Ministadt', eva: '8000001', lat: 52.0, lon: 12.0 },
+      ]),
     },
     tafel: vi.fn(async () => [
       {
@@ -180,6 +183,7 @@ describe('GET /api/route – FaSta (barrierefrei)', () => {
       stations: {
         holeStationsInfo: vi.fn(async () => ministadt),
         sucheBahnhoefe: vi.fn(async () => []),
+        sucheBahnhoefeNahebei: vi.fn(async () => []),
       },
       tafel: vi.fn(async () => []),
       wagenposition: vi.fn(async () => null),
@@ -266,5 +270,44 @@ describe('GET /api/stations', () => {
     const app = buildApp(macheClients());
     const res = await app.inject({ method: 'GET', url: '/api/stations' });
     expect(res.statusCode).toBe(400);
+  });
+});
+
+describe('GET /api/stations mit Koordinaten', () => {
+  it('liefert Treffer im Umkreis und reicht den Radius durch', async () => {
+    const clients = macheClients();
+    const app = buildApp(clients);
+    const res = await app.inject({ method: 'GET', url: '/api/stations?lat=52.525&lon=13.369' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toHaveLength(1);
+    expect(clients.stations.sucheBahnhoefeNahebei).toHaveBeenCalledWith(52.525, 13.369, 1000);
+  });
+
+  it('q und lat gleichzeitig → 400 parameter-ungueltig', async () => {
+    const app = buildApp();
+    const res = await app.inject({ method: 'GET', url: '/api/stations?q=Berlin&lat=52.5&lon=13.3' });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().fehler).toBe('parameter-ungueltig');
+  });
+
+  it('lat ohne lon → 400 parameter-ungueltig', async () => {
+    const app = buildApp();
+    const res = await app.inject({ method: 'GET', url: '/api/stations?lat=52.5' });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().fehler).toBe('parameter-ungueltig');
+  });
+
+  it('lat ausserhalb des Wertebereichs → 400 parameter-ungueltig', async () => {
+    const app = buildApp();
+    const res = await app.inject({ method: 'GET', url: '/api/stations?lat=200&lon=13.3' });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().fehler).toBe('parameter-ungueltig');
+  });
+
+  it('weder q noch Koordinaten → 400 parameter-fehlt', async () => {
+    const app = buildApp();
+    const res = await app.inject({ method: 'GET', url: '/api/stations' });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().fehler).toBe('parameter-fehlt');
   });
 });

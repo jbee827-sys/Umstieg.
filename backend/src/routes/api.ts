@@ -23,6 +23,11 @@ export type OverpassFn = (lat: number, lon: number, radiusM: number) => Promise<
 
 export interface StationsClient {
   sucheBahnhoefe(q: string): Promise<BahnhofTreffer[]>;
+  sucheBahnhoefeNahebei(
+    lat: number,
+    lon: number,
+    radiusM: number,
+  ): Promise<BahnhofTreffer[]>;
   holeStationsInfo(eva: string): Promise<StationsInfo>;
 }
 
@@ -74,14 +79,46 @@ function heuteJJJJMMTT(): string {
 
 export function registriereApiRouten(app: FastifyInstance, clients: ApiClients): void {
   const graphCache = erzeugeCache<GraphEintrag>(100, GRAPH_TTL_MS);
+  const ERKENNUNG_RADIUS_M = 1000;
 
-  app.get<{ Querystring: { q?: string } }>('/api/stations', async (req, reply) => {
+  app.get<{ Querystring: { q?: string; lat?: string; lon?: string } }>('/api/stations', async (req, reply) => {
     const q = req.query.q?.trim();
-    if (!q) {
-      return reply.code(400).send({ fehler: 'parameter-fehlt', detail: 'q ist erforderlich' });
+    const latRoh = req.query.lat;
+    const lonRoh = req.query.lon;
+    const hatKoordinaten = latRoh !== undefined || lonRoh !== undefined;
+
+    if (!q && !hatKoordinaten) {
+      return reply
+        .code(400)
+        .send({ fehler: 'parameter-fehlt', detail: 'q oder lat+lon ist erforderlich' });
     }
+    if (q && hatKoordinaten) {
+      return reply
+        .code(400)
+        .send({ fehler: 'parameter-ungueltig', detail: 'q und lat/lon schliessen sich aus' });
+    }
+
     try {
-      return await clients.stations.sucheBahnhoefe(q);
+      if (hatKoordinaten) {
+        const lat = Number(latRoh);
+        const lon = Number(lonRoh);
+        const gueltig =
+          latRoh !== undefined &&
+          lonRoh !== undefined &&
+          Number.isFinite(lat) &&
+          Number.isFinite(lon) &&
+          lat >= -90 &&
+          lat <= 90 &&
+          lon >= -180 &&
+          lon <= 180;
+        if (!gueltig) {
+          return reply
+            .code(400)
+            .send({ fehler: 'parameter-ungueltig', detail: 'lat und lon muessen gueltig sein' });
+        }
+        return await clients.stations.sucheBahnhoefeNahebei(lat, lon, ERKENNUNG_RADIUS_M);
+      }
+      return await clients.stations.sucheBahnhoefe(q!);
     } catch (e) {
       if (e instanceof FehlendeZugangsdatenError) {
         return reply.code(503).send({ fehler: 'db-zugang-fehlt' });

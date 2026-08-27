@@ -1,7 +1,7 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import { holeAnlagen } from './clients/fasta.js';
 import { overpassQuery } from './clients/overpass.js';
-import { holeStationsInfo, sucheBahnhoefe } from './clients/stations.js';
+import { holeStationsInfo, sucheBahnhoefe, sucheBahnhoefeNahebei } from './clients/stations.js';
 import { holeTafel } from './clients/timetables.js';
 import { holeWagenposition } from './clients/wagenreihung.js';
 import { Ueberwachung } from './core/ueberwachung.js';
@@ -26,6 +26,7 @@ export function buildApp(clients: Partial<AppClients> = {}): FastifyInstance {
     overpass: clients.overpass ?? ((lat, lon, radiusM) => overpassQuery(lat, lon, radiusM)),
     stations: clients.stations ?? {
       sucheBahnhoefe: (q) => sucheBahnhoefe(q),
+      sucheBahnhoefeNahebei: (lat, lon, radiusM) => sucheBahnhoefeNahebei(lat, lon, radiusM),
       holeStationsInfo: (eva) => holeStationsInfo(eva),
     },
     tafel,
