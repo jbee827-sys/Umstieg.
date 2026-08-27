@@ -47,6 +47,8 @@ Browser: navigator.geolocation
 - Kein Logging der Koordinaten. `logger: false` in `app.ts` bleibt bewusst bestehen.
 - Die Rundung auf ~110 m reicht zur Bahnhofszuordnung, taugt aber nicht zum Bewegungsprofil.
 
+**Nicht kontrollierbarer Abfluss, offenzulegen:** Genutzt wird ausschließlich die Browser-eigene Geolocation API (`navigator.geolocation`), kein Fremddienst und keine IP-Ortung. Wie das Gerät die Position *ermittelt*, liegt jedoch außerhalb unserer Reichweite – Android-Chrome fragt dafür in der Regel Googles Standortdienst an, iOS den von Apple. Dieser Abfluss an den Plattformanbieter geschieht, bevor unser Code etwas sieht; wir lösen ihn weder aus noch können wir ihn verhindern, müssen ihn in der Datenschutzerklärung (P2) aber benennen.
+
 ## 5. Architektur Frontend
 
 Neues Verzeichnis `frontend/src/standort/`. Die Browser-API steckt ausschließlich im Hook; alle Entscheidungslogik liegt in reinen Funktionen und ist ohne Browser-Mocks testbar.
