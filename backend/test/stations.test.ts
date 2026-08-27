@@ -5,6 +5,7 @@ import {
   FehlendeZugangsdatenError,
   holeStationsInfo,
   sucheBahnhoefe,
+  sucheBahnhoefeNahebei,
 } from '../src/clients/stations.js';
 
 function ladeFixture(name: string): unknown {
@@ -18,6 +19,7 @@ function fetchMock(): typeof fetch {
     const url = String(eingabe);
     let fixture: unknown;
     if (url.includes('/stop-places/by-name/')) fixture = ladeFixture('stations-suche');
+    else if (url.includes('/stop-places/by-position')) fixture = ladeFixture('stations-by-position');
     else if (url.includes('/platforms/')) fixture = ladeFixture('stations-platforms');
     else if (url.includes('/stop-places/')) fixture = ladeFixture('stations-stopplace');
     else throw new Error(`unerwartete URL im Test: ${url}`);
@@ -87,6 +89,35 @@ describe('stations-Client', () => {
     it('ohne Zugangsdaten → FehlendeZugangsdatenError', async () => {
       vi.stubEnv('DB_CLIENT_ID', '');
       await expect(holeStationsInfo('8011160', fetchMock())).rejects.toBeInstanceOf(
+        FehlendeZugangsdatenError,
+      );
+    });
+  });
+
+  describe('sucheBahnhoefeNahebei', () => {
+    it('parst Treffer aus dem Umkreis-Fixture', async () => {
+      const treffer = await sucheBahnhoefeNahebei(52.525, 13.369, 1000, fetchMock());
+      expect(treffer).toHaveLength(2);
+      expect(treffer[0]).toEqual({
+        name: 'Berlin Hbf',
+        eva: '8011160',
+        lat: 52.524925,
+        lon: 13.369629,
+      });
+    });
+
+    it('reicht Koordinaten und Radius als Query-Parameter durch', async () => {
+      const mock = fetchMock();
+      await sucheBahnhoefeNahebei(52.525, 13.369, 1000, mock);
+      const [url] = (mock as unknown as ReturnType<typeof vi.fn>).mock.calls[0] as [string];
+      expect(url).toContain('latitude=52.525');
+      expect(url).toContain('longitude=13.369');
+      expect(url).toContain('radius=1000');
+    });
+
+    it('ohne Zugangsdaten → FehlendeZugangsdatenError', async () => {
+      vi.stubEnv('DB_CLIENT_ID', '');
+      await expect(sucheBahnhoefeNahebei(52.525, 13.369, 1000, fetchMock())).rejects.toBeInstanceOf(
         FehlendeZugangsdatenError,
       );
     });
