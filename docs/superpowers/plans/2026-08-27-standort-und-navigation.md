@@ -17,7 +17,8 @@
 - **Backend-Imports tragen `.js`-Endungen** (ESM/NodeNext), auch für `.ts`-Quellen: `import { x } from './datei.js'`.
 - **Frontend-Stilkonvention der bestehenden Dateien beibehalten:** `.ts`-Logikdateien mit Semikolon (wie `src/api/client.ts`), `.tsx`-Komponenten ohne Semikolon (wie `src/App.tsx`). Frontend-Imports **ohne** Dateiendung.
 - **Bezeichner und UI-Texte auf Deutsch**, wie im gesamten Projekt.
-- **Keine Zahlenliterale für Schwellenwerte** – ausschließlich die Konstanten aus `frontend/src/standort/schwellen.ts`.
+- **Keine Zahlenliterale für Schwellenwerte** im Frontend – ausschließlich die Konstanten aus `frontend/src/standort/schwellen.ts`. Der Umkreisradius der Bahnhofssuche ist davon ausgenommen: Er ist eine Serverentscheidung und steht in `backend/src/routes/api.ts`.
+- **Frontend und Backend spiegeln bewusst.** Es sind getrennte npm-Pakete mit eigener `tsconfig`; das Frontend kann nichts aus `backend/src` importieren. Deshalb wird `haversineM` in `frontend/src/standort/distanz.ts` wortgleich gespiegelt – wie schon `frontend/src/api/typen.ts` die Backend-Typen spiegelt (Kopfkommentar dort). Jede gespiegelte Datei trägt einen Verweis auf ihr Original.
 - **Rundung geschieht im Browser vor dem Absenden**, niemals serverseitig.
 - **Kein `localStorage`, keine Cookies, kein Logging von Koordinaten.** `logger: false` in `backend/src/app.ts` bleibt unverändert.
 - **Genauigkeitsgrenze:** `GENAUIGKEIT_MAX_M = 100`. Bei schlechterem Fix wird der Punkt ausgeblendet und der Ankunftszähler pausiert, ohne zurückgesetzt zu werden.
@@ -481,6 +482,10 @@ export const KOORD_RUNDUNG = 3;
 /** Kulanz nach der Abfahrtszeit, bevor "abgefahren" gilt. */
 export const ABGEFAHREN_KULANZ_MS = 60_000;
 ```
+
+Der Umkreisradius der Bahnhofssuche gehört **nicht** hierher – er wird serverseitig
+in `routes/api.ts` festgelegt (Task 2). Eine Konstante dafür im Frontend wäre
+unbenutzt.
 
 - [ ] **Step 4: Failing Test schreiben**
 
