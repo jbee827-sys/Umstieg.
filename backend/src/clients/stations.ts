@@ -1,4 +1,9 @@
-import { epPlatforms, epStopPlace, epStopPlacesByName } from './db-endpunkte.js';
+import {
+  epPlatforms,
+  epStopPlace,
+  epStopPlacesByName,
+  epStopPlacesByPosition,
+} from './db-endpunkte.js';
 import type { BahnhofTreffer, StationsInfo } from '../core/typen.js';
 
 /** DB-Zugangsdaten fehlen – Aufrufer degradiert transparent (Fixtures/Synthese). */
@@ -38,11 +43,8 @@ interface StopPlace {
   position?: { latitude?: number; longitude?: number };
 }
 
-export async function sucheBahnhoefe(
-  q: string,
-  fetchFn: typeof fetch = fetch,
-): Promise<BahnhofTreffer[]> {
-  const body = (await dbGet(epStopPlacesByName(q), fetchFn)) as { stopPlaces?: StopPlace[] };
+/** Beide Suchvarianten liefern dieselbe stopPlaces-Huelle. */
+function zuTreffern(body: { stopPlaces?: StopPlace[] }): BahnhofTreffer[] {
   return (body.stopPlaces ?? [])
     .filter((sp) => sp.evaNumber && sp.names?.DE?.nameLong)
     .map((sp) => ({
@@ -51,6 +53,24 @@ export async function sucheBahnhoefe(
       lat: sp.position?.latitude ?? 0,
       lon: sp.position?.longitude ?? 0,
     }));
+}
+
+export async function sucheBahnhoefe(
+  q: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<BahnhofTreffer[]> {
+  return zuTreffern((await dbGet(epStopPlacesByName(q), fetchFn)) as { stopPlaces?: StopPlace[] });
+}
+
+/** Bahnhöfe im Umkreis – Grundlage der Standorterkennung (P1). */
+export async function sucheBahnhoefeNahebei(
+  lat: number,
+  lon: number,
+  radiusM: number,
+  fetchFn: typeof fetch = fetch,
+): Promise<BahnhofTreffer[]> {
+  const url = epStopPlacesByPosition(lat, lon, radiusM);
+  return zuTreffern((await dbGet(url, fetchFn)) as { stopPlaces?: StopPlace[] });
 }
 
 export async function holeStationsInfo(

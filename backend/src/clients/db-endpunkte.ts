@@ -9,6 +9,11 @@ export const RIS_STATIONS_BASIS = 'https://apis.deutschebahn.com/db/apis/ris-sta
 export const epStopPlacesByName = (query: string): string =>
   `${RIS_STATIONS_BASIS}/stop-places/by-name/${encodeURIComponent(query)}`;
 
+// Umkreissuche (Standorterkennung). Wie alle Pfade hier vor Live-Betrieb
+// gegen die Marketplace-Doku verifizieren – siehe TODO im Dateikopf.
+export const epStopPlacesByPosition = (lat: number, lon: number, radiusM: number): string =>
+  `${RIS_STATIONS_BASIS}/stop-places/by-position?latitude=${lat}&longitude=${lon}&radius=${radiusM}`;
+
 export const epStopPlace = (eva: string): string =>
   `${RIS_STATIONS_BASIS}/stop-places/${encodeURIComponent(eva)}`;
 

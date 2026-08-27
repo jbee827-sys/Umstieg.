@@ -1,0 +1,15 @@
+{
+  "_hinweis": "HANDGEBAUT nach Marketplace-Doku, NICHT gegen eine echte Antwort verifiziert. Vor Live-Betrieb pruefen (siehe TODO in src/clients/db-endpunkte.ts).",
+  "stopPlaces": [
+    {
+      "evaNumber": "8011160",
+      "names": { "DE": { "nameLong": "Berlin Hbf" } },
+      "position": { "latitude": 52.524925, "longitude": 13.369629 }
+    },
+    {
+      "evaNumber": "8089021",
+      "names": { "DE": { "nameLong": "Berlin Hbf (tief)" } },
+      "position": { "latitude": 52.52505, "longitude": 13.36936 }
+    }
+  ]
+}
