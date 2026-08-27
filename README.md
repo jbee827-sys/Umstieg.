@@ -31,10 +31,13 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 | Task 13 – Frontend: Eingabe, Schrittliste, Ampel (Design-Tokens) | ✅ fertig (manuelle Browser-Sichtprüfung auf Mobilgerät steht noch aus) |
 | Task 14 – Karte (MapLibre, Ebenen-Umschalter, lazy geladen) | ✅ fertig (WebGL-Sichtprüfung im Browser empfohlen) |
 | Task 15 – Live-Tafeln, Zugauswahl, Wagenreihung, farbige Ampel | ✅ fertig (Timetables-XML + ist-wr-JSON, hinter Env-Guard bzw. öffentlich) |
-| Task 16 – SSE-Überwachung, FaSta | 🔶 **angefangen, NICHT committet** – Details unten unter „Wiedereinstieg" |
+| Task 16 – SSE-Überwachung, FaSta | ✅ fertig, 112 Tests grün |
 | Task 17 – Degradationstests, Docker, Mobile-Feinschliff | ⬜ offen |
+| P1 – Standort & Live-Navigation | 📋 Spec + Plan geschrieben, Umsetzung offen |
 
-**Tests:** `cd backend && npm test` → **100 von 102 grün, 2 rot** (beide in `test/fasta.test.ts`, siehe Wiedereinstieg). Letzter Commit `f4ba0d3` (Task 15) war vollständig grün mit 92 Tests. `npm run lint` sauber. Frontend: `cd frontend && npm run build` grün.
+**Tests:** `cd backend && npm test` → **112 von 112 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm run build` grün; `npm run lint` meldet 3 Warnungen, die alle aus Task 13/15 stammen.
+
+**Nicht maschinell geprüft:** Die Frontend-SSE-Anbindung (`api/sse.ts`, `LiveBanner`) ist nur über TypeScript und Build abgesichert – das Frontend hat noch keine Testinfrastruktur. Der SSE-Endpunkt selbst wird dagegen in `test/live.test.ts` gegen einen echten HTTP-Server geprüft.
 
 ## Was Ende-zu-Ende funktioniert
 
@@ -53,6 +56,7 @@ Wichtigste Erkenntnis aus dem Spike: **74 % Stufe 1** – Indoor-Routing über O
 - `GET /api/health` → `{ status: 'ok' }`
 - `GET /api/board/:eva?type=arr|dep` → `TafelEintrag[]` (`{ zug, zeitSoll, zeitIst?, gleisSoll, gleisIst?, ziel }`; Soll aus `/plan`, Änderungen aus `/fchg` zusammengeführt). Ohne Schlüssel: **503**.
 - `GET /api/stations?q=<Suchtext>` → `BahnhofTreffer[]` (`{ name, eva, lat, lon }`). Ohne `DB_CLIENT_ID`/`DB_CLIENT_SECRET`: **503** `{ fehler: 'db-zugang-fehlt' }`.
+- `GET /api/live/:eva?zugAn=&zugAb=` → **SSE-Strom** mit den Ereignissen `gleiswechsel`, `verspaetung`, `heartbeat` (Payload `{ typ, zug?, alt?, neu?, zeitstempel }`). Gepollt wird **einmal je EVA**, unabhängig von der Zahl der Zuschauer; die Zugparameter filtern nur die Zustellung. Verbindungsabbruch meldet den Abonnenten ab, der letzte Abmelder stoppt den Poller.
 - `GET /api/route?eva=&gleisAn=&gleisAb=&zugAn?=&wagen?=&abschnitt?=&profil?=&variante?=` → `RouteErgebnis` (`zugAn`+`wagen` → Wagenreihung bestimmt den Start-Abschnitt; keine Daten → Bahnsteigmitte mit Hinweis):
   - `profil`: `zuegig | normal | langsam` (Default `normal`) · `variante`: `schnellste | einfachste | barrierefrei` (Default `schnellste`)
   - Antwort: `{ stufe, schritte[], gehzeitSek, karte, hinweise[] }`; `karte` = GeoJSON-FeatureCollections je Ebene (Routenlinie + Start-/Zielmarker, `[lon, lat]`)
@@ -90,41 +94,24 @@ Report: [`docs/spike-datenrealitaet-ergebnis.md`](./docs/spike-datenrealitaet-er
 - Abschnittsmarker (A–F) nur an 52 % der Bahnhöfe in OSM → Wagenpositions-Feature primär über DB-Stationsdaten (bestätigt Konzept).
 - DB-Abschnittsdaten-Check weiterhin **blockiert auf Marketplace-Registrierung**.
 
-## Wiedereinstieg: hier genau weitermachen (Task 16)
+## Live-Überwachung (Task 16, fertig)
 
-Task 16 wurde begonnen und **mitten in der TDD-Schleife gestoppt** – die neuen Dateien liegen **uncommittet** im Arbeitsverzeichnis (`git status` zeigt sie als `??` bzw. `M`). Nichts geht verloren, aber der erste Schritt beim Weitermachen ist, die zwei roten Tests grün zu bekommen.
+- **Poller pro EVA** (`core/ueberwachung.ts`): Ein Abruf je Bahnhof, egal wie viele Clients zuschauen. `letzterStand` ist nach Zug **und Sollzeit** geschlüsselt – ein durchfahrender Zug steht in beiden Tafeln, und nur nach Zugnummer geschlüsselt hätten sich die Einträge gegenseitig überschrieben und bei jedem Poll eine Phantom-Verspätung erzeugt.
+- **SSE-Endpunkt** (`routes/live.ts`): `reply.hijack()`, Ereignisse als `event:`/`data:`-Paare, Abmeldung am `close` des Requests. Geprüft gegen einen echten HTTP-Server, nicht per `inject()` – ein SSE-Strom endet nie und ließe `inject()` hängen.
+- **FaSta in `/api/route`**: nur bei `variante=barrierefrei`, weil nur dort der Betriebsstatus über die Route entscheidet. Angewendet wird auf einer **Kopie** des Graphen (`kopiereGraph`) – sonst bliebe ein gerade defekter Aufzug 24 h im Graph-Cache gesperrt, lange nachdem er wieder läuft.
+- **Frontend**: `api/sse.ts` (EventSource, Wiederverbindung fordert die Route neu an) und `components/LiveBanner.tsx`. Ein Gleiswechsel schreibt das neue Gleis in die Eingabewerte, berechnet die Route neu, zeigt den Banner und löst `navigator.vibrate` aus.
 
-**Zustand der neuen Dateien:**
-
-| Datei | Zustand |
-|---|---|
-| `backend/src/core/ueberwachung.ts` | ✅ fertig – Poller **pro EVA**, Abonnenten-Verteilung, Ereignisse `gleiswechsel`/`verspaetung`/`heartbeat`, Timetables-Ausfall bricht nicht ab |
-| `backend/test/live.test.ts` | ✅ 6 Tests grün (Gleiswechsel, Verspätung, ein Poll bei zwei Abonnenten, Heartbeat, Abmeldung, Fehlerfall) |
-| `backend/src/clients/fasta.ts` | ✅ fertig – `holeAnlagen(eva)`, Status ≠ `ACTIVE` wird konservativ als `INACTIVE` geführt |
-| `backend/test/fixtures/db/fasta-facilities.json` | ✅ handgebautes Fixture (Verifikationshinweis enthalten) |
-| `backend/src/clients/db-endpunkte.ts` | ✅ um `epFastaFacilities` ergänzt (mit TODO: FaSta nutzt StaDa-Bahnhofsnummern, **nicht** EVA – Zuordnung vor Live-Betrieb klären) |
-| `backend/test/fasta.test.ts` | 🔴 4 Tests: 2 grün (`holeAnlagen`), **2 rot** – erwarten `wendeFastaAn`, das noch nicht existiert |
-
-**Schritt 1 (rot → grün):** `wendeFastaAn(graph, anlagen)` in `backend/src/core/synthmodell.ts` implementieren und exportieren. Erwartetes Verhalten laut den bereits geschriebenen Tests: Für jede FaSta-Anlage die nächstgelegene `aufzug`-/`rolltreppe`-Kante im Graphen suchen und deren `status` setzen; nur Anlagen in der Nähe wirken (weit entfernte lassen den Graphen unverändert – Schwellenwert wählen, ~50 m). `status: 'INACTIVE'` sperrt die Kante nur in der Variante `barrierefrei` (das erledigt `kanteErlaubt` in `routing.ts` bereits), `schnellste` bleibt unberührt.
-
-**Danach fehlen für Task 16 noch:**
-
-1. `backend/src/routes/live.ts` – SSE-Endpunkt `GET /api/live/:eva?zugAn&zugAb`, der `Ueberwachung.abonniere()` nutzt und bei Verbindungsabbruch die Abmeldefunktion aufruft. Tests: Ereignis kommt beim Client an, zwei Clients = ein Poll.
-2. `Ueberwachung` in `app.ts` verdrahten (eine Instanz je App, `tafel`-Client injizierbar wie die übrigen).
-3. FaSta in `/api/route` einhängen: bei `variante=barrierefrei` `holeAnlagen` abrufen, `wendeFastaAn` anwenden; FaSta-Ausfall → Route trotzdem berechnen + Hinweis „Aufzugstatus unbekannt" (Degradationstabelle Konzept 8).
-4. Frontend: `frontend/src/api/sse.ts` (EventSource + Reconnect, bei Reconnect Route neu anfordern) und `frontend/src/components/LiveBanner.tsx`; Gleiswechsel → Route automatisch neu laden, Banner + `navigator.vibrate`.
-
-**Dann Task 17:** Degradationstests (jede Zeile der Konzept-Tabelle Abschnitt 8 als eigener Test), `Dockerfile` + `docker-compose.yml` (Multi-Stage: Frontend-Build → Backend serviert `frontend/dist` via `@fastify/static`), README final.
+**Nächster Schritt – Task 17:** Degradationstests (jede Zeile der Konzept-Tabelle Abschnitt 8 als eigener Test), `Dockerfile` + `docker-compose.yml` (Multi-Stage: Frontend-Build → Backend serviert `frontend/dist` via `@fastify/static`) – dort wird auch der in P1 angelegte `Caddyfile` als Dienst eingebunden.
 
 **Unabhängig davon offen:** Spike-Nachlauf für die fehlenden 13 Bahnhöfe, sobald Overpass wieder stabil antwortet (`npx tsx scripts/spike-datenrealitaet.ts`, gecacht – fragt nur die fehlenden ab).
 
 ## Offene Punkte / Blocker
 
-- **Uncommittete Arbeit (Task 16):** `ueberwachung.ts`, `fasta.ts`, `live.test.ts`, `fasta.test.ts`, `fixtures/db/fasta-facilities.json` sowie die Änderung an `db-endpunkte.ts` liegen im Arbeitsverzeichnis, aber **nicht im Git-Verlauf** – bewusst so, weil 2 Tests rot sind (Regel: Commit nur nach grünem Task). Siehe „Wiedereinstieg".
 - **DB API Marketplace:** Registrierung ausstehend → `DB_CLIENT_ID`/`DB_CLIENT_SECRET` in `.env` (Vorlage `.env.example`). Bis dahin degradiert alles transparent auf Fixtures/Synthese.
 - **Alle DB-Schemata sind ungeprüft:** Endpunktpfade wurden am 25.08.2026 gegen die Marketplace-Doku verifiziert, die **Antwort-Fixtures sind jedoch handgebaut** (`backend/test/fixtures/db/*`, jeweils mit Hinweis im Kopf). Vor Live-Betrieb gegen echte Antworten prüfen – die Parser können auf Feldnamen-Abweichungen laufen.
 - **FaSta-Adressierung ungeklärt:** FaSta arbeitet mit StaDa-Bahnhofsnummern, die App reicht bisher die EVA durch (TODO in `db-endpunkte.ts`). Vor Live-Betrieb Zuordnung klären.
-- **Manuelle Browser-Sichtprüfung steht aus:** Frontend wurde per Build, API-Aufruf und Proxy-Test verifiziert, aber noch nicht optisch auf einem 390-px-Viewport bzw. mit WebGL-Karte begutachtet.
+- **Manuelle Browser-Sichtprüfung steht aus:** Frontend wurde per Build, API-Aufruf und Proxy-Test verifiziert, aber noch nicht optisch auf einem 390-px-Viewport bzw. mit WebGL-Karte begutachtet. Das gilt auch für die SSE-Anbindung – der EventSource-Pfad im Browser ist bisher nur typgeprüft.
+- **Frontend ohne Testinfrastruktur:** Es gibt keine Frontend-Tests. Vitest kommt mit P1 dazu (Task 3 des Plans).
 - **GitHub-Remote:** `gh` CLI nicht installiert – Repo nur lokal (`main` = Doku-Basis, Arbeit auf `feat/mvp`). Für Push: `winget install GitHub.cli` + `gh auth login`, oder leeres Repo anlegen und URL mitteilen.
 - **Vercel:** bewusst nicht verwendet (VITA-Projekt bleibt unberührt); Deployment-Ziel ist Docker.
 - **Spike-Rohdaten** (`backend/test/fixtures/spike/`) sind gitignored – über das Script reproduzierbar.

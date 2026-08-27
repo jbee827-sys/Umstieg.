@@ -3,6 +3,7 @@ import type {
   FastaAnlage,
   GraphKante,
   GraphKnoten,
+  KantenTyp,
   RouteErgebnis,
   StationGraph,
   StationsInfo,
@@ -155,6 +156,58 @@ export function syntheseGraph(info: StationsInfo, anlagen: FastaAnlage[] = []): 
     a.localeCompare(b, 'de', { numeric: true }),
   );
   return { knoten, adjazenz, stufe: 3, gleise };
+}
+
+// FaSta-Koordinaten und OSM-Geometrie stammen aus verschiedenen Quellen; jenseits
+// dieser Entfernung ist die Zuordnung nicht mehr glaubwürdig und wird verworfen.
+const FASTA_MAX_ABSTAND_M = 50;
+
+/** Kleinster Abstand der Anlage zu einem der beiden Kantenenden. */
+function abstandZuKante(graph: StationGraph, kante: GraphKante, anlage: FastaAnlage): number {
+  let kleinster = Infinity;
+  for (const id of [kante.von, kante.nach]) {
+    const knoten = graph.knoten.get(id);
+    if (!knoten) continue;
+    kleinster = Math.min(kleinster, haversineM(anlage.lat, anlage.lon, knoten.lat, knoten.lon));
+  }
+  return kleinster;
+}
+
+/**
+ * Überträgt den FaSta-Betriebsstatus auf einen OSM-Graphen (Stufe 1/2). Jede
+ * Anlage wirkt auf die nächstgelegene Kante gleichen Typs, aber nur innerhalb
+ * von FASTA_MAX_ABSTAND_M – eine weit entfernte Anlage lässt den Graphen
+ * unverändert.
+ *
+ * `INACTIVE` sperrt die Kante ausschließlich in der Variante `barrierefrei`
+ * (das erledigt `kanteErlaubt` in routing.ts); `schnellste` bleibt unberührt.
+ * Der Graph wird an Ort und Stelle geändert.
+ *
+ * Für Stufe 3 ist das nicht nötig – dort trägt `syntheseGraph` den Status
+ * bereits beim Bau ein.
+ */
+export function wendeFastaAn(graph: StationGraph, anlagen: FastaAnlage[]): void {
+  // Kanten stehen in beiden Adjazenzlisten als dieselbe Referenz – ein Set
+  // betrachtet jedes Kantenobjekt genau einmal.
+  const kanten = new Set<GraphKante>();
+  for (const liste of graph.adjazenz.values()) {
+    for (const kante of liste) kanten.add(kante);
+  }
+
+  for (const anlage of anlagen) {
+    const gesucht: KantenTyp = anlage.typ === 'AUFZUG' ? 'aufzug' : 'rolltreppe';
+    let beste: GraphKante | null = null;
+    let besterAbstand = Infinity;
+    for (const kante of kanten) {
+      if (kante.typ !== gesucht) continue;
+      const abstand = abstandZuKante(graph, kante, anlage);
+      if (abstand < besterAbstand) {
+        besterAbstand = abstand;
+        beste = kante;
+      }
+    }
+    if (beste && besterAbstand <= FASTA_MAX_ABSTAND_M) beste.status = anlage.status;
+  }
 }
 
 /** Sonderfall gleicher Bahnsteig: kein Routing nötig, ehrliche Kurzansage. */

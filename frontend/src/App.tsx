@@ -1,9 +1,11 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import './App.css'
 import { holeRoute, RouteFehler } from './api/client'
-import type { RouteErgebnis } from './api/typen'
+import { verbindeLive } from './api/sse'
+import type { LiveEreignis, RouteErgebnis } from './api/typen'
 import { Ampel } from './components/Ampel'
 import { Eingabe, type EingabeWerte } from './components/Eingabe'
+import { LiveBanner } from './components/LiveBanner'
 import { Schrittliste } from './components/Schrittliste'
 
 // MapLibre ist groß und die Karte standardmäßig eingeklappt → erst bei Bedarf laden.
@@ -49,6 +51,8 @@ function App() {
   const [werte, setWerte] = useState<EingabeWerte | null>(null)
   const [laden, setLaden] = useState(false)
   const [fehler, setFehler] = useState<string | null>(null)
+  const [liveEreignis, setLiveEreignis] = useState<LiveEreignis | null>(null)
+  const [stand, setStand] = useState<string | null>(null)
   const [, setTick] = useState(0)
 
   // Live-Countdown: mit bekannter Abfahrtszeit alle 10 s neu rendern
@@ -58,7 +62,7 @@ function App() {
     return () => window.clearInterval(timer)
   }, [ansicht, werte?.abfahrtZeit])
 
-  async function berechne(eingabe: EingabeWerte) {
+  const berechne = useCallback(async (eingabe: EingabeWerte) => {
     setLaden(true)
     setFehler(null)
     try {
@@ -81,7 +85,35 @@ function App() {
     } finally {
       setLaden(false)
     }
-  }
+  }, [])
+
+  // Live-Überwachung nur in der Routenansicht. Ein Gleiswechsel ändert die
+  // Eingabewerte und stößt die Neuberechnung an – die Route zeigt sofort den
+  // neuen Weg, statt still falsch zu bleiben (Konzept 7).
+  useEffect(() => {
+    if (ansicht !== 'route' || !werte?.eva) return
+    return verbindeLive({
+      eva: werte.eva,
+      zugAn: werte.zugAnName,
+      zugAb: werte.zugAbName,
+      onWiederverbunden: () => void berechne(werte),
+      onEreignis: (ereignis) => {
+        if (ereignis.typ === 'heartbeat') {
+          setStand(ereignis.zeitstempel)
+          return
+        }
+        setLiveEreignis(ereignis)
+        if (ereignis.typ !== 'gleiswechsel' || !ereignis.neu) return
+        navigator.vibrate?.([200, 100, 200])
+        const betrifftAnkunft = ereignis.zug === werte.zugAnName
+        void berechne({
+          ...werte,
+          gleisAn: betrifftAnkunft ? ereignis.neu : werte.gleisAn,
+          gleisAb: betrifftAnkunft ? werte.gleisAb : ereignis.neu,
+        })
+      },
+    })
+  }, [ansicht, werte, berechne])
 
   if (ansicht === 'route' && route && werte) {
     const restSek = werte.abfahrtZeit
@@ -91,6 +123,9 @@ function App() {
     return (
       <main className="app">
         <Ampel farbe={farbe} gehzeitSek={route.gehzeitSek} restSek={restSek} />
+        {liveEreignis && (
+          <LiveBanner ereignis={liveEreignis} onSchliessen={() => setLiveEreignis(null)} />
+        )}
         <div className="routen-kopf">
           <div>
             <div className="kicker">{werte.bahnhofName || 'Umstieg'}</div>
@@ -100,6 +135,12 @@ function App() {
           </div>
           <span className="stufen-tag">{STUFEN_TEXT[route.stufe]}</span>
         </div>
+        {stand && (
+          <p className="live-stand">
+            Live-Daten · Stand:{' '}
+            {new Date(stand).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+          </p>
+        )}
         <hr className="trennlinie" />
         <Schrittliste schritte={route.schritte} />
         {route.karte && (

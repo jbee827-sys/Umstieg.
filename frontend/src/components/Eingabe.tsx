@@ -13,6 +13,9 @@ export interface EingabeWerte {
   variante: RoutenVariante
   /** Zugnummer des Ankunftszugs (für die Wagenreihung), z. B. "3" aus "RE 3" */
   zugAn?: string
+  /** Volle Bezeichnungen wie in der Tafel ("ICE 1006") – Filter für die Live-Überwachung. */
+  zugAnName?: string
+  zugAbName?: string
   ankunftZeit?: string
   abfahrtZeit?: string
 }
@@ -92,6 +95,8 @@ export function Eingabe({ laden, fehler, onBerechnen }: EingabeProps) {
       profil,
       variante,
       zugAn: zugAnkunft ? zugnummer(zugAnkunft.zug) : undefined,
+      zugAnName: zugAnkunft?.zug,
+      zugAbName: zugAbfahrt?.zug,
       ankunftZeit: zugAnkunft ? (zugAnkunft.zeitIst ?? zugAnkunft.zeitSoll) : undefined,
       abfahrtZeit: zugAbfahrt ? (zugAbfahrt.zeitIst ?? zugAbfahrt.zeitSoll) : undefined,
     })

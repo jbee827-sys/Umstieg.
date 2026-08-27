@@ -390,6 +390,35 @@ interface GeoFeature {
  * Route als GeoJSON je Ebene (Schluessel = level als String): Routen-Liniensegmente
  * pro Ebene plus Start-/Zielmarker. Koordinatenreihenfolge GeoJSON-konform [lon, lat].
  */
+/**
+ * Kopie mit geklonten Kanten; Knoten werden geteilt (sie werden nie geändert).
+ *
+ * Nötig, bevor ein Momentanzustand auf einen zwischengespeicherten Graphen
+ * angewendet wird – etwa der FaSta-Betriebsstatus. Ohne die Kopie wanderte ein
+ * gerade defekter Aufzug in den 24-Stunden-Graphcache und bliebe dort gesperrt,
+ * lange nachdem er wieder läuft.
+ */
+export function kopiereGraph(graph: StationGraph): StationGraph {
+  // Dieselbe Kante steht in beiden Adjazenzlisten – die Zuordnung sorgt dafür,
+  // dass sie auch in der Kopie EIN Objekt bleibt.
+  const klone = new Map<GraphKante, GraphKante>();
+  const adjazenz = new Map<string, GraphKante[]>();
+  for (const [id, liste] of graph.adjazenz) {
+    adjazenz.set(
+      id,
+      liste.map((kante) => {
+        let klon = klone.get(kante);
+        if (!klon) {
+          klon = { ...kante };
+          klone.set(kante, klon);
+        }
+        return klon;
+      }),
+    );
+  }
+  return { knoten: graph.knoten, adjazenz, stufe: graph.stufe, gleise: graph.gleise };
+}
+
 export function graphZuGeoJSON(
   graph: StationGraph,
   pfad: RoutenPfad,

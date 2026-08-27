@@ -1,16 +1,26 @@
 import Fastify, { type FastifyInstance } from 'fastify';
+import { holeAnlagen } from './clients/fasta.js';
 import { overpassQuery } from './clients/overpass.js';
 import { holeStationsInfo, sucheBahnhoefe } from './clients/stations.js';
 import { holeTafel } from './clients/timetables.js';
 import { holeWagenposition } from './clients/wagenreihung.js';
+import { Ueberwachung } from './core/ueberwachung.js';
 import { registriereApiRouten, type ApiClients } from './routes/api.js';
+import { registriereLiveRouten } from './routes/live.js';
+
+export interface AppClients extends ApiClients {
+  /** Überwachung ist injizierbar, damit Tests die Polls selbst auslösen können. */
+  ueberwachung: Ueberwachung;
+}
 
 // App-Factory ohne listen(): per app.inject() testbar; Clients injizierbar
 // (Tests nutzen Fixture-Clients, Produktion die echten).
-export function buildApp(clients: Partial<ApiClients> = {}): FastifyInstance {
+export function buildApp(clients: Partial<AppClients> = {}): FastifyInstance {
   const app = Fastify({ logger: false });
 
   app.get('/api/health', async () => ({ status: 'ok' }));
+
+  const tafel = clients.tafel ?? ((eva, typ) => holeTafel(eva, typ));
 
   registriereApiRouten(app, {
     overpass: clients.overpass ?? ((lat, lon, radiusM) => overpassQuery(lat, lon, radiusM)),
@@ -18,10 +28,19 @@ export function buildApp(clients: Partial<ApiClients> = {}): FastifyInstance {
       sucheBahnhoefe: (q) => sucheBahnhoefe(q),
       holeStationsInfo: (eva) => holeStationsInfo(eva),
     },
-    tafel: clients.tafel ?? ((eva, typ) => holeTafel(eva, typ)),
+    tafel,
     wagenposition:
       clients.wagenposition ?? ((zug, datum, wagen) => holeWagenposition(zug, datum, wagen)),
+    fasta: clients.fasta ?? ((eva) => holeAnlagen(eva)),
   });
+
+  // Eine Überwachung je App-Instanz. Sie beobachtet beide Tafeln, damit sowohl
+  // der Ankunfts- als auch der Anschlusszug erfasst ist; gepollt wird trotzdem
+  // nur einmal je EVA (Konzeptkorrektur 1).
+  const ueberwachung =
+    clients.ueberwachung ??
+    new Ueberwachung(async (eva) => [...(await tafel(eva, 'arr')), ...(await tafel(eva, 'dep'))]);
+  registriereLiveRouten(app, ueberwachung);
 
   return app;
 }
