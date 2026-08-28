@@ -17,7 +17,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 ## Hier weitermachen (Stand 28.08.2026)
 
 ```bash
-cd backend && npm test        # muss 122 von 122 grün sein
+cd backend && npm test        # muss 126 von 126 grün sein
 cd backend && npm run lint    # tsc --noEmit, muss sauber sein
 cd frontend && npm run build  # muss grün sein
 ```
@@ -73,7 +73,7 @@ Der Ausführungs-Ledger liegt unter `.superpowers/sdd/2026-08-27-standort-und-na
 | Task 17 – Degradationstests, Docker, Mobile-Feinschliff | 🔶 `Dockerfile` steht (28.08.2026); Degradationstests und Mobile-Feinschliff offen |
 | P1 – Standort & Live-Navigation (12 Tasks) | 🔶 Tasks 1–2 fertig, 3–12 offen (Tabelle oben) |
 
-**Tests:** `cd backend && npm test` → **122 von 122 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm run build` grün; `npm run lint` meldet 3 Warnungen, die alle aus Task 13/15 stammen und vor P1 schon bestanden.
+**Tests:** `cd backend && npm test` → **126 von 126 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm run build` grün; `npm run lint` meldet 3 Warnungen, die alle aus Task 13/15 stammen und vor P1 schon bestanden.
 
 **Nicht maschinell geprüft:** Die Frontend-SSE-Anbindung (`api/sse.ts`, `LiveBanner`) ist nur über TypeScript und Build abgesichert – das Frontend hat noch keine Testinfrastruktur. Der SSE-Endpunkt selbst wird dagegen in `test/live.test.ts` gegen einen echten HTTP-Server geprüft.
 
