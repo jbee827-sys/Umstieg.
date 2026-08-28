@@ -1,0 +1,15 @@
+# Standard: Git normalisiert Textdateien auf LF im Repository.
+* text=auto
+
+# Dateien, die in Linux-Containern ausgefuehrt oder gelesen werden, muessen
+# auch im Arbeitsverzeichnis LF behalten - CRLF bricht Shell-Zeilen im
+# Docker-Build und in fly.toml.
+Dockerfile text eol=lf
+.dockerignore text eol=lf
+*.sh text eol=lf
+fly.toml text eol=lf
+
+# Binaerdateien nie anfassen.
+*.png binary
+*.jpg binary
+*.woff2 binary
