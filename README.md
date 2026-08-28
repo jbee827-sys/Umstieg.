@@ -12,12 +12,12 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 
 - **Backend:** Node.js ≥ 20, Fastify 5, TypeScript (strict). Zustandslos, keine Datenbank, RAM-LRU-Cache. Holt zur Laufzeit OSM-Geometrie (Overpass) und DB-Live-Daten (Marketplace-APIs).
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
-- **Betrieb:** ein Docker-Container (Backend liefert Frontend statisch aus) – noch nicht gebaut.
+- **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 27.08.2026, HEAD `7b244ee`)
+## Hier weitermachen (Stand 28.08.2026)
 
 ```bash
-cd backend && npm test        # muss 120 von 120 grün sein
+cd backend && npm test        # muss 122 von 122 grün sein
 cd backend && npm run lint    # tsc --noEmit, muss sauber sein
 cd frontend && npm run build  # muss grün sein
 ```
@@ -26,12 +26,12 @@ Arbeitsbaum ist sauber, alles committet. Der MVP steht bis einschließlich Task 
 
 **Nächster Schritt:** P1 Task 3 aus [`docs/superpowers/plans/2026-08-27-standort-und-navigation.md`](./docs/superpowers/plans/2026-08-27-standort-und-navigation.md) – Frontend-Testinfrastruktur (vitest), `schwellen.ts`, `distanz.ts`. Der Plan enthält für jeden Task den fertigen Code, den Befehl und das erwartete Ergebnis.
 
-**Eine Altlast zuerst:** P1 Task 2 ist implementiert und committet (`7b244ee`, 120 Tests grün), hat aber **die Task-Review noch nicht durchlaufen** – die Sitzung endete davor. Entweder die Review nachholen (`review-package` über `df30887..7b244ee`) oder bewusst überspringen und mit Task 3 starten.
+**Altlast erledigt (28.08.2026):** Die offene Task-Review zu P1 Task 2 wurde nachgeholt – und hat einen echten Fehler gefunden. `Number('')` ergibt `0`, deshalb passierten `?lat=&lon=` und `?lat=52.5&lon=` die Validierung und lösten eine Umkreissuche bei (0,0) bzw. (52.5,0) aus, statt 400 zu liefern. Behoben mit zwei Regressionstests (`d6bc572`).
 
 | P1-Task | Status |
 |---|---|
 | 1 – Backend-Umkreissuche im stations-Client | ✅ fertig, Review sauber (`e914b87`) |
-| 2 – `/api/stations` mit `lat`/`lon` | ✅ implementiert (`7b244ee`), **Review offen** |
+| 2 – `/api/stations` mit `lat`/`lon` | ✅ fertig, Review nachgeholt, Fehler behoben (`d6bc572`) |
 | 3 – Frontend-Testinfrastruktur, Schwellen, Haversine | ⬜ offen ← **hier einsteigen** |
 | 4 – Ankunfts-Zustandsmaschine + Zielermittlung | ⬜ offen |
 | 5 – Bahnhofserkennung mit Rundung | ⬜ offen |
@@ -40,7 +40,7 @@ Arbeitsbaum ist sauber, alles committet. Der MVP steht bis einschließlich Task 
 | 8 – Positionspunkt + Genauigkeitskreis auf der Karte | ⬜ offen |
 | 9 – Ankunftsvorschlag + „Angekommen"-Screen | ⬜ offen |
 | 10 – Zustand „Zug ist abgefahren" | ⬜ offen |
-| 11 – HTTPS: mkcert + Caddyfile | ⬜ offen |
+| 11 – HTTPS: mkcert + Caddyfile | ♻️ **gegenstandslos** – Fly.io und Vercel liefern HTTPS automatisch; nur für lokale WLAN-Handytests noch relevant |
 | 12 – Mobilabnahme + README | ⬜ offen |
 
 **Zwei Entscheidungen aus der Vorflug-Prüfung, die für Reviews gelten:**
@@ -70,10 +70,10 @@ Der Ausführungs-Ledger liegt unter `.superpowers/sdd/2026-08-27-standort-und-na
 | Task 14 – Karte (MapLibre, Ebenen-Umschalter, lazy geladen) | ✅ fertig (WebGL-Sichtprüfung im Browser empfohlen) |
 | Task 15 – Live-Tafeln, Zugauswahl, Wagenreihung, farbige Ampel | ✅ fertig (Timetables-XML + ist-wr-JSON, hinter Env-Guard bzw. öffentlich) |
 | Task 16 – SSE-Überwachung, FaSta | ✅ fertig, 112 Tests grün |
-| Task 17 – Degradationstests, Docker, Mobile-Feinschliff | ⬜ offen |
+| Task 17 – Degradationstests, Docker, Mobile-Feinschliff | 🔶 `Dockerfile` steht (28.08.2026); Degradationstests und Mobile-Feinschliff offen |
 | P1 – Standort & Live-Navigation (12 Tasks) | 🔶 Tasks 1–2 fertig, 3–12 offen (Tabelle oben) |
 
-**Tests:** `cd backend && npm test` → **120 von 120 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm run build` grün; `npm run lint` meldet 3 Warnungen, die alle aus Task 13/15 stammen und vor P1 schon bestanden.
+**Tests:** `cd backend && npm test` → **122 von 122 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm run build` grün; `npm run lint` meldet 3 Warnungen, die alle aus Task 13/15 stammen und vor P1 schon bestanden.
 
 **Nicht maschinell geprüft:** Die Frontend-SSE-Anbindung (`api/sse.ts`, `LiveBanner`) ist nur über TypeScript und Build abgesichert – das Frontend hat noch keine Testinfrastruktur. Der SSE-Endpunkt selbst wird dagegen in `test/live.test.ts` gegen einen echten HTTP-Server geprüft.
 
@@ -124,6 +124,32 @@ npx tsx scripts/record-fixture.ts <name> <lat> <lon>  # neues Overpass-Fixture
 
 **Dev ohne DB-Zugang:** `FIXTURE_EVA=berlin npm run dev` (im Backend) → `/api/route` läuft gegen das Berlin-Hbf-Fixture (EVA 8011160, z. B. Gleis 6 → 14), `/api/stations` liefert einen festen Treffer. Keine externen Aufrufe.
 
+## Deployment
+
+Vollstaendige Anleitung: [`docs/deployment.md`](./docs/deployment.md).
+
+Zwei Ziele, bewusst getrennt: **Vercel** liefert den statischen Frontend-Build,
+**Fly.io** betreibt das Backend als dauerhaft laufenden Container. Das Backend
+darf nicht schlafen gelegt werden – Poller, offene SSE-Verbindungen und der
+24-h-Graph-Cache leben im Prozess.
+
+Verbunden werden beide ueber eine Env-Variable, nicht ueber einen Proxy:
+
+| Umgebung | `VITE_API_BASE` | Wirkung |
+|---|---|---|
+| lokal | leer | Aufrufe bleiben relativ, Vite-Proxy → `localhost:3001` |
+| Vercel | `https://umstieg-backend.fly.dev` | Aufrufe gehen direkt ans Backend |
+
+Ein `vercel.json`-Rewrite fuer `/api/*` waere naheliegend, ist aber bewusst
+**nicht** gesetzt: der SSE-Strom liefe sonst durch Vercels Proxy und wuerde dort
+gepuffert oder getrennt. Gegenstueck im Backend ist `CORS_ORIGIN` (kommagetrennte
+Allowlist; leer = keine CORS-Header, die sichere Voreinstellung fuer lokal).
+
+```bash
+cd backend && fly deploy          # Backend
+vercel deploy --prod              # Frontend (aus dem Wurzelverzeichnis)
+```
+
 ## Spike-Ergebnis (Task 6, 25.08.2026)
 
 Report: [`docs/spike-datenrealitaet-ergebnis.md`](./docs/spike-datenrealitaet-ergebnis.md). Kernzahlen (27 von 40 Bahnhöfen erfasst, 13 wegen Overpass-Überlastung offen – Koordinatenliste bleibt, Wiederholung füllt den Cache nach):
@@ -150,8 +176,8 @@ Report: [`docs/spike-datenrealitaet-ergebnis.md`](./docs/spike-datenrealitaet-er
 - **FaSta-Adressierung ungeklärt:** FaSta arbeitet mit StaDa-Bahnhofsnummern, die App reicht bisher die EVA durch (TODO in `db-endpunkte.ts`). Vor Live-Betrieb Zuordnung klären.
 - **Manuelle Browser-Sichtprüfung steht aus:** Frontend wurde per Build, API-Aufruf und Proxy-Test verifiziert, aber noch nicht optisch auf einem 390-px-Viewport bzw. mit WebGL-Karte begutachtet. Das gilt auch für die SSE-Anbindung – der EventSource-Pfad im Browser ist bisher nur typgeprüft.
 - **Frontend ohne Testinfrastruktur:** Es gibt keine Frontend-Tests. Vitest kommt mit P1 dazu (Task 3 des Plans).
-- **GitHub-Remote:** `gh` CLI nicht installiert – Repo nur lokal (`main` = Doku-Basis, Arbeit auf `feat/mvp`). Für Push: `winget install GitHub.cli` + `gh auth login`, oder leeres Repo anlegen und URL mitteilen.
-- **Vercel:** bewusst nicht verwendet (VITA-Projekt bleibt unberührt); Deployment-Ziel ist Docker.
+- **GitHub-Remote:** Repo ist push-fertig (LICENSE, Secret-Scan der Historie sauber, `.gitignore` geprüft). Fehlt nur die `gh` CLI: `winget install --id GitHub.cli -e`, neues Terminal, `gh auth login`, dann `gh repo create`.
+- ~~**Vercel:** bewusst nicht verwendet~~ – **am 28.08.2026 umgekehrt.** Frontend läuft jetzt auf Vercel, Backend als Container. Das VITA-Projekt bleibt unberührt (eigenes Vercel-Projekt). Begründung: [`docs/deployment.md`](./docs/deployment.md).
 - **Spike-Rohdaten** (`backend/test/fixtures/spike/`) sind gitignored – über das Script reproduzierbar.
 
 ## Konzeptkorrekturen (aus Analyse + Design übernommen)

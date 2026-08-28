@@ -1,3 +1,4 @@
+import cors from '@fastify/cors';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { holeAnlagen } from './clients/fasta.js';
 import { overpassQuery } from './clients/overpass.js';
@@ -17,6 +18,24 @@ export interface AppClients extends ApiClients {
 // (Tests nutzen Fixture-Clients, Produktion die echten).
 export function buildApp(clients: Partial<AppClients> = {}): FastifyInstance {
   const app = Fastify({ logger: false });
+
+  // CORS nur, wenn ausdruecklich konfiguriert.
+  //
+  // In der Entwicklung laeuft alles ueber den Vite-Proxy und ist damit
+  // same-origin – dort werden keine CORS-Header gebraucht, und keine zu
+  // senden ist die sicherere Voreinstellung.
+  //
+  // In Produktion liegt das Frontend auf Vercel und das Backend auf einer
+  // anderen Domain. CORS_ORIGIN nennt die erlaubten Herkuenfte, kommagetrennt
+  // (Produktionsdomain plus ggf. Vercel-Vorschau-URLs). Die API ist
+  // ausschliesslich lesend, deshalb reicht GET.
+  const erlaubteHerkuenfte = (process.env.CORS_ORIGIN ?? '')
+    .split(',')
+    .map((h) => h.trim())
+    .filter(Boolean);
+  if (erlaubteHerkuenfte.length > 0) {
+    app.register(cors, { origin: erlaubteHerkuenfte, methods: ['GET'] });
+  }
 
   app.get('/api/health', async () => ({ status: 'ok' }));
 
