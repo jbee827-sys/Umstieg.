@@ -1,8 +1,11 @@
 node_modules/
 dist/
 .env
+.env.*
+!.env.example
 *.log
 # Spike-Rohdaten: reproduzierbar über scripts/spike-datenrealitaet.ts
 backend/test/fixtures/spike/
 # Arbeitsbereich der Plan-Ausführung (Ledger, Briefs, Review-Pakete)
 .superpowers/
+.vercel
