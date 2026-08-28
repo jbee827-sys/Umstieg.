@@ -26,7 +26,9 @@ async function dbGet(url: string, fetchFn: typeof fetch): Promise<unknown> {
   const antwort = await fetchFn(url, {
     headers: {
       ...dbAuthHeader(),
-      Accept: 'application/json',
+      // RIS::Stations verlangt den Vendor-Media-Type; 'application/json'
+      // quittiert das Gateway mit 415 "No acceptable representation".
+      Accept: 'application/vnd.de.db.ris+json',
     },
     signal: AbortSignal.timeout(15000),
   });
