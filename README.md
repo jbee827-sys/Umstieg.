@@ -24,7 +24,7 @@ cd frontend && npm run build  # muss grün sein
 
 Arbeitsbaum ist sauber, alles committet. Der MVP steht bis einschließlich Task 16; offen sind **MVP-Task 17** und die **Tasks 3–12 des Standort-Plans (P1)**.
 
-**Nächster Schritt:** P1 Task 3 aus [`docs/superpowers/plans/2026-08-27-standort-und-navigation.md`](./docs/superpowers/plans/2026-08-27-standort-und-navigation.md) – Frontend-Testinfrastruktur (vitest), `schwellen.ts`, `distanz.ts`. Der Plan enthält für jeden Task den fertigen Code, den Befehl und das erwartete Ergebnis.
+**Nächster Schritt: Deployment abschliessen** (angefangen 28.08.2026, siehe Abschnitt „Deployment-Stand" weiter unten). Danach P1 Task 3 aus [`docs/superpowers/plans/2026-08-27-standort-und-navigation.md`](./docs/superpowers/plans/2026-08-27-standort-und-navigation.md) – Frontend-Testinfrastruktur (vitest), `schwellen.ts`, `distanz.ts`. Der Plan enthält für jeden Task den fertigen Code, den Befehl und das erwartete Ergebnis.
 
 **Altlast erledigt (28.08.2026):** Die offene Task-Review zu P1 Task 2 wurde nachgeholt – und hat einen echten Fehler gefunden. `Number('')` ergibt `0`, deshalb passierten `?lat=&lon=` und `?lat=52.5&lon=` die Validierung und lösten eine Umkreissuche bei (0,0) bzw. (52.5,0) aus, statt 400 zu liefern. Behoben mit zwei Regressionstests (`d6bc572`).
 
@@ -49,6 +49,53 @@ Arbeitsbaum ist sauber, alles committet. Der MVP steht bis einschließlich Task 
 2. `useStandort.ts` bekommt bewusst **keine** Unit-Tests – die Datei enthält keine Entscheidungslogik, die steckt in `ankunft.ts`/`distanz.ts`/`bahnhofErkennung.ts`. Abgesichert wird sie in der Mobilabnahme (Task 12). **Plan gilt.**
 
 Der Ausführungs-Ledger liegt unter `.superpowers/sdd/2026-08-27-standort-und-navigation/progress.md` (gitignored) und hält Commits, Rulings und zurückgestellte Minor-Findings fest.
+
+## Deployment-Stand (28.08.2026, unterbrochen)
+
+**GitHub: erledigt.** Repo liegt auf <https://github.com/jbee827-sys/Umstieg.->,
+Zweige `main` und `feat/mvp` sind gepusht und identisch. Lizenz wird als MIT
+erkannt (Datenlizenzen stehen in `NOTICE`).
+
+> ⚠️ **Offene Entscheidung:** Das Repo ist **öffentlich**, obwohl privat
+> geplant war. Inhaltlich unbedenklich (Historie auf Secrets geprüft, nichts
+> gefunden), aber bewusst zu entscheiden:
+> Settings → General → ganz unten → *Change repository visibility*.
+> Ebenfalls kosmetisch: der Repo-Name `Umstieg.-` sieht nach Vertipper aus.
+
+**Fly.io: bis zur Anmeldung gekommen.**
+
+- Konto besteht.
+- `flyctl` v0.4.87 ist installiert – **über winget**, nicht über das
+  Install-Skript: `winget install --id Fly-io.flyctl --source winget`.
+- **Noch nicht angemeldet.** `flyctl auth whoami` meldet „no access token".
+
+Nach einem Terminal-Neustart (winget hat den PATH geändert) weitermachen mit:
+
+```bash
+flyctl auth login
+cd /d/Claude-code/Umstieg/backend && flyctl apps create umstieg-backend
+cd /d/Claude-code/Umstieg/backend && flyctl deploy
+```
+
+App-Namen sind bei Fly weltweit eindeutig; ist `umstieg-backend` vergeben,
+anderen Namen wählen und `app = "..."` in `backend/fly.toml` anpassen.
+Bewusst **kein** `flyctl launch` – das würde die fertige `fly.toml`
+überschreiben wollen. Docker wird lokal nicht gebraucht, Fly baut remote.
+
+**Vercel: noch nicht begonnen.** Reihenfolge und Befehle stehen in
+[`docs/deployment.md`](./docs/deployment.md). Kurz: Backend-URL notieren →
+`VITE_API_BASE` in Vercel setzen → `vercel deploy --prod` → danach
+`flyctl secrets set CORS_ORIGIN=<vercel-domain>`. Schritt 4 geht zwingend
+zuletzt, vorher ist die Frontend-Domain nicht bekannt.
+
+### Zwei Fallstricke auf diesem Rechner
+
+1. **`!`-Befehle laufen in Git Bash, nicht in PowerShell.** Also Unix-Syntax:
+   `/d/Claude-code/...` statt `D:\Claude-code\...`, `&&` statt `;`, und keine
+   Cmdlets wie `iwr`/`iex` (daran scheiterte das Fly-Install-Skript).
+2. **Jeder Aufruf startet in `D:\Claude-code`, nicht im Projektordner.**
+   Deshalb in jedem Befehl `cd /d/Claude-code/Umstieg/...` voranstellen –
+   sonst „fatal: not a git repository".
 
 ## Projektstand (27.08.2026)
 
