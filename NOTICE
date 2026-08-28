@@ -1,0 +1,13 @@
+Datenlizenzen
+=============
+
+Die MIT-Lizenz in LICENSE gilt fuer den QUELLCODE dieses Projekts.
+Die zur Laufzeit verarbeiteten Daten stehen unter eigenen Lizenzen und
+sind NICHT Teil dieses Repositorys - sie werden zur Laufzeit abgerufen.
+
+- OpenStreetMap / Overpass (Bahnhofsgeometrie): Open Database License (ODbL).
+  Attribution "© OpenStreetMap-Mitwirkende" ist Pflicht und in der Karte
+  hinterlegt. https://www.openstreetmap.org/copyright
+- Deutsche Bahn (Fahrplan-, Wagenreihungs-, Stations- und FaSta-Daten):
+  Nutzungsbedingungen des DB API Marketplace, überwiegend CC BY 4.0.
+  https://developers.deutschebahn.com
