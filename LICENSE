@@ -19,18 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-HINWEIS: Diese Lizenz gilt für den QUELLCODE dieses Projekts.
-Die zur Laufzeit verarbeiteten Daten stehen unter eigenen Lizenzen:
-
-- OpenStreetMap / Overpass (Bahnhofsgeometrie): Open Database License (ODbL).
-  Attribution "© OpenStreetMap-Mitwirkende" ist Pflicht und in der Karte
-  hinterlegt. https://www.openstreetmap.org/copyright
-- Deutsche Bahn (Fahrplan-, Wagenreihungs-, Stations- und FaSta-Daten):
-  Nutzungsbedingungen des DB API Marketplace, überwiegend CC BY 4.0.
-  https://developers.deutschebahn.com
-
-Diese Daten sind NICHT Teil dieses Repositorys und werden zur Laufzeit
-abgerufen.
