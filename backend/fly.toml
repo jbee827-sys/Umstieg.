@@ -1,5 +1,12 @@
 # Fly.io-Konfiguration fuer das Backend. Aus diesem Ordner deployen:
-#   cd backend && fly deploy
+#   cd backend && fly deploy --ha=false
+#
+# --ha=false ist Pflicht. Ohne den Schalter legt Fly beim Deploy eine zweite
+# Maschine fuer Hochverfuegbarkeit an (so geschehen beim ersten Deploy am
+# 28.08.2026). Zwei Maschinen teilen weder den Poller-Zustand noch den
+# Graph-Cache: jede pollt die DB-APIs eigenstaendig und fuellt ihren eigenen
+# Overpass-Cache. Genau die Verdopplung, die Konzeptkorrektur 1 vermeiden
+# will. min_machines_running unten ist eine Unter-, keine Obergrenze.
 
 app = "umstieg-backend"
 primary_region = "fra"

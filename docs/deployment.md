@@ -35,27 +35,116 @@ Backend eine CORS-Allowlist: `CORS_ORIGIN` (kommagetrennt). Ist sie leer,
 sendet das Backend **keine** CORS-Header – die sichere Voreinstellung für die
 Entwicklung, wo ohnehin same-origin über den Proxy gearbeitet wird.
 
+## Zugangsdaten
+
+Die DB-Schluessel liegen **nicht im Repo**, sondern in einem Tresor ausserhalb
+jedes Projektordners:
+
+```
+C:\Users\jbeer\.secrets\umstieg.env      # Quelle der Wahrheit
+C:\Users\jbeer\.secrets\README.md        # Konvention, eine Datei je Projekt
+```
+
+Rechte sind eng gesetzt (nur der Benutzer, Vererbung entfernt):
+
+```powershell
+icacls "C:\Users\jbeer\.secrets" /inheritance:r /grant:r "MATEBOOK-JULIAN\jbeer:(OI)(CI)F"
+```
+
+Lokal starten (Git Bash, aus `backend/`):
+
+```bash
+npx tsx watch --env-file="$HOME/.secrets/umstieg.env" src/server.ts
+```
+
+Produktion liest keine Datei – Fly gibt die Werte direkt als
+Umgebungsvariablen in den Container. Der Tresor ist die Quelle, Fly die Kopie.
+
+`backend/.env.example` ist reine Vorlage und bleibt leer. `.gitignore` sperrt
+`.env` und `.env.*` (mit Ausnahme von `.env.example`) – auch gegen den Fall,
+dass Notepad beim Speichern `.env.txt` daraus macht.
+
+### Alle APIs auf EINE Anwendung abonnieren
+
+Das Backend nutzt ein einziges Schluesselpaar fuer alle DB-Aufrufe
+(`dbAuthHeader()` in `clients/stations.ts`). Verteilt man die APIs auf mehrere
+Marketplace-Anwendungen, funktioniert genau eine und der Rest liefert 401
+`Cannot find valid subscription for the incoming API request`.
+
+Benoetigt: **RIS::Stations**, **Timetables**, **FaSta**.
+
+### Zwei Fallstricke, die je einen Abend gekostet haben
+
+1. **RIS::Stations verlangt einen Vendor-Media-Type.** Mit
+   `Accept: application/json` antwortet das Gateway **415**
+   `No acceptable representation`. Richtig ist
+   `Accept: application/vnd.de.db.ris+json` (siehe `clients/stations.ts`).
+   Die anderen APIs sind mit `application/json` zufrieden.
+2. **Die Basis-URL ist fuer alle APIs gleich aufgebaut:**
+   `https://apis.deutschebahn.com/db-api-marketplace/apis/<produkt>/<version>`.
+   RIS::Stations stand hier zunaechst faelschlich unter `/db/apis/...` und
+   lieferte deshalb dauerhaft 401.
+
+Beim Eintragen ausserdem auf **LF-Zeilenenden und keine Leerzeichen** achten –
+Notepad haengt beim Einfuegen gern eines an, das Zeichen wird Teil des
+Schluessels, und das Ergebnis ist ein stiller 401.
+
 ## Backend deployen (Fly.io)
 
 Einmalig:
 
 ```bash
 cd backend
-fly launch --no-deploy --name umstieg-backend --region fra   # liest fly.toml
+fly apps create umstieg-backend          # NICHT `fly launch`
 fly secrets set DB_CLIENT_ID=... DB_CLIENT_SECRET=...
 fly secrets set CORS_ORIGIN=https://<deine-vercel-domain>.vercel.app
 ```
 
+Bewusst `fly apps create` statt `fly launch`: `launch` will die fertige
+`fly.toml` neu schreiben. Der App-Name ist bei Fly weltweit eindeutig; ist er
+vergeben, anderen Namen waehlen und `app = "..."` in `fly.toml` anpassen.
+Docker wird lokal nicht gebraucht, Fly baut remote.
+
 Danach jedes Mal:
 
 ```bash
-cd backend && fly deploy
+cd backend && fly deploy --ha=false
 curl https://umstieg-backend.fly.dev/api/health     # {"status":"ok"}
 ```
+
+### Warum `--ha=false` nicht optional ist
 
 `fly.toml` setzt `min_machines_running = 1` und `auto_stop_machines = "off"`.
 Das ist Absicht: Eine schlafende Maschine verliert Poller, SSE-Verbindungen
 und Cache.
+
+`min_machines_running` ist aber eine **Unter-, keine Obergrenze**. Ohne
+`--ha=false` legt Fly beim Deploy zusaetzlich eine zweite Maschine fuer
+Hochverfuegbarkeit an – beim ersten Deploy am 28.08.2026 genau so passiert.
+Zwei Maschinen sind hier kein Gewinn, sondern der Fehler, den die Tabelle
+oben vermeiden will:
+
+| Zustand | Wirkung bei zwei Maschinen |
+|---|---|
+| Poller je EVA | **Zwei** Abrufe je Bahnhof statt einem – Konzeptkorrektur 1 ausgehebelt. |
+| Graph-Cache | Jede Maschine haelt einen eigenen. Doppelte Overpass-Last, halbierte Trefferquote – bei einem Gemeinschaftsdienst mit Fair-Use-Grenzen relevant. |
+| SSE | Unkritisch. Eine Verbindung bleibt auf ihrer Maschine, deren Poller speist sie. |
+
+Ein Korrektheitsfehler entsteht daraus nicht – `/api/route` ist je Anfrage
+zustandslos, ein SSE-Strom in sich konsistent. Es ist eine Verdopplung der
+Last auf zwei fremde Dienste.
+
+Der Preis der einen Maschine, bewusst akzeptiert: beim Deploy einige Sekunden
+Ausfall, und kein Failover, wenn die Maschine stirbt. Sollte das eines Tages
+stoeren, ist der Ausweg nicht eine zweite Maschine, sondern gemeinsamer
+Zustand (Redis o. ae.) fuer Poller und Cache.
+
+Nachtraeglich pruefen und aufraeumen:
+
+```bash
+fly machines list                 # es darf genau eine geben
+fly machines destroy <id> --force # zweite entfernen
+```
 
 ## Frontend deployen (Vercel)
 
