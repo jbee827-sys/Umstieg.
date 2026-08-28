@@ -1,0 +1,36 @@
+# Fly.io-Konfiguration fuer das Backend. Aus diesem Ordner deployen:
+#   cd backend && fly deploy
+
+app = "umstieg-backend"
+primary_region = "fra"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "3001"
+
+[http_service]
+  internal_port = 3001
+  force_https = true
+
+  # Die Maschine darf NICHT schlafen gelegt werden. Beim Herunterfahren
+  # sterben der EVA-Poller, alle offenen SSE-Verbindungen und der
+  # Graph-Cache – genau die drei Dinge, deretwegen das Backend ueberhaupt
+  # dauerhaft laeuft (siehe Dockerfile).
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "15s"
+    method = "GET"
+    path = "/api/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  # 512 MB, weil der LRU-Cache bis zu 100 OSM-Graphen im Speicher haelt.
+  memory = "512mb"
+  cpus = 1

@@ -1,3 +1,4 @@
+import { apiUrl } from './basis';
 import type { LiveEreignis } from './typen';
 
 export interface LiveOptionen {
@@ -26,7 +27,7 @@ export function verbindeLive({
   if (zugAn) parameter.set('zugAn', zugAn);
   if (zugAb) parameter.set('zugAb', zugAb);
   const anhang = parameter.toString() ? `?${parameter.toString()}` : '';
-  const quelle = new EventSource(`/api/live/${encodeURIComponent(eva)}${anhang}`);
+  const quelle = new EventSource(apiUrl(`/api/live/${encodeURIComponent(eva)}${anhang}`));
 
   let warSchonOffen = false;
   quelle.onopen = () => {
