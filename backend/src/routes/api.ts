@@ -104,7 +104,9 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
         const lon = Number(lonRoh);
         const gueltig =
           latRoh !== undefined &&
+          latRoh.trim() !== '' &&
           lonRoh !== undefined &&
+          lonRoh.trim() !== '' &&
           Number.isFinite(lat) &&
           Number.isFinite(lon) &&
           lat >= -90 &&

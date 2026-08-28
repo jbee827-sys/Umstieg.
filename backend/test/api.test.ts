@@ -304,6 +304,20 @@ describe('GET /api/stations mit Koordinaten', () => {
     expect(res.json().fehler).toBe('parameter-ungueltig');
   });
 
+  it('leere Koordinaten (?lat=&lon=) → 400 parameter-ungueltig', async () => {
+    const app = buildApp();
+    const res = await app.inject({ method: 'GET', url: '/api/stations?lat=&lon=' });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().fehler).toBe('parameter-ungueltig');
+  });
+
+  it('lon leer, lat gesetzt → 400 parameter-ungueltig', async () => {
+    const app = buildApp();
+    const res = await app.inject({ method: 'GET', url: '/api/stations?lat=52.5&lon=' });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().fehler).toBe('parameter-ungueltig');
+  });
+
   it('weder q noch Koordinaten → 400 parameter-fehlt', async () => {
     const app = buildApp();
     const res = await app.inject({ method: 'GET', url: '/api/stations' });
