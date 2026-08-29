@@ -4,6 +4,9 @@ import { holeRoute, RouteFehler } from './api/client'
 import { verbindeLive } from './api/sse'
 import type { BahnhofTreffer, LiveEreignis, RouteErgebnis } from './api/typen'
 import { Ampel } from './components/Ampel'
+import { Datenschutz } from './components/Datenschutz'
+import { Fusszeile } from './components/Fusszeile'
+import { Impressum } from './components/Impressum'
 import { Angekommen } from './components/Angekommen'
 import { Eingabe, type EingabeWerte } from './components/Eingabe'
 import { LiveBanner } from './components/LiveBanner'
@@ -101,6 +104,20 @@ function App() {
     setAnkunftVorschlag(ergebnis.vorschlagen)
   }, [ansicht, standort, route])
 
+  // Rechtsseiten ueber den URL-Hash, damit sie eine stabile, verlinkbare
+  // Adresse haben und der Zurueck-Knopf des Browsers funktioniert.
+  const [rechtsseite, setRechtsseite] = useState(() => window.location.hash.slice(1))
+  useEffect(() => {
+    const beiWechsel = () => setRechtsseite(window.location.hash.slice(1))
+    window.addEventListener('hashchange', beiWechsel)
+    return () => window.removeEventListener('hashchange', beiWechsel)
+  }, [])
+
+  function schliesseRechtsseite() {
+    window.history.replaceState('', '', window.location.pathname)
+    setRechtsseite('')
+  }
+
   const berechne = useCallback(async (eingabe: EingabeWerte) => {
     setLaden(true)
     setFehler(null)
@@ -153,6 +170,9 @@ function App() {
       },
     })
   }, [ansicht, werte, berechne])
+
+  if (rechtsseite === 'impressum') return <Impressum onZurueck={schliesseRechtsseite} />
+  if (rechtsseite === 'datenschutz') return <Datenschutz onZurueck={schliesseRechtsseite} />
 
   function bestaetigeAnkunft() {
     ankunft.current = { ...ankunft.current, bestaetigt: true }
@@ -243,6 +263,7 @@ function App() {
         >
           Neue Eingabe
         </button>
+        <Fusszeile />
       </main>
     )
   }
@@ -267,6 +288,7 @@ function App() {
       )}
       <hr className="trennlinie" />
       <Eingabe laden={laden} fehler={fehler} erkannt={erkannt} onBerechnen={berechne} />
+      <Fusszeile />
     </main>
   )
 }
