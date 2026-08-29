@@ -14,25 +14,30 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 28.08.2026, abends)
+## Hier weitermachen (Stand 29.08.2026)
 
 ```bash
 cd backend && npm test        # muss 126 von 126 grün sein
 cd backend && npm run lint    # tsc --noEmit, muss sauber sein
+cd frontend && npm test       # muss 22 von 22 grün sein
 cd frontend && npm run build  # muss grün sein
 ```
-
-Arbeitsbaum ist sauber, alles committet und auf `feat/mvp` gepusht.
 
 **Die App läuft in Produktion und rechnet echte Routen.** Deployment, DB-Zugang
 und die Verbindung Frontend↔Backend sind abgeschlossen und Ende-zu-Ende
 verifiziert – Einzelheiten im Abschnitt „Deployment-Stand". Der MVP steht bis
 einschließlich Task 16.
 
-**Nächster inhaltlicher Schritt: P1 Task 3** aus
-[`docs/superpowers/plans/2026-08-27-standort-und-navigation.md`](./docs/superpowers/plans/2026-08-27-standort-und-navigation.md)
-– Frontend-Testinfrastruktur (vitest), `schwellen.ts`, `distanz.ts`. Der Plan
-enthält für jeden Task den fertigen Code, den Befehl und das erwartete Ergebnis.
+**P1 (Standort & Live-Navigation) ist codeseitig fertig.** Die App fragt den
+Standort ab, belegt den Bahnhof vor, zeigt den Positionspunkt auf der Karte,
+schlägt die Ankunft vor und kennt den Zustand „Zug ist abgefahren". Tasks 1–11
+sind umgesetzt und maschinell geprüft.
+
+**Was fehlt, ist keine Zeile Code, sondern der Blick darauf:** Das Frontend ist
+bis heute **nie in einem Browser gelaufen** – weder der 390-px-Viewport noch
+die WebGL-Karte noch der Berechtigungsdialog. Nächster Schritt ist deshalb
+P1 Task 12 (Mobilabnahme, fünf Punkte im Plan) zusammen mit der ausstehenden
+Browser-Sichtprüfung. Beides braucht Handarbeit an einem echten Gerät.
 
 ## Offene ToDos
 
@@ -40,9 +45,9 @@ enthält für jeden Task den fertigen Code, den Befehl und das erwartete Ergebni
 
 | # | Aufgabe | Hintergrund |
 |---|---|---|
-| 1 | **`main` auf `feat/mvp` vorziehen** – steht 3 Commits zurück (`dda571f`) | `main` ist der Vercel-Produktionszweig; ein Push löst dort ein Produktions-Deployment aus. Das Frontend hat sich nicht geändert, es wäre ein folgenloser Rebuild. Bewusst offen gelassen. |
+| 1 | **`main` auf `feat/mvp` vorziehen** – steht 13 Commits zurück (`dda571f`) | `main` ist der Vercel-Produktionszweig; ein Push löst dort ein Produktions-Deployment aus. Das Frontend hat sich nicht geändert, es wäre ein folgenloser Rebuild. Bewusst offen gelassen. |
 | 2 | **FaSta-Adressierung schließen** | RIS::Stations liefert in der Antwort `stationID` (Berlin Hbf: `"1071"`) – genau die StaDa-Bahnhofsnummer, die FaSta erwartet. Der TODO in `clients/db-endpunkte.ts` lässt sich ohne zusätzliche API schließen: `stationID` in `StationsInfo` durchreichen statt die EVA zu senden. |
-| 3 | **Browser-Sichtprüfung nachholen** | Frontend ist bis heute nur typ- und buildgeprüft. Nie gesehen: 390-px-Viewport, WebGL-Karte, EventSource-Pfad im echten Browser. Jetzt möglich, weil die Produktion echte Daten liefert. |
+| 3 | **Browser-Sichtprüfung nachholen** ← *der wichtigste offene Punkt* | Frontend ist bis heute nur typ-, build- und unitgeprüft. Nie gesehen: 390-px-Viewport, WebGL-Karte, EventSource-Pfad, Standortdialog, Positionspunkt. Mit P1 hängt daran jetzt deutlich mehr als vorher. Versuch am 29.08. gescheitert: Claude-in-Chrome bekommt keine Tab-Gruppe (`No group with id`) – die Extension war nicht in Chrome verbunden. |
 | 4 | **3 Lint-Warnungen im Frontend** (`cd frontend && npm run lint`) | Stammen aus Task 13/15, bestanden schon vor P1. |
 | 5 | **Vercel: Framework-Preset steht auf „Services"** | Rückstand der `experimentalServices`-Erkennung beim `vercel link`. Die `vercel.json` überschreibt es, der Build ist nachweislich korrekt – kosmetisch, aber irreführend. Settings → Build & Deployment. |
 | 6 | **Vercel-Preview-Variable nur für `feat/mvp`** | `VITE_API_BASE` konnte nicht „für alle Preview-Zweige" gesetzt werden (CLI-Fehler in v53.1.0: der vorgeschlagene Befehl ist derselbe, der scheitert). Neue Zweige brauchen einen eigenen Eintrag oder das Dashboard. |
@@ -51,9 +56,9 @@ enthält für jeden Task den fertigen Code, den Befehl und das erwartete Ergebni
 
 | # | Aufgabe | Umfang |
 |---|---|---|
-| 7 | **P1 Tasks 3–12: Standort & Live-Navigation** | 10 von 12 Tasks offen, siehe Tabelle unten. Das ist der Grund, warum die App im Browser weder nach dem Standort fragt noch einen Ankunftsvorschlag macht – der Code existiert schlicht noch nicht. |
+| 7 | **P1 Task 12: Mobilabnahme** | Der Code steht (Tasks 1–11), geprüft ist er nur maschinell. Die fünf Punkte der Abnahme im Plan brauchen ein echtes Handy: Berechtigungsdialog, Wiederkehrer ohne Dialog, Vorbelegung am Bahnhof, schlechter Fix in der Unterführung, Ankunftsvorschlag am Zielgleis. Vorbereitet: `mkcert`-Zertifikate in `frontend/.cert/` schalten den Dev-Server auf HTTPS. |
 | 8 | **MVP-Task 17 abschließen** | `Dockerfile` steht. Offen: Degradationstests (jede Zeile der Konzept-Tabelle Abschnitt 8 als eigener Test) und Mobile-Feinschliff. |
-| 9 | **Fehlende Design-Screens** | Von 6 Screens sind Eingabe, Routenansicht und Karte gebaut. Offen: Störung/Gleiswechsel, Wagenreihung, Angekommen. |
+| 9 | **Fehlende Design-Screens** | Von 6 Screens sind Eingabe, Routenansicht, Karte und „Angekommen" (P1 Task 9) gebaut. Offen: Störung/Gleiswechsel und Wagenreihung als eigene Screens. |
 
 ### Später / bei Gelegenheit
 
@@ -70,16 +75,16 @@ enthält für jeden Task den fertigen Code, den Befehl und das erwartete Ergebni
 |---|---|
 | 1 – Backend-Umkreissuche im stations-Client | ✅ fertig, Review sauber (`e914b87`) |
 | 2 – `/api/stations` mit `lat`/`lon` | ✅ fertig, Review nachgeholt, Fehler behoben (`d6bc572`); **gegen die echte API verifiziert** (28.08.2026) |
-| 3 – Frontend-Testinfrastruktur, Schwellen, Haversine | ⬜ offen ← **hier einsteigen** |
-| 4 – Ankunfts-Zustandsmaschine + Zielermittlung | ⬜ offen |
-| 5 – Bahnhofserkennung mit Rundung | ⬜ offen |
-| 6 – `useStandort`-Hook | ⬜ offen |
-| 7 – Bahnhof in der Eingabe vorbelegen | ⬜ offen |
-| 8 – Positionspunkt + Genauigkeitskreis auf der Karte | ⬜ offen |
-| 9 – Ankunftsvorschlag + „Angekommen"-Screen | ⬜ offen |
-| 10 – Zustand „Zug ist abgefahren" | ⬜ offen |
-| 11 – HTTPS: mkcert + Caddyfile | ♻️ **gegenstandslos** – Fly.io und Vercel liefern HTTPS automatisch; nur für lokale WLAN-Handytests noch relevant |
-| 12 – Mobilabnahme + README | ⬜ offen |
+| 3 – Frontend-Testinfrastruktur, Schwellen, Haversine | ✅ fertig, 4 Tests (`6a5e534`) |
+| 4 – Ankunfts-Zustandsmaschine + Zielermittlung | ✅ fertig, 9 Tests (`8c225e8`) |
+| 5 – Bahnhofserkennung mit Rundung | ✅ fertig, 6 Tests (`e99840d`) |
+| 6 – `useStandort`-Hook | ✅ fertig, bewusst ohne Unit-Tests (`6e2d820`) |
+| 7 – Bahnhof in der Eingabe vorbelegen | ✅ fertig, gegen den Fixture-Modus geprüft (`fe9e9a6`) |
+| 8 – Positionspunkt + Genauigkeitskreis auf der Karte | ✅ fertig, 3 Tests (`60784a8`) |
+| 9 – Ankunftsvorschlag + „Angekommen"-Screen | ✅ fertig (`60a9ead`) |
+| 10 – Zustand „Zug ist abgefahren" | ✅ fertig (`5183298`) |
+| 11 – HTTPS | ✅ **gekürzt umgesetzt** (`20700dd`): Dev-Server schaltet auf HTTPS, sobald `frontend/.cert/` Zertifikate enthält. Das `Caddyfile` entfällt – Fly.io und Vercel terminieren TLS selbst |
+| 12 – Mobilabnahme + README | 🔶 README nachgezogen, **Abnahme am Gerät offen** |
 
 **Zwei Entscheidungen aus der Vorflug-Prüfung, die für Reviews gelten:**
 
@@ -217,11 +222,11 @@ Teil des Schlüssels, und das Ergebnis ist ein stiller 401. Genau so passiert.
 | Task 15 – Live-Tafeln, Zugauswahl, Wagenreihung, farbige Ampel | ✅ fertig (Timetables-XML + ist-wr-JSON, hinter Env-Guard bzw. öffentlich) |
 | Task 16 – SSE-Überwachung, FaSta | ✅ fertig, 112 Tests grün |
 | Task 17 – Degradationstests, Docker, Mobile-Feinschliff | 🔶 `Dockerfile` steht und läuft in Produktion (28.08.2026); `docker-compose.yml`/Caddy entfallen; Degradationstests und Mobile-Feinschliff offen |
-| P1 – Standort & Live-Navigation (12 Tasks) | 🔶 Tasks 1–2 fertig und gegen die echte API verifiziert, 3–12 offen (Tabelle oben) |
+| P1 – Standort & Live-Navigation (12 Tasks) | 🔶 Tasks 1–11 fertig, 22 Frontend-Tests grün; Task 12 (Mobilabnahme am Gerät) offen (Tabelle oben) |
 
-**Tests:** `cd backend && npm test` → **126 von 126 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm run build` grün; `npm run lint` meldet 3 Warnungen, die alle aus Task 13/15 stammen und vor P1 schon bestanden.
+**Tests:** `cd backend && npm test` → **126 von 126 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm test` → **22 von 22 grün** (Testinfrastruktur seit P1 Task 3), `npm run build` grün; `npm run lint` meldet 4 Warnungen – drei aus Task 13/15, die vierte aus der Vorbelegung in `Eingabe.tsx` (dasselbe `set-state-in-effect`-Muster wie die beiden bestehenden in derselben Datei).
 
-**Nicht maschinell geprüft:** Die Frontend-SSE-Anbindung (`api/sse.ts`, `LiveBanner`) ist nur über TypeScript und Build abgesichert – das Frontend hat noch keine Testinfrastruktur. Der SSE-Endpunkt selbst wird dagegen in `test/live.test.ts` gegen einen echten HTTP-Server geprüft.
+**Nicht maschinell geprüft:** Die Frontend-SSE-Anbindung (`api/sse.ts`, `LiveBanner`) und `useStandort.ts` sind nur über TypeScript und Build abgesichert – beide enthalten keine reine Logik, sondern sprechen Browser-APIs an. Der SSE-Endpunkt selbst wird dagegen in `test/live.test.ts` gegen einen echten HTTP-Server geprüft; `useStandort` gehört in die Mobilabnahme.
 
 ## Was Ende-zu-Ende funktioniert
 
@@ -239,7 +244,7 @@ Wichtigste Erkenntnis aus dem Spike: **74 % Stufe 1** – Indoor-Routing über O
 
 - `GET /api/health` → `{ status: 'ok' }`
 - `GET /api/board/:eva?type=arr|dep` → `TafelEintrag[]` (`{ zug, zeitSoll, zeitIst?, gleisSoll, gleisIst?, ziel }`; Soll aus `/plan`, Änderungen aus `/fchg` zusammengeführt). Ohne Schlüssel: **503**.
-- `GET /api/stations?q=<Suchtext>` **oder** `?lat=&lon=` → `BahnhofTreffer[]` (`{ name, eva, lat, lon }`). Die Koordinatenvariante (P1 Task 2) sucht im Umkreis von 1000 m; der Radius ist bewusst eine Serverentscheidung und steht in `routes/api.ts`. `q` und `lat`/`lon` schließen sich aus → **400** `parameter-ungueltig`; das gilt auch für eine einzelne Koordinate oder Werte außerhalb −90…90 bzw. −180…180. Weder noch → **400** `parameter-fehlt`. Ohne `DB_CLIENT_ID`/`DB_CLIENT_SECRET`: **503** `{ fehler: 'db-zugang-fehlt' }`.
+- `GET /api/stations?q=<Suchtext>` **oder** `?lat=&lon=` → `BahnhofTreffer[]` (`{ name, eva, lat, lon }`). Die Koordinatenvariante (P1 Task 2) sucht im Umkreis von 1000 m; der Radius ist bewusst eine Serverentscheidung und steht in `routes/api.ts`. Die Werte sind bereits im Browser auf 3 Nachkommastellen (~110 m) gerundet – Rohkoordinaten verlassen das Gerät nie (`standort/bahnhofErkennung.ts`). `q` und `lat`/`lon` schließen sich aus → **400** `parameter-ungueltig`; das gilt auch für eine einzelne Koordinate oder Werte außerhalb −90…90 bzw. −180…180. Weder noch → **400** `parameter-fehlt`. Ohne `DB_CLIENT_ID`/`DB_CLIENT_SECRET`: **503** `{ fehler: 'db-zugang-fehlt' }`.
 - `GET /api/live/:eva?zugAn=&zugAb=` → **SSE-Strom** mit den Ereignissen `gleiswechsel`, `verspaetung`, `heartbeat` (Payload `{ typ, zug?, alt?, neu?, zeitstempel }`). Gepollt wird **einmal je EVA**, unabhängig von der Zahl der Zuschauer; die Zugparameter filtern nur die Zustellung. Verbindungsabbruch meldet den Abonnenten ab, der letzte Abmelder stoppt den Poller.
 - `GET /api/route?eva=&gleisAn=&gleisAb=&zugAn?=&wagen?=&abschnitt?=&profil?=&variante?=` → `RouteErgebnis` (`zugAn`+`wagen` → Wagenreihung bestimmt den Start-Abschnitt; keine Daten → Bahnsteigmitte mit Hinweis):
   - `profil`: `zuegig | normal | langsam` (Default `normal`) · `variante`: `schnellste | einfachste | barrierefrei` (Default `schnellste`)
@@ -276,7 +281,22 @@ npx tsx watch --env-file="$HOME/.secrets/umstieg.env" src/server.ts
 
 `npm run dev` allein lädt **keine** `.env` – es gibt weder `dotenv` noch `--env-file` in den Skripten. Ohne die Variablen läuft das Backend im degradierten Modus.
 
-**Dev ohne DB-Zugang:** `FIXTURE_EVA=berlin npm run dev` (im Backend) → `/api/route` läuft gegen das Berlin-Hbf-Fixture (EVA 8011160, z. B. Gleis 6 → 14), `/api/stations` liefert einen festen Treffer. Keine externen Aufrufe.
+**Dev ohne DB-Zugang:** `FIXTURE_EVA=berlin npm run dev` (im Backend) → `/api/route` läuft gegen das Berlin-Hbf-Fixture (EVA 8011160, z. B. Gleis 6 → 14), `/api/stations` liefert einen festen Treffer – für die Namens- **und** die Umkreissuche. Keine externen Aufrufe.
+
+**HTTPS in der Entwicklung (für Standorttests am Handy):** `navigator.geolocation`
+liefert außerhalb von `localhost` nur in einem sicheren Kontext etwas. Liegen
+Zertifikate in `frontend/.cert/`, schaltet Vite von selbst auf HTTPS um:
+
+```bash
+cd frontend
+mkcert -install
+mkcert -key-file .cert/key.pem -cert-file .cert/cert.pem localhost <LAN-IP>
+```
+
+Die LAN-IP steht in `ipconfig`; ohne sie ist der Rechner vom Handy aus nicht
+erreichbar. Fehlt `mkcert`: `winget install FiloSottile.mkcert`. Ohne
+Zertifikate läuft der Dev-Server unverändert über HTTP – die Standortfunktionen
+sind dann nur auf `localhost` verfügbar. `.cert/` ist gitignored.
 
 ## Deployment
 
@@ -325,15 +345,52 @@ Offen bleiben: **Degradationstests** (jede Zeile der Konzept-Tabelle Abschnitt 8
 
 **Unabhängig davon offen:** Spike-Nachlauf für die fehlenden 13 Bahnhöfe, sobald Overpass wieder stabil antwortet (`npx tsx scripts/spike-datenrealitaet.ts`, gecacht – fragt nur die fehlenden ab).
 
+## Standort & Live-Navigation (P1, Code fertig – Abnahme offen)
+
+Was der Code tut, wenn die Standortfreigabe erteilt ist:
+
+- **Bahnhof vorbelegen:** Der Standort wird genau einmal je Sitzung in einen
+  Bahnhof aufgelöst. Genau ein Treffer im Umkreis → Vorbelegung; mehrere →
+  Auswahlliste, weil ein geratener Wert bei Bahnhöfen an einem gemeinsamen
+  Vorplatz schlechter ist als eine Frage. Ein Tastendruck im Bahnhofsfeld
+  verdrängt die Erkennung dauerhaft.
+- **Rohkoordinaten verlassen das Gerät nie.** Gerundet wird im Browser auf
+  3 Nachkommastellen (~110 m) – genug zur Bahnhofszuordnung, zu grob für ein
+  Bewegungsprofil. Kein `localStorage`, keine Cookies, kein Koordinaten-Logging.
+- **Positionspunkt auf der Karte** mit Genauigkeitskreis als berechnetes
+  Polygon (echte Meter, zoomfest – anders als MapLibres `circle-radius`). GPS
+  kennt kein Stockwerk, deshalb liegt der Punkt auf einer eigenen Quelle und
+  ist auf allen Ebenen sichtbar.
+- **Ein Fix schlechter als 100 m wird nicht gezeichnet**, sondern begründet
+  ausgeblendet. Ein Punkt 200 m daneben ist in einem 400-m-Bahnhof aktiv
+  schädlich. Der Ankunftszähler pausiert dabei, ohne zurückgesetzt zu werden.
+- **Ankunft wird vorgeschlagen, nie erzwungen.** 40 m Radius, 15 s Verweildauer,
+  dann die Frage „Bist du an Gleis X angekommen?". Verglichen wird horizontale
+  Distanz – wer in der Unterführung unter dem Zielbahnsteig hindurchgeht, ist
+  horizontal am Ziel und eine Etage zu tief. Stufe-3-Routen bekommen gar keine
+  Erkennung, nur einen manuellen Knopf: Deren Koordinaten sind konstruiert.
+- **Nach der Abfahrtszeit** (plus 1 min Kulanz) trifft die Ampel keine Aussage
+  mehr, statt dauerhaft rot zu leuchten.
+
+**Ungeprüft ist all das im Browser.** Verifiziert sind die reinen Funktionen
+über 22 Unit-Tests und die Serverseite gegen den Fixture-Modus. Der
+Berechtigungsdialog, der Positionspunkt und die Ankunftserkennung am Gleis
+brauchen die Mobilabnahme (Task 12).
+
 ## Bekannte Einschränkungen
 
 Die Arbeitsliste steht oben unter [„Offene ToDos"](#offene-todos). Hier nur,
 was dauerhaft gilt oder bewusst so ist:
 
-- **Frontend ohne Testinfrastruktur.** Es gibt keine Frontend-Tests; die
-  SSE-Anbindung (`api/sse.ts`, `LiveBanner`) ist nur über TypeScript und Build
-  abgesichert. Vitest kommt mit P1 Task 3. Der SSE-**Endpunkt** wird dagegen in
-  `test/live.test.ts` gegen einen echten HTTP-Server geprüft.
+- **Frontend nie im Browser gesehen.** Die 22 Frontend-Tests decken reine
+  Funktionen ab (Distanz, Ankunftslogik, Rundung). Was ein Browser tut –
+  Layout auf 390 px, WebGL-Karte, EventSource, Standortdialog – ist bis heute
+  ungeprüft. Das ist die grösste offene Lücke des Projekts, nicht eine
+  Formalie.
+- **Browser-API-Dateien ohne Unit-Tests.** `api/sse.ts`, `LiveBanner` und
+  `standort/useStandort.ts` sind nur über TypeScript und Build abgesichert –
+  bewusst, sie enthalten keine Entscheidungslogik. Der SSE-**Endpunkt** wird
+  dagegen in `test/live.test.ts` gegen einen echten HTTP-Server geprüft.
 - **FaSta- und Wagenreihungs-Fixtures sind weiterhin handgebaut**
   (`backend/test/fixtures/db/*`, jeweils mit Hinweis im Kopf). RIS::Stations und
   Timetables sind inzwischen gegen echte Antworten verifiziert, diese beiden
