@@ -96,3 +96,40 @@ describe('gleicherBahnsteigErgebnis', () => {
     expect(ergebnis.stufe).toBe(3);
   });
 });
+
+describe('Verankerung des Synthesemodells', () => {
+  // Die Gleisliste aus RIS::Stations traegt NIE Koordinaten - platforms/{eva}
+  // liefert nur Namen. Ohne Verankerung an der Stationsposition landete jede
+  // Stufe-3-Route bei 51 N / 10 O, einem Acker in Mitteldeutschland, und die
+  // Karte zeigte echte OSM-Kacheln von dort.
+  const berlinHbf: StationsInfo = {
+    eva: '8098160',
+    name: 'Berlin Hbf (tief)',
+    lat: 52.525592,
+    lon: 13.369545,
+    gleise: [{ gleis: '5' }, { gleis: '6' }, { gleis: '7' }, { gleis: '8' }],
+  };
+
+  it('legt die Knoten an die Stationsposition, nicht auf den Nullpunkt', () => {
+    const graph = syntheseGraph(berlinHbf);
+    for (const knoten of graph.knoten.values()) {
+      expect(knoten.lat).toBeCloseTo(52.5256, 2);
+      expect(knoten.lon).toBeCloseTo(13.3695, 2);
+    }
+  });
+
+  it('haelt die Bahnsteige im Standardabstand auseinander', () => {
+    const graph = syntheseGraph(berlinHbf);
+    const laengen = [...graph.knoten.values()].map((k) => k.lon);
+    // Vier Bahnsteige a 15 m ≈ 45 m Spanne – nicht alles auf einem Punkt.
+    expect(Math.max(...laengen)).toBeGreaterThan(Math.min(...laengen));
+  });
+
+  it('faellt ohne Stationsposition auf den bisherigen Nullpunkt zurueck', () => {
+    const ohneOrt: StationsInfo = { eva: '8000001', name: 'Ohne Ort', gleise: [{ gleis: '1' }] };
+    const graph = syntheseGraph(ohneOrt);
+    const erster = [...graph.knoten.values()][0];
+    expect(erster.lat).toBeCloseTo(51, 5);
+    expect(erster.lon).toBeCloseTo(10, 3);
+  });
+});
