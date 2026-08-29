@@ -45,10 +45,34 @@ interface StopPlace {
   position?: { latitude?: number; longitude?: number };
 }
 
+/**
+ * Gueltige EVA-Nummer einer deutschen Eisenbahn-Verkehrsstelle:
+ * genau sieben Ziffern, beginnend mit dem UIC-Laendercode 80.
+ *
+ * RIS::Stations liefert in derselben Antwort auch Kennungen aus anderen
+ * Nummernraeumen - sechsstellige Nahverkehrs-IDs (z. B. 730749 fuer
+ * "Berlin Hauptbahnhof (S+U)") und IFOPT-Kennungen der Form
+ * "de:11000:900003201:1:50". Timetables und die Gleisliste kennen sie
+ * nicht: /api/board quittiert sie mit HTTP 500, /api/route findet kein
+ * Gleis. Sie gehoeren deshalb nicht in die Trefferliste, denn alles, was
+ * dort steht, muss antippbar sein.
+ *
+ * Auslaendische Verkehrsstellen (81 Oesterreich, 85 Schweiz, ...) fallen
+ * bewusst mit heraus - Timetables deckt nur Deutschland ab.
+ *
+ * ABSICHTLICH ENG: Umstiege zu Bus, Tram, S- und U-Bahn brauchen spaeter
+ * genau diese anderen Nummernraeume. Dann wird hier nicht gelockert,
+ * sondern der Treffer bekommt eine Verkehrsart, und die Route entscheidet
+ * anhand dieser, welche Schnittstelle sie befragt.
+ */
+export function istGueltigeEva(eva: string): boolean {
+  return /^80\d{5}$/.test(eva);
+}
+
 /** Beide Suchvarianten liefern dieselbe stopPlaces-Huelle. */
 function zuTreffern(body: { stopPlaces?: StopPlace[] }): BahnhofTreffer[] {
   return (body.stopPlaces ?? [])
-    .filter((sp) => sp.evaNumber && sp.names?.DE?.nameLong)
+    .filter((sp) => sp.evaNumber && sp.names?.DE?.nameLong && istGueltigeEva(sp.evaNumber))
     .map((sp) => ({
       name: sp.names!.DE!.nameLong!,
       eva: sp.evaNumber!,

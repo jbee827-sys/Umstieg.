@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { erzeugeCache, GRAPH_TTL_MS } from '../cache/lru.js';
-import { FehlendeZugangsdatenError } from '../clients/stations.js';
+import { FehlendeZugangsdatenError, istGueltigeEva } from '../clients/stations.js';
 import { gehzeitSekunden } from '../core/gehzeit.js';
 import { baueGraph, graphZuGeoJSON, kopiereGraph } from '../core/graph.js';
 import { klassifiziere } from '../core/klassifikation.js';
@@ -132,6 +132,13 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
   app.get<{ Params: { eva: string }; Querystring: { type?: string } }>(
     '/api/board/:eva',
     async (req, reply) => {
+      // Kennungen aus fremden Nummernraeumen (Nahverkehr, IFOPT) kennt
+      // Timetables nicht - ungeprueft endete das in einem HTTP 500.
+      if (!istGueltigeEva(req.params.eva)) {
+        return reply
+          .code(400)
+          .send({ fehler: 'parameter-ungueltig', detail: 'eva ist keine gueltige EVA-Nummer' });
+      }
       const typ = req.query.type;
       if (typ !== 'arr' && typ !== 'dep') {
         return reply
@@ -157,6 +164,11 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
       return reply
         .code(400)
         .send({ fehler: 'parameter-fehlt', detail: 'eva, gleisAn und gleisAb sind erforderlich' });
+    }
+    if (!istGueltigeEva(eva)) {
+      return reply
+        .code(400)
+        .send({ fehler: 'parameter-ungueltig', detail: 'eva ist keine gueltige EVA-Nummer' });
     }
     if (!GEHPROFILE.includes(profil) || !VARIANTEN.includes(variante)) {
       return reply.code(400).send({ fehler: 'parameter-ungueltig' });
