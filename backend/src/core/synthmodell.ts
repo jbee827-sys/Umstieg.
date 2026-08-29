@@ -18,6 +18,8 @@ const TREPPE_LAENGE_M = 10;
 const AUFZUG_LAENGE_M = 5;
 const NACHBARGLEIS_LAENGE_M = 5;
 const GRUPPIER_SCHWELLE_M = 10; // Gleise näher beieinander → selber Bahnsteig
+// Notnagel, wenn die Stationsdaten keine Position tragen: geografische Mitte
+// Deutschlands. Der Regelfall ist die echte Stationsposition – siehe unten.
 const BASIS_LAT = 51.0;
 const BASIS_LON = 10.0;
 
@@ -28,7 +30,17 @@ interface SynthBahnsteig {
   lon: number;
 }
 
-/** Gleise zu physischen Bahnsteigen gruppieren (gleiche/nahe Koordinaten). */
+/**
+ * Gleise zu physischen Bahnsteigen gruppieren (gleiche/nahe Koordinaten).
+ *
+ * Verankert wird an der ECHTEN Stationsposition. Die Gleisliste aus
+ * RIS::Stations (`platforms/{eva}`) traegt nie Koordinaten – sie liefert nur
+ * Namen. Ohne Verankerung landete deshalb jede Stufe-3-Route bei 51 N / 10 O,
+ * und weil das Frontend die Karte zeigt, sobald `karte` vorhanden ist, sah der
+ * Nutzer echte OSM-Kacheln von einem Acker in Mitteldeutschland – mit allem
+ * Anschein von Genauigkeit. Die relativen Abstaende bleiben unveraendert
+ * geschaetzt („ca."-Angaben); richtig ist nur, WO der Bahnhof liegt.
+ */
 function gruppiereBahnsteige(info: StationsInfo): SynthBahnsteig[] {
   const bahnsteige: SynthBahnsteig[] = [];
   for (const eintrag of info.gleise) {
@@ -50,12 +62,15 @@ function gruppiereBahnsteige(info: StationsInfo): SynthBahnsteig[] {
       lon: eintrag.lon ?? NaN,
     });
   }
-  // Bahnsteige ohne Koordinaten bekommen synthetische Positionen im Standardabstand.
-  const mProGradLon = 111320 * Math.cos((BASIS_LAT * Math.PI) / 180);
+  // Bahnsteige ohne Koordinaten bekommen synthetische Positionen im
+  // Standardabstand – ausgehend von der Stationsposition, sofern bekannt.
+  const ankerLat = info.lat ?? BASIS_LAT;
+  const ankerLon = info.lon ?? BASIS_LON;
+  const mProGradLon = 111320 * Math.cos((ankerLat * Math.PI) / 180);
   bahnsteige.forEach((b, i) => {
     if (Number.isNaN(b.lat)) {
-      b.lat = BASIS_LAT;
-      b.lon = BASIS_LON + (i * BAHNSTEIG_ABSTAND_M) / mProGradLon;
+      b.lat = ankerLat;
+      b.lon = ankerLon + (i * BAHNSTEIG_ABSTAND_M) / mProGradLon;
     }
   });
   return bahnsteige.sort((a, b) => a.lon - b.lon || a.lat - b.lat);
