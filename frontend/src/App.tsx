@@ -4,9 +4,12 @@ import { holeRoute, RouteFehler } from './api/client'
 import { verbindeLive } from './api/sse'
 import type { BahnhofTreffer, LiveEreignis, RouteErgebnis } from './api/typen'
 import { Ampel } from './components/Ampel'
+import { Angekommen } from './components/Angekommen'
 import { Eingabe, type EingabeWerte } from './components/Eingabe'
 import { LiveBanner } from './components/LiveBanner'
 import { Schrittliste } from './components/Schrittliste'
+import { StandortStreifen } from './components/StandortStreifen'
+import { ANKUNFT_START, pruefeAnkunft, zielKoordinate } from './standort/ankunft'
 import { erkenneBahnhof } from './standort/bahnhofErkennung'
 import { useStandort } from './standort/useStandort'
 
@@ -46,7 +49,7 @@ function ampelFarbe(restSek: number, gehzeitSek: number): 'gruen' | 'gelb' | 'ro
 }
 
 function App() {
-  const [ansicht, setAnsicht] = useState<'eingabe' | 'route'>('eingabe')
+  const [ansicht, setAnsicht] = useState<'eingabe' | 'route' | 'angekommen'>('eingabe')
   // Route bleibt nach Berechnung vollständig im Speicher – die Anzeige
   // funktioniert auch, wenn die Verbindung im Bahnhof abreißt (Konzept).
   const [route, setRoute] = useState<RouteErgebnis | null>(null)
@@ -82,6 +85,20 @@ function App() {
     starteVerfolgung()
     return stoppeVerfolgung
   }, [ansicht, starteVerfolgung, stoppeVerfolgung])
+
+  const ankunft = useRef(ANKUNFT_START)
+  const [ankunftVorschlag, setAnkunftVorschlag] = useState(false)
+
+  useEffect(() => {
+    if (ansicht !== 'route' || !standort || !route) return
+    const ziel = zielKoordinate(route)
+    // Stufe 3 und fehlender Zielmarker liefern null – dann bleibt nur der
+    // manuelle Knopf, eine Pruefung gegen konstruierte Koordinaten waere sinnlos.
+    if (!ziel) return
+    const ergebnis = pruefeAnkunft(ankunft.current, standort, ziel, Date.now())
+    ankunft.current = ergebnis.zustand
+    setAnkunftVorschlag(ergebnis.vorschlagen)
+  }, [ansicht, standort, route])
 
   const berechne = useCallback(async (eingabe: EingabeWerte) => {
     setLaden(true)
@@ -136,6 +153,25 @@ function App() {
     })
   }, [ansicht, werte, berechne])
 
+  function bestaetigeAnkunft() {
+    ankunft.current = { ...ankunft.current, bestaetigt: true }
+    setAnkunftVorschlag(false)
+    stoppeVerfolgung()
+    setAnsicht('angekommen')
+  }
+
+  if (ansicht === 'angekommen' && werte) {
+    return (
+      <Angekommen
+        gleis={werte.gleisAb}
+        onNeu={() => {
+          ankunft.current = ANKUNFT_START
+          setAnsicht('eingabe')
+        }}
+      />
+    )
+  }
+
   if (ansicht === 'route' && route && werte) {
     const restSek = werte.abfahrtZeit
       ? (heuteUm(werte.abfahrtZeit).getTime() - Date.now()) / 1000
@@ -164,6 +200,14 @@ function App() {
         )}
         <hr className="trennlinie" />
         <Schrittliste schritte={route.schritte} />
+        {ankunftVorschlag && (
+          <StandortStreifen gleis={werte.gleisAb} onBestaetigen={bestaetigeAnkunft} />
+        )}
+        {!zielKoordinate(route) && (
+          <button type="button" className="knopf-sekundaer" onClick={bestaetigeAnkunft}>
+            Ich bin da
+          </button>
+        )}
         {route.karte && (
           <Suspense fallback={<div className="lade-hinweis">Karte wird geladen …</div>}>
             <Karte karte={route.karte} standort={standort} />
