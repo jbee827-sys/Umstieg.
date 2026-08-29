@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# mkcert-Zertifikate fuer HTTPS in der Entwicklung – nie ins Repo
+.cert/
