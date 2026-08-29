@@ -10,6 +10,7 @@ import { LiveBanner } from './components/LiveBanner'
 import { Schrittliste } from './components/Schrittliste'
 import { StandortStreifen } from './components/StandortStreifen'
 import { ANKUNFT_START, pruefeAnkunft, zielKoordinate } from './standort/ankunft'
+import { ABGEFAHREN_KULANZ_MS } from './standort/schwellen'
 import { erkenneBahnhof } from './standort/bahnhofErkennung'
 import { useStandort } from './standort/useStandort'
 
@@ -176,10 +177,22 @@ function App() {
     const restSek = werte.abfahrtZeit
       ? (heuteUm(werte.abfahrtZeit).getTime() - Date.now()) / 1000
       : undefined
-    const farbe = restSek === undefined ? null : ampelFarbe(restSek, route.gehzeitSek)
+    const abgefahren = restSek !== undefined && restSek * 1000 < -ABGEFAHREN_KULANZ_MS
+    const farbe = restSek === undefined || abgefahren ? null : ampelFarbe(restSek, route.gehzeitSek)
     return (
       <main className="app">
-        <Ampel farbe={farbe} gehzeitSek={route.gehzeitSek} restSek={restSek} />
+        <Ampel
+          farbe={farbe}
+          gehzeitSek={route.gehzeitSek}
+          restSek={restSek}
+          abgefahren={abgefahren}
+        />
+        {abgefahren && (
+          <div className="hinweis-box" role="status">
+            Der Zug ist abgefahren. Eine Alternativsuche gehört nicht zum Funktionsumfang – such
+            den nächsten Anschluss bitte im Fahrplan.
+          </div>
+        )}
         {liveEreignis && (
           <LiveBanner ereignis={liveEreignis} onSchliessen={() => setLiveEreignis(null)} />
         )}

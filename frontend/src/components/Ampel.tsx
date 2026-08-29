@@ -6,6 +6,8 @@ interface AmpelProps {
   gehzeitSek: number
   /** verbleibende Sekunden bis zur Abfahrt (nur mit Zugauswahl) */
   restSek?: number
+  /** Abfahrtszeit ist verstrichen – die Ampel trifft keine Aussage mehr. */
+  abgefahren?: boolean
 }
 
 const STATUS_TEXT: Record<Ampelfarbe, string> = {
@@ -28,7 +30,7 @@ function restText(sek: number): string {
 
 // Ampel relativ zur Gehzeit (Konzeptkorrektur 4). Ohne Zugauswahl gibt es
 // keine Abfahrtszeit → grau "ohne Live-Daten", nur die Gehzeit wird gezeigt.
-export function Ampel({ farbe, gehzeitSek, restSek }: AmpelProps) {
+export function Ampel({ farbe, gehzeitSek, restSek, abgefahren }: AmpelProps) {
   return (
     <div className="ampel-leiste" role="status">
       <div className="ampel-lampen" aria-hidden="true">
@@ -38,12 +40,14 @@ export function Ampel({ farbe, gehzeitSek, restSek }: AmpelProps) {
       </div>
       <div className="ampel-text">
         <div className={`ampel-status${farbe === null ? ' grau' : ''}`}>
-          {farbe === null ? 'Ohne Live-Daten' : STATUS_TEXT[farbe]}
+          {farbe !== null ? STATUS_TEXT[farbe] : abgefahren ? 'Zug abgefahren' : 'Ohne Live-Daten'}
         </div>
         <div className="ampel-untertitel">
-          {farbe === null || restSek === undefined
-            ? `${gehzeitText(gehzeitSek)} · Zugauswahl für die Ampel nötig`
-            : `${restText(restSek)} · ${gehzeitText(gehzeitSek)}`}
+          {abgefahren
+            ? gehzeitText(gehzeitSek)
+            : farbe === null || restSek === undefined
+              ? `${gehzeitText(gehzeitSek)} · Zugauswahl für die Ampel nötig`
+              : `${restText(restSek)} · ${gehzeitText(gehzeitSek)}`}
         </div>
       </div>
     </div>
