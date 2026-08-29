@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { LngLatBounds, Map as MapLibreMap, type GeoJSONSource } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import { genauigkeitsPolygon } from '../standort/distanz'
+import { GENAUIGKEIT_MAX_M } from '../standort/schwellen'
+import type { Standort } from '../standort/typen'
 
 interface GeoFeature {
   type: 'Feature'
@@ -16,6 +19,8 @@ interface FeatureCollection {
 interface KarteProps {
   /** GeoJSON-FeatureCollections je Ebene (Schlüssel = level), aus /api/route */
   karte: Record<string, unknown>
+  /** Aktueller Geraetestandort; null = keiner verfuegbar. */
+  standort?: Standort | null
 }
 
 const LEER: FeatureCollection = { type: 'FeatureCollection', features: [] }
@@ -44,7 +49,7 @@ function alleKoordinaten(sammlung: FeatureCollection): [number, number][] {
 
 // Einklappbare Karte (Text vor Karte, Konzept): MapLibre über OSM-Rasterkacheln
 // mit ODbL-Attribution, Routenlinie + Start-/Zielmarker je Ebene, Umschalter.
-export function Karte({ karte }: KarteProps) {
+export function Karte({ karte, standort }: KarteProps) {
   const [offen, setOffen] = useState(false)
   const ebenen = useMemo(
     () => Object.keys(karte).sort((a, b) => Number(a) - Number(b)),
@@ -55,6 +60,32 @@ export function Karte({ karte }: KarteProps) {
   const mapRef = useRef<MapLibreMap | null>(null)
 
   const daten = (e: string): FeatureCollection => (karte[e] as FeatureCollection) ?? LEER
+
+  // GPS kennt kein Stockwerk – der Punkt wird deshalb KEINER Ebene zugeordnet
+  // und ist auf allen Ebenen sichtbar. Zu ungenaue Fixes werden verworfen:
+  // ein Punkt 200 m daneben ist in einem 400-m-Bahnhof aktiv schaedlich.
+  const brauchbar = standort != null && standort.genauigkeitM <= GENAUIGKEIT_MAX_M
+  const positionsDaten = (): FeatureCollection =>
+    brauchbar && standort
+      ? {
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              geometry: {
+                type: 'Polygon',
+                coordinates: [genauigkeitsPolygon(standort.lat, standort.lon, standort.genauigkeitM)],
+              },
+              properties: {},
+            } as unknown as GeoFeature,
+            {
+              type: 'Feature',
+              geometry: { type: 'Point', coordinates: [standort.lon, standort.lat] },
+              properties: { rolle: 'standort' },
+            },
+          ],
+        }
+      : LEER
 
   useEffect(() => {
     if (!offen || !behaelter.current) return
@@ -106,6 +137,27 @@ export function Karte({ karte }: KarteProps) {
         },
       })
 
+      map.addSource('position', { type: 'geojson', data: positionsDaten() })
+      map.addLayer({
+        id: 'position-kreis',
+        type: 'fill',
+        source: 'position',
+        filter: ['==', ['geometry-type'], 'Polygon'],
+        paint: { 'fill-color': '#2f6fd0', 'fill-opacity': 0.15 },
+      })
+      map.addLayer({
+        id: 'position-punkt',
+        type: 'circle',
+        source: 'position',
+        filter: ['==', ['geometry-type'], 'Point'],
+        paint: {
+          'circle-radius': 7,
+          'circle-color': '#2f6fd0',
+          'circle-stroke-width': 3,
+          'circle-stroke-color': '#f8f4f4',
+        },
+      })
+
       // Auf die gesamte Route zoomen (alle Ebenen, damit der Kontext stimmt)
       const punkte = ebenen.flatMap((e) => alleKoordinaten(daten(e)))
       if (punkte.length > 0) {
@@ -131,6 +183,12 @@ export function Karte({ karte }: KarteProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- nur auf Ebenenwechsel reagieren
   }, [ebene])
 
+  useEffect(() => {
+    const quelle = mapRef.current?.getSource('position') as GeoJSONSource | undefined
+    quelle?.setData(positionsDaten())
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- nur auf Standortwechsel reagieren
+  }, [standort])
+
   if (ebenen.length === 0) return null
 
   return (
@@ -145,6 +203,14 @@ export function Karte({ karte }: KarteProps) {
       </button>
       {offen && (
         <div className="karte-rahmen">
+          {standort && !brauchbar && (
+            <div className="hinweis-box">
+              Standort zu ungenau (± {Math.round(standort.genauigkeitM)} m) – Punkt ausgeblendet.
+            </div>
+          )}
+          {brauchbar && (
+            <div className="hinweis-box">Blauer Punkt: dein Standort · Ebene unbekannt</div>
+          )}
           <div className="karte-ebenen" role="group" aria-label="Ebene wählen">
             {ebenen.map((e) => (
               <button

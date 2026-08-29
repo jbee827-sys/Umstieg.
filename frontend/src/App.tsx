@@ -166,7 +166,7 @@ function App() {
         <Schrittliste schritte={route.schritte} />
         {route.karte && (
           <Suspense fallback={<div className="lade-hinweis">Karte wird geladen …</div>}>
-            <Karte karte={route.karte} />
+            <Karte karte={route.karte} standort={standort} />
           </Suspense>
         )}
         {route.hinweise.length > 0 && (
