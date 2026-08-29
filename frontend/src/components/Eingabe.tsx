@@ -28,6 +28,8 @@ function zugnummer(zug: string): string | undefined {
 interface EingabeProps {
   laden: boolean
   fehler: string | null
+  /** Per Standort erkannte Bahnhoefe; leer, solange nichts erkannt wurde. */
+  erkannt?: BahnhofTreffer[]
   onBerechnen: (werte: EingabeWerte) => void
 }
 
@@ -46,7 +48,7 @@ const VARIANTEN: { wert: RoutenVariante; label: string }[] = [
 // Eingabemaske nach dem Onboarding-Screen des Designs: Bahnhofssuche mit
 // Vervollständigung, Gleis an/ab (Pflicht), Wagennummer optional, große
 // Auswahlflächen für Gehprofil und Routenvariante.
-export function Eingabe({ laden, fehler, onBerechnen }: EingabeProps) {
+export function Eingabe({ laden, fehler, erkannt, onBerechnen }: EingabeProps) {
   const [suchtext, setSuchtext] = useState('')
   const [vorschlaege, setVorschlaege] = useState<BahnhofTreffer[]>([])
   const [gewaehlt, setGewaehlt] = useState<BahnhofTreffer | null>(null)
@@ -60,6 +62,16 @@ export function Eingabe({ laden, fehler, onBerechnen }: EingabeProps) {
   const [zugAnkunft, setZugAnkunft] = useState<TafelEintrag | null>(null)
   const [zugAbfahrt, setZugAbfahrt] = useState<TafelEintrag | null>(null)
   const suchTimer = useRef<number | undefined>(undefined)
+  const [erkennungVerworfen, setErkennungVerworfen] = useState(false)
+
+  // Vorbelegt wird NUR ein leeres Feld: Die Erkennung trifft verzoegert ein
+  // und darf eine bereits getippte Eingabe nicht ueberschreiben.
+  useEffect(() => {
+    if (erkennungVerworfen || gewaehlt || suchtext !== '') return
+    if (!erkannt || erkannt.length !== 1) return
+    setGewaehlt(erkannt[0])
+    setSuchtext(erkannt[0].name)
+  }, [erkannt, erkennungVerworfen, gewaehlt, suchtext])
 
   // Bahnhofssuche mit Entprellung; 503 → Freitext-Fallback (EVA direkt eingeben)
   useEffect(() => {
@@ -122,6 +134,7 @@ export function Eingabe({ laden, fehler, onBerechnen }: EingabeProps) {
           onChange={(e) => {
             setSuchtext(e.target.value)
             setGewaehlt(null)
+            setErkennungVerworfen(true)
           }}
         />
         {vorschlaege.length > 0 && (
@@ -142,7 +155,32 @@ export function Eingabe({ laden, fehler, onBerechnen }: EingabeProps) {
             ))}
           </ul>
         )}
-        {gewaehlt && <span className="gewaehlt">✓ {gewaehlt.name}</span>}
+        {!gewaehlt && !erkennungVerworfen && erkannt && erkannt.length > 1 && (
+          <div style={{ marginTop: 8 }}>
+            <div className="hinweis-box">Bahnhöfe in deiner Nähe:</div>
+            <ul className="vorschlaege">
+              {erkannt.map((treffer) => (
+                <li key={treffer.eva}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGewaehlt(treffer)
+                      setSuchtext(treffer.name)
+                    }}
+                  >
+                    {treffer.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {gewaehlt && (
+          <span className="gewaehlt">
+            ✓ {gewaehlt.name}
+            {erkannt?.some((t) => t.eva === gewaehlt.eva) && ' · automatisch erkannt'}
+          </span>
+        )}
         {dbFehlt && (
           <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div className="hinweis-box">

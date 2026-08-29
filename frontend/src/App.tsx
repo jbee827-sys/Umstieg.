@@ -1,12 +1,14 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import './App.css'
 import { holeRoute, RouteFehler } from './api/client'
 import { verbindeLive } from './api/sse'
-import type { LiveEreignis, RouteErgebnis } from './api/typen'
+import type { BahnhofTreffer, LiveEreignis, RouteErgebnis } from './api/typen'
 import { Ampel } from './components/Ampel'
 import { Eingabe, type EingabeWerte } from './components/Eingabe'
 import { LiveBanner } from './components/LiveBanner'
 import { Schrittliste } from './components/Schrittliste'
+import { erkenneBahnhof } from './standort/bahnhofErkennung'
+import { useStandort } from './standort/useStandort'
 
 // MapLibre ist groß und die Karte standardmäßig eingeklappt → erst bei Bedarf laden.
 const Karte = lazy(() => import('./components/Karte').then((m) => ({ default: m.Karte })))
@@ -54,6 +56,18 @@ function App() {
   const [liveEreignis, setLiveEreignis] = useState<LiveEreignis | null>(null)
   const [stand, setStand] = useState<string | null>(null)
   const [, setTick] = useState(0)
+  const { status: standortStatus, standort, starteVerfolgung, stoppeVerfolgung } = useStandort()
+  const [erkannt, setErkannt] = useState<BahnhofTreffer[]>([])
+  const erkennungLief = useRef(false)
+
+  // Genau einmal je Sitzung erkennen – danach bestimmt der Nutzer.
+  useEffect(() => {
+    if (!standort || erkennungLief.current) return
+    erkennungLief.current = true
+    void erkenneBahnhof(standort).then((ergebnis) => {
+      if (ergebnis.ok) setErkannt(ergebnis.treffer.slice(0, 6))
+    })
+  }, [standort])
 
   // Live-Countdown: mit bekannter Abfahrtszeit alle 10 s neu rendern
   useEffect(() => {
@@ -61,6 +75,13 @@ function App() {
     const timer = window.setInterval(() => setTick((t) => t + 1), 10000)
     return () => window.clearInterval(timer)
   }, [ansicht, werte?.abfahrtZeit])
+
+  // Verfolgung laeuft ausschliesslich in der Routenansicht.
+  useEffect(() => {
+    if (ansicht !== 'route') return
+    starteVerfolgung()
+    return stoppeVerfolgung
+  }, [ansicht, starteVerfolgung, stoppeVerfolgung])
 
   const berechne = useCallback(async (eingabe: EingabeWerte) => {
     setLaden(true)
@@ -176,8 +197,19 @@ function App() {
         <h1>Dein Umstieg</h1>
         <p>Vom Ankunftsgleis zum Anschlusszug – Schritt für Schritt.</p>
       </header>
+      {standortStatus === 'verweigert' && (
+        <div className="hinweis-box">
+          Ohne Standortfreigabe suchst du den Bahnhof von Hand. Du kannst sie in den
+          Browsereinstellungen für diese Seite wieder erlauben.
+        </div>
+      )}
+      {standortStatus === 'nicht-verfuegbar' && (
+        <div className="hinweis-box">
+          Die Standortbestimmung braucht eine sichere Verbindung (HTTPS).
+        </div>
+      )}
       <hr className="trennlinie" />
-      <Eingabe laden={laden} fehler={fehler} onBerechnen={berechne} />
+      <Eingabe laden={laden} fehler={fehler} erkannt={erkannt} onBerechnen={berechne} />
     </main>
   )
 }
