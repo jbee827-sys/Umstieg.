@@ -325,3 +325,31 @@ describe('GET /api/stations mit Koordinaten', () => {
     expect(res.json().fehler).toBe('parameter-fehlt');
   });
 });
+
+describe('EVA-Pruefung an den Endpunkten', () => {
+  // Der Filter im stations-Client haelt ungueltige Kennungen aus der
+  // Trefferliste heraus. Ueber die URL sind sie trotzdem erreichbar, und
+  // dort quittierte /api/board sie mit einem unbehandelten HTTP 500.
+  it('/api/board weist eine Nahverkehrs-Kennung mit 400 ab, nicht mit 500', async () => {
+    const app = buildApp(macheClients());
+    const res = await app.inject({ method: 'GET', url: '/api/board/730749?type=dep' });
+    expect(res.statusCode).toBe(400);
+    expect(res.json()).toMatchObject({ fehler: 'parameter-ungueltig' });
+  });
+
+  it('/api/board laesst eine gueltige EVA durch', async () => {
+    const app = buildApp(macheClients());
+    const res = await app.inject({ method: 'GET', url: '/api/board/8000001?type=dep' });
+    expect(res.statusCode).toBe(200);
+  });
+
+  it('/api/route weist eine ungueltige EVA mit 400 ab', async () => {
+    const app = buildApp(macheClients());
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/route?eva=de:11000:900003201&gleisAn=1&gleisAb=2',
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json()).toMatchObject({ fehler: 'parameter-ungueltig' });
+  });
+});

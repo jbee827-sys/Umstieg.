@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import {
   FehlendeZugangsdatenError,
   holeStationsInfo,
+  istGueltigeEva,
   sucheBahnhoefe,
   sucheBahnhoefeNahebei,
 } from '../src/clients/stations.js';
@@ -121,5 +122,88 @@ describe('stations-Client', () => {
         FehlendeZugangsdatenError,
       );
     });
+  });
+});
+
+/** Antwort mit gemischten Kennungen, wie RIS::Stations sie real liefert. */
+function gemischteAntwort(): typeof fetch {
+  const body = {
+    stopPlaces: [
+      {
+        evaNumber: '8011160',
+        names: { DE: { nameLong: 'Berlin Hbf' } },
+        position: { latitude: 52.525592, longitude: 13.369545 },
+      },
+      {
+        evaNumber: '730749',
+        names: { DE: { nameLong: 'Berlin Hauptbahnhof (S+U), Berlin' } },
+        position: { latitude: 52.526462, longitude: 13.369379 },
+      },
+      {
+        evaNumber: '727269',
+        names: { DE: { nameLong: 'Hauptbahnhof (S+U)/Washingtonplatz, Berlin' } },
+        position: { latitude: 52.523389, longitude: 13.370497 },
+      },
+      {
+        evaNumber: 'de:11000:900003201',
+        names: { DE: { nameLong: 'Berlin Hbf (IFOPT)' } },
+        position: { latitude: 52.5, longitude: 13.3 },
+      },
+    ],
+  };
+  return vi.fn(
+    async () =>
+      new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+  ) as unknown as typeof fetch;
+}
+
+describe('EVA-Filter', () => {
+  beforeEach(() => {
+    vi.stubEnv('DB_CLIENT_ID', 'test-id');
+    vi.stubEnv('DB_CLIENT_SECRET', 'test-secret');
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  describe('istGueltigeEva', () => {
+    it('akzeptiert siebenstellige deutsche EVA-Nummern', () => {
+      expect(istGueltigeEva('8011160')).toBe(true);
+      expect(istGueltigeEva('8098160')).toBe(true);
+      expect(istGueltigeEva('8089522')).toBe(true);
+    });
+
+    it('verwirft sechsstellige Nahverkehrs-Kennungen', () => {
+      // Diese liefert RIS::Stations fuer Berlin Hbf mit; /api/board quittiert
+      // sie mit HTTP 500, weil Timetables sie nicht kennt.
+      expect(istGueltigeEva('730749')).toBe(false);
+      expect(istGueltigeEva('727269')).toBe(false);
+    });
+
+    it('verwirft IFOPT-Kennungen und sonstige Nicht-Zahlen', () => {
+      expect(istGueltigeEva('de:11000:900003201:1:50')).toBe(false);
+      expect(istGueltigeEva('')).toBe(false);
+      expect(istGueltigeEva('80111600')).toBe(false);
+    });
+
+    it('verwirft auslaendische Verkehrsstellen (anderer UIC-Laendercode)', () => {
+      // 81 = Oesterreich, 85 = Schweiz. Timetables deckt nur Deutschland ab.
+      expect(istGueltigeEva('8100002')).toBe(false);
+      expect(istGueltigeEva('8500010')).toBe(false);
+    });
+  });
+
+  it('sucheBahnhoefe liefert nur Treffer mit gueltiger EVA', async () => {
+    const treffer = await sucheBahnhoefe('Berlin Hbf', gemischteAntwort());
+    expect(treffer).toHaveLength(1);
+    expect(treffer[0].eva).toBe('8011160');
+  });
+
+  it('die Umkreissuche filtert genauso', async () => {
+    const treffer = await sucheBahnhoefeNahebei(52.525, 13.369, 1000, gemischteAntwort());
+    expect(treffer.map((t) => t.eva)).toEqual(['8011160']);
   });
 });
