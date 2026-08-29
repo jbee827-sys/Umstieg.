@@ -587,3 +587,61 @@
     transform: rotate(360deg);
   }
 }
+
+/* Rechtsseiten: Fliesstext, bewusst schmaler und ruhiger als die App-Oberflaeche. */
+.rechtstext {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--color-neutral-800);
+}
+
+.rechtstext h2 {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-text);
+  margin: 24px 0 6px;
+}
+
+.rechtstext h2:first-child {
+  margin-top: 0;
+}
+
+.rechtstext p,
+.rechtstext ul {
+  margin: 0 0 10px;
+}
+
+.rechtstext ul {
+  padding-left: 20px;
+}
+
+.rechtstext code {
+  font-size: 0.85em;
+  background: var(--color-surface);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.rechtstext a {
+  color: var(--color-accent-700);
+}
+
+.fusszeile {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-neutral-300);
+  font-size: 0.85rem;
+  color: var(--color-neutral-600);
+}
+
+.fusszeile a {
+  color: var(--color-neutral-700);
+  text-decoration: underline;
+  /* Grosse Beruehrflaeche, wie alle Ziele in dieser App. */
+  padding: 8px 4px;
+}
