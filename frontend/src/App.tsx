@@ -266,7 +266,11 @@ function App() {
         )}
         {route.karte && (
           <Suspense fallback={<div className="lade-hinweis">Karte wird geladen …</div>}>
-            <Karte karte={route.karte} standort={standort} />
+            <Karte
+              karte={route.karte}
+              standort={standort}
+              aktiverSchritt={route.schritte[position] ?? null}
+            />
           </Suspense>
         )}
         {route.hinweise.length > 0 && (
