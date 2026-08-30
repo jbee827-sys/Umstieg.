@@ -68,14 +68,32 @@ function App() {
   const [, setTick] = useState(0)
   const { status: standortStatus, standort, starteVerfolgung, stoppeVerfolgung } = useStandort()
   const [erkannt, setErkannt] = useState<BahnhofTreffer[]>([])
-  const erkennungLief = useRef(false)
+  const [standortZuUngenau, setStandortZuUngenau] = useState(false)
+  const erkennungLaeuft = useRef(false)
+  const erkennungFertig = useRef(false)
 
   // Genau einmal je Sitzung erkennen – danach bestimmt der Nutzer.
+  //
+  // Ein zu grober Fix darf den einen Versuch NICHT verbrauchen: Auf dem Handy
+  // kommt zuerst die Netzortung (oft ueber 1 km) und erst Sekunden spaeter der
+  // GPS-Fix. Deshalb wird erkennungFertig nur gesetzt, wenn wirklich gesucht
+  // wurde. Alle Zustandsaenderungen liegen im then(), damit kein synchrones
+  // setState im Effect steht.
   useEffect(() => {
-    if (!standort || erkennungLief.current) return
-    erkennungLief.current = true
+    if (!standort || erkennungFertig.current || erkennungLaeuft.current) return
+    erkennungLaeuft.current = true
     void erkenneBahnhof(standort).then((ergebnis) => {
-      if (ergebnis.ok) setErkannt(ergebnis.treffer.slice(0, 6))
+      erkennungLaeuft.current = false
+      if (ergebnis.ok) {
+        erkennungFertig.current = true
+        setStandortZuUngenau(false)
+        setErkannt(ergebnis.treffer.slice(0, 6))
+      } else if (ergebnis.fehler === 'zu-ungenau') {
+        setStandortZuUngenau(true)
+      } else {
+        // Netz- oder DB-Fehler: nicht endlos wiederholen.
+        erkennungFertig.current = true
+      }
     })
   }, [standort])
 
@@ -320,6 +338,13 @@ function App() {
       {standortStatus === 'nicht-verfuegbar' && (
         <div className="hinweis-box">
           Die Standortbestimmung braucht eine sichere Verbindung (HTTPS).
+        </div>
+      )}
+      {standortZuUngenau && standort && (
+        <div className="hinweis-box">
+          Dein Standort ist nur auf ± {Math.round(standort.genauigkeitM)} m genau – zu grob, um
+          daraus einen Bahnhof zu bestimmen. Ohne GPS, etwa an einem Rechner, ist das normal.
+          Such den Bahnhof bitte von Hand.
         </div>
       )}
       <hr className="trennlinie" />

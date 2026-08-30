@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { erkenneBahnhof, rundeKoordinate } from './bahnhofErkennung';
 import type { Standort } from './typen';
 
-function standort(lat: number, lon: number): Standort {
-  return { lat, lon, genauigkeitM: 20, zeitstempel: 0 };
+function standort(lat: number, lon: number, genauigkeitM = 20): Standort {
+  return { lat, lon, genauigkeitM, zeitstempel: 0 };
 }
 
 describe('rundeKoordinate', () => {
@@ -38,5 +38,28 @@ describe('erkenneBahnhof', () => {
     const suche = vi.fn(async () => ({ ok: false as const, fehler: 'db-zugang-fehlt' as const }));
     const ergebnis = await erkenneBahnhof(standort(52.525, 13.369), suche);
     expect(ergebnis).toEqual({ ok: false, fehler: 'db-zugang-fehlt' });
+  });
+});
+
+describe('erkenneBahnhof prueft die Genauigkeit', () => {
+  it('sucht gar nicht erst, wenn der Fix groeber ist als der Suchradius', async () => {
+    // Der Server sucht im Umkreis von 1000 m. Ist die Unsicherheit groesser,
+    // ist die Suchflaeche kleiner als der Fehler - das Ergebnis waere geraten.
+    const suche = vi.fn(async () => ({ ok: true as const, treffer: [] }));
+    const ergebnis = await erkenneBahnhof(standort(52.525, 13.369, 2000), suche);
+    expect(suche).not.toHaveBeenCalled();
+    expect(ergebnis).toEqual({ ok: false, fehler: 'zu-ungenau' });
+  });
+
+  it('sucht bei brauchbarem Fix weiterhin', async () => {
+    const suche = vi.fn(async () => ({ ok: true as const, treffer: [] }));
+    await erkenneBahnhof(standort(52.525, 13.369, 400), suche);
+    expect(suche).toHaveBeenCalledTimes(1);
+  });
+
+  it('die Grenze selbst gilt noch als brauchbar', async () => {
+    const suche = vi.fn(async () => ({ ok: true as const, treffer: [] }));
+    await erkenneBahnhof(standort(52.525, 13.369, 1000), suche);
+    expect(suche).toHaveBeenCalledTimes(1);
   });
 });
