@@ -6,6 +6,8 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 **Implementierungsplan MVP (17 Tasks):** [`docs/plans/2026-08-24-umsetzungsplan-mvp.md`](./docs/plans/2026-08-24-umsetzungsplan-mvp.md)
 **Spec Standort (P1):** [`docs/superpowers/specs/2026-08-27-standort-und-navigation-design.md`](./docs/superpowers/specs/2026-08-27-standort-und-navigation-design.md)
 **Plan Standort (P1, 12 Tasks):** [`docs/superpowers/plans/2026-08-27-standort-und-navigation.md`](./docs/superpowers/plans/2026-08-27-standort-und-navigation.md)
+**Spec Schrittnavigation:** [`docs/superpowers/specs/2026-08-30-schrittnavigation-design.md`](./docs/superpowers/specs/2026-08-30-schrittnavigation-design.md)
+**Plan Schrittnavigation (8 Tasks):** [`docs/superpowers/plans/2026-08-30-schrittnavigation.md`](./docs/superpowers/plans/2026-08-30-schrittnavigation.md)
 **UI-Design (Claude Design Import):** [`design/Umstieg.dc.html`](./design/Umstieg.dc.html)
 
 ## Architektur
@@ -45,10 +47,10 @@ Browser-Sichtprüfung. Beides braucht Handarbeit an einem echten Gerät.
 
 | # | Aufgabe | Hintergrund |
 |---|---|---|
-| 1 | **`main` auf `feat/mvp` vorziehen** – steht 13 Commits zurück (`dda571f`) | `main` ist der Vercel-Produktionszweig; ein Push löst dort ein Produktions-Deployment aus. Das Frontend hat sich nicht geändert, es wäre ein folgenloser Rebuild. Bewusst offen gelassen. |
+| 1 | **EVA-Split bei grossen Bahnhöfen** ← *die grösste inhaltliche Lücke* | Berlin Hbf ist drei Verkehrsstellen: `8011160` (Gleis 11–14), `8098160` (tief, Gleis 1–8), `8089522` (S-Bahn, Gleis 22). Kein EVA enthält Gleis 6 **und** 14, und `8098160` taucht in der Suche gar nicht auf. `/api/route?eva=` setzt aber voraus, dass ein EVA alle Gleise eines Umstiegs kennt. Zu entscheiden: Suche bündelt verwandte Verkehrsstellen, **oder** `/api/route` nimmt mehrere EVAs. |
 | 2 | **FaSta-Adressierung schließen** | RIS::Stations liefert in der Antwort `stationID` (Berlin Hbf: `"1071"`) – genau die StaDa-Bahnhofsnummer, die FaSta erwartet. Der TODO in `clients/db-endpunkte.ts` lässt sich ohne zusätzliche API schließen: `stationID` in `StationsInfo` durchreichen statt die EVA zu senden. |
-| 3 | **Browser-Sichtprüfung nachholen** ← *der wichtigste offene Punkt* | Frontend ist bis heute nur typ-, build- und unitgeprüft. Nie gesehen: 390-px-Viewport, WebGL-Karte, EventSource-Pfad, Standortdialog, Positionspunkt. Mit P1 hängt daran jetzt deutlich mehr als vorher. Versuch am 29.08. gescheitert: Claude-in-Chrome bekommt keine Tab-Gruppe (`No group with id`) – die Extension war nicht in Chrome verbunden. |
-| 4 | **3 Lint-Warnungen im Frontend** (`cd frontend && npm run lint`) | Stammen aus Task 13/15, bestanden schon vor P1. |
+| 3 | **Mobilabnahme am echten Gerät** | Die Sichtprüfung am Desktop ist am 29./30.08. erfolgt (siehe „Was der Browser gezeigt hat"). Offen bleibt, was nur ein Handy zeigt: Berechtigungsdialog, Wiederkehrer ohne Dialog, Genauigkeit im Bahnhof, Ankunftserkennung am Gleis, und ob die automatische Ebenenwahl als Hilfe oder als Bevormundung ankommt. `mkcert`-Zertifikate in `frontend/.cert/` schalten den Dev-Server auf HTTPS. |
+| 4 | **4 Lint-Warnungen im Frontend** (`cd frontend && npm run lint`) | Drei `set-state-in-effect` (Task 13/15 und die Bahnhofs-Vorbelegung), eine `purity` (`Date.now()` im Render). Alle bestehen bewusst; neue Warnungen wurden bei jeder Änderung behoben statt übernommen. |
 | 5 | **Vercel: Framework-Preset steht auf „Services"** | Rückstand der `experimentalServices`-Erkennung beim `vercel link`. Die `vercel.json` überschreibt es, der Build ist nachweislich korrekt – kosmetisch, aber irreführend. Settings → Build & Deployment. |
 | 6 | **Vercel-Preview-Variable nur für `feat/mvp`** | `VITE_API_BASE` konnte nicht „für alle Preview-Zweige" gesetzt werden (CLI-Fehler in v53.1.0: der vorgeschlagene Befehl ist derselbe, der scheitert). Neue Zweige brauchen einen eigenen Eintrag oder das Dashboard. |
 
@@ -222,9 +224,11 @@ Teil des Schlüssels, und das Ergebnis ist ein stiller 401. Genau so passiert.
 | Task 15 – Live-Tafeln, Zugauswahl, Wagenreihung, farbige Ampel | ✅ fertig (Timetables-XML + ist-wr-JSON, hinter Env-Guard bzw. öffentlich) |
 | Task 16 – SSE-Überwachung, FaSta | ✅ fertig, 112 Tests grün |
 | Task 17 – Degradationstests, Docker, Mobile-Feinschliff | 🔶 `Dockerfile` steht und läuft in Produktion (28.08.2026); `docker-compose.yml`/Caddy entfallen; Degradationstests und Mobile-Feinschliff offen |
-| P1 – Standort & Live-Navigation (12 Tasks) | 🔶 Tasks 1–11 fertig, 22 Frontend-Tests grün; Task 12 (Mobilabnahme am Gerät) offen (Tabelle oben) |
+| P1 – Standort & Live-Navigation (12 Tasks) | 🔶 Tasks 1–11 fertig; Task 12 (Mobilabnahme am Gerät) offen (Tabelle oben) |
+| Rechtliches – Impressum, Datenschutz, lokale Schriften | ✅ fertig, im Browser geprüft |
+| Schrittnavigation (Spec 30.08.2026, 8 Tasks) | ✅ Code fertig, Abnahme am Gerät offen |
 
-**Tests:** `cd backend && npm test` → **126 von 126 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm test` → **22 von 22 grün** (Testinfrastruktur seit P1 Task 3), `npm run build` grün; `npm run lint` meldet 4 Warnungen – drei aus Task 13/15, die vierte aus der Vorbelegung in `Eingabe.tsx` (dasselbe `set-state-in-effect`-Muster wie die beiden bestehenden in derselben Datei).
+**Tests:** `cd backend && npm test` → **149 von 149 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm test` → **34 von 34 grün**, `npm run build` grün; `npm run lint` meldet 4 Warnungen (siehe ToDo 4).
 
 **Nicht maschinell geprüft:** Die Frontend-SSE-Anbindung (`api/sse.ts`, `LiveBanner`) und `useStandort.ts` sind nur über TypeScript und Build abgesichert – beide enthalten keine reine Logik, sondern sprechen Browser-APIs an. Der SSE-Endpunkt selbst wird dagegen in `test/live.test.ts` gegen einen echten HTTP-Server geprüft; `useStandort` gehört in die Mobilabnahme.
 
@@ -248,7 +252,7 @@ Wichtigste Erkenntnis aus dem Spike: **74 % Stufe 1** – Indoor-Routing über O
 - `GET /api/live/:eva?zugAn=&zugAb=` → **SSE-Strom** mit den Ereignissen `gleiswechsel`, `verspaetung`, `heartbeat` (Payload `{ typ, zug?, alt?, neu?, zeitstempel }`). Gepollt wird **einmal je EVA**, unabhängig von der Zahl der Zuschauer; die Zugparameter filtern nur die Zustellung. Verbindungsabbruch meldet den Abonnenten ab, der letzte Abmelder stoppt den Poller.
 - `GET /api/route?eva=&gleisAn=&gleisAb=&zugAn?=&wagen?=&abschnitt?=&profil?=&variante?=` → `RouteErgebnis` (`zugAn`+`wagen` → Wagenreihung bestimmt den Start-Abschnitt; keine Daten → Bahnsteigmitte mit Hinweis):
   - `profil`: `zuegig | normal | langsam` (Default `normal`) · `variante`: `schnellste | einfachste | barrierefrei` (Default `schnellste`)
-  - Antwort: `{ stufe, schritte[], gehzeitSek, karte, hinweise[] }`; `karte` = GeoJSON-FeatureCollections je Ebene (Routenlinie + Start-/Zielmarker, `[lon, lat]`)
+  - Antwort: `{ stufe, schritte[], gehzeitSek, karte, hinweise[] }`; jeder Schritt trägt zusätzlich `sekunden` (Summe = `gehzeitSek`, Invariante im Test), `level` (Ebene, auf der der Schritt endet) und `knotenVon`/`knotenBis` (Bereich im Routenpfad, daraus zeichnet die Karte das Teilstück). Alle vier sind optional – ältere Clients brechen nicht.; `karte` = GeoJSON-FeatureCollections je Ebene (Routenlinie + Start-/Zielmarker, `[lon, lat]`)
   - Degradation: Overpass-Ausfall oder unbrauchbare OSM-Daten → Synthesemodell (`stufe: 3`, „ca."-Distanzen, Hinweis); gleicher Bahnsteig → Kurzantwort ohne Routing; Wagenreihung ohne Daten → Bahnsteigmitte mit Hinweis
   - Fehler: **400** `parameter-fehlt`/`parameter-ungueltig`, **404** `gleis-unbekannt`/`keine-route`, **503** `db-zugang-fehlt`
   - Cache: Graph je EVA 24 h (LRU max 100), im RAM
@@ -377,16 +381,51 @@ Was der Code tut, wenn die Standortfreigabe erteilt ist:
 Berechtigungsdialog, der Positionspunkt und die Ankunftserkennung am Gleis
 brauchen die Mobilabnahme (Task 12).
 
+## Was der Browser gezeigt hat (30.08.2026)
+
+Erste echte Sichtprüfung, mit drei Funden, die kein Test gefunden hätte:
+
+1. **Bahnhofssuche lieferte Kennungen, die nicht antippbar waren.** Zwei der
+   fünf Treffer für „Berlin Hbf" waren sechsstellige Nahverkehrs-IDs; ein Tipp
+   darauf endete in einem unbehandelten **HTTP 500**. Behoben: `istGueltigeEva`
+   filtert die Suche und schützt beide Endpunkte.
+2. **Bei Stufe 3 zeigte die Karte eine Wiese in Mitteldeutschland.** Das
+   Synthesemodell lag hart auf 51 N / 10 O und benutzte `info.lat`/`info.lon`
+   nie. Behoben – und zusätzlich zeigt Stufe 3 jetzt ein Schema statt einer
+   Landkarte.
+3. **Die Schrift kam von Google Fonts.** Behoben: Archivo wird lokal
+   ausgeliefert, der Build enthält keinen Google-Verweis mehr.
+
+Bestätigt hat die Prüfung: WebGL-Karte, Ebenen-Umschalter, ODbL-Attribution,
+Bahnhofssuche gegen RIS::Stations, `watchPosition` und die Genauigkeitsgrenze
+(„Standort zu ungenau (± 124 m) – Punkt ausgeblendet"). Kein horizontales
+Scrollen; `App.css` hat **null** Media-Queries, das Layout ist rein fluid mit
+`max-width: 430px`.
+
+## Rechtliches
+
+Impressum und Datenschutzerklärung sind erreichbar über `#impressum` und
+`#datenschutz` sowie eine Fußzeile in beiden Ansichten. Die Betreiberangaben
+stehen in [`frontend/src/rechtliches/betreiber.json`](./frontend/src/rechtliches/betreiber.json)
+– der einzigen Stelle im Projekt mit personenbezogenen Daten; Impressum und
+Datenschutzerklärung lesen beide von dort. Stehen dort Platzhalter, zeigt die
+Impressumsseite eine rote Warnung.
+
+Die Datenschutzerklärung beschreibt ausschließlich, was der Code nachweislich
+tut: keine Cookies, kein `localStorage`, kein Tracking, Backend ohne Protokoll
+(`logger: false`), Standort im Browser auf ~110 m gerundet, Kartenkacheln erst
+beim Aufklappen. Schriften liegen lokal (`frontend/src/assets/fonts/`, SIL OFL
+1.1) – **kein** Google Fonts.
+
 ## Bekannte Einschränkungen
 
 Die Arbeitsliste steht oben unter [„Offene ToDos"](#offene-todos). Hier nur,
 was dauerhaft gilt oder bewusst so ist:
 
-- **Frontend nie im Browser gesehen.** Die 22 Frontend-Tests decken reine
-  Funktionen ab (Distanz, Ankunftslogik, Rundung). Was ein Browser tut –
-  Layout auf 390 px, WebGL-Karte, EventSource, Standortdialog – ist bis heute
-  ungeprüft. Das ist die grösste offene Lücke des Projekts, nicht eine
-  Formalie.
+- **Nur am Desktop gesehen, nie auf einem Handy.** Die Sichtprüfung am
+  30.08. hat Layout, WebGL-Karte, Bahnhofssuche und den Standortpfad
+  bestätigt. Was ein echtes Gerät zeigt – Berechtigungsdialog, GPS-Genauigkeit
+  in einer Bahnhofshalle, Bedienbarkeit mit Gepäck – bleibt offen.
 - **Browser-API-Dateien ohne Unit-Tests.** `api/sse.ts`, `LiveBanner` und
   `standort/useStandort.ts` sind nur über TypeScript und Build abgesichert –
   bewusst, sie enthalten keine Entscheidungslogik. Der SSE-**Endpunkt** wird
