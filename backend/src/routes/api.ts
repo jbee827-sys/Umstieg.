@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { erzeugeCache, GRAPH_TTL_MS } from '../cache/lru.js';
 import { FehlendeZugangsdatenError, istGueltigeEva } from '../clients/stations.js';
 import { gehzeitSekunden } from '../core/gehzeit.js';
+import { berlinTeile } from '../core/zeit.js';
 import { baueGraph, graphZuGeoJSON, kopiereGraph } from '../core/graph.js';
 import { klassifiziere } from '../core/klassifikation.js';
 import { berechneRoute, findeStartknoten, istGleicherBahnsteig } from '../core/routing.js';
@@ -71,10 +72,11 @@ interface RouteQuery {
 }
 
 function heuteJJJJMMTT(): string {
-  const jetzt = new Date();
-  const mm = String(jetzt.getMonth() + 1).padStart(2, '0');
-  const tt = String(jetzt.getDate()).padStart(2, '0');
-  return `${jetzt.getFullYear()}${mm}${tt}`;
+  // Deutsche Ortszeit: Zwischen 22 und 24 Uhr deutscher Zeit ist im UTC-
+  // Container noch der Vortag, und die Wagenreihung waere fuer den falschen
+  // Tag abgefragt.
+  const { jahr, monat, tag } = berlinTeile(new Date());
+  return `${jahr}${monat}${tag}`;
 }
 
 export function registriereApiRouten(app: FastifyInstance, clients: ApiClients): void {

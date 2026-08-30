@@ -1,3 +1,4 @@
+import { berlinTeile } from '../core/zeit.js';
 // Zentrale DB-API-Marketplace-Endpunkte.
 //
 // TODO (Pflicht vor Live-Betrieb): Pfade und Antwortschemata gegen die aktuelle
@@ -24,12 +25,15 @@ export const epPlatforms = (eva: string): string =>
 // Timetables (IRIS-XML): /plan/{evaNo}/{YYMMDD}/{HH} + /fchg/{evaNo}
 export const TIMETABLES_BASIS = 'https://apis.deutschebahn.com/db-api-marketplace/apis/timetables/v1';
 
+/**
+ * Soll-Tafel einer Stunde. Datum und Stunde in DEUTSCHER Ortszeit - so ist der
+ * Fahrplan definiert. Mit Date#getHours() waere es die Prozesszeit, und der
+ * Container laeuft in UTC: im Sommer zwei Stunden zu frueh, im Winter eine.
+ */
 export const epTafelPlan = (eva: string, zeitpunkt: Date): string => {
-  const jj = String(zeitpunkt.getFullYear()).slice(2);
-  const mm = String(zeitpunkt.getMonth() + 1).padStart(2, '0');
-  const tt = String(zeitpunkt.getDate()).padStart(2, '0');
-  const hh = String(zeitpunkt.getHours()).padStart(2, '0');
-  return `${TIMETABLES_BASIS}/plan/${encodeURIComponent(eva)}/${jj}${mm}${tt}/${hh}`;
+  const { jahr, monat, tag, stunde } = berlinTeile(zeitpunkt);
+  const jj = jahr.slice(2);
+  return `${TIMETABLES_BASIS}/plan/${encodeURIComponent(eva)}/${jj}${monat}${tag}/${stunde}`;
 };
 
 export const epTafelAenderungen = (eva: string): string =>

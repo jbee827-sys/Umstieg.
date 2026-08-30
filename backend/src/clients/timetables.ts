@@ -52,8 +52,15 @@ export async function holeTafel(
   typ: 'arr' | 'dep',
   fetchFn: typeof fetch = fetch,
 ): Promise<TafelEintrag[]> {
-  const [planXml, aenderungenXml] = await Promise.all([
-    holeXml(epTafelPlan(eva, new Date()), fetchFn),
+  // ZWEI Stunden holen. IRIS liefert je Aufruf genau eine, und um 17:55
+  // nuetzen Zuege bis 17:59 niemandem - gebraucht wird der 18:05. Der Preis
+  // ist ein zusaetzlicher Aufruf je Poll; die Buendelung pro EVA
+  // (Konzeptkorrektur 1) bleibt davon unberuehrt.
+  const jetzt = new Date();
+  const naechsteStunde = new Date(jetzt.getTime() + 60 * 60 * 1000);
+  const [planJetzt, planSpaeter, aenderungenXml] = await Promise.all([
+    holeXml(epTafelPlan(eva, jetzt), fetchFn),
+    holeXml(epTafelPlan(eva, naechsteStunde), fetchFn),
     holeXml(epTafelAenderungen(eva), fetchFn),
   ]);
 
@@ -62,8 +69,15 @@ export async function holeTafel(
     if (halt.id) aenderungen.set(halt.id, halt);
   }
 
+  // Beide Stunden zusammenfuehren; ein Halt kann in beiden Antworten stehen,
+  // deshalb nach halt.id entdoppeln.
+  const halte = new Map<string, IrisHalt>();
+  for (const halt of [...parseHalte(planJetzt), ...parseHalte(planSpaeter)]) {
+    halte.set(halt.id ?? `${halt.tl?.c}${halt.tl?.n}${halt.ar?.pt}${halt.dp?.pt}`, halt);
+  }
+
   const eintraege: TafelEintrag[] = [];
-  for (const halt of parseHalte(planXml)) {
+  for (const halt of halte.values()) {
     const ereignis = typ === 'arr' ? halt.ar : halt.dp;
     if (!ereignis) continue;
 
@@ -86,5 +100,6 @@ export async function holeTafel(
       ziel: (typ === 'dep' ? laufweg[laufweg.length - 1] : laufweg[0]) ?? '',
     });
   }
-  return eintraege;
+  // Chronologisch - die Tafel soll lesen wie eine Anzeigetafel.
+  return eintraege.sort((a, b) => a.zeitSoll.localeCompare(b.zeitSoll));
 }
