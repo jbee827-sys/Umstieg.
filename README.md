@@ -129,8 +129,8 @@ will. **Deploys brauchen deshalb `--ha=false`**, festgehalten in `fly.toml` und
 `docs/deployment.md`:
 
 ```bash
-cd backend && fly deploy --ha=false
-fly machines list                     # es darf genau eine geben
+cd backend && flyctl deploy --ha=false
+flyctl machines list                     # es darf genau eine geben
 ```
 
 **2. `vercel link` will das Backend nach Vercel deployen.** Die CLI schreibt
@@ -198,8 +198,14 @@ Teil des Schlüssels, und das Ergebnis ist ein stiller 401. Genau so passiert.
 2. **Jeder Aufruf startet in `D:\Claude-code`, nicht im Projektordner.**
    Deshalb in jedem Befehl `cd /d/Claude-code/Umstieg/...` voranstellen –
    sonst „fatal: not a git repository".
-3. **`flyctl auth login` braucht ein echtes Terminal.** In der Agenten-Shell
-   fehlt das TTY: `fly auth login requires an interactive terminal`. Einmal in
+3. **Der Befehl heisst `flyctl`, nicht `fly`.** Der Windows-Installer (winget)
+   legt ausschliesslich `flyctl.exe` an; die Kurzform `fly` erzeugt nur das
+   Unix-Installskript. `fly deploy` quittiert PowerShell deshalb mit
+   „Der Begriff ist nicht als Name eines Cmdlet erkannt". Der Paketordner
+   `%LOCALAPPDATA%\Microsoft\WinGet\Packages\Fly-io.flyctl_*` steht bereits
+   im PATH – es fehlt nichts ausser dem richtigen Namen.
+4. **`flyctl auth login` braucht ein echtes Terminal.** In der Agenten-Shell
+   fehlt das TTY: `flyctl auth login requires an interactive terminal`. Einmal in
    einem normalen Terminalfenster anmelden – danach liegt der Token in
    `~/.fly/config.yml` und alle weiteren Aufrufe funktionieren.
 
@@ -324,7 +330,7 @@ gepuffert oder getrennt. Gegenstueck im Backend ist `CORS_ORIGIN` (kommagetrennt
 Allowlist; leer = keine CORS-Header, die sichere Voreinstellung fuer lokal).
 
 ```bash
-cd backend && fly deploy --ha=false   # Backend – ohne den Schalter legt Fly eine zweite Maschine an
+cd backend && flyctl deploy --ha=false   # Backend – ohne den Schalter legt Fly eine zweite Maschine an
 vercel deploy --prod              # Frontend (aus dem Wurzelverzeichnis)
 ```
 
