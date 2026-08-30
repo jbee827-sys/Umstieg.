@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { LngLatBounds, Map as MapLibreMap, type GeoJSONSource } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import type { Schritt } from '../api/typen'
 import { genauigkeitsPolygon } from '../standort/distanz'
 import { GENAUIGKEIT_MAX_M } from '../standort/schwellen'
 import type { Standort } from '../standort/typen'
@@ -21,6 +22,8 @@ interface KarteProps {
   karte: Record<string, unknown>
   /** Aktueller Geraetestandort; null = keiner verfuegbar. */
   standort?: Standort | null
+  /** Aktiver Schritt – bestimmt Ebene und Ausschnitt. */
+  aktiverSchritt?: Schritt | null
 }
 
 const LEER: FeatureCollection = { type: 'FeatureCollection', features: [] }
@@ -49,7 +52,7 @@ function alleKoordinaten(sammlung: FeatureCollection): [number, number][] {
 
 // Einklappbare Karte (Text vor Karte, Konzept): MapLibre über OSM-Rasterkacheln
 // mit ODbL-Attribution, Routenlinie + Start-/Zielmarker je Ebene, Umschalter.
-export function Karte({ karte, standort }: KarteProps) {
+export function Karte({ karte, standort, aktiverSchritt }: KarteProps) {
   const [offen, setOffen] = useState(false)
   const ebenen = useMemo(
     () => Object.keys(karte).sort((a, b) => Number(a) - Number(b)),
@@ -189,6 +192,34 @@ export function Karte({ karte, standort }: KarteProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- nur auf Standortwechsel reagieren
   }, [standort])
 
+  // Die Ebene des aktiven Schritts uebernehmen – aber nur, solange der Nutzer
+  // nicht selbst umgeschaltet hat. Sonst waere die Handbedienung wirkungslos,
+  // und die Karte spraenge dem Nutzer unter den Fingern weg.
+  const manuellGewaehlt = useRef(false)
+  useEffect(() => {
+    if (manuellGewaehlt.current) return
+    const level = aktiverSchritt?.level
+    if (level === undefined) return
+    const schluessel = String(level)
+    if (ebenen.includes(schluessel)) setEbene(schluessel)
+  }, [aktiverSchritt, ebenen])
+
+  // Ausschnitt auf das Teilstueck des aktiven Schritts. Auf 390 px ist das der
+  // Unterschied zwischen lesbar und nicht: Eine 400-m-Route als Ganzes zu
+  // zeigen heisst, nichts davon zu zeigen.
+  useEffect(() => {
+    const map = mapRef.current
+    const von = aktiverSchritt?.knotenVon
+    const bis = aktiverSchritt?.knotenBis
+    if (!map || von === undefined || bis === undefined) return
+    const linie = alleKoordinaten(daten(ebene))
+    const stueck = linie.slice(von, bis + 1)
+    if (stueck.length === 0) return
+    const grenzen = stueck.reduce((b, p) => b.extend(p), new LngLatBounds(stueck[0], stueck[0]))
+    map.fitBounds(grenzen, { padding: 64, maxZoom: 19 })
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- nur auf Schrittwechsel reagieren
+  }, [aktiverSchritt, ebene])
+
   if (ebenen.length === 0) return null
 
   return (
@@ -218,7 +249,10 @@ export function Karte({ karte, standort }: KarteProps) {
                 type="button"
                 className="karte-ebene-knopf"
                 aria-pressed={ebene === e}
-                onClick={() => setEbene(e)}
+                onClick={() => {
+                  manuellGewaehlt.current = true
+                  setEbene(e)
+                }}
               >
                 {ebenenLabel(e)}
               </button>
