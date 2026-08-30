@@ -1,4 +1,5 @@
-import type { GraphKnoten, KantenTyp, RoutenPfad, Schritt } from './typen.js';
+import { verteileGehzeit } from './gehzeit.js';
+import type { Gehprofil, GraphKnoten, KantenTyp, RoutenPfad, Schritt } from './typen.js';
 
 /** Peilung a→b in Grad (0 = Nord, 90 = Ost), äquirektangulare Näherung – Bahnhofsmaßstab. */
 export function peilungGrad(a: GraphKnoten, b: GraphKnoten): number {
@@ -92,10 +93,13 @@ const TYP_NAME: Partial<Record<KantenTyp, string>> = {
 export interface TextOptionen {
   /** Stufe 3 (Synthesemodell): Distanzen sind Schätzungen → Präfix „ca. ". */
   ungefaehr?: boolean;
+  /** Ohne Profil bleibt `sekunden` undefiniert (aeltere Aufrufer). */
+  profil?: Gehprofil;
 }
 
 export function generiereSchritte(pfad: RoutenPfad, optionen: TextOptionen = {}): Schritt[] {
   const segmente = baueSegmente(pfad);
+  const zeiten = optionen.profil ? verteileGehzeit(segmente, optionen.profil) : null;
   const schritte: Schritt[] = [];
   const distanzPraefix = optionen.ungefaehr ? 'ca. ' : '';
   let referenzPeilung: number | null = null;
@@ -127,7 +131,13 @@ export function generiereSchritte(pfad: RoutenPfad, optionen: TextOptionen = {})
     }
 
     referenzPeilung = segment.peilungEnde ?? referenzPeilung;
-    schritte.push({ text, typ: segment.typ, ...(distanzM !== undefined ? { distanzM } : {}) });
+    schritte.push({
+      text,
+      typ: segment.typ,
+      ...(distanzM !== undefined ? { distanzM } : {}),
+      ...(zeiten ? { sekunden: zeiten[schritte.length] } : {}),
+      level: segment.zielLevel,
+    });
   }
 
   if (schritte.length > 0) {

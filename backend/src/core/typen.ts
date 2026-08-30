@@ -63,6 +63,10 @@ export interface Schritt {
   text: string; // fertiger deutscher Anweisungssatz
   typ: KantenTyp | 'start' | 'ziel';
   distanzM?: number; // auf 10 m gerundet, nur bei eben/rampe
+  /** Gehzeit dieses Schritts. Summe aller Schritte = gehzeitSek (Invariante). */
+  sekunden?: number;
+  /** Ebene, auf der der Schritt ENDET - bei einem Wechsel die Zielebene. */
+  level?: number;
 }
 
 export interface RouteErgebnis {

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { generiereSchritte, peilungGrad } from '../src/core/textgen.js';
+import { gehzeitSekunden } from '../src/core/gehzeit.js';
 import type { GraphKante, GraphKnoten, KantenTyp, RoutenPfad } from '../src/core/typen.js';
 
 // Knoten aus Meter-Offsets (x = Ost, y = Nord) um 52° N – nur die PEILUNGEN
@@ -139,5 +140,43 @@ describe('generiereSchritte', () => {
     const schritte = generiereSchritte(machePfad(knoten, [kante('a', 'b', 'rampe', 28, -1)]));
     expect(schritte[0].text).toBe('Nach Ausstieg Rampe hinunter zur Unterführung (-1) zu Gleis 3');
     expect(schritte[0].distanzM).toBe(30);
+  });
+});
+
+/**
+ * Zwei Segmente: 200 m eben (aus zwei verschmelzenden Kanten gleicher
+ * Richtung) und eine Treppe von Ebene 0 nach 1.
+ * gehzeitSekunden normal = round(210/1,0) + 20 = 230.
+ */
+function beispielPfad(): RoutenPfad {
+  const a = xy('a', 0, 0, 0);
+  const b = xy('b', 0, 100, 0);
+  const c = xy('c', 0, 200, 0);
+  const d = xy('d', 0, 200, 1);
+  return machePfad(
+    [a, b, c, d],
+    [kante('a', 'b', 'eben', 100), kante('b', 'c', 'eben', 100), kante('c', 'd', 'treppe', 10, 1)],
+  );
+}
+
+describe('Schritte tragen Zeit und Ebene', () => {
+  it('jeder Schritt hat sekunden, und die Summe ist die Gehzeit', () => {
+    const pfad = beispielPfad();
+    const schritte = generiereSchritte(pfad, { profil: 'normal' });
+    for (const s of schritte) expect(typeof s.sekunden).toBe('number');
+    const summe = schritte.reduce((a, s) => a + (s.sekunden ?? 0), 0);
+    expect(summe).toBe(gehzeitSekunden(pfad, 'normal'));
+  });
+
+  it('level ist die ZIEL-Ebene eines Ebenenwechsels, nicht die Ausgangsebene', () => {
+    const schritte = generiereSchritte(beispielPfad(), { profil: 'normal' });
+    const treppe = schritte.find((s) => s.typ === 'treppe');
+    expect(treppe?.level).toBe(1);
+  });
+
+  it('ohne profil bleiben sekunden undefiniert - Rueckwaertskompatibilitaet', () => {
+    const schritte = generiereSchritte(beispielPfad());
+    expect(schritte[0].sekunden).toBeUndefined();
+    expect(schritte[0].level).toBeDefined();
   });
 });
