@@ -53,6 +53,7 @@ export function Eingabe({ laden, fehler, erkannt, onBerechnen }: EingabeProps) {
   const [vorschlaege, setVorschlaege] = useState<BahnhofTreffer[]>([])
   const [gewaehlt, setGewaehlt] = useState<BahnhofTreffer | null>(null)
   const [dbFehlt, setDbFehlt] = useState(false)
+  const [netzFehlt, setNetzFehlt] = useState(false)
   const [evaManuell, setEvaManuell] = useState('')
   const [gleisAn, setGleisAn] = useState('')
   const [gleisAb, setGleisAb] = useState('')
@@ -84,9 +85,16 @@ export function Eingabe({ laden, fehler, erkannt, onBerechnen }: EingabeProps) {
       const ergebnis = await sucheStationen(suchtext.trim())
       if (ergebnis.ok) {
         setDbFehlt(false)
+        setNetzFehlt(false)
         setVorschlaege(ergebnis.treffer.slice(0, 6))
       } else if (ergebnis.fehler === 'db-zugang-fehlt') {
         setDbFehlt(true)
+        setNetzFehlt(false)
+        setVorschlaege([])
+      } else {
+        // Frueher fiel dieser Fall durch beide Zweige: keine Vorschlaege, keine
+        // Meldung, kein Hinweis - die App sah aus, als tue sie gar nichts.
+        setNetzFehlt(true)
         setVorschlaege([])
       }
     }, 300)
@@ -180,6 +188,13 @@ export function Eingabe({ laden, fehler, erkannt, onBerechnen }: EingabeProps) {
             ✓ {gewaehlt.name}
             {erkannt?.some((t) => t.eva === gewaehlt.eva) && ' · automatisch erkannt'}
           </span>
+        )}
+        {netzFehlt && !dbFehlt && (
+          <div className="hinweis-box" style={{ marginTop: 8 }}>
+            Die Bahnhofssuche erreicht den Server nicht. Prüfe deine Verbindung. Läuft die App
+            unter einer Vorschau-Adresse, weist der Server die Anfrage ab – dann bitte die
+            reguläre Adresse verwenden.
+          </div>
         )}
         {dbFehlt && (
           <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
