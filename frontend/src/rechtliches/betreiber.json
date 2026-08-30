@@ -1,0 +1,10 @@
+{
+  "_hinweis": "Diese sechs Werte ausfuellen und die eckigen Klammern samt Text ersetzen. Paragraph 5 DDG verlangt Name, ladungsfaehige Anschrift (kein Postfach) und neben der E-Mail einen zweiten Kontaktweg, in der Regel eine Telefonnummer. Solange hier Platzhalter stehen, zeigt die Impressumsseite eine rote Warnung. Diese Datei ist die einzige Stelle im Projekt mit personenbezogenen Angaben; Impressum und Datenschutzerklaerung lesen beide von hier.",
+
+  "name": "[BITTE AUSFÜLLEN: Vor- und Nachname]",
+  "strasse": "[BITTE AUSFÜLLEN: Straße und Hausnummer]",
+  "ort": "[BITTE AUSFÜLLEN: PLZ und Ort]",
+  "land": "Deutschland",
+  "email": "[BITTE AUSFÜLLEN: E-Mail-Adresse]",
+  "telefon": "[BITTE AUSFÜLLEN: Telefonnummer]"
+}

@@ -1,18 +1,23 @@
-// ANGABEN HIER EINTRAGEN – ohne sie ist das Impressum wertlos.
-// § 5 DDG verlangt Name, ladungsfaehige Anschrift und einen zweiten
-// Kontaktweg neben der E-Mail (in der Regel eine Telefonnummer).
-// Ein Postfach genuegt nicht.
+// Die Werte stehen bewusst nebenan in betreiber.json, nicht hier: Unter
+// Windows ist die Endung .ts als MPEG-Transportstrom registriert, eine
+// .ts-Datei oeffnet also im Videoplayer statt im Editor. Die Angaben soll
+// aber ein Mensch pflegen koennen, ohne Werkzeuge zu wechseln.
 //
-// Diese Datei ist die einzige Stelle mit personenbezogenen Angaben des
-// Betreibers. Impressum und Datenschutzerklaerung lesen beide von hier.
-export const BETREIBER = {
-  name: '[BITTE AUSFÜLLEN: Vor- und Nachname]',
-  strasse: '[BITTE AUSFÜLLEN: Straße und Hausnummer]',
-  ort: '[BITTE AUSFÜLLEN: PLZ und Ort]',
-  land: 'Deutschland',
-  email: '[BITTE AUSFÜLLEN: E-Mail-Adresse]',
-  telefon: '[BITTE AUSFÜLLEN: Telefonnummer]',
-};
+// Diese Datei bleibt der typisierte Zugang dazu.
+import daten from './betreiber.json';
+
+export interface Betreiber {
+  name: string;
+  strasse: string;
+  ort: string;
+  land: string;
+  email: string;
+  telefon: string;
+}
+
+export const BETREIBER: Betreiber = daten;
 
 /** true, solange noch Platzhalter drinstehen – blendet die Warnung ein. */
-export const ANGABEN_FEHLEN = Object.values(BETREIBER).some((w) => w.startsWith('[BITTE'));
+export const ANGABEN_FEHLEN: boolean = (
+  [daten.name, daten.strasse, daten.ort, daten.land, daten.email, daten.telefon] as string[]
+).some((wert) => wert.startsWith('[BITTE'));

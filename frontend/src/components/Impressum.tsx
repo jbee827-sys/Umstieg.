@@ -12,7 +12,7 @@ export function Impressum({ onZurueck }: { onZurueck: () => void }) {
       {ANGABEN_FEHLEN && (
         <div className="fehler-box">
           Dieses Impressum ist noch nicht ausgefüllt. Die Angaben stehen in
-          <code> frontend/src/rechtliches/betreiber.ts</code>.
+          <code> frontend/src/rechtliches/betreiber.json</code>.
         </div>
       )}
 
