@@ -180,3 +180,22 @@ describe('Schritte tragen Zeit und Ebene', () => {
     expect(schritte[0].level).toBeDefined();
   });
 });
+
+describe('Schritte verweisen auf ihren Pfadbereich', () => {
+  it('deckt den Pfad lueckenlos und ohne Ueberschneidung ab', () => {
+    const pfad = beispielPfad();
+    const schritte = generiereSchritte(pfad, { profil: 'normal' });
+    expect(schritte[0].knotenVon).toBe(0);
+    expect(schritte[schritte.length - 1].knotenBis).toBe(pfad.knoten.length - 1);
+    for (let i = 1; i < schritte.length; i++) {
+      expect(schritte[i].knotenVon).toBe(schritte[i - 1].knotenBis);
+    }
+  });
+
+  it('ein verschmolzenes Segment umfasst mehrere Knoten', () => {
+    const schritte = generiereSchritte(beispielPfad(), { profil: 'normal' });
+    const spannen = schritte.map((s) => (s.knotenBis ?? 0) - (s.knotenVon ?? 0));
+    expect(Math.max(...spannen)).toBeGreaterThanOrEqual(1);
+    for (const spanne of spannen) expect(spanne).toBeGreaterThan(0);
+  });
+});

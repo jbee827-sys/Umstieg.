@@ -67,6 +67,9 @@ export interface Schritt {
   sekunden?: number;
   /** Ebene, auf der der Schritt ENDET - bei einem Wechsel die Zielebene. */
   level?: number;
+  /** Indexbereich im Routenpfad - daraus zeichnet die Karte das Teilstueck. */
+  knotenVon?: number;
+  knotenBis?: number;
 }
 
 export interface RouteErgebnis {

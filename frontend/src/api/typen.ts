@@ -15,6 +15,9 @@ export interface Schritt {
   sekunden?: number;
   /** Ebene, auf der der Schritt endet. */
   level?: number;
+  /** Indexbereich im Routenpfad. */
+  knotenVon?: number;
+  knotenBis?: number;
 }
 
 export interface RouteErgebnis {
