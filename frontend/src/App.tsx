@@ -11,9 +11,11 @@ import { Angekommen } from './components/Angekommen'
 import { Eingabe, type EingabeWerte } from './components/Eingabe'
 import { LiveBanner } from './components/LiveBanner'
 import { Schrittliste } from './components/Schrittliste'
+import { Schrittsteuerung } from './components/Schrittsteuerung'
 import { StandortStreifen } from './components/StandortStreifen'
 import { ANKUNFT_START, pruefeAnkunft, zielKoordinate } from './standort/ankunft'
 import { ABGEFAHREN_KULANZ_MS } from './standort/schwellen'
+import { aktiverSchritt } from './navigation/fortschritt'
 import { erkenneBahnhof } from './standort/bahnhofErkennung'
 import { useStandort } from './standort/useStandort'
 
@@ -77,11 +79,13 @@ function App() {
   }, [standort])
 
   // Live-Countdown: mit bekannter Abfahrtszeit alle 10 s neu rendern
+  // Alle 10 s neu rendern. Treibt zwei Dinge: den Countdown der Ampel und das
+  // Weiterruecken der Schrittanzeige - deshalb laeuft er auch ohne Zugauswahl.
   useEffect(() => {
-    if (ansicht !== 'route' || !werte?.abfahrtZeit) return
+    if (ansicht !== 'route') return
     const timer = window.setInterval(() => setTick((t) => t + 1), 10000)
     return () => window.clearInterval(timer)
-  }, [ansicht, werte?.abfahrtZeit])
+  }, [ansicht])
 
   // Verfolgung laeuft ausschliesslich in der Routenansicht.
   useEffect(() => {
@@ -89,6 +93,13 @@ function App() {
     starteVerfolgung()
     return stoppeVerfolgung
   }, [ansicht, starteVerfolgung, stoppeVerfolgung])
+
+  // Die Uhr laeuft ab dem Oeffnen der Routenansicht. Als State, nicht als Ref:
+  // Der Wert wird waehrend des Renderns gelesen, und ein Ref darf das nicht -
+  // er kann sich ohne Render aendern. Gesetzt wird er im Ereignisbehandler
+  // (berechne), nicht in einem Effect.
+  const [startZeit, setStartZeit] = useState(0)
+  const [versatz, setVersatz] = useState(0)
 
   const ankunft = useRef(ANKUNFT_START)
   const [ankunftVorschlag, setAnkunftVorschlag] = useState(false)
@@ -133,6 +144,8 @@ function App() {
       })
       setWerte(eingabe)
       setRoute(ergebnis)
+      setStartZeit(Date.now())
+      setVersatz(0)
       setAnsicht('route')
     } catch (e) {
       const code = e instanceof RouteFehler ? e.code : 'netz'
@@ -194,8 +207,10 @@ function App() {
   }
 
   if (ansicht === 'route' && route && werte) {
+    const jetzt = Date.now()
+    const position = aktiverSchritt(route.schritte, startZeit, jetzt, versatz)
     const restSek = werte.abfahrtZeit
-      ? (heuteUm(werte.abfahrtZeit).getTime() - Date.now()) / 1000
+      ? (heuteUm(werte.abfahrtZeit).getTime() - jetzt) / 1000
       : undefined
     const abgefahren = restSek !== undefined && restSek * 1000 < -ABGEFAHREN_KULANZ_MS
     const farbe = restSek === undefined || abgefahren ? null : ampelFarbe(restSek, route.gehzeitSek)
@@ -232,7 +247,15 @@ function App() {
           </p>
         )}
         <hr className="trennlinie" />
-        <Schrittliste schritte={route.schritte} />
+        <Schrittliste schritte={route.schritte} aktiv={position} />
+        {route.schritte.length > 1 && (
+          <Schrittsteuerung
+            position={position}
+            anzahl={route.schritte.length}
+            onZurueck={() => setVersatz((v) => v - 1)}
+            onWeiter={() => setVersatz((v) => v + 1)}
+          />
+        )}
         {ankunftVorschlag && (
           <StandortStreifen gleis={werte.gleisAb} onBestaetigen={bestaetigeAnkunft} />
         )}
