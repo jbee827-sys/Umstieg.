@@ -128,8 +128,8 @@ Overpass-Cache, also genau die Verdopplung, die Konzeptkorrektur 1 vermeiden
 will. **Deploys brauchen deshalb `--ha=false`**, festgehalten in `fly.toml` und
 `docs/deployment.md`:
 
-```bash
-cd backend && flyctl deploy --ha=false
+```powershell
+flyctl deploy D:\Claude-code\Umstieg\backend --ha=false
 flyctl machines list                     # es darf genau eine geben
 ```
 

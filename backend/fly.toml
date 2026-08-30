@@ -1,5 +1,10 @@
-# Fly.io-Konfiguration fuer das Backend. Aus diesem Ordner deployen:
+# Fly.io-Konfiguration fuer das Backend. Der App-Name steht unten und wird
+# aus DIESER Datei gelesen - flyctl muss sie also finden. Am robustesten mit
+# dem Arbeitsverzeichnis als Positionsargument, dann ist kein cd noetig:
+#   flyctl deploy <pfad>/backend --ha=false
+# Mit cd geht es auch, aber nur aus dem backend-Ordner heraus:
 #   cd backend && flyctl deploy --ha=false
+# Aus dem Wurzelverzeichnis scheitert es, weil der App-Name fehlt.
 #
 # --ha=false ist Pflicht. Ohne den Schalter legt Fly beim Deploy eine zweite
 # Maschine fuer Hochverfuegbarkeit an (so geschehen beim ersten Deploy am

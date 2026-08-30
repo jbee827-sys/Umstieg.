@@ -107,10 +107,16 @@ Docker wird lokal nicht gebraucht, Fly baut remote.
 
 Danach jedes Mal:
 
-```bash
-cd backend && flyctl deploy --ha=false
+```powershell
+flyctl deploy <pfad>\backend --ha=false
+flyctl machines list                                # es darf genau eine geben
 curl https://umstieg-backend.fly.dev/api/health     # {"status":"ok"}
 ```
+
+Der Pfad davor ist das **Arbeitsverzeichnis**: flyctl liest dort die `fly.toml`,
+nimmt daraus `app = "umstieg-backend"` und findet zugleich das `Dockerfile`.
+Ohne ihn muss man im Ordner `backend/` stehen - aus dem Wurzelverzeichnis
+heraus scheitert der Befehl damit, dass der App-Name fehlt.
 
 ### Warum `--ha=false` nicht optional ist
 
