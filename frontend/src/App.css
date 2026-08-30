@@ -645,3 +645,39 @@
   /* Grosse Beruehrflaeche, wie alle Ziele in dieser App. */
   padding: 8px 4px;
 }
+
+/* Aktiver Schritt: kraeftig, erledigte gedaempft – der Weg bleibt im Ganzen
+   sichtbar, die Gegenwart hebt sich ab. */
+.schritt-aktiv {
+  background: var(--color-accent-100);
+  border: 2px solid var(--color-accent);
+  font-size: 1.15rem;
+}
+
+.schritt-erledigt {
+  opacity: 0.45;
+}
+
+.schrittsteuerung {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.schrittsteuerung .knopf-sekundaer {
+  flex: 1;
+  min-height: 56px;
+}
+
+.schrittsteuerung .knopf-sekundaer:disabled {
+  opacity: 0.4;
+}
+
+.schritt-zaehler {
+  flex: 0 0 auto;
+  font-size: 0.85rem;
+  color: var(--color-neutral-600);
+  text-align: center;
+  min-width: 96px;
+}
