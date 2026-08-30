@@ -11,3 +11,17 @@ sind NICHT Teil dieses Repositorys - sie werden zur Laufzeit abgerufen.
 - Deutsche Bahn (Fahrplan-, Wagenreihungs-, Stations- und FaSta-Daten):
   Nutzungsbedingungen des DB API Marketplace, überwiegend CC BY 4.0.
   https://developers.deutschebahn.com
+
+Mitgelieferte Schriften
+=======================
+
+Anders als die obigen Daten liegen die Schriftdateien IM Repository:
+
+- Archivo (frontend/src/assets/fonts/*.woff2)
+  Copyright 2020 The Archivo Project Authors
+  https://github.com/Omnibus-Type/Archivo
+  SIL Open Font License 1.1 - Volltext in
+  frontend/src/assets/fonts/OFL.txt
+
+  Lokal ausgeliefert statt ueber Google Fonts: Ein @import von
+  fonts.googleapis.com uebertraegt die IP jedes Besuchers an Google.

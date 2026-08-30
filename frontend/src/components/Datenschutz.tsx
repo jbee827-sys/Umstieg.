@@ -4,7 +4,7 @@ import { BETREIBER } from '../rechtliches/betreiber'
 // an der Datenverarbeitung ist diese Seite mitzupflegen:
 // - Standort: standort/useStandort.ts, standort/bahnhofErkennung.ts (Rundung)
 // - Kartenkacheln: components/Karte.tsx
-// - Schriften: index.css (@import von fonts.googleapis.com)
+// - Schriften: index.css (lokale @font-face, KEIN Google Fonts)
 // - Backend ohne Logging: backend/src/app.ts (logger: false)
 export function Datenschutz({ onZurueck }: { onZurueck: () => void }) {
   return (
@@ -97,10 +97,10 @@ export function Datenschutz({ onZurueck }: { onZurueck: () => void }) {
 
         <h2>Schriftarten</h2>
         <p>
-          Die Schrift „Archivo" wird derzeit von Google Fonts geladen
-          (Google Ireland Limited). Dabei wird deine IP-Adresse an Google
-          übertragen. Diese Einbindung soll durch eine lokale Auslieferung der
-          Schriftdateien ersetzt werden; bis dahin ist sie hier offengelegt.
+          Die Schrift „Archivo" wird von unserem eigenen Server ausgeliefert.
+          Es besteht keine Verbindung zu Google Fonts oder einem anderen
+          Schriftendienst – beim Laden der Schrift werden keinerlei Daten an
+          Dritte übertragen.
         </p>
 
         <h2>Fahrplan- und Stationsdaten</h2>
