@@ -16,7 +16,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 29.08.2026)
+## Hier weitermachen (Stand 30.08.2026, abends)
 
 ```bash
 cd backend && npm test        # muss 126 von 126 grün sein
@@ -47,7 +47,8 @@ Browser-Sichtprüfung. Beides braucht Handarbeit an einem echten Gerät.
 
 | # | Aufgabe | Hintergrund |
 |---|---|---|
-| 1 | **EVA-Split bei grossen Bahnhöfen** ← *die grösste inhaltliche Lücke* | Berlin Hbf ist drei Verkehrsstellen: `8011160` (Gleis 11–14), `8098160` (tief, Gleis 1–8), `8089522` (S-Bahn, Gleis 22). Kein EVA enthält Gleis 6 **und** 14, und `8098160` taucht in der Suche gar nicht auf. `/api/route?eva=` setzt aber voraus, dass ein EVA alle Gleise eines Umstiegs kennt. Zu entscheiden: Suche bündelt verwandte Verkehrsstellen, **oder** `/api/route` nimmt mehrere EVAs. |
+| 1 | **EVA-Split bei grossen Bahnhöfen** ← *die grösste inhaltliche Lücke* | Berlin Hbf ist drei Verkehrsstellen: `8011160` (Gleis 11–14), `8098160` (tief, Gleis 1–8), `8089522` (S-Bahn, Gleis 22). Kein EVA enthält Gleis 6 **und** 14; `8098160` taucht in der Suche gar nicht auf; und **`8011160` liefert eine LEERE Fahrplantafel** – IRIS führt Berlin Hbf unter `8098160`. Am 30.08. gemessen: `8011160` → 0 Abfahrten, `8098160` → 47. Andere grosse Knoten sind unauffällig (München 29, Köln 101, Frankfurt 43), das Problem trifft nur aufgeteilte Bahnhöfe – ausgerechnet den, der überall das Beispiel ist. Zu entscheiden: Suche bündelt verwandte Verkehrsstellen, **oder** `/api/route` und `/api/board` nehmen mehrere EVAs. |
+| 1b | **Graph-Cache vergiftet sich selbst** | Ein Overpass-Ausfall erzeugt einen Stufe-3-Graphen, und der wird **genauso 24 h gecacht wie ein guter** (`erzeugeCache(100, GRAPH_TTL_MS)` – eine Frist für alle). Der Bahnhof bleibt einen Tag degradiert, lange nach der Erholung. Am 29.08. beobachtet: 19:00 Uhr Stufe 3, nach dem Neustart mit leerem Cache sofort Stufe 1. Fix: Frist nach Qualität – Stufe 1 volle 24 h, Stufe 3 wenige Minuten. |
 | 2 | **FaSta-Adressierung schließen** | RIS::Stations liefert in der Antwort `stationID` (Berlin Hbf: `"1071"`) – genau die StaDa-Bahnhofsnummer, die FaSta erwartet. Der TODO in `clients/db-endpunkte.ts` lässt sich ohne zusätzliche API schließen: `stationID` in `StationsInfo` durchreichen statt die EVA zu senden. |
 | 3 | **Mobilabnahme am echten Gerät** | Die Sichtprüfung am Desktop ist am 29./30.08. erfolgt (siehe „Was der Browser gezeigt hat"). Offen bleibt, was nur ein Handy zeigt: Berechtigungsdialog, Wiederkehrer ohne Dialog, Genauigkeit im Bahnhof, Ankunftserkennung am Gleis, und ob die automatische Ebenenwahl als Hilfe oder als Bevormundung ankommt. `mkcert`-Zertifikate in `frontend/.cert/` schalten den Dev-Server auf HTTPS. |
 | 4 | **4 Lint-Warnungen im Frontend** (`cd frontend && npm run lint`) | Drei `set-state-in-effect` (Task 13/15 und die Bahnhofs-Vorbelegung), eine `purity` (`Date.now()` im Render). Alle bestehen bewusst; neue Warnungen wurden bei jeder Änderung behoben statt übernommen. |
@@ -232,9 +233,11 @@ Teil des Schlüssels, und das Ergebnis ist ein stiller 401. Genau so passiert.
 | Task 17 – Degradationstests, Docker, Mobile-Feinschliff | 🔶 `Dockerfile` steht und läuft in Produktion (28.08.2026); `docker-compose.yml`/Caddy entfallen; Degradationstests und Mobile-Feinschliff offen |
 | P1 – Standort & Live-Navigation (12 Tasks) | 🔶 Tasks 1–11 fertig; Task 12 (Mobilabnahme am Gerät) offen (Tabelle oben) |
 | Rechtliches – Impressum, Datenschutz, lokale Schriften | ✅ fertig, im Browser geprüft |
-| Schrittnavigation (Spec 30.08.2026, 8 Tasks) | ✅ Code fertig, Abnahme am Gerät offen |
+| Schrittnavigation (Spec 30.08.2026, 8 Tasks) | ✅ fertig, **im Browser gegen die Produktion verifiziert** (30.08.) |
 
-**Tests:** `cd backend && npm test` → **149 von 149 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm test` → **34 von 34 grün**, `npm run build` grün; `npm run lint` meldet 4 Warnungen (siehe ToDo 4).
+**Tests:** `cd backend && npm test` → **158 von 158 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm test` → **37 von 37 grün**, `npm run build` grün; `npm run lint` meldet 4 Warnungen (siehe ToDo 4).
+
+Die Backend-Suite läuft mit **`TZ=UTC`** (`vitest.config.ts`) – wie die Produktion. Ohne das sind Zeitzonenfehler auf einem deutschen Rechner unsichtbar; genau so ist der Fehler entstanden, dass die Zugauswahl nur abgefahrene Züge zeigte.
 
 **Nicht maschinell geprüft:** Die Frontend-SSE-Anbindung (`api/sse.ts`, `LiveBanner`) und `useStandort.ts` sind nur über TypeScript und Build abgesichert – beide enthalten keine reine Logik, sondern sprechen Browser-APIs an. Der SSE-Endpunkt selbst wird dagegen in `test/live.test.ts` gegen einen echten HTTP-Server geprüft; `useStandort` gehört in die Mobilabnahme.
 
@@ -387,7 +390,29 @@ Was der Code tut, wenn die Standortfreigabe erteilt ist:
 Berechtigungsdialog, der Positionspunkt und die Ankunftserkennung am Gleis
 brauchen die Mobilabnahme (Task 12).
 
-## Was der Browser gezeigt hat (30.08.2026)
+## Abnahme im Browser (30.08.2026, gegen die Produktion)
+
+Die fünf Punkte aus dem Umsetzungsplan, alle auf <https://umstieg.vercel.app>
+durchgespielt – nicht lokal:
+
+| Prüfung | Ergebnis |
+|---|---|
+| Aktiver Schritt hervorgehoben, erledigte gedämpft | ✅ Schritt 1 blass, Schritt 2 mit Rahmen und Tönung |
+| Uhr rückt von selbst weiter | ✅ nach ~20 s von Schritt 1 auf 2, ohne Zutun |
+| „Weiter"/„Zurück" | ✅ „Schritt 3 von 14", Korrektur bleibt bestehen |
+| Karte wählt die Ebene des Schritts | ✅ Schritt 5 → Ebene 0, Schritt 10 → Unterführung (−1), selbständig |
+| Handwahl behält Vorrang | ✅ von Hand auf −1 gestellt, Weiterschalten überstimmt sie nicht |
+| Stufe 3 zeigt ein Schema | ✅ drei Balken, aktiver rot, Ebenen am Rand, **kein Kartenknopf** – MapLibre wird nicht geladen |
+
+Dazu bestätigt: Zugauswahl mit echten kommenden Zügen inklusive Folgestunde,
+Verspätungen mit durchgestrichener Sollzeit, der Genauigkeitshinweis
+(„± 2000 m – zu grob"), Fußzeile mit Impressum und Datenschutz.
+
+**Nicht geprüft und nur am Gerät prüfbar:** Berechtigungsdialog, GPS-Genauigkeit
+in einer Bahnhofshalle, Ankunftserkennung am Zielgleis, und ob die automatische
+Ebenenwahl unterwegs als Hilfe oder als Bevormundung ankommt.
+
+## Was der Browser vorher gezeigt hat (29./30.08.2026)
 
 Erste echte Sichtprüfung, mit drei Funden, die kein Test gefunden hätte:
 
@@ -401,6 +426,22 @@ Erste echte Sichtprüfung, mit drei Funden, die kein Test gefunden hätte:
    Landkarte.
 3. **Die Schrift kam von Google Fonts.** Behoben: Archivo wird lokal
    ausgeliefert, der Build enthält keinen Google-Verweis mehr.
+4. **Die Zugauswahl zeigte nur abgefahrene Züge.** Um 17:26 Uhr lieferte die
+   Tafel Züge von 15:04 bis 15:53. `epTafelPlan` baute die Stunde mit
+   `Date#getHours()`, also der **Prozesszeit** – der Container läuft in UTC,
+   der DB-Fahrplan ist in deutscher Ortszeit definiert. Im Sommer zwei Stunden
+   zu früh, im Winter eine. Behoben über `core/zeit.ts`, das die Zone
+   ausdrücklich nennt. Dieselbe Ursache steckte in `heuteJJJJMMTT()` für die
+   Wagenreihung. **Und es wurde nur eine Stunde geholt** – um 17:55 fehlte der
+   18:05, also genau der Anschluss, um den es geht; jetzt sind es zwei Stunden.
+5. **Die Bahnhofssuche schwieg bei Netzfehlern.** `fehler: 'netz'` fiel durch
+   beide Auswertungszweige: keine Vorschläge, keine Meldung. Häufigste Ursache
+   ist eine Vercel-Vorschau-Adresse, die nicht in `CORS_ORIGIN` steht.
+6. **Die Bahnhofserkennung prüfte die Genauigkeit nicht.** Bei einem
+   2000-m-Fix wurde ein 1000-m-Umkreis abgefragt – die Antwort war geraten.
+   Neu: `ERKENNUNG_MAX_M`. Ausserdem verbrauchte ein grober Erstfix den
+   einzigen Erkennungsversuch, was die Vorbelegung auf dem Handy unbrauchbar
+   gemacht hätte (Netzortung zuerst, GPS Sekunden später).
 
 Bestätigt hat die Prüfung: WebGL-Karte, Ebenen-Umschalter, ODbL-Attribution,
 Bahnhofssuche gegen RIS::Stations, `watchPosition` und die Genauigkeitsgrenze
