@@ -11,6 +11,10 @@ export interface Schritt {
   text: string;
   typ: KantenTyp | 'start' | 'ziel';
   distanzM?: number;
+  /** Gehzeit dieses Schritts. Summe aller Schritte = gehzeitSek. */
+  sekunden?: number;
+  /** Ebene, auf der der Schritt endet. */
+  level?: number;
 }
 
 export interface RouteErgebnis {

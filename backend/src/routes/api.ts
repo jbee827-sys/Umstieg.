@@ -266,7 +266,7 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
 
     return {
       stufe: graph.stufe,
-      schritte: generiereSchritte(pfad, { ungefaehr: graph.stufe === 3 }),
+      schritte: generiereSchritte(pfad, { ungefaehr: graph.stufe === 3, profil }),
       gehzeitSek: gehzeitSekunden(pfad, profil),
       karte: graphZuGeoJSON(graph, pfad),
       hinweise,
