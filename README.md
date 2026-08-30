@@ -50,7 +50,7 @@ Browser-Sichtprüfung. Beides braucht Handarbeit an einem echten Gerät.
 | 1 | **EVA-Split bei grossen Bahnhöfen** ← *die grösste inhaltliche Lücke* | Berlin Hbf ist drei Verkehrsstellen: `8011160` (Gleis 11–14), `8098160` (tief, Gleis 1–8), `8089522` (S-Bahn, Gleis 22). Kein EVA enthält Gleis 6 **und** 14; `8098160` taucht in der Suche gar nicht auf; und **`8011160` liefert eine LEERE Fahrplantafel** – IRIS führt Berlin Hbf unter `8098160`. Am 30.08. gemessen: `8011160` → 0 Abfahrten, `8098160` → 47. Andere grosse Knoten sind unauffällig (München 29, Köln 101, Frankfurt 43), das Problem trifft nur aufgeteilte Bahnhöfe – ausgerechnet den, der überall das Beispiel ist. Zu entscheiden: Suche bündelt verwandte Verkehrsstellen, **oder** `/api/route` und `/api/board` nehmen mehrere EVAs. |
 | 1b | **Graph-Cache vergiftet sich selbst** | Ein Overpass-Ausfall erzeugt einen Stufe-3-Graphen, und der wird **genauso 24 h gecacht wie ein guter** (`erzeugeCache(100, GRAPH_TTL_MS)` – eine Frist für alle). Der Bahnhof bleibt einen Tag degradiert, lange nach der Erholung. Am 29.08. beobachtet: 19:00 Uhr Stufe 3, nach dem Neustart mit leerem Cache sofort Stufe 1. Fix: Frist nach Qualität – Stufe 1 volle 24 h, Stufe 3 wenige Minuten. |
 | 2 | **FaSta-Adressierung schließen** | RIS::Stations liefert in der Antwort `stationID` (Berlin Hbf: `"1071"`) – genau die StaDa-Bahnhofsnummer, die FaSta erwartet. Der TODO in `clients/db-endpunkte.ts` lässt sich ohne zusätzliche API schließen: `stationID` in `StationsInfo` durchreichen statt die EVA zu senden. |
-| 3 | **Mobilabnahme am echten Gerät** | Die Sichtprüfung am Desktop ist am 29./30.08. erfolgt (siehe „Was der Browser gezeigt hat"). Offen bleibt, was nur ein Handy zeigt: Berechtigungsdialog, Wiederkehrer ohne Dialog, Genauigkeit im Bahnhof, Ankunftserkennung am Gleis, und ob die automatische Ebenenwahl als Hilfe oder als Bevormundung ankommt. `mkcert`-Zertifikate in `frontend/.cert/` schalten den Dev-Server auf HTTPS. |
+| 3 | **Mobilabnahme am echten Gerät** | Die Sichtprüfung am Desktop ist am 29./30.08. erfolgt (siehe „Abnahme im Browser"). Offen bleibt, was nur ein Handy zeigt: Berechtigungsdialog, Wiederkehrer ohne Dialog, Genauigkeit im Bahnhof, Ankunftserkennung am Gleis, und ob die automatische Ebenenwahl als Hilfe oder als Bevormundung ankommt. `mkcert`-Zertifikate in `frontend/.cert/` schalten den Dev-Server auf HTTPS. |
 | 4 | **4 Lint-Warnungen im Frontend** (`cd frontend && npm run lint`) | Drei `set-state-in-effect` (Task 13/15 und die Bahnhofs-Vorbelegung), eine `purity` (`Date.now()` im Render). Alle bestehen bewusst; neue Warnungen wurden bei jeder Änderung behoben statt übernommen. |
 | 5 | **Vercel: Framework-Preset steht auf „Services"** | Rückstand der `experimentalServices`-Erkennung beim `vercel link`. Die `vercel.json` überschreibt es, der Build ist nachweislich korrekt – kosmetisch, aber irreführend. Settings → Build & Deployment. |
 | 6 | **Vercel-Preview-Variable nur für `feat/mvp`** | `VITE_API_BASE` konnte nicht „für alle Preview-Zweige" gesetzt werden (CLI-Fehler in v53.1.0: der vorgeschlagene Befehl ist derselbe, der scheitert). Neue Zweige brauchen einen eigenen Eintrag oder das Dashboard. |
@@ -59,7 +59,7 @@ Browser-Sichtprüfung. Beides braucht Handarbeit an einem echten Gerät.
 
 | # | Aufgabe | Umfang |
 |---|---|---|
-| 7 | **P1 Task 12: Mobilabnahme** | Der Code steht (Tasks 1–11), geprüft ist er nur maschinell. Die fünf Punkte der Abnahme im Plan brauchen ein echtes Handy: Berechtigungsdialog, Wiederkehrer ohne Dialog, Vorbelegung am Bahnhof, schlechter Fix in der Unterführung, Ankunftsvorschlag am Zielgleis. Vorbereitet: `mkcert`-Zertifikate in `frontend/.cert/` schalten den Dev-Server auf HTTPS. |
+| 7 | **Drei Konzeptvorgaben, die nie gebaut wurden** | Siehe eigener Abschnitt „Konzeptlücken" weiter unten: der Abgleich OSM ↔ DB-Gleisliste (§4.3), FaSta-Koordinaten im Synthesemodell (§5) und die getrennten Blöcke Ankunft/Abfahrt (§9). Der erste davon würde ToDo 1 und 1b zugleich entschärfen. |
 | 8 | **MVP-Task 17 abschließen** | `Dockerfile` steht. Offen: Degradationstests (jede Zeile der Konzept-Tabelle Abschnitt 8 als eigener Test) und Mobile-Feinschliff. |
 | 9 | **Fehlende Design-Screens** | Von 6 Screens sind Eingabe, Routenansicht, Karte und „Angekommen" (P1 Task 9) gebaut. Offen: Störung/Gleiswechsel und Wagenreihung als eigene Screens. |
 
@@ -71,6 +71,8 @@ Browser-Sichtprüfung. Beides braucht Handarbeit an einem echten Gerät.
 | 11 | **DB-Antwortschemata der übrigen Clients prüfen** | RIS::Stations und Timetables sind gegen echte Antworten verifiziert. **Nicht geprüft:** FaSta und Wagenreihung – deren Fixtures sind weiterhin handgebaut. |
 | 12 | **Ticket-PDF-Import** | Im Prototyp als UI-Flow vorhanden, laut Konzept Stufe 2. Backend fehlt. |
 | 13 | **Repo-Sichtbarkeit** | Repo ist öffentlich. Inhaltlich unbedenklich (Historie mehrfach auf Secrets geprüft, zuletzt 28.08.2026 über alle Blobs – 0 Treffer), aber bewusst zu entscheiden. |
+| 14 | **Frontend kann keine Komponenten testen** | `vitest.config.ts` nutzt `environment: 'node'`, geprüft werden also nur reine Funktionen. Beide Korrekturen vom 30.08. – der Netzfehler-Hinweis und der Genauigkeitshinweis – ließen sich **gar nicht** testen und wurden nur im Browser verifiziert. jsdom plus Testing Library wäre ein überschaubarer Schritt und schlösse genau die Lücke, die bei stillen Fehlern zubeißt. |
+| 15 | **Zwei geratene Schwellenwerte** | `MINDEST_SCHRITT_MS = 8000` (Anzeigedauer je Schritt) und `ERKENNUNG_MAX_M = 1000` (Genauigkeitsbudget der Bahnhofserkennung) sind begründete Startwerte ohne Messung dahinter. Zu hoch gewählt hinkt die Schrittanzeige hinterher, zu niedrig flackert sie. Erst die Mobilabnahme zeigt die Richtung. |
 
 ### P1 – Standort & Live-Navigation
 
@@ -463,6 +465,33 @@ tut: keine Cookies, kein `localStorage`, kein Tracking, Backend ohne Protokoll
 (`logger: false`), Standort im Browser auf ~110 m gerundet, Kartenkacheln erst
 beim Aufklappen. Schriften liegen lokal (`frontend/src/assets/fonts/`, SIL OFL
 1.1) – **kein** Google Fonts.
+
+## Konzeptlücken
+
+Drei Vorgaben aus dem [Umsetzungskonzept](./2026-08-24-umstiegs-navigator-design.md)
+sind nie gebaut worden. Sie stehen hier getrennt, weil sie keine Fehler sind,
+sondern Entscheidungen, die noch anstehen.
+
+**§4.3 – Abgleich OSM ↔ DB-Gleisliste.** Das Konzept verlangt: „Gleisnummern
+aus OSM (`ref` an Bahnsteigen) gegen die DB-Gleisliste abgleichen; bei Konflikt
+gewinnt die DB-Liste." Beide Quellen laufen bis heute unabgeglichen
+nebeneinander. Genau daraus entstehen ToDo 1 und 1b: Stufe 1 routet
+**geografisch** über OSM und kennt keine EVA-Grenzen, das Synthesemodell
+dagegen ist **EVA-gebunden**. Welche Quelle gerade antwortet, entscheidet
+deshalb über Erfolg oder 404 – am 29.08. innerhalb von Minuten beides erlebt.
+Dieser Abgleich ist der Hebel, der beide Punkte zugleich entschärft.
+
+**§5 – FaSta-Koordinaten im Synthesemodell.** Stufe 3 soll die Lage von
+Aufzügen und Rolltreppen aus FaSta beziehen. Tatsächlich wird FaSta nur bei
+`variante=barrierefrei` abgefragt und fließt nicht in die Geometrie ein. Das
+Standardmodell setzt seine Querung deshalb auf halber Bahnsteiglänge an, statt
+sie dort zu vermuten, wo nachweislich ein Aufzug steht.
+
+**§9 – getrennte Blöcke Ankunft und Abfahrt.** Vorgesehen sind zwei Blöcke mit
+**je** Gleis, Zug und Wagennummer. Gebaut ist eine flache Maske mit *einer*
+Wagennummer, die des Ankunftszugs. Für den Abfahrtszug fehlt das Feld – womit
+der im Konzept genannte „verfeinerte Zielpunkt über die Abfahrts-Wagenposition"
+keine Eingabe hätte. Der steht allerdings ohnehin unter Stufe 2.
 
 ## Bekannte Einschränkungen
 
