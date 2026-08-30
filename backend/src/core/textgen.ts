@@ -45,6 +45,8 @@ interface Segment {
   peilungEnde: number | null;
   deltaLevel: number;
   zielLevel: number;
+  knotenVon: number;
+  knotenBis: number;
 }
 
 /** Kanten zu Segmenten: benachbarte eben-Kanten gleicher Richtung (±22,5°) verschmelzen. */
@@ -68,6 +70,7 @@ function baueSegmente(pfad: RoutenPfad): Segment[] {
       letztes.laengeM += kante.laengeM;
       letztes.peilungEnde = peilung;
       letztes.zielLevel = nach.level;
+      letztes.knotenBis = i + 1;
       continue;
     }
     segmente.push({
@@ -79,6 +82,8 @@ function baueSegmente(pfad: RoutenPfad): Segment[] {
       // kante.deltaLevel gilt nur für die Speicherrichtung von→nach.
       deltaLevel: nach.level - von.level,
       zielLevel: nach.level,
+      knotenVon: i,
+      knotenBis: i + 1,
     });
   }
   return segmente;
@@ -137,6 +142,8 @@ export function generiereSchritte(pfad: RoutenPfad, optionen: TextOptionen = {})
       ...(distanzM !== undefined ? { distanzM } : {}),
       ...(zeiten ? { sekunden: zeiten[schritte.length] } : {}),
       level: segment.zielLevel,
+      knotenVon: segment.knotenVon,
+      knotenBis: segment.knotenBis,
     });
   }
 
