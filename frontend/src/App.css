@@ -681,3 +681,18 @@
   text-align: center;
   min-width: 96px;
 }
+
+/* Stufe-3-Schema: bewusst als Skizze erkennbar, kein Kartenhintergrund. */
+.schema-bereich {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.schema-flaeche {
+  width: 100%;
+  height: auto;
+  background: var(--color-neutral-100);
+  border-radius: 12px;
+}

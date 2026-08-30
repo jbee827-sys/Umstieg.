@@ -4,6 +4,7 @@ import { holeRoute, RouteFehler } from './api/client'
 import { verbindeLive } from './api/sse'
 import type { BahnhofTreffer, LiveEreignis, RouteErgebnis } from './api/typen'
 import { Ampel } from './components/Ampel'
+import { Bahnhofsschema } from './components/Bahnhofsschema'
 import { Datenschutz } from './components/Datenschutz'
 import { Fusszeile } from './components/Fusszeile'
 import { Impressum } from './components/Impressum'
@@ -264,14 +265,22 @@ function App() {
             Ich bin da
           </button>
         )}
-        {route.karte && (
-          <Suspense fallback={<div className="lade-hinweis">Karte wird geladen …</div>}>
-            <Karte
-              karte={route.karte}
-              standort={standort}
-              aktiverSchritt={route.schritte[position] ?? null}
-            />
-          </Suspense>
+        {route.stufe === 3 ? (
+          <Bahnhofsschema
+            schritte={route.schritte}
+            aktiv={position}
+            bahnhofName={werte.bahnhofName || 'Umstieg'}
+          />
+        ) : (
+          route.karte && (
+            <Suspense fallback={<div className="lade-hinweis">Karte wird geladen …</div>}>
+              <Karte
+                karte={route.karte}
+                standort={standort}
+                aktiverSchritt={route.schritte[position] ?? null}
+              />
+            </Suspense>
+          )
         )}
         {route.hinweise.length > 0 && (
           <ul className="hinweisliste">
