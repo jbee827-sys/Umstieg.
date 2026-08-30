@@ -95,12 +95,12 @@ Einmalig:
 
 ```bash
 cd backend
-fly apps create umstieg-backend          # NICHT `fly launch`
-fly secrets set DB_CLIENT_ID=... DB_CLIENT_SECRET=...
-fly secrets set CORS_ORIGIN=https://<deine-vercel-domain>.vercel.app
+flyctl apps create umstieg-backend          # NICHT `flyctl launch`
+flyctl secrets set DB_CLIENT_ID=... DB_CLIENT_SECRET=...
+flyctl secrets set CORS_ORIGIN=https://<deine-vercel-domain>.vercel.app
 ```
 
-Bewusst `fly apps create` statt `fly launch`: `launch` will die fertige
+Bewusst `flyctl apps create` statt `flyctl launch`: `launch` will die fertige
 `fly.toml` neu schreiben. Der App-Name ist bei Fly weltweit eindeutig; ist er
 vergeben, anderen Namen waehlen und `app = "..."` in `fly.toml` anpassen.
 Docker wird lokal nicht gebraucht, Fly baut remote.
@@ -108,7 +108,7 @@ Docker wird lokal nicht gebraucht, Fly baut remote.
 Danach jedes Mal:
 
 ```bash
-cd backend && fly deploy --ha=false
+cd backend && flyctl deploy --ha=false
 curl https://umstieg-backend.fly.dev/api/health     # {"status":"ok"}
 ```
 
@@ -142,8 +142,8 @@ Zustand (Redis o. ae.) fuer Poller und Cache.
 Nachtraeglich pruefen und aufraeumen:
 
 ```bash
-fly machines list                 # es darf genau eine geben
-fly machines destroy <id> --force # zweite entfernen
+flyctl machines list                 # es darf genau eine geben
+flyctl machines destroy <id> --force # zweite entfernen
 ```
 
 ## Frontend deployen (Vercel)
@@ -172,7 +172,7 @@ gesamte Standortfunktion (P1) im Browser blockiert.
 1. Backend deployen und die Domain notieren.
 2. `VITE_API_BASE` in Vercel auf diese Domain setzen.
 3. Frontend deployen und dessen Domain notieren.
-4. `CORS_ORIGIN` im Backend auf die Vercel-Domain setzen (`fly secrets set`,
+4. `CORS_ORIGIN` im Backend auf die Vercel-Domain setzen (`flyctl secrets set`,
    startet die Maschine neu).
 5. Prüfen: Route berechnen (HTTP), dann Zug auswählen (SSE muss stehen).
 

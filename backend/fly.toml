@@ -1,5 +1,5 @@
 # Fly.io-Konfiguration fuer das Backend. Aus diesem Ordner deployen:
-#   cd backend && fly deploy --ha=false
+#   cd backend && flyctl deploy --ha=false
 #
 # --ha=false ist Pflicht. Ohne den Schalter legt Fly beim Deploy eine zweite
 # Maschine fuer Hochverfuegbarkeit an (so geschehen beim ersten Deploy am
