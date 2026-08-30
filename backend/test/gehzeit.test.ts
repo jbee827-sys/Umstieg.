@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ampel, berechnePuffer, gehzeitSekunden } from '../src/core/gehzeit.js';
+import { ampel, berechnePuffer, gehzeitSekunden, verteileGehzeit } from '../src/core/gehzeit.js';
 import type { GraphKante, KantenTyp, RoutenPfad } from '../src/core/typen.js';
 
 const kante = (typ: KantenTyp, laengeM: number, deltaLevel = 0): GraphKante => ({
@@ -71,5 +71,48 @@ describe('berechnePuffer', () => {
     const ankunft = new Date('2026-08-25T10:00:00Z');
     const abfahrt = new Date('2026-08-25T10:02:00Z');
     expect(berechnePuffer(abfahrt, ankunft, 180)).toBe(-60);
+  });
+});
+
+describe('verteileGehzeit', () => {
+  it('verteilt auf ein Segment die volle Zeit', () => {
+    const werte = verteileGehzeit([{ laengeM: 100, typ: 'eben' }], 'normal');
+    expect(werte).toEqual([100]);
+  });
+
+  it('rechnet den Zuschlag je Segmenttyp dazu', () => {
+    // 10 m bei 1,0 m/s = 10 s, Treppenzuschlag 20 s
+    const werte = verteileGehzeit([{ laengeM: 10, typ: 'treppe' }], 'normal');
+    expect(werte).toEqual([30]);
+  });
+
+  it('haelt die Summe exakt auf gehzeitSekunden - auch bei krummen Laengen', () => {
+    const segmente = [
+      { laengeM: 3.7, typ: 'eben' as const },
+      { laengeM: 3.7, typ: 'eben' as const },
+      { laengeM: 3.7, typ: 'eben' as const },
+    ];
+    const werte = verteileGehzeit(segmente, 'normal');
+    const summe = werte.reduce((a, b) => a + b, 0);
+    // Einzeln gerundet waere jedes 4 s, in Summe 12 - richtig sind 11.
+    expect(summe).toBe(Math.round((3.7 * 3) / 1.0));
+    expect(summe).toBe(11);
+  });
+
+  it('liefert nie negative Werte', () => {
+    const segmente = Array.from({ length: 20 }, () => ({ laengeM: 0.4, typ: 'eben' as const }));
+    for (const w of verteileGehzeit(segmente, 'zuegig')) {
+      expect(w).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it('beruecksichtigt das Gehprofil', () => {
+    const schnell = verteileGehzeit([{ laengeM: 140, typ: 'eben' }], 'zuegig');
+    const langsam = verteileGehzeit([{ laengeM: 140, typ: 'eben' }], 'langsam');
+    expect(schnell[0]).toBeLessThan(langsam[0]);
+  });
+
+  it('leere Eingabe -> leeres Ergebnis', () => {
+    expect(verteileGehzeit([], 'normal')).toEqual([]);
   });
 });

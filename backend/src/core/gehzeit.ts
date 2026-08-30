@@ -21,6 +21,29 @@ export function gehzeitSekunden(pfad: RoutenPfad, profil: Gehprofil): number {
 }
 
 /**
+ * Gehzeit je Segment. Die Summe ist EXAKT gleich `gehzeitSekunden` ueber
+ * dieselben Kanten - deshalb kumulative Rundung statt Rundung je Segment:
+ * `gehzeitSekunden` rundet einmal am Ende, und Sum(round(x_i)) weicht davon
+ * ab. Bei 30 Schritten summiert sich das auf mehrere Sekunden, und dann
+ * widersprechen sich Ampel und Schrittanzeige.
+ */
+export function verteileGehzeit(
+  segmente: { laengeM: number; typ: KantenTyp }[],
+  profil: Gehprofil,
+): number[] {
+  const v = GESCHWINDIGKEIT[profil];
+  let laengeBisher = 0;
+  let gerundetBisher = 0;
+  return segmente.map((segment) => {
+    laengeBisher += segment.laengeM;
+    const gerundet = Math.round(laengeBisher / v);
+    const anteil = gerundet - gerundetBisher;
+    gerundetBisher = gerundet;
+    return anteil + (ZUSCHLAG[segment.typ] ?? 0);
+  });
+}
+
+/**
  * Ampel RELATIV zur Gehzeit (Konzeptkorrektur 4, aus dem UI-Design übernommen):
  * grün = Umstiegszeit ≥ 2× Gehzeit, gelb = 1–2× Gehzeit, rot = unter 1× Gehzeit.
  */
