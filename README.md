@@ -114,7 +114,7 @@ Beide Ziele laufen, die Kette ist Ende-zu-Ende geprüft.
 |---|---|---|
 | **Frontend** (Vercel) | <https://umstieg.vercel.app> | ✅ Vite-Build, `VITE_API_BASE` einkompiliert |
 | **Backend** (Fly.io) | <https://umstieg-backend.fly.dev> | ✅ 1 Maschine, Region `fra`, Health-Check grün |
-| **GitHub** | <https://github.com/jbee827-sys/Umstieg.> | ✅ `feat/mvp` aktuell, `main` 3 Commits zurück |
+| **GitHub** | <https://github.com/jbee827-sys/Umstieg.> | ✅ `feat/mvp` und `main` gleichauf (31.08.2026) |
 
 Verifiziert am 28.08.2026 gegen die Produktion:
 
@@ -224,6 +224,20 @@ darauf und bleibt leer. Einzelheiten: [`docs/deployment.md`](./docs/deployment.m
 Beim Eintragen auf **LF-Zeilenenden und keine Leerzeichen** achten – Notepad
 schreibt CRLF und hängt beim Einfügen gern ein Leerzeichen an. Das Zeichen wird
 Teil des Schlüssels, und das Ergebnis ist ein stiller 401. Genau so passiert.
+
+### Zweige
+
+Gearbeitet wird auf **`feat/mvp`**. `main` wird nach jedem abgeschlossenen
+Abschnitt nachgezogen – bisher per Fast-Forward, weil `main` stets direkter
+Vorfahr war und es deshalb nichts zu verschmelzen gab:
+
+```bash
+git checkout main && git merge --ff-only feat/mvp && git push origin main
+git checkout feat/mvp        # weiter geht es hier
+```
+
+Das Deployment hängt **nicht** am Zweig: `flyctl deploy` schiebt den Stand des
+Arbeitsverzeichnisses hoch, unabhängig davon, wo HEAD gerade steht.
 
 ### Eigenheiten dieses Rechners
 
