@@ -264,9 +264,8 @@
   position: sticky;
   top: 0;
   z-index: 5;
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  /* Spalte, nicht Zeile: Kopf, Zeitleiste und Status liegen uebereinander. */
+  display: block;
   padding: 12px 0;
   background: var(--color-bg);
 }
@@ -826,59 +825,116 @@
   flex-direction: column;
 }
 
-/* Angekommen (Screen 6): gross und gruen, ohne Zweifel. */
-.angekommen-gruen {
-  min-height: 100dvh;
+/* Angekommen (Screen 6): die gruene Flaeche traegt nur die Bestaetigung und
+   bedeckt etwa ein Drittel - darunter steht die App wie ueberall, damit die
+   untere Leiste gleich bleibt. */
+.angekommen-flaeche {
+  min-height: 33dvh;
   background: var(--color-gruen);
   color: var(--color-bg);
-  padding: 32px 20px calc(24px + env(safe-area-inset-bottom));
-  max-width: 430px;
-  margin: 0 auto;
+  border-radius: 18px;
+  padding: 26px 20px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  justify-content: center;
+  gap: 4px;
 }
-.angekommen-gruen h1 {
+.angekommen-flaeche h1 {
   font-size: 34px;
   font-weight: 800;
   letter-spacing: -0.03em;
-  margin: 18px 0 4px;
-}
-.kicker-hell {
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  opacity: 0.75;
+  margin: 10px 0 0;
 }
 .angekommen-satz {
   font-size: 16px;
   margin: 0;
-  opacity: 0.9;
+  opacity: 0.92;
 }
 .angekommen-kacheln {
   display: flex;
   gap: 8px;
-  margin-top: 20px;
+  margin-top: 16px;
 }
 .angekommen-kachel {
   flex: 1;
   padding: 12px;
   border-radius: 12px;
-  background: color-mix(in srgb, #f3f2f2 16%, transparent);
+  border: 2px solid var(--color-divider);
 }
 .angekommen-kachel-label {
   font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  opacity: 0.8;
+  color: var(--color-neutral-600, #6b6767);
 }
 .angekommen-kachel-wert {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 800;
+  font-variant-numeric: tabular-nums;
   margin-top: 2px;
 }
+.angekommen-wagenkasten {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-size: 15px;
+}
+
+/* Globale Stoermeldung (Punkt 5): faehrt von oben ein, bedeckt ein Drittel. */
+.stoermeldung {
+  position: fixed;
+  inset: 0 0 auto 0;
+  min-height: 33dvh;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+.stoermeldung-inhalt {
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  padding: 20px 20px 22px;
+}
+.stoermeldung h2 {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 6px 0 4px;
+}
+.stoermeldung p {
+  margin: 0;
+  font-size: 15px;
+}
+.stoermeldung-stand {
+  margin-top: 6px !important;
+  font-size: 12px;
+  opacity: 0.8;
+}
+.stoermeldung-knoepfe {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+.stoermeldung-knoepfe > * { flex: 1; }
+.knopf-durchsichtig {
+  min-height: 52px;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+
 .knopf-hell {
-  margin-top: auto;
   min-height: 58px;
   border: 0;
   border-radius: 999px;
@@ -960,4 +1016,107 @@
   padding: 12px 0;
   font-size: 14px;
   font-weight: 700;
+}
+
+/* Ampel mit Zeitleiste (Screen 2) */
+.ampel-kopf {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ampel-rest {
+  font-family: var(--font-heading, inherit);
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.ampel-gehzeit {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  text-align: right;
+  color: var(--color-neutral-600, #6b6767);
+}
+.ampel-zeitleiste {
+  margin-top: 10px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-neutral-300, #cdc9c9);
+  overflow: hidden;
+}
+.ampel-zeitleiste-fuellung {
+  height: 4px;
+  border-radius: 999px;
+  background: currentColor;
+  transition: width 0.9s cubic-bezier(0.22, 0.7, 0.2, 1);
+}
+.ampel-status {
+  margin-top: 7px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.ampel-gruen { color: var(--color-gruen); }
+.ampel-gelb { color: var(--color-gelb, #e08a00); }
+.ampel-rot { color: var(--color-accent); }
+.ampel-grau { color: var(--color-neutral-600, #6b6767); }
+.ampel-lampen {
+  display: flex;
+  gap: 5px;
+  padding: 6px 9px;
+  background: #201e1d;
+  border-radius: 999px;
+  flex: none;
+}
+
+/* Routenwahl als Zeilen mit Radio-Punkt (Screen 2) */
+.routenwahl {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.routenwahl-zeile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 13px 14px;
+  min-height: 56px;
+  border: 1px solid var(--color-divider);
+  border-radius: 14px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+  cursor: pointer;
+}
+.routenwahl-zeile.gewaehlt {
+  border-color: var(--color-text);
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+.routenwahl-punkt {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+.routenwahl-punkt > span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: transparent;
+}
+.routenwahl-punkt > span.gefuellt { background: currentColor; }
+.routenwahl-label { flex: 1; min-width: 0; }
+.routenwahl-min {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  opacity: 0.85;
 }

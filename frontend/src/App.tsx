@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import './App.css'
 import { holeRoute, RouteFehler } from './api/client'
+import { ladeVarianten } from './api/varianten'
 import { verbindeLive } from './api/sse'
 import type { BahnhofTreffer, LiveEreignis, RouteErgebnis, RoutenVariante } from './api/typen'
 import { Datenschutz } from './components/Datenschutz'
@@ -12,7 +13,7 @@ import { Dashboard, type VariantenStand } from './screens/Dashboard'
 import { Navigation } from './screens/Navigation'
 import { Stoerung, type Vorschlag } from './screens/Stoerung'
 import { Eingabe, type EingabeWerte } from './components/Eingabe'
-import { LiveBanner } from './components/LiveBanner'
+import { Stoermeldung } from './components/Stoermeldung'
 import { StandortStreifen } from './components/StandortStreifen'
 import { ANKUNFT_START, pruefeAnkunft, zielKoordinate } from './standort/ankunft'
 import { ABGEFAHREN_KULANZ_MS } from './standort/schwellen'
@@ -57,6 +58,12 @@ function App() {
   // Ein Gleiswechsel-Vorschlag. Liegt einer vor, traegt die Leiste ein
   // Kennzeichen; uebernommen wird er nur auf Knopfdruck.
   const [vorschlag, setVorschlag] = useState<Vorschlag | null>(null)
+  // Die aktuelle Route fuer den SSE-Behandler, ohne ihn bei jeder Aenderung
+  // neu zu abonnieren.
+  const routeRef = useRef<RouteErgebnis | null>(null)
+  useEffect(() => {
+    routeRef.current = route
+  }, [route])
   const [werte, setWerte] = useState<EingabeWerte | null>(null)
   const [laden, setLaden] = useState(false)
   const [fehler, setFehler] = useState<string | null>(null)
@@ -156,40 +163,30 @@ function App() {
       zugAn: eingabe.zugAn,
       wagen: eingabe.wagen || undefined,
     }
-    // Beide Varianten vorab, damit am Knopf die Minuten stehen koennen. Ein
-    // Fehlschlag der einen laesst die andere bestehen - der Knopf zeigt dann
-    // keine Minuten statt einer geratenen Zahl.
-    const [schnell, barrierefrei] = await Promise.allSettled([
-      holeRoute({ ...basis, variante: 'schnellste' }),
-      holeRoute({ ...basis, variante: 'barrierefrei' }),
-    ])
-    setLaden(false)
-
-    const stand: VariantenStand = {
-      gewaehlt: eingabe.variante === 'barrierefrei' ? 'barrierefrei' : 'schnellste',
-      ...(schnell.status === 'fulfilled' ? { schnellste: schnell.value.gehzeitSek } : {}),
-      ...(barrierefrei.status === 'fulfilled'
-        ? { barrierefrei: barrierefrei.value.gehzeitSek }
-        : {}),
-    }
-    const gewuenscht = stand.gewaehlt === 'barrierefrei' ? barrierefrei : schnell
-    // Die gewuenschte Variante hat Vorrang; faellt sie aus, greift die andere,
-    // damit ueberhaupt eine Route steht.
-    const ersatz = gewuenscht.status === 'fulfilled' ? gewuenscht : schnell.status === 'fulfilled' ? schnell : barrierefrei
-
-    if (ersatz.status !== 'fulfilled') {
-      const e = ersatz.reason
+    const gewaehlt: RoutenVariante =
+      eingabe.variante === 'barrierefrei' ? 'barrierefrei' : 'schnellste'
+    try {
+      await ladeVarianten(
+        basis,
+        gewaehlt,
+        holeRoute,
+        (haupt) => {
+          setLaden(false)
+          setWerte(eingabe)
+          setRoute(haupt)
+          setVarianten({ gewaehlt, [gewaehlt]: haupt.gehzeitSek })
+          setStartZeit(Date.now())
+          setVersatz(0)
+          setBildschirm('dashboard')
+        },
+        (variante, sek) => setVarianten((v) => ({ ...v, [variante]: sek })),
+      )
+    } catch (e) {
+      setLaden(false)
       const code = e instanceof RouteFehler ? e.code : 'netz'
       const detail = e instanceof RouteFehler ? e.message : undefined
       setFehler(FEHLER_TEXTE[code] ?? detail ?? 'Unbekannter Fehler.')
-      return
     }
-    setWerte(eingabe)
-    setRoute(ersatz.value)
-    setVarianten(stand)
-    setStartZeit(Date.now())
-    setVersatz(0)
-    setBildschirm('dashboard')
   }, [])
 
   /** Variante wechseln, ohne neu zu rechnen wenn moeglich. */
@@ -220,8 +217,20 @@ function App() {
           return
         }
         setLiveEreignis(ereignis)
-        if (ereignis.typ !== 'gleiswechsel' || !ereignis.neu) return
         navigator.vibrate?.([200, 100, 200])
+
+        // Eine neue Abfahrtszeit aendert die Restzeit, nicht den Weg - die
+        // Route bleibt, nur die Zeit wird neu. Ein Gleiswechsel dagegen
+        // braucht eine neue Berechnung.
+        if (ereignis.typ === 'verspaetung' && ereignis.neu) {
+          setVorschlag((alt) => ({
+            route: alt?.route ?? routeRef.current!,
+            werte: { ...werte, abfahrtZeit: ereignis.neu },
+            anlass: ereignis,
+          }))
+          return
+        }
+        if (ereignis.typ !== 'gleiswechsel' || !ereignis.neu) return
         const betrifftAnkunft = ereignis.zug === werte.zugAnName
         const neueWerte: EingabeWerte = {
           ...werte,
@@ -248,6 +257,25 @@ function App() {
   if (rechtsseite === 'impressum') return <Impressum onZurueck={schliesseRechtsseite} />
   if (rechtsseite === 'datenschutz') return <Datenschutz onZurueck={schliesseRechtsseite} />
 
+  // EIN Zeitpunkt fuer alle Zweige. Der 10-Sekunden-Tick oben loest das
+  // Neurendern aus; hier nur lesen - deshalb genau eine Stelle.
+  const jetzt = Date.now()
+
+  // Eine Aenderung an Gleis oder Abfahrtszeit ist zu wichtig, um sie erst
+  // beim naechsten Seitenwechsel zu zeigen - die Meldung liegt deshalb ueber
+  // JEDER Seite.
+  const meldung =
+    liveEreignis && liveEreignis.typ !== 'heartbeat' ? (
+      <Stoermeldung
+        ereignis={liveEreignis}
+        onAnsehen={() => {
+          setLiveEreignis(null)
+          setBildschirm('stoerung')
+        }}
+        onSchliessen={() => setLiveEreignis(null)}
+      />
+    ) : null
+
   function bestaetigeAnkunft() {
     ankunft.current = { ...ankunft.current, bestaetigt: true }
     setAnkunftVorschlag(false)
@@ -257,11 +285,19 @@ function App() {
 
   if (bildschirm === 'angekommen' && werte) {
     return (
-      <>
+      <main className="app">
+      {meldung}
+        {meldung}
         <Angekommen
           gleis={werte.gleisAb}
           abfahrt={werte.abfahrtZeit}
           wagen={werte.wagen || undefined}
+          zugAbName={werte.zugAbName}
+          restSek={
+            werte.abfahrtZeit
+              ? (heuteUm(werte.abfahrtZeit).getTime() - jetzt) / 1000
+              : undefined
+          }
           onNeu={() => {
             ankunft.current = ANKUNFT_START
             setBildschirm('eingabe')
@@ -273,13 +309,9 @@ function App() {
           hinweis={false}
           onWechsel={setBildschirm}
         />
-      </>
+      </main>
     )
   }
-
-  // EIN Zeitpunkt fuer alle Zweige. Der 10-Sekunden-Tick oben loest das
-  // Neurendern aus; hier nur lesen - deshalb genau eine Stelle.
-  const jetzt = Date.now()
 
   if (bildschirm === 'stoerung' && vorschlag && route && werte) {
     const restSek = vorschlag.werte.abfahrtZeit
@@ -287,6 +319,8 @@ function App() {
       : undefined
     return (
       <main className="app">
+      {meldung}
+        {meldung}
         <Stoerung
           vorschlag={vorschlag}
           alteRoute={route}
@@ -305,7 +339,6 @@ function App() {
             setBildschirm('dashboard')
           }}
         />
-        <Fusszeile />
         <Navileiste
           aktuell="dashboard"
           hatRoute={route !== null}
@@ -323,9 +356,8 @@ function App() {
     const abgefahren = restSek !== undefined && restSek * 1000 < -ABGEFAHREN_KULANZ_MS
     return (
       <main className="app">
-        {liveEreignis && (
-          <LiveBanner ereignis={liveEreignis} onSchliessen={() => setLiveEreignis(null)} />
-        )}
+      {meldung}
+        {meldung}
         <Dashboard
           werte={werte}
           route={route}
@@ -337,7 +369,6 @@ function App() {
           onNavigation={() => setBildschirm('navigation')}
           onStoerung={() => setBildschirm('stoerung')}
         />
-        <Fusszeile />
         <Navileiste
           aktuell={bildschirm}
           hatRoute={route !== null}
@@ -352,9 +383,8 @@ function App() {
     const position = aktiverSchritt(route.schritte, startZeit, jetzt, versatz)
     return (
       <main className="app">
-        {liveEreignis && (
-          <LiveBanner ereignis={liveEreignis} onSchliessen={() => setLiveEreignis(null)} />
-        )}
+      {meldung}
+        {meldung}
         <div className="routen-kopf">
           <div>
             <div className="kicker">{werte.bahnhofName || 'Umstieg'}</div>
@@ -379,6 +409,7 @@ function App() {
           standort={standort}
           onZurueck={() => setVersatz((v) => v - 1)}
           onWeiter={() => setVersatz((v) => v + 1)}
+          onAngekommen={bestaetigeAnkunft}
         />
         {ankunftVorschlag && (
           <StandortStreifen gleis={werte.gleisAb} onBestaetigen={bestaetigeAnkunft} />
@@ -395,7 +426,6 @@ function App() {
             ))}
           </ul>
         )}
-        <Fusszeile />
         <Navileiste
           aktuell={bildschirm}
           hatRoute={route !== null}
@@ -408,6 +438,7 @@ function App() {
 
   return (
     <main className="app">
+      {meldung}
       <header className="kopf">
         <div className="kicker">Umstieg.</div>
         <h1>Dein Umstieg</h1>

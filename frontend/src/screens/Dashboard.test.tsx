@@ -36,7 +36,7 @@ function zeige(ueber: Partial<Parameters<typeof Dashboard>[0]> = {}) {
 describe('Dashboard', () => {
   it('zeigt die Gehzeit auch ohne Abfahrtszeit', () => {
     zeige()
-    expect(screen.getByText(/5 Minuten Gehzeit/)).toBeDefined()
+    expect(screen.getByText("Gehzeit 5 min")).toBeDefined()
   })
 
   it('bietet nur Schnellste und Barrierefrei an', () => {
