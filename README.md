@@ -21,7 +21,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 ```bash
 cd backend && npm test        # muss 180 von 180 grün sein
 cd backend && npm run lint    # tsc --noEmit, muss sauber sein
-cd frontend && npm test       # muss 37 von 37 grün sein
+cd frontend && npm test       # muss 81 von 81 grün sein
 cd frontend && npm run build  # muss grün sein
 ```
 
@@ -69,7 +69,7 @@ braucht Handarbeit an einem echten Gerät.
 |---|---|---|
 | 7 | **Drei Konzeptvorgaben, die nie gebaut wurden** | Siehe eigener Abschnitt „Konzeptlücken" weiter unten: der Abgleich OSM ↔ DB-Gleisliste (§4.3), FaSta-Koordinaten im Synthesemodell (§5) und die getrennten Blöcke Ankunft/Abfahrt (§9). Der erste ist seit dem 31.08. der wichtigste offene Punkt – er erklärt den München-Fehlschluss weiter unten. |
 | 8 | **MVP-Task 17 abschließen** | `Dockerfile` steht. Offen: Degradationstests (jede Zeile der Konzept-Tabelle Abschnitt 8 als eigener Test) und Mobile-Feinschliff. |
-| 9 | **Design-Abgleich (D0–D9)** ← *jetzt analysiert* | Die App folgt dem Konzept**text**, nicht dem Design**bild**: Der Umsetzungsplan entstand 80 Minuten vor dem Design-Import und wurde nie nachgezogen (`grep` auf den Plan: null Erwähnungen). Ursache, Belege und neun benannte ToDos in [`docs/2026-08-31-design-abgleich.md`](./docs/2026-08-31-design-abgleich.md). Erster Schritt ist D0: Spec und Plan für die sechs Screens. |
+| 9 | **Restliche Design-Screens** | Der Umbau nach dem Entwurf ist am 31.08. erfolgt (Spec und Plan unter `docs/superpowers/`). Offen bleiben allein die drei Punkte, die das Backend brauchen: Ticket-Import, Wagenreihungsseite und die Variante *Mit Stopp: WC & Kiosk* – vollständig spezifiziert in [Abschnitt 8 der Spec](./docs/superpowers/specs/2026-08-31-frontend-nach-design-design.md). Ursachenanalyse: [`docs/2026-08-31-design-abgleich.md`](./docs/2026-08-31-design-abgleich.md). |
 
 ### Später / bei Gelegenheit
 
@@ -79,7 +79,7 @@ braucht Handarbeit an einem echten Gerät.
 | 11 | **DB-Antwortschema der Wagenreihung prüfen** | RIS::Stations, Timetables und FaSta sind gegen echte Antworten verifiziert – RIS::Stations am 31.08. mit aufgezeichneten Fixtures (`test/fixtures/db/gruppe-*.json`). **Nicht geprüft:** allein die Wagenreihung, deren Fixture weiterhin handgebaut ist. |
 | 12 | **Ticket-PDF-Import** | Im Prototyp als UI-Flow vorhanden, laut Konzept Stufe 2. Backend fehlt. |
 | 13 | **Repo-Sichtbarkeit** | Repo ist öffentlich. Inhaltlich unbedenklich (Historie mehrfach auf Secrets geprüft, zuletzt 28.08.2026 über alle Blobs – 0 Treffer), aber bewusst zu entscheiden. |
-| 14 | **Frontend kann keine Komponenten testen** | `vitest.config.ts` nutzt `environment: 'node'`, geprüft werden also nur reine Funktionen. Beide Korrekturen vom 30.08. – der Netzfehler-Hinweis und der Genauigkeitshinweis – ließen sich **gar nicht** testen und wurden nur im Browser verifiziert. jsdom plus Testing Library wäre ein überschaubarer Schritt und schlösse genau die Lücke, die bei stillen Fehlern zubeißt. |
+| ~~14~~ | ~~**Frontend kann keine Komponenten testen**~~ ✅ **erledigt 31.08.2026** | jsdom und Testing Library sind eingerichtet (`vitest.config.ts`, `src/test-setup.ts`). Die Komponententests waren die Voraussetzung für den Frontend-Umbau. |
 | 15 | **Drei geratene Schwellenwerte** | `MINDEST_SCHRITT_MS = 8000` (Anzeigedauer je Schritt), `ERKENNUNG_MAX_M = 1000` (Genauigkeitsbudget der Bahnhofserkennung) und `NOTBEHELF_TTL_MS = 600000` (Cache-Frist für Stufe 3; über `GRAPH_NOTBEHELF_TTL_MS` ohne Neubau verstellbar) sind begründete Startwerte ohne Messung dahinter. Zu hoch gewählt hinkt die Schrittanzeige hinterher, zu niedrig flackert sie. Erst die Mobilabnahme zeigt die Richtung. |
 
 ### P1 – Standort & Live-Navigation
@@ -283,8 +283,9 @@ Arbeitsverzeichnisses hoch, unabhängig davon, wo HEAD gerade steht.
 | Rechtliches – Impressum, Datenschutz, lokale Schriften | ✅ fertig, im Browser geprüft |
 | Schrittnavigation (Spec 30.08.2026, 8 Tasks) | ✅ fertig, **im Browser gegen die Produktion verifiziert** (30.08.) |
 | Verkehrsstellengruppen + Cache-Frist + FaSta-Adressierung (31.08.2026) | ✅ fertig, **gegen die echte DB-API verifiziert** (31.08.) |
+| Frontend-Umbau nach dem Designkonzept (31.08.2026) | ✅ fertig – fünf Bildschirme, Navigationsleiste, Schema statt Karte, Gleiswechsel als Vorschlag; **Browser-Sichtprüfung offen** |
 
-**Tests:** `cd backend && npm test` → **180 von 180 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm test` → **37 von 37 grün**, `npm run build` grün; `npm run lint` meldet 4 Warnungen (siehe ToDo 4).
+**Tests:** `cd backend && npm test` → **180 von 180 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm test` → **81 von 81 grün** (jsdom + Testing Library), `npm run build` grün; `npm run lint` meldet 4 Warnungen (siehe ToDo 4).
 
 Die Backend-Suite läuft mit **`TZ=UTC`** (`vitest.config.ts`) – wie die Produktion. Ohne das sind Zeitzonenfehler auf einem deutschen Rechner unsichtbar; genau so ist der Fehler entstanden, dass die Zugauswahl nur abgefahrene Züge zeigte.
 
@@ -317,13 +318,43 @@ Wichtigste Erkenntnis aus dem Spike: **74 % Stufe 1** – Indoor-Routing über O
 
 ## UI-Design (importiert aus Claude Design, 24.08.2026)
 
-Vollständig gesichert unter `design/` (Projekt „Umstieg mobile app design", `Umstieg.dc.html` + Modernist-Design-System + iOS-Frame + dc-Runtime). Umgesetzt sind bisher Eingabe, Routenansicht mit Ampel und Karte; die Screens Störung/Gleiswechsel, Wagenreihung und Angekommen sind noch nicht gebaut (Störungsbanner kommt mit Task 16):
+Vollständig gesichert unter `design/` (Projekt „Umstieg mobile app design",
+`Umstieg.dc.html` + Modernist-Design-System + iOS-Frame + dc-Runtime).
 
-- **6 Screens:** Onboarding (Von/Nach + Ticket-PDF-Import), Dashboard (Gleise, Ampel, Routenwahl), Navigation (SVG-Karte + Schritt-Sheet), Störung/Gleiswechsel, Wagenreihung, Angekommen.
-- **Design-Tokens:** Modernist-System (`design/_ds/.../styles.css`) – Akzent `#ec3013`, Hintergrund `#f3f2f2`, Text `#201e1d`, Font „Archivo" (Heading 800), Grün `#0f7a4f`, Gelb `#e08a00`.
-- **Wichtig – Ampellogik ist RELATIV zur Gehzeit** (nicht absolut wie im Konzept 6.4): Grün ≥ 2× Gehzeit, Gelb 1–2× Gehzeit, Rot < 1× Gehzeit. ✅ so umgesetzt in `backend/src/core/gehzeit.ts` und im Frontend; Plandokument ist nachgezogen.
-- Mock-Szenario im Prototyp: RE 3 Stralsund → Berlin Hbf Gl. 6 (Ebene −2) → ICE 1006 Hamburg Gl. 14 (Ebene +1), Wagen 26/Platz 61, Abschnitt C.
-- Prototyp enthält Ticket-PDF-Import als UI-Flow (laut Konzept Stufe 2 – UI schon da, Backend später).
+**Am 31.08.2026 umgebaut** – bis dahin folgte die App dem Konzept*text* statt
+dem Design*bild*; Ursache und Belege in
+[`docs/2026-08-31-design-abgleich.md`](./docs/2026-08-31-design-abgleich.md),
+Spec und Plan unter `docs/superpowers/`.
+
+**Gebaut sind fünf Bildschirme** mit unterer Navigationsleiste:
+
+| Bildschirm | Inhalt |
+|---|---|
+| Eingabe | Bahnhofssuche, Gleise, Zugauswahl; Gehtempo hinter „Mehr einstellen" |
+| Dashboard | Ampel **ab der Gleiseingabe**, Ankunfts-/Anschlussblock, zwei Routenknöpfe mit Minuten |
+| Navigation | Ebenenschema, ein Schritt zur Zeit, echte Karte hinter „Mehr" |
+| Störung | Gleiswechsel als **Vorschlag** – alt gegen neu, „Route übernehmen" |
+| Angekommen | „Du bist da." groß auf Grün mit den bekannten Reisedaten |
+
+**Nicht gebaut, nur spezifiziert** (brauchen das Backend): Ticket-Import,
+Wagenreihungsseite und die Variante „Mit Stopp: WC & Kiosk" – siehe
+Abschnitt 8 der Spec.
+
+**Drei Festlegungen, die vom Entwurf abweichen und warum:**
+
+1. **Die Navigationsleiste ist eine Neuerung, kein Design-Rückstand.** Die
+   „Screens"-Liste im Prototyp steht *ausserhalb* der Bildschirmrahmen – sie
+   ist der Navigator des Design-Werkzeugs.
+2. **Das Gehtempo bleibt**, eingeklappt. Im Entwurf kommt es nicht vor; es
+   ersatzlos zu streichen wäre für langsame Gehende ein Rückschritt.
+3. **Die echte Karte bleibt erreichbar.** Der Entwurf kennt keine
+   Kartenbibliothek, aber für Wege über einen Vorplatz hilft die Geometrie.
+   Bei Stufe 3 gibt es sie weiterhin gar nicht – dort wären die Koordinaten
+   konstruiert.
+
+- **Design-Tokens:** Modernist-System (`design/_ds/.../styles.css`) – Akzent `#ec3013`, Hintergrund `#f3f2f2`, Text `#201e1d`, Font „Archivo" (Heading 800), Grün `#0f7a4f`, Gelb `#e08a00`. Diese waren von Anfang an richtig übernommen.
+- **Wichtig – Ampellogik ist RELATIV zur Gehzeit** (nicht absolut wie im Konzept 6.4): Grün ≥ 2× Gehzeit, Gelb 1–2× Gehzeit, Rot < 1× Gehzeit.
+
 
 ## Entwicklung starten
 

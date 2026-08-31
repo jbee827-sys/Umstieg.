@@ -39,12 +39,6 @@ const PROFILE: { wert: Gehprofil; label: string }[] = [
   { wert: 'langsam', label: 'Langsam / Gepäck' },
 ]
 
-const VARIANTEN: { wert: RoutenVariante; label: string }[] = [
-  { wert: 'schnellste', label: 'Schnellste' },
-  { wert: 'einfachste', label: 'Einfachste' },
-  { wert: 'barrierefrei', label: 'Barrierefrei' },
-]
-
 // Eingabemaske nach dem Onboarding-Screen des Designs: Bahnhofssuche mit
 // Vervollständigung, Gleis an/ab (Pflicht), Wagennummer optional, große
 // Auswahlflächen für Gehprofil und Routenvariante.
@@ -59,7 +53,6 @@ export function Eingabe({ laden, fehler, erkannt, onBerechnen }: EingabeProps) {
   const [gleisAb, setGleisAb] = useState('')
   const [wagen, setWagen] = useState('')
   const [profil, setProfil] = useState<Gehprofil>('normal')
-  const [variante, setVariante] = useState<RoutenVariante>('schnellste')
   const [zugAnkunft, setZugAnkunft] = useState<TafelEintrag | null>(null)
   const [zugAbfahrt, setZugAbfahrt] = useState<TafelEintrag | null>(null)
   const suchTimer = useRef<number | undefined>(undefined)
@@ -113,7 +106,7 @@ export function Eingabe({ laden, fehler, erkannt, onBerechnen }: EingabeProps) {
       gleisAb: gleisAb.trim(),
       wagen: wagen.trim(),
       profil,
-      variante,
+      variante: 'schnellste',
       zugAn: zugAnkunft ? zugnummer(zugAnkunft.zug) : undefined,
       zugAnName: zugAnkunft?.zug,
       zugAbName: zugAbfahrt?.zug,
@@ -283,39 +276,27 @@ export function Eingabe({ laden, fehler, erkannt, onBerechnen }: EingabeProps) {
         />
       </div>
 
-      <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
-        <label>Gehtempo</label>
-        <div className="wahl-gruppe" role="group" aria-label="Gehtempo">
-          {PROFILE.map((p) => (
-            <button
-              key={p.wert}
-              type="button"
-              className="wahl-knopf"
-              aria-pressed={profil === p.wert}
-              onClick={() => setProfil(p.wert)}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-      </fieldset>
-
-      <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
-        <label>Route</label>
-        <div className="wahl-gruppe" role="group" aria-label="Routenvariante">
-          {VARIANTEN.map((v) => (
-            <button
-              key={v.wert}
-              type="button"
-              className="wahl-knopf"
-              aria-pressed={variante === v.wert}
-              onClick={() => setVariante(v.wert)}
-            >
-              {v.label}
-            </button>
-          ))}
-        </div>
-      </fieldset>
+      {/* Im Entwurf kommt das Gehtempo nicht vor. Ersatzlos streichen waere
+          fuer langsame Gehende aber ein Rueckschritt - deshalb eingeklappt. */}
+      <details className="mehr-einstellen">
+        <summary>Mehr einstellen</summary>
+        <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
+          <label>Gehtempo</label>
+          <div className="wahl-gruppe" role="group" aria-label="Gehtempo">
+            {PROFILE.map((p) => (
+              <button
+                key={p.wert}
+                type="button"
+                className="wahl-knopf"
+                aria-pressed={profil === p.wert}
+                onClick={() => setProfil(p.wert)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      </details>
 
       {fehler && <div className="fehler-box">{fehler}</div>}
 
