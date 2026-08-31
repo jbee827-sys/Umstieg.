@@ -825,3 +825,67 @@
 .wahl-gruppe-spalte {
   flex-direction: column;
 }
+
+/* Angekommen (Screen 6): gross und gruen, ohne Zweifel. */
+.angekommen-gruen {
+  min-height: 100dvh;
+  background: var(--color-gruen);
+  color: var(--color-bg);
+  padding: 32px 20px calc(24px + env(safe-area-inset-bottom));
+  max-width: 430px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.angekommen-gruen h1 {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 18px 0 4px;
+}
+.kicker-hell {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+.angekommen-satz {
+  font-size: 16px;
+  margin: 0;
+  opacity: 0.9;
+}
+.angekommen-kacheln {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+.angekommen-kachel {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, #f3f2f2 16%, transparent);
+}
+.angekommen-kachel-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.angekommen-kachel-wert {
+  font-size: 20px;
+  font-weight: 800;
+  margin-top: 2px;
+}
+.knopf-hell {
+  margin-top: auto;
+  min-height: 58px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+}
