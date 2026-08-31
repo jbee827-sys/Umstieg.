@@ -9,6 +9,7 @@ import { Datenschutz } from './components/Datenschutz'
 import { Fusszeile } from './components/Fusszeile'
 import { Impressum } from './components/Impressum'
 import { Angekommen } from './components/Angekommen'
+import { Navileiste } from './components/Navileiste'
 import { Eingabe, type EingabeWerte } from './components/Eingabe'
 import { LiveBanner } from './components/LiveBanner'
 import { Schrittliste } from './components/Schrittliste'
@@ -17,6 +18,7 @@ import { StandortStreifen } from './components/StandortStreifen'
 import { ANKUNFT_START, pruefeAnkunft, zielKoordinate } from './standort/ankunft'
 import { ABGEFAHREN_KULANZ_MS } from './standort/schwellen'
 import { aktiverSchritt } from './navigation/fortschritt'
+import type { Bildschirm } from './navigation/bildschirme'
 import { erkenneBahnhof } from './standort/bahnhofErkennung'
 import { useStandort } from './standort/useStandort'
 
@@ -56,7 +58,8 @@ function ampelFarbe(restSek: number, gehzeitSek: number): 'gruen' | 'gelb' | 'ro
 }
 
 function App() {
-  const [ansicht, setAnsicht] = useState<'eingabe' | 'route' | 'angekommen'>('eingabe')
+  // 'dashboard' und 'navigation' zeigen bis Task 3/5 denselben Inhalt.
+  const [bildschirm, setBildschirm] = useState<Bildschirm>('eingabe')
   // Route bleibt nach Berechnung vollständig im Speicher – die Anzeige
   // funktioniert auch, wenn die Verbindung im Bahnhof abreißt (Konzept).
   const [route, setRoute] = useState<RouteErgebnis | null>(null)
@@ -101,17 +104,17 @@ function App() {
   // Alle 10 s neu rendern. Treibt zwei Dinge: den Countdown der Ampel und das
   // Weiterruecken der Schrittanzeige - deshalb laeuft er auch ohne Zugauswahl.
   useEffect(() => {
-    if (ansicht !== 'route') return
+    if (bildschirm !== 'dashboard' && bildschirm !== 'navigation') return
     const timer = window.setInterval(() => setTick((t) => t + 1), 10000)
     return () => window.clearInterval(timer)
-  }, [ansicht])
+  }, [bildschirm])
 
   // Verfolgung laeuft ausschliesslich in der Routenansicht.
   useEffect(() => {
-    if (ansicht !== 'route') return
+    if (bildschirm !== 'dashboard' && bildschirm !== 'navigation') return
     starteVerfolgung()
     return stoppeVerfolgung
-  }, [ansicht, starteVerfolgung, stoppeVerfolgung])
+  }, [bildschirm, starteVerfolgung, stoppeVerfolgung])
 
   // Die Uhr laeuft ab dem Oeffnen der Routenansicht. Als State, nicht als Ref:
   // Der Wert wird waehrend des Renderns gelesen, und ein Ref darf das nicht -
@@ -124,7 +127,7 @@ function App() {
   const [ankunftVorschlag, setAnkunftVorschlag] = useState(false)
 
   useEffect(() => {
-    if (ansicht !== 'route' || !standort || !route) return
+    if (bildschirm !== 'dashboard' && bildschirm !== 'navigation' || !standort || !route) return
     const ziel = zielKoordinate(route)
     // Stufe 3 und fehlender Zielmarker liefern null – dann bleibt nur der
     // manuelle Knopf, eine Pruefung gegen konstruierte Koordinaten waere sinnlos.
@@ -132,7 +135,7 @@ function App() {
     const ergebnis = pruefeAnkunft(ankunft.current, standort, ziel, Date.now())
     ankunft.current = ergebnis.zustand
     setAnkunftVorschlag(ergebnis.vorschlagen)
-  }, [ansicht, standort, route])
+  }, [bildschirm, standort, route])
 
   // Rechtsseiten ueber den URL-Hash, damit sie eine stabile, verlinkbare
   // Adresse haben und der Zurueck-Knopf des Browsers funktioniert.
@@ -165,7 +168,7 @@ function App() {
       setRoute(ergebnis)
       setStartZeit(Date.now())
       setVersatz(0)
-      setAnsicht('route')
+      setBildschirm('dashboard')
     } catch (e) {
       const code = e instanceof RouteFehler ? e.code : 'netz'
       const detail = e instanceof RouteFehler ? e.message : undefined
@@ -179,7 +182,7 @@ function App() {
   // Eingabewerte und stößt die Neuberechnung an – die Route zeigt sofort den
   // neuen Weg, statt still falsch zu bleiben (Konzept 7).
   useEffect(() => {
-    if (ansicht !== 'route' || !werte?.eva) return
+    if (bildschirm !== 'dashboard' && bildschirm !== 'navigation' || !werte?.eva) return
     return verbindeLive({
       eva: werte.eva,
       zugAn: werte.zugAnName,
@@ -201,7 +204,7 @@ function App() {
         })
       },
     })
-  }, [ansicht, werte, berechne])
+  }, [bildschirm, werte, berechne])
 
   if (rechtsseite === 'impressum') return <Impressum onZurueck={schliesseRechtsseite} />
   if (rechtsseite === 'datenschutz') return <Datenschutz onZurueck={schliesseRechtsseite} />
@@ -210,22 +213,30 @@ function App() {
     ankunft.current = { ...ankunft.current, bestaetigt: true }
     setAnkunftVorschlag(false)
     stoppeVerfolgung()
-    setAnsicht('angekommen')
+    setBildschirm('angekommen')
   }
 
-  if (ansicht === 'angekommen' && werte) {
+  if (bildschirm === 'angekommen' && werte) {
     return (
-      <Angekommen
-        gleis={werte.gleisAb}
-        onNeu={() => {
-          ankunft.current = ANKUNFT_START
-          setAnsicht('eingabe')
-        }}
-      />
+      <>
+        <Angekommen
+          gleis={werte.gleisAb}
+          onNeu={() => {
+            ankunft.current = ANKUNFT_START
+            setBildschirm('eingabe')
+          }}
+        />
+        <Navileiste
+          aktuell={bildschirm}
+          hatRoute={route !== null}
+          hinweis={false}
+          onWechsel={setBildschirm}
+        />
+      </>
     )
   }
 
-  if (ansicht === 'route' && route && werte) {
+  if ((bildschirm === 'dashboard' || bildschirm === 'navigation') && route && werte) {
     const jetzt = Date.now()
     const position = aktiverSchritt(route.schritte, startZeit, jetzt, versatz)
     const restSek = werte.abfahrtZeit
@@ -311,13 +322,19 @@ function App() {
           className="knopf-sekundaer"
           type="button"
           onClick={() => {
-            setAnsicht('eingabe')
+            setBildschirm('eingabe')
             setFehler(null)
           }}
         >
           Neue Eingabe
         </button>
         <Fusszeile />
+        <Navileiste
+          aktuell={bildschirm}
+          hatRoute={route !== null}
+          hinweis={false}
+          onWechsel={setBildschirm}
+        />
       </main>
     )
   }
@@ -350,6 +367,12 @@ function App() {
       <hr className="trennlinie" />
       <Eingabe laden={laden} fehler={fehler} erkannt={erkannt} onBerechnen={berechne} />
       <Fusszeile />
+        <Navileiste
+          aktuell={bildschirm}
+          hatRoute={route !== null}
+          hinweis={false}
+          onWechsel={setBildschirm}
+        />
     </main>
   )
 }
