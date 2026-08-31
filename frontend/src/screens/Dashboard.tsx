@@ -1,0 +1,129 @@
+import { Ampel } from '../components/Ampel'
+import type { EingabeWerte } from '../components/Eingabe'
+import type { Ampelfarbe, RouteErgebnis, RoutenVariante } from '../api/typen'
+
+/**
+ * Gehzeit je Variante in Sekunden. `undefined` heisst: konnte nicht berechnet
+ * werden – dann steht am Knopf KEINE Minutenangabe statt einer geratenen.
+ */
+export interface VariantenStand {
+  schnellste?: number
+  barrierefrei?: number
+  gewaehlt: RoutenVariante
+}
+
+interface DashboardProps {
+  werte: EingabeWerte
+  route: RouteErgebnis
+  /** Sekunden bis zur Abfahrt; undefiniert ohne Zugauswahl. */
+  restSek?: number
+  abgefahren: boolean
+  varianten: VariantenStand
+  /** Ein Gleiswechsel-Vorschlag liegt vor. */
+  hinweis: boolean
+  onVariante: (v: RoutenVariante) => void
+  onNavigation: () => void
+  onStoerung: () => void
+}
+
+const KNOEPFE: { wert: RoutenVariante; label: string; feld: keyof VariantenStand }[] = [
+  { wert: 'schnellste', label: 'Schnellste Route', feld: 'schnellste' },
+  { wert: 'barrierefrei', label: 'Barrierefrei (Aufzug)', feld: 'barrierefrei' },
+]
+
+function minuten(sek?: number): string {
+  return sek === undefined ? '' : ` · ${Math.ceil(sek / 60)} min`
+}
+
+/** Ampel relativ zur Gehzeit – identische Formel wie backend gehzeit.ts. */
+function farbeVon(restSek: number | undefined, gehzeitSek: number, abgefahren: boolean): Ampelfarbe | null {
+  if (restSek === undefined || abgefahren) return null
+  if (restSek < gehzeitSek || restSek < 0) return 'rot'
+  if (restSek >= 2 * gehzeitSek) return 'gruen'
+  return 'gelb'
+}
+
+// Dashboard nach Screen 2 des Entwurfs. Die Ampel steht hier ab der
+// Gleiseingabe – ohne Abfahrtszeit grau, aber MIT Gehzeit und der Begruendung,
+// warum sie schweigt. Genau das fehlte bisher.
+export function Dashboard({
+  werte,
+  route,
+  restSek,
+  abgefahren,
+  varianten,
+  hinweis,
+  onVariante,
+  onNavigation,
+  onStoerung,
+}: DashboardProps) {
+  const farbe = farbeVon(restSek, route.gehzeitSek, abgefahren)
+  return (
+    <>
+      <div className="routen-kopf">
+        <div>
+          <div className="kicker">Umstieg in</div>
+          <h2>{werte.bahnhofName || 'diesem Bahnhof'}</h2>
+        </div>
+      </div>
+
+      <Ampel
+        farbe={farbe}
+        gehzeitSek={route.gehzeitSek}
+        restSek={restSek}
+        abgefahren={abgefahren}
+      />
+
+      <div className="dashboard-bloecke">
+        <section className="dashboard-block">
+          <div className="kicker">Du kommst an</div>
+          {werte.zugAnName && <div className="dashboard-zug">{werte.zugAnName}</div>}
+          <div className="dashboard-gleis">Gl. {werte.gleisAn}</div>
+          {werte.ankunftZeit && <div className="dashboard-zeit">an {werte.ankunftZeit}</div>}
+        </section>
+        <section className="dashboard-block">
+          <div className="kicker">Dein Anschluss</div>
+          {werte.zugAbName && <div className="dashboard-zug">{werte.zugAbName}</div>}
+          <div className="dashboard-gleis">Gl. {werte.gleisAb}</div>
+          {werte.abfahrtZeit && <div className="dashboard-zeit">ab {werte.abfahrtZeit}</div>}
+        </section>
+      </div>
+
+      <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
+        <label>Route</label>
+        <div className="wahl-gruppe wahl-gruppe-spalte" role="group" aria-label="Routenvariante">
+          {KNOEPFE.map((k) => (
+            <button
+              key={k.wert}
+              type="button"
+              className="wahl-knopf"
+              aria-pressed={varianten.gewaehlt === k.wert}
+              onClick={() => onVariante(k.wert)}
+            >
+              {k.label}
+              {minuten(varianten[k.feld] as number | undefined)}
+            </button>
+          ))}
+        </div>
+      </fieldset>
+
+      {route.hinweise.length > 0 && (
+        <ul className="hinweisliste">
+          {route.hinweise.map((h) => (
+            <li key={h}>{h}</li>
+          ))}
+        </ul>
+      )}
+
+      {hinweis && (
+        <button type="button" className="knopf-sekundaer" onClick={onStoerung}>
+          Störung ansehen
+        </button>
+      )}
+
+      <button type="button" className="knopf-primaer" onClick={onNavigation}>
+        <span>Navigation starten</span>
+      </button>
+    </>
+  )
+}
