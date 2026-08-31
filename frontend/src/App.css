@@ -953,3 +953,11 @@
   font-size: 15px;
   line-height: 1.4;
 }
+
+.mehr-einstellen > summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 12px 0;
+  font-size: 14px;
+  font-weight: 700;
+}
