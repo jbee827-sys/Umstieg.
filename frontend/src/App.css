@@ -696,3 +696,46 @@
   background: var(--color-neutral-100);
   border-radius: 12px;
 }
+
+/* Untere Navigationsleiste. sticky statt fixed: Der Inhalt darueber soll
+   scrollen, die Leiste aber nie ueber dem letzten Element kleben. */
+.navileiste {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: 4px;
+  margin-top: 24px;
+  padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+  background: var(--color-bg);
+  border-top: 2px solid var(--color-divider);
+}
+.navileiste-knopf {
+  flex: 1;
+  min-height: 52px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+  cursor: pointer;
+  position: relative;
+}
+.navileiste-knopf.aktuell {
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+.navileiste-knopf[aria-disabled='true'] {
+  opacity: 0.35;
+  cursor: default;
+}
+.navileiste-punkt {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
