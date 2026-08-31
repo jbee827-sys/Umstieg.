@@ -69,7 +69,7 @@ braucht Handarbeit an einem echten Gerät.
 |---|---|---|
 | 7 | **Drei Konzeptvorgaben, die nie gebaut wurden** | Siehe eigener Abschnitt „Konzeptlücken" weiter unten: der Abgleich OSM ↔ DB-Gleisliste (§4.3), FaSta-Koordinaten im Synthesemodell (§5) und die getrennten Blöcke Ankunft/Abfahrt (§9). Der erste ist seit dem 31.08. der wichtigste offene Punkt – er erklärt den München-Fehlschluss weiter unten. |
 | 8 | **MVP-Task 17 abschließen** | `Dockerfile` steht. Offen: Degradationstests (jede Zeile der Konzept-Tabelle Abschnitt 8 als eigener Test) und Mobile-Feinschliff. |
-| 9 | **Fehlende Design-Screens** | Von 6 Screens sind Eingabe, Routenansicht, Karte und „Angekommen" (P1 Task 9) gebaut. Offen: Störung/Gleiswechsel und Wagenreihung als eigene Screens. |
+| 9 | **Design-Abgleich (D0–D9)** ← *jetzt analysiert* | Die App folgt dem Konzept**text**, nicht dem Design**bild**: Der Umsetzungsplan entstand 80 Minuten vor dem Design-Import und wurde nie nachgezogen (`grep` auf den Plan: null Erwähnungen). Ursache, Belege und neun benannte ToDos in [`docs/2026-08-31-design-abgleich.md`](./docs/2026-08-31-design-abgleich.md). Erster Schritt ist D0: Spec und Plan für die sechs Screens. |
 
 ### Später / bei Gelegenheit
 
