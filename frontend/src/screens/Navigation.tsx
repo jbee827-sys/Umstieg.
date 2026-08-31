@@ -17,6 +17,7 @@ interface NavigationProps {
   standort: Standort | null
   onZurueck: () => void
   onWeiter: () => void
+  onAngekommen: () => void
 }
 
 // Screen 3 des Entwurfs: oben das Ebenenschema, unten EIN Schritt.
@@ -31,6 +32,7 @@ export function Navigation({
   standort,
   onZurueck,
   onWeiter,
+  onAngekommen,
 }: NavigationProps) {
   const modell = leiteSchemaAb(route.schritte, position, gleisAn, gleisAb)
   return (
@@ -56,6 +58,10 @@ export function Navigation({
         onZurueck={onZurueck}
         onWeiter={onWeiter}
       />
+
+      <button type="button" className="knopf-sekundaer" onClick={onAngekommen}>
+        Angekommen
+      </button>
     </>
   )
 }

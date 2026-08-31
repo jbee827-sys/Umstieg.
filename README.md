@@ -21,7 +21,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 ```bash
 cd backend && npm test        # muss 180 von 180 grün sein
 cd backend && npm run lint    # tsc --noEmit, muss sauber sein
-cd frontend && npm test       # muss 81 von 81 grün sein
+cd frontend && npm test       # muss 110 von 110 grün sein
 cd frontend && npm run build  # muss grün sein
 ```
 
@@ -48,6 +48,54 @@ GPS-Genauigkeit in der Bahnhofshalle, Ankunftserkennung am Gleis. Nächster
 Schritt ist deshalb P1 Task 12 (Mobilabnahme, fünf Punkte im Plan). Das
 braucht Handarbeit an einem echten Gerät.
 
+## Offen: was NICHT geprüft ist (Stand 31.08.2026, abends)
+
+Der Frontend-Umbau und die sechs Feinschliffe sind **codeseitig fertig und
+maschinell grün** (110 Frontend-Tests, 180 Backend-Tests, Build und Lint
+sauber). Was fehlt, ist der Blick darauf. Dieser Abschnitt trennt bewusst,
+**was gesehen wurde und was nicht** – die schwersten Fehler dieses Projekts
+waren allesamt nur im Browser sichtbar.
+
+### Im Browser bestätigt (31.08.2026)
+
+| Prüfung | Ergebnis |
+|---|---|
+| Eingabebildschirm, Navigationsleiste, gesperrte Einträge | ✅ |
+| Bahnhofssuche: 3 Treffer, Bushaltestellen gefiltert | ✅ |
+| Impressum/Datenschutz **nur** auf der Eingabe | ✅ (Feinschliff 1) |
+| Dashboard erscheint nach Sekunden statt nach 61 s | ✅ (Blocker behoben) |
+| Routenknöpfe als Zeilen mit Radio-Punkt und Minuten | ✅ (Feinschliff 2) |
+| Ampel: graue Aussage mit Begründung, Gehzeit sichtbar | ✅ |
+
+### NICHT geprüft – hier bitte weitermachen
+
+| # | Was | Warum offen |
+|---|---|---|
+| P1 | **Ampel-Layout nach der Korrektur** | Die erste Sichtprüfung zeigte die Ampel **kaputt**: `.ampel-leiste` war `display:flex`, dadurch stand der Statustext rechts statt unter der Zeitleiste, und der Platzhalter „–:––" sah aus wie ein Strichartefakt. Beides ist behoben (`display:block`, kein Platzhalter mehr) und durch Tests gedeckt – **aber nach der Korrektur nicht mehr im Browser gesehen.** |
+| P2 | **Weg-Seite** | Ebenenschema, Schritt-Sheet und der neue „Angekommen"-Knopf (Feinschliff 3) sind nie im Browser gelaufen. Das Schema wird aus echter Geometrie abgeleitet – der fehleranfälligste Teil des Umbaus. |
+| P3 | **Angekommen-Seite** | Grüne Fläche auf ⅓, weißer Haken, Kacheln Puffer/Abfahrt, Wagenkasten nur bei ICE/IC (Feinschliffe 4 und 6) – nur über Tests abgesichert. |
+| P4 | **Globale Störmeldung** | Die rote Fläche von oben (Feinschliff 5) braucht ein echtes SSE-Ereignis. Sie wurde nie ausgelöst gesehen – weder Gleiswechsel noch Verspätung. |
+| P5 | **Störungsseite mit Verspätung** | Der Zweig „neue Abfahrtszeit → Vorschlag ohne Neuberechnung" ist neu und nie live durchlaufen. |
+| P6 | **Mobilabnahme am Gerät** | Unverändert offen: Berechtigungsdialog, GPS in der Halle, Ankunftserkennung, Bedienbarkeit mit Gepäck. |
+
+### Bekannter Rückstand, bewusst offen
+
+**Der Kaltstart bleibt langsam.** Ursache, am 31.08. gemessen: Zwei
+gleichzeitige Anfragen für denselben Bahnhof finden beide den Graph-Cache
+leer, bauen den Graphen unabhängig und fragen Overpass doppelt – **24 s und
+61 s statt 2 s**. Das Frontend umgeht das jetzt, indem es die Varianten
+**nacheinander** lädt (`api/varianten.ts`); die zweite trifft den warmen
+Cache.
+
+Der eigentliche Fix gehört ins Backend: gleichzeitige Graphbauten für
+dieselbe EVA zusammenführen (eine Karte laufender Versprechen, `Map<string,
+Promise<GraphEintrag>>`). Ohne das kostet der erste Aufruf eines
+unbekannten Bahnhofs weiterhin rund 24 Sekunden. **Nicht umgesetzt, weil
+Backend-Änderungen in diesem Vorhaben ausgeschlossen waren.**
+
+**Der Umbau ist nicht deployt.** Produktion läuft weiter mit der alten
+Oberfläche (`vercel deploy --prod` steht aus). Das Backend ist aktuell.
+
 ## Offene ToDos
 
 ### Sofort (kleine Schritte, klar umrissen)
@@ -58,6 +106,9 @@ braucht Handarbeit an einem echten Gerät.
 | ~~1b~~ | ~~**Graph-Cache vergiftet sich selbst**~~ ✅ **erledigt 31.08.2026** | Frist jetzt nach Qualität: Stufe 1/2 volle 24 h, Stufe 3 zehn Minuten (`graphTtlMs` in `cache/lru.ts`). |
 | ~~2~~ | ~~**FaSta-Adressierung schließen**~~ ✅ **erledigt 31.08.2026** | `stationID` wird durchgereicht. Der Fund dabei: Mit der EVA antwortete FaSta **nicht** mit einem Fehler, sondern mit HTTP 200 und `[ ]`. |
 | 3a | **Erkennungsradius von 1000 m prüfen** | Am 31.08. beobachtet: Von `52.84/13.81` aus liegt Eberswalde Hbf **1094 m** entfernt – 94 m zu weit, die Umkreissuche liefert nichts, und die Vorbelegung bleibt leer. Die Rohantwort enthält dort 17 Bushaltestellen, aber keine Eisenbahn-Verkehrsstelle; der Filter arbeitet also richtig. Zu entscheiden ist der Radius (`ERKENNUNG_RADIUS_M` in `routes/api.ts`) – gehört in die Mobilabnahme. |
+| 3b | **Sichtprüfung der neuen Bildschirme** | Weg, Angekommen, Störmeldung und die korrigierte Ampel sind nie im Browser gesehen worden – Einzelheiten oben unter „Offen: was NICHT geprüft ist" (P1–P5). |
+| 3c | **Gleichzeitige Graphbauten zusammenführen** (Backend) | Zwei gleichzeitige Anfragen für dieselbe EVA bauen den Graphen doppelt: am 31.08. 24 s und 61 s statt 2 s. Das Frontend umgeht es durch Nacheinanderladen; der Kaltstart bleibt bei ~24 s. Fix: `Map<string, Promise<GraphEintrag>>` in `routes/api.ts`, damit der zweite Aufruf auf den ersten wartet. |
+| 3d | **Frontend deployen** | Der Umbau liegt auf `feat/mvp` und `main`, ist aber **nicht** ausgeliefert. Produktion zeigt weiter die alte Oberfläche. |
 | 3 | **Mobilabnahme am echten Gerät** | Die Sichtprüfung am Desktop ist am 29./30.08. erfolgt (siehe „Abnahme im Browser"). Offen bleibt, was nur ein Handy zeigt: Berechtigungsdialog, Wiederkehrer ohne Dialog, Genauigkeit im Bahnhof, Ankunftserkennung am Gleis, und ob die automatische Ebenenwahl als Hilfe oder als Bevormundung ankommt. `mkcert`-Zertifikate in `frontend/.cert/` schalten den Dev-Server auf HTTPS. |
 | 4 | **4 Lint-Warnungen im Frontend** (`cd frontend && npm run lint`) | Drei `set-state-in-effect` (Task 13/15 und die Bahnhofs-Vorbelegung), eine `purity` (`Date.now()` im Render). Alle bestehen bewusst; neue Warnungen wurden bei jeder Änderung behoben statt übernommen. |
 | 5 | **Vercel: Framework-Preset steht auf „Services"** | Rückstand der `experimentalServices`-Erkennung beim `vercel link`. Die `vercel.json` überschreibt es, der Build ist nachweislich korrekt – kosmetisch, aber irreführend. Settings → Build & Deployment. |
@@ -285,7 +336,7 @@ Arbeitsverzeichnisses hoch, unabhängig davon, wo HEAD gerade steht.
 | Verkehrsstellengruppen + Cache-Frist + FaSta-Adressierung (31.08.2026) | ✅ fertig, **gegen die echte DB-API verifiziert** (31.08.) |
 | Frontend-Umbau nach dem Designkonzept (31.08.2026) | ✅ fertig – fünf Bildschirme, Navigationsleiste, Schema statt Karte, Gleiswechsel als Vorschlag; **Browser-Sichtprüfung offen** |
 
-**Tests:** `cd backend && npm test` → **180 von 180 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm test` → **81 von 81 grün** (jsdom + Testing Library), `npm run build` grün; `npm run lint` meldet 4 Warnungen (siehe ToDo 4).
+**Tests:** `cd backend && npm test` → **180 von 180 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm test` → **110 von 110 grün** (jsdom + Testing Library), `npm run build` grün; `npm run lint` meldet 4 Warnungen (siehe ToDo 4).
 
 Die Backend-Suite läuft mit **`TZ=UTC`** (`vitest.config.ts`) – wie die Produktion. Ohne das sind Zeitzonenfehler auf einem deutschen Rechner unsichtbar; genau so ist der Fehler entstanden, dass die Zugauswahl nur abgefahrene Züge zeigte.
 
@@ -334,7 +385,13 @@ Spec und Plan unter `docs/superpowers/`.
 | Dashboard | Ampel **ab der Gleiseingabe**, Ankunfts-/Anschlussblock, zwei Routenknöpfe mit Minuten |
 | Navigation | Ebenenschema, ein Schritt zur Zeit, echte Karte hinter „Mehr" |
 | Störung | Gleiswechsel als **Vorschlag** – alt gegen neu, „Route übernehmen" |
-| Angekommen | „Du bist da." groß auf Grün mit den bekannten Reisedaten |
+| Angekommen | Grüne Fläche auf ⅓ mit weißem Haken, Kacheln Puffer/Abfahrt, Wagenkasten bei ICE/IC |
+
+**Sechs Feinschliffe am 31.08.2026 nachgezogen:** Fußzeile nur auf der
+Eingabe · Ampel mit Zeitleiste und Routenzeilen nach Entwurf · „Angekommen"-Knopf
+auf der Weg-Seite · Angekommen-Fläche auf ⅓ statt Vollbild · globale rote
+Störmeldung von oben, unabhängig von der Seite · einheitliche
+Navigationsleiste auf allen Bildschirmen.
 
 **Nicht gebaut, nur spezifiziert** (brauchen das Backend): Ticket-Import,
 Wagenreihungsseite und die Variante „Mit Stopp: WC & Kiosk" – siehe

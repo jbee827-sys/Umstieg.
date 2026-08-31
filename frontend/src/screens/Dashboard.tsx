@@ -1,6 +1,7 @@
 import { Ampel } from '../components/Ampel'
 import type { EingabeWerte } from '../components/Eingabe'
 import type { Ampelfarbe, RouteErgebnis, RoutenVariante } from '../api/typen'
+import { ampelFarbe } from '../navigation/ampel'
 
 /**
  * Gehzeit je Variante in Sekunden. `undefined` heisst: konnte nicht berechnet
@@ -17,6 +18,8 @@ interface DashboardProps {
   route: RouteErgebnis
   /** Sekunden bis zur Abfahrt; undefiniert ohne Zugauswahl. */
   restSek?: number
+  /** Puffer beim Öffnen – Bezugspunkt der Zeitleiste. */
+  startPufferSek?: number
   abgefahren: boolean
   varianten: VariantenStand
   /** Ein Gleiswechsel-Vorschlag liegt vor. */
@@ -32,15 +35,16 @@ const KNOEPFE: { wert: RoutenVariante; label: string; feld: keyof VariantenStand
 ]
 
 function minuten(sek?: number): string {
-  return sek === undefined ? '' : ` · ${Math.ceil(sek / 60)} min`
+  return sek === undefined ? '' : `${Math.ceil(sek / 60)} min`
 }
 
-/** Ampel relativ zur Gehzeit – identische Formel wie backend gehzeit.ts. */
-function farbeVon(restSek: number | undefined, gehzeitSek: number, abgefahren: boolean): Ampelfarbe | null {
+function farbeVon(
+  restSek: number | undefined,
+  gehzeitSek: number,
+  abgefahren: boolean,
+): Ampelfarbe | null {
   if (restSek === undefined || abgefahren) return null
-  if (restSek < gehzeitSek || restSek < 0) return 'rot'
-  if (restSek >= 2 * gehzeitSek) return 'gruen'
-  return 'gelb'
+  return ampelFarbe(restSek, gehzeitSek)
 }
 
 // Dashboard nach Screen 2 des Entwurfs. Die Ampel steht hier ab der
@@ -50,6 +54,7 @@ export function Dashboard({
   werte,
   route,
   restSek,
+  startPufferSek,
   abgefahren,
   varianten,
   hinweis,
@@ -71,6 +76,7 @@ export function Dashboard({
         farbe={farbe}
         gehzeitSek={route.gehzeitSek}
         restSek={restSek}
+        startPufferSek={startPufferSek}
         abgefahren={abgefahren}
       />
 
@@ -91,19 +97,27 @@ export function Dashboard({
 
       <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
         <label>Route</label>
-        <div className="wahl-gruppe wahl-gruppe-spalte" role="group" aria-label="Routenvariante">
-          {KNOEPFE.map((k) => (
-            <button
-              key={k.wert}
-              type="button"
-              className="wahl-knopf"
-              aria-pressed={varianten.gewaehlt === k.wert}
-              onClick={() => onVariante(k.wert)}
-            >
-              {k.label}
-              {minuten(varianten[k.feld] as number | undefined)}
-            </button>
-          ))}
+        <div className="routenwahl" role="group" aria-label="Routenvariante">
+          {KNOEPFE.map((k) => {
+            const gewaehlt = varianten.gewaehlt === k.wert
+            return (
+              <button
+                key={k.wert}
+                type="button"
+                className={`routenwahl-zeile${gewaehlt ? ' gewaehlt' : ''}`}
+                aria-pressed={gewaehlt}
+                onClick={() => onVariante(k.wert)}
+              >
+                <span className="routenwahl-punkt" aria-hidden="true">
+                  <span className={gewaehlt ? 'gefuellt' : ''} />
+                </span>
+                <span className="routenwahl-label">{k.label}</span>
+                <span className="routenwahl-min">
+                  {minuten(varianten[k.feld] as number | undefined)}
+                </span>
+              </button>
+            )
+          })}
         </div>
       </fieldset>
 

@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { Navigation } from './Navigation'
 import type { RouteErgebnis, Schritt } from '../api/typen'
 
@@ -23,7 +24,7 @@ describe('Navigation', () => {
   it('zeigt das Ebenenschema mit den Gleisen', () => {
     render(
       <Navigation route={route(1, true)} gleisAn="6" gleisAb="14" bahnhofName="Berlin Hbf"
-        position={0} standort={null} onZurueck={() => {}} onWeiter={() => {}} />,
+        position={0} standort={null} onZurueck={() => {}} onWeiter={() => {}} onAngekommen={() => {}} />,
     )
     expect(screen.getByText(/Schema, keine Karte/)).toBeDefined()
   })
@@ -31,7 +32,7 @@ describe('Navigation', () => {
   it('bietet bei Stufe 1 die echte Karte hinter Mehr an', () => {
     render(
       <Navigation route={route(1, true)} gleisAn="6" gleisAb="14" bahnhofName="Berlin Hbf"
-        position={0} standort={null} onZurueck={() => {}} onWeiter={() => {}} />,
+        position={0} standort={null} onZurueck={() => {}} onWeiter={() => {}} onAngekommen={() => {}} />,
     )
     expect(screen.getByText(/Echte Karte anzeigen/)).toBeDefined()
   })
@@ -40,7 +41,7 @@ describe('Navigation', () => {
     // Stufe-3-Koordinaten sind konstruiert - eine Karte darueber waere gelogen.
     render(
       <Navigation route={route(3, false)} gleisAn="6" gleisAb="14" bahnhofName="Berlin Hbf"
-        position={0} standort={null} onZurueck={() => {}} onWeiter={() => {}} />,
+        position={0} standort={null} onZurueck={() => {}} onWeiter={() => {}} onAngekommen={() => {}} />,
     )
     expect(screen.queryByText(/Echte Karte anzeigen/)).toBeNull()
   })
@@ -48,8 +49,21 @@ describe('Navigation', () => {
   it('zeigt den aktiven Schritt im Sheet', () => {
     const { container } = render(
       <Navigation route={route(1, true)} gleisAn="6" gleisAb="14" bahnhofName="Berlin Hbf"
-        position={1} standort={null} onZurueck={() => {}} onWeiter={() => {}} />,
+        position={1} standort={null} onZurueck={() => {}} onWeiter={() => {}} onAngekommen={() => {}} />,
     )
     expect(container.querySelector('.schrittsheet-text')?.textContent).toBe('Treppe hoch')
+  })
+})
+
+describe('Navigation: Weg zur Angekommen-Seite', () => {
+  it('bietet einen Knopf zur Angekommen-Seite', async () => {
+    const onAngekommen = vi.fn()
+    render(
+      <Navigation route={route(1, true)} gleisAn="6" gleisAb="14" bahnhofName="Berlin Hbf"
+        position={0} standort={null} onZurueck={() => {}} onWeiter={() => {}}
+        onAngekommen={onAngekommen} />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: /^Angekommen$/ }))
+    expect(onAngekommen).toHaveBeenCalled()
   })
 })
