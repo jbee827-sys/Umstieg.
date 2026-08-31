@@ -6,7 +6,7 @@ import type { BahnhofTreffer, LiveEreignis, RouteErgebnis, RoutenVariante } from
 import { Datenschutz } from './components/Datenschutz'
 import { Fusszeile } from './components/Fusszeile'
 import { Impressum } from './components/Impressum'
-import { Angekommen } from './components/Angekommen'
+import { Angekommen } from './screens/Angekommen'
 import { Navileiste } from './components/Navileiste'
 import { Dashboard, type VariantenStand } from './screens/Dashboard'
 import { Navigation } from './screens/Navigation'
@@ -240,6 +240,8 @@ function App() {
       <>
         <Angekommen
           gleis={werte.gleisAb}
+          abfahrt={werte.abfahrtZeit}
+          wagen={werte.wagen || undefined}
           onNeu={() => {
             ankunft.current = ANKUNFT_START
             setBildschirm('eingabe')
