@@ -1,0 +1,37 @@
+{
+  "_hinweis": "AUFGEZEICHNET von der echten RIS::Stations-API am 31.08.2026 (nicht handgebaut). Endpunkt: GET /stop-places/8089021",
+  "stopPlaces": [
+    {
+      "evaNumber": "8089021",
+      "names": {
+        "DE": {
+          "nameLong": "Berlin Hbf (S-Bahn)",
+          "speechLong": "Berlin Hauptbahnhof",
+          "speechShort": "Berlin Hauptbahnhof",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "CITY_TRAIN"
+      ],
+      "availablePhysicalTransports": [
+        "CITY_TRAIN"
+      ],
+      "countryCode": "DE",
+      "timeZone": "Europe/Berlin",
+      "metropolis": {},
+      "municipalityKey": "11000000",
+      "position": {
+        "longitude": 13.369545,
+        "latitude": 52.525592
+      },
+      "postalCode": "10557",
+      "replacementTransportsAvailable": false,
+      "state": "BE",
+      "stationID": "1071",
+      "transportAssociations": [
+        "VBB"
+      ]
+    }
+  ]
+}

@@ -16,12 +16,12 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 30.08.2026, abends)
+## Hier weitermachen (Stand 31.08.2026)
 
 ```bash
-cd backend && npm test        # muss 126 von 126 grün sein
+cd backend && npm test        # muss 178 von 178 grün sein
 cd backend && npm run lint    # tsc --noEmit, muss sauber sein
-cd frontend && npm test       # muss 22 von 22 grün sein
+cd frontend && npm test       # muss 37 von 37 grün sein
 cd frontend && npm run build  # muss grün sein
 ```
 
@@ -35,11 +35,18 @@ Standort ab, belegt den Bahnhof vor, zeigt den Positionspunkt auf der Karte,
 schlägt die Ankunft vor und kennt den Zustand „Zug ist abgefahren". Tasks 1–11
 sind umgesetzt und maschinell geprüft.
 
-**Was fehlt, ist keine Zeile Code, sondern der Blick darauf:** Das Frontend ist
-bis heute **nie in einem Browser gelaufen** – weder der 390-px-Viewport noch
-die WebGL-Karte noch der Berechtigungsdialog. Nächster Schritt ist deshalb
-P1 Task 12 (Mobilabnahme, fünf Punkte im Plan) zusammen mit der ausstehenden
-Browser-Sichtprüfung. Beides braucht Handarbeit an einem echten Gerät.
+**Am 31.08.2026 sind die drei grössten Backend-Lücken geschlossen** (siehe
+„Verkehrsstellengruppen" weiter unten): Ein Bahnhof wird jetzt über **alle**
+seine Verkehrsstellen ausgewertet, ein degradierter Graph blockiert den
+Bahnhof nicht mehr einen ganzen Tag, und FaSta wird endlich richtig
+adressiert. Alles gegen die echte DB-API verifiziert.
+
+**Was fehlt, ist keine Zeile Code, sondern der Blick darauf:** Die
+Sichtprüfung am Desktop ist am 29./30.08. erfolgt (Abschnitt „Abnahme im
+Browser"). Offen bleibt, was nur ein Handy zeigt – Berechtigungsdialog,
+GPS-Genauigkeit in der Bahnhofshalle, Ankunftserkennung am Gleis. Nächster
+Schritt ist deshalb P1 Task 12 (Mobilabnahme, fünf Punkte im Plan). Das
+braucht Handarbeit an einem echten Gerät.
 
 ## Offene ToDos
 
@@ -47,9 +54,9 @@ Browser-Sichtprüfung. Beides braucht Handarbeit an einem echten Gerät.
 
 | # | Aufgabe | Hintergrund |
 |---|---|---|
-| 1 | **EVA-Split bei grossen Bahnhöfen** ← *die grösste inhaltliche Lücke* | Berlin Hbf ist drei Verkehrsstellen: `8011160` (Gleis 11–14), `8098160` (tief, Gleis 1–8), `8089522` (S-Bahn, Gleis 22). Kein EVA enthält Gleis 6 **und** 14; `8098160` taucht in der Suche gar nicht auf; und **`8011160` liefert eine LEERE Fahrplantafel** – IRIS führt Berlin Hbf unter `8098160`. Am 30.08. gemessen: `8011160` → 0 Abfahrten, `8098160` → 47. Andere grosse Knoten sind unauffällig (München 29, Köln 101, Frankfurt 43), das Problem trifft nur aufgeteilte Bahnhöfe – ausgerechnet den, der überall das Beispiel ist. Zu entscheiden: Suche bündelt verwandte Verkehrsstellen, **oder** `/api/route` und `/api/board` nehmen mehrere EVAs. |
-| 1b | **Graph-Cache vergiftet sich selbst** | Ein Overpass-Ausfall erzeugt einen Stufe-3-Graphen, und der wird **genauso 24 h gecacht wie ein guter** (`erzeugeCache(100, GRAPH_TTL_MS)` – eine Frist für alle). Der Bahnhof bleibt einen Tag degradiert, lange nach der Erholung. Am 29.08. beobachtet: 19:00 Uhr Stufe 3, nach dem Neustart mit leerem Cache sofort Stufe 1. Fix: Frist nach Qualität – Stufe 1 volle 24 h, Stufe 3 wenige Minuten. |
-| 2 | **FaSta-Adressierung schließen** | RIS::Stations liefert in der Antwort `stationID` (Berlin Hbf: `"1071"`) – genau die StaDa-Bahnhofsnummer, die FaSta erwartet. Der TODO in `clients/db-endpunkte.ts` lässt sich ohne zusätzliche API schließen: `stationID` in `StationsInfo` durchreichen statt die EVA zu senden. |
+| ~~1~~ | ~~**EVA-Split bei grossen Bahnhöfen**~~ ✅ **erledigt 31.08.2026** | Gelöst über `groupMembers` aus RIS::Stations. Einzelheiten im Abschnitt „Verkehrsstellengruppen". |
+| ~~1b~~ | ~~**Graph-Cache vergiftet sich selbst**~~ ✅ **erledigt 31.08.2026** | Frist jetzt nach Qualität: Stufe 1/2 volle 24 h, Stufe 3 zehn Minuten (`graphTtlMs` in `cache/lru.ts`). |
+| ~~2~~ | ~~**FaSta-Adressierung schließen**~~ ✅ **erledigt 31.08.2026** | `stationID` wird durchgereicht. Der Fund dabei: Mit der EVA antwortete FaSta **nicht** mit einem Fehler, sondern mit HTTP 200 und `[ ]`. |
 | 3 | **Mobilabnahme am echten Gerät** | Die Sichtprüfung am Desktop ist am 29./30.08. erfolgt (siehe „Abnahme im Browser"). Offen bleibt, was nur ein Handy zeigt: Berechtigungsdialog, Wiederkehrer ohne Dialog, Genauigkeit im Bahnhof, Ankunftserkennung am Gleis, und ob die automatische Ebenenwahl als Hilfe oder als Bevormundung ankommt. `mkcert`-Zertifikate in `frontend/.cert/` schalten den Dev-Server auf HTTPS. |
 | 4 | **4 Lint-Warnungen im Frontend** (`cd frontend && npm run lint`) | Drei `set-state-in-effect` (Task 13/15 und die Bahnhofs-Vorbelegung), eine `purity` (`Date.now()` im Render). Alle bestehen bewusst; neue Warnungen wurden bei jeder Änderung behoben statt übernommen. |
 | 5 | **Vercel: Framework-Preset steht auf „Services"** | Rückstand der `experimentalServices`-Erkennung beim `vercel link`. Die `vercel.json` überschreibt es, der Build ist nachweislich korrekt – kosmetisch, aber irreführend. Settings → Build & Deployment. |
@@ -59,7 +66,7 @@ Browser-Sichtprüfung. Beides braucht Handarbeit an einem echten Gerät.
 
 | # | Aufgabe | Umfang |
 |---|---|---|
-| 7 | **Drei Konzeptvorgaben, die nie gebaut wurden** | Siehe eigener Abschnitt „Konzeptlücken" weiter unten: der Abgleich OSM ↔ DB-Gleisliste (§4.3), FaSta-Koordinaten im Synthesemodell (§5) und die getrennten Blöcke Ankunft/Abfahrt (§9). Der erste davon würde ToDo 1 und 1b zugleich entschärfen. |
+| 7 | **Drei Konzeptvorgaben, die nie gebaut wurden** | Siehe eigener Abschnitt „Konzeptlücken" weiter unten: der Abgleich OSM ↔ DB-Gleisliste (§4.3), FaSta-Koordinaten im Synthesemodell (§5) und die getrennten Blöcke Ankunft/Abfahrt (§9). Der erste ist seit dem 31.08. der wichtigste offene Punkt – er erklärt den München-Fehlschluss weiter unten. |
 | 8 | **MVP-Task 17 abschließen** | `Dockerfile` steht. Offen: Degradationstests (jede Zeile der Konzept-Tabelle Abschnitt 8 als eigener Test) und Mobile-Feinschliff. |
 | 9 | **Fehlende Design-Screens** | Von 6 Screens sind Eingabe, Routenansicht, Karte und „Angekommen" (P1 Task 9) gebaut. Offen: Störung/Gleiswechsel und Wagenreihung als eigene Screens. |
 
@@ -68,11 +75,11 @@ Browser-Sichtprüfung. Beides braucht Handarbeit an einem echten Gerät.
 | # | Aufgabe | |
 |---|---|---|
 | 10 | **Spike-Nachlauf für 13 Bahnhöfe** | `npx tsx scripts/spike-datenrealitaet.ts` – gecacht, fragt nur die fehlenden ab, sobald Overpass stabil antwortet. |
-| 11 | **DB-Antwortschemata der übrigen Clients prüfen** | RIS::Stations und Timetables sind gegen echte Antworten verifiziert. **Nicht geprüft:** FaSta und Wagenreihung – deren Fixtures sind weiterhin handgebaut. |
+| 11 | **DB-Antwortschema der Wagenreihung prüfen** | RIS::Stations, Timetables und FaSta sind gegen echte Antworten verifiziert – RIS::Stations am 31.08. mit aufgezeichneten Fixtures (`test/fixtures/db/gruppe-*.json`). **Nicht geprüft:** allein die Wagenreihung, deren Fixture weiterhin handgebaut ist. |
 | 12 | **Ticket-PDF-Import** | Im Prototyp als UI-Flow vorhanden, laut Konzept Stufe 2. Backend fehlt. |
 | 13 | **Repo-Sichtbarkeit** | Repo ist öffentlich. Inhaltlich unbedenklich (Historie mehrfach auf Secrets geprüft, zuletzt 28.08.2026 über alle Blobs – 0 Treffer), aber bewusst zu entscheiden. |
 | 14 | **Frontend kann keine Komponenten testen** | `vitest.config.ts` nutzt `environment: 'node'`, geprüft werden also nur reine Funktionen. Beide Korrekturen vom 30.08. – der Netzfehler-Hinweis und der Genauigkeitshinweis – ließen sich **gar nicht** testen und wurden nur im Browser verifiziert. jsdom plus Testing Library wäre ein überschaubarer Schritt und schlösse genau die Lücke, die bei stillen Fehlern zubeißt. |
-| 15 | **Zwei geratene Schwellenwerte** | `MINDEST_SCHRITT_MS = 8000` (Anzeigedauer je Schritt) und `ERKENNUNG_MAX_M = 1000` (Genauigkeitsbudget der Bahnhofserkennung) sind begründete Startwerte ohne Messung dahinter. Zu hoch gewählt hinkt die Schrittanzeige hinterher, zu niedrig flackert sie. Erst die Mobilabnahme zeigt die Richtung. |
+| 15 | **Drei geratene Schwellenwerte** | `MINDEST_SCHRITT_MS = 8000` (Anzeigedauer je Schritt), `ERKENNUNG_MAX_M = 1000` (Genauigkeitsbudget der Bahnhofserkennung) und `NOTBEHELF_TTL_MS = 600000` (Cache-Frist für Stufe 3; über `GRAPH_NOTBEHELF_TTL_MS` ohne Neubau verstellbar) sind begründete Startwerte ohne Messung dahinter. Zu hoch gewählt hinkt die Schrittanzeige hinterher, zu niedrig flackert sie. Erst die Mobilabnahme zeigt die Richtung. |
 
 ### P1 – Standort & Live-Navigation
 
@@ -155,9 +162,9 @@ Schlüsselpaar für alle Aufrufe – verteilt man die APIs, liefert der Rest 401
 
 | API | Nutzung | Schema geprüft |
 |---|---|---|
-| RIS::Stations | Bahnhofssuche, Umkreissuche, Gleisliste | ✅ gegen echte Antwort |
+| RIS::Stations | Bahnhofssuche, Umkreissuche, Gleisliste, **Verkehrsstellengruppe** | ✅ gegen echte Antwort (Fixtures aufgezeichnet 31.08.) |
 | Timetables | Ankunfts-/Abfahrtstafel, SSE-Poller | ✅ gegen echte Antwort |
-| FaSta | Aufzüge/Rolltreppen bei `variante=barrierefrei` | ⬜ abonniert, Fixture handgebaut |
+| FaSta | Aufzüge/Rolltreppen bei `variante=barrierefrei` | ✅ gegen echte Antwort (31.08.): StaDa-Nummer 1071 → 69 Anlagen |
 | StaDa | derzeit ungenutzt | ⬜ abonniert |
 
 **Zwei Fehler in RIS::Stations, die nur mit echten Schlüsseln sichtbar wurden**
@@ -212,7 +219,7 @@ Teil des Schlüssels, und das Ergebnis ist ein stiller 401. Genau so passiert.
    einem normalen Terminalfenster anmelden – danach liegt der Token in
    `~/.fly/config.yml` und alle weiteren Aufrufe funktionieren.
 
-## Projektstand (28.08.2026)
+## Projektstand (31.08.2026)
 
 | Arbeitspaket | Status |
 |---|---|
@@ -236,8 +243,9 @@ Teil des Schlüssels, und das Ergebnis ist ein stiller 401. Genau so passiert.
 | P1 – Standort & Live-Navigation (12 Tasks) | 🔶 Tasks 1–11 fertig; Task 12 (Mobilabnahme am Gerät) offen (Tabelle oben) |
 | Rechtliches – Impressum, Datenschutz, lokale Schriften | ✅ fertig, im Browser geprüft |
 | Schrittnavigation (Spec 30.08.2026, 8 Tasks) | ✅ fertig, **im Browser gegen die Produktion verifiziert** (30.08.) |
+| Verkehrsstellengruppen + Cache-Frist + FaSta-Adressierung (31.08.2026) | ✅ fertig, **gegen die echte DB-API verifiziert** (31.08.) |
 
-**Tests:** `cd backend && npm test` → **158 von 158 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm test` → **37 von 37 grün**, `npm run build` grün; `npm run lint` meldet 4 Warnungen (siehe ToDo 4).
+**Tests:** `cd backend && npm test` → **178 von 178 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm test` → **37 von 37 grün**, `npm run build` grün; `npm run lint` meldet 4 Warnungen (siehe ToDo 4).
 
 Die Backend-Suite läuft mit **`TZ=UTC`** (`vitest.config.ts`) – wie die Produktion. Ohne das sind Zeitzonenfehler auf einem deutschen Rechner unsichtbar; genau so ist der Fehler entstanden, dass die Zugauswahl nur abgefahrene Züge zeigte.
 
@@ -258,7 +266,7 @@ Wichtigste Erkenntnis aus dem Spike: **74 % Stufe 1** – Indoor-Routing über O
 ## API (Stand Task 15)
 
 - `GET /api/health` → `{ status: 'ok' }`
-- `GET /api/board/:eva?type=arr|dep` → `TafelEintrag[]` (`{ zug, zeitSoll, zeitIst?, gleisSoll, gleisIst?, ziel }`; Soll aus `/plan`, Änderungen aus `/fchg` zusammengeführt). Ohne Schlüssel: **503**.
+- `GET /api/board/:eva?type=arr|dep` → `TafelEintrag[]` (`{ zug, zeitSoll, zeitIst?, gleisSoll, gleisIst?, ziel }`; Soll aus `/plan`, Änderungen aus `/fchg` zusammengeführt). Abgefragt wird die **ganze Verkehrsstellengruppe** und nach `(zug, zeitSoll)` entdoppelt, sortiert nach Sollzeit – ohne das lieferte Berlin Hbf eine leere Tafel. Ein ausgefallener Bahnhofsteil nimmt die übrigen nicht mit; fallen alle aus, bleibt der Fehler stehen. Ohne Schlüssel: **503**.
 - `GET /api/stations?q=<Suchtext>` **oder** `?lat=&lon=` → `BahnhofTreffer[]` (`{ name, eva, lat, lon }`). Die Koordinatenvariante (P1 Task 2) sucht im Umkreis von 1000 m; der Radius ist bewusst eine Serverentscheidung und steht in `routes/api.ts`. Die Werte sind bereits im Browser auf 3 Nachkommastellen (~110 m) gerundet – Rohkoordinaten verlassen das Gerät nie (`standort/bahnhofErkennung.ts`). `q` und `lat`/`lon` schließen sich aus → **400** `parameter-ungueltig`; das gilt auch für eine einzelne Koordinate oder Werte außerhalb −90…90 bzw. −180…180. Weder noch → **400** `parameter-fehlt`. Ohne `DB_CLIENT_ID`/`DB_CLIENT_SECRET`: **503** `{ fehler: 'db-zugang-fehlt' }`.
 - `GET /api/live/:eva?zugAn=&zugAb=` → **SSE-Strom** mit den Ereignissen `gleiswechsel`, `verspaetung`, `heartbeat` (Payload `{ typ, zug?, alt?, neu?, zeitstempel }`). Gepollt wird **einmal je EVA**, unabhängig von der Zahl der Zuschauer; die Zugparameter filtern nur die Zustellung. Verbindungsabbruch meldet den Abonnenten ab, der letzte Abmelder stoppt den Poller.
 - `GET /api/route?eva=&gleisAn=&gleisAb=&zugAn?=&wagen?=&abschnitt?=&profil?=&variante?=` → `RouteErgebnis` (`zugAn`+`wagen` → Wagenreihung bestimmt den Start-Abschnitt; keine Daten → Bahnsteigmitte mit Hinweis):
@@ -266,7 +274,7 @@ Wichtigste Erkenntnis aus dem Spike: **74 % Stufe 1** – Indoor-Routing über O
   - Antwort: `{ stufe, schritte[], gehzeitSek, karte, hinweise[] }`; jeder Schritt trägt zusätzlich `sekunden` (Summe = `gehzeitSek`, Invariante im Test), `level` (Ebene, auf der der Schritt endet) und `knotenVon`/`knotenBis` (Bereich im Routenpfad, daraus zeichnet die Karte das Teilstück). Alle vier sind optional – ältere Clients brechen nicht.; `karte` = GeoJSON-FeatureCollections je Ebene (Routenlinie + Start-/Zielmarker, `[lon, lat]`)
   - Degradation: Overpass-Ausfall oder unbrauchbare OSM-Daten → Synthesemodell (`stufe: 3`, „ca."-Distanzen, Hinweis); gleicher Bahnsteig → Kurzantwort ohne Routing; Wagenreihung ohne Daten → Bahnsteigmitte mit Hinweis
   - Fehler: **400** `parameter-fehlt`/`parameter-ungueltig`, **404** `gleis-unbekannt`/`keine-route`, **503** `db-zugang-fehlt`
-  - Cache: Graph je EVA 24 h (LRU max 100), im RAM
+  - Cache: Graph je **Bahnhof** (Schlüssel = sortierte EVA-Gruppe, LRU max 100), im RAM. Frist nach Qualität: Stufe 1/2 24 h, Stufe 3 nur 10 Minuten (`GRAPH_NOTBEHELF_TTL_MS` verstellt sie)
 
 ## UI-Design (importiert aus Claude Design, 24.08.2026)
 
@@ -359,6 +367,59 @@ Report: [`docs/spike-datenrealitaet-ergebnis.md`](./docs/spike-datenrealitaet-er
 Offen bleiben: **Degradationstests** (jede Zeile der Konzept-Tabelle Abschnitt 8 als eigener Test) und der **Mobile-Feinschliff**.
 
 **Unabhängig davon offen:** Spike-Nachlauf für die fehlenden 13 Bahnhöfe, sobald Overpass wieder stabil antwortet (`npx tsx scripts/spike-datenrealitaet.ts`, gecacht – fragt nur die fehlenden ab).
+
+## Verkehrsstellengruppen (31.08.2026)
+
+Ein grosser Bahnhof ist mehrere Verkehrsstellen, und die App wertet jetzt alle
+aus. Grundlage ist `groupMembers` aus RIS::Stations.
+
+| Bahnhof | Leader | Gruppe | `stationID` |
+|---|---|---|---|
+| Berlin Hbf | 8011160 | 8011160, 8089021, 8098160 | 1071 |
+| München Hbf | 8000261 | 8000261, 8098261, 8098262, 8098263 | 4234 |
+| Frankfurt(M) Hbf | 8000105 | 8000105, 8098105 | 1866 |
+| Köln Hbf | 8000207 | *nur sich selbst* | 3320 |
+
+**Vier Eigenschaften, die das Verfahren bestimmen:**
+
+1. **`groupMembers` steht nur in den SUCHANTWORTEN**, und dort nur beim
+   führenden Eintrag. `stop-places/{eva}` trägt das Feld **gar nicht** – auch
+   nicht für den Leader. Aufgelöst wird deshalb über den Namen plus Abgleich
+   der `stationID`, die auf jedem Mitglied steht.
+2. **Die Suche liefert immer nur den Leader.** `8098160` taucht weder in
+   `by-name` noch in `by-position` auf – es *soll* nicht, es ist ein
+   Gruppenmitglied. Das Frontend bekommt also von selbst die richtige Nummer
+   und musste **nicht** geändert werden; die API-Schnittstelle ist unverändert.
+3. **Bushaltestellen scheiden über die Gruppe aus, nicht über einen
+   Verkehrsarten-Filter** – der würde hier versagen: „Berlin Hbf
+   (Invalidenstraße)" führt `INTER_REGIONAL_TRAIN` (SEV-Busse sind als IRE
+   gebucht) und „Hamburg Hbf ZOB" hat 19 „Gleise" namens `ZOB 1`…`ZOB 15`.
+   Beide haben keine `stationID` und stehen in keiner Gruppe. `istGueltigeEva`
+   fängt die sechsstelligen Nahverkehrs-IDs, die Gruppe fängt den Rest.
+4. **Gleislisten werden nach Namen VEREINIGT, nicht verkettet.** München führt
+   Gleis 13 unter drei Mitgliedern gleichzeitig – die Unterteilung ist
+   betrieblich, nicht physisch.
+
+**Was das konkret ändert** (Berlin Hbf, gemessen 31.08.2026):
+
+```
+Gleisliste   vorher  4 (nur 11–14)      nachher 20 (1–8, 11–16)
+Abfahrtstafel vorher 0 Einträge         nachher 134
+Route Gl. 6 → 14    Stufe 1, 30 Schritte, 380 s
+Route Gl. 6 → 15    Stufe 1, 23 Schritte, 366 s   (S-Bahn, vorher unerreichbar)
+FaSta               vorher [ ] (EVA)    nachher 69 Anlagen (StaDa 1071)
+```
+
+**Degradation:** Fällt die Suche aus, bleibt es bei der einen Verkehrsstelle –
+lieber die Gleise eines Bahnhofsteils als gar keine Route. Fällt ein
+Bahnhofsteil aus, liefern die übrigen trotzdem.
+
+**Bekannte Lücke in DBs eigenen Daten:** `8089522` („Berlin Hbf (S-Bahn)",
+Gleis 22, S21-Tunnel) hat **keine** `stationID` und steht in **keiner** Gruppe,
+obwohl dort echte Züge halten (12 in der Stunde). Es bleibt bewusst ein eigener
+Treffer in der Suchliste. Es per Namens- oder Umkreisheuristik einzugemeinden
+würde „Invalidenstraße" und „Washingtonplatz" mitziehen – wir folgen DBs
+Gruppierung.
 
 ## Standort & Live-Navigation (P1, Code fertig – Abnahme offen)
 
@@ -475,11 +536,21 @@ sondern Entscheidungen, die noch anstehen.
 **§4.3 – Abgleich OSM ↔ DB-Gleisliste.** Das Konzept verlangt: „Gleisnummern
 aus OSM (`ref` an Bahnsteigen) gegen die DB-Gleisliste abgleichen; bei Konflikt
 gewinnt die DB-Liste." Beide Quellen laufen bis heute unabgeglichen
-nebeneinander. Genau daraus entstehen ToDo 1 und 1b: Stufe 1 routet
-**geografisch** über OSM und kennt keine EVA-Grenzen, das Synthesemodell
-dagegen ist **EVA-gebunden**. Welche Quelle gerade antwortet, entscheidet
-deshalb über Erfolg oder 404 – am 29.08. innerhalb von Minuten beides erlebt.
-Dieser Abgleich ist der Hebel, der beide Punkte zugleich entschärft.
+nebeneinander: Stufe 1 routet **geografisch** über OSM und kennt keine
+EVA-Grenzen, das Synthesemodell dagegen ist **EVA-gebunden**.
+
+Seit dem 31.08. ist das der wichtigste offene Punkt, weil es dafür jetzt einen
+belegten Fehlschluss gibt. **München Hbf, Gleis 5 → Gleis 2** antwortet mit
+„Gleis 2 gegenüber, kein Ebenenwechsel" – 1 Schritt, 30 Sekunden. Tatsächlich
+liegt Gleis 2 im S-Bahn-Tiefbahnhof, eine Ebene tiefer. Die Gegenprobe
+Gleis 11 → 2 rechnet korrekt 17 Schritte. Ursache ist `istGleicherBahnsteig`
+in `core/routing.ts`: Es vergleicht `bahnsteigId` aus OSM, und dort trägt
+offenbar ein Bahnsteig beide Gleisnummern. Ein Abgleich gegen die DB-Gleisliste
+– die Gleis 2 eindeutig `8098263` (tief) zuordnet – würde genau das auffangen.
+
+Der Fehler ist **älter als die Gruppenauflösung** und von ihr unberührt:
+`istGleicherBahnsteig` arbeitet allein auf dem OSM-Graphen, dessen Aufbau
+(Stationsposition, Radius 400 m) unverändert ist.
 
 **§5 – FaSta-Koordinaten im Synthesemodell.** Stufe 3 soll die Lage von
 Aufzügen und Rolltreppen aus FaSta beziehen. Tatsächlich wird FaSta nur bei
@@ -506,12 +577,19 @@ was dauerhaft gilt oder bewusst so ist:
   `standort/useStandort.ts` sind nur über TypeScript und Build abgesichert –
   bewusst, sie enthalten keine Entscheidungslogik. Der SSE-**Endpunkt** wird
   dagegen in `test/live.test.ts` gegen einen echten HTTP-Server geprüft.
-- **FaSta- und Wagenreihungs-Fixtures sind weiterhin handgebaut**
-  (`backend/test/fixtures/db/*`, jeweils mit Hinweis im Kopf). RIS::Stations und
-  Timetables sind inzwischen gegen echte Antworten verifiziert, diese beiden
-  nicht. Die Parser können auf Feldnamen-Abweichungen laufen.
+- **Das Wagenreihungs-Fixture ist weiterhin handgebaut**
+  (`backend/test/fixtures/db/wagenreihung-ice1006.json`, mit Hinweis im Kopf).
+  RIS::Stations, Timetables und FaSta sind gegen echte Antworten verifiziert;
+  die Gruppen-Fixtures (`gruppe-*.json`) sind am 31.08.2026 von der echten API
+  aufgezeichnet. Allein der Wagenreihungs-Parser kann noch auf
+  Feldnamen-Abweichungen laufen.
 - **Spike-Rohdaten** (`backend/test/fixtures/spike/`) sind gitignored – über
   `scripts/spike-datenrealitaet.ts` reproduzierbar.
+- **München Hbf, Gleis 5 → 2 antwortet falsch** („gegenüber, kein
+  Ebenenwechsel", 30 s). Gleis 2 liegt im S-Bahn-Tiefbahnhof. Ursache ist
+  `istGleicherBahnsteig` auf OSM-Daten – siehe Konzeptlücke §4.3. Betrifft nur
+  Bahnhöfe, an denen OSM eine Gleisnummer doppelt führt; Gleis 11 → 2 rechnet
+  am selben Bahnhof korrekt.
 - **Vercel-Vorschau-Deployments erreichen die API nicht.** Ihre URLs stehen
   nicht in `CORS_ORIGIN`; für einen Vorschautest die konkrete URL vorübergehend
   aufnehmen. Absicht – eine Wildcard würde jede fremde Vercel-App an die API
@@ -528,8 +606,11 @@ was dauerhaft gilt oder bewusst so ist:
 - ~~**Vercel bewusst nicht verwendet**~~ → umgekehrt: Frontend läuft auf
   Vercel, Backend als Container. Das VITA-Projekt bleibt unberührt (eigenes
   Vercel-Projekt). Begründung: [`docs/deployment.md`](./docs/deployment.md).
-- ~~**FaSta-Adressierung ungeklärt**~~ → Weg gefunden, aber **noch nicht
-  umgesetzt**: RIS::Stations liefert `stationID`. Siehe ToDo 2.
+- ~~**FaSta-Adressierung ungeklärt**~~ → am 31.08.2026 umgesetzt: `stationID`
+  aus RIS::Stations wird durchgereicht. Dabei zeigte sich, dass die alte
+  Adressierung nicht mit einem Fehler quittierte, sondern mit HTTP 200 und
+  leerer Liste – `variante=barrierefrei` kannte in Produktion nie einen Aufzug,
+  ohne dass es irgendwo auffiel.
 
 ## Konzeptkorrekturen (aus Analyse + Design übernommen)
 

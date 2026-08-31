@@ -38,11 +38,19 @@ async function dbGet(url: string, fetchFn: typeof fetch): Promise<unknown> {
   return antwort.json();
 }
 
-// Antwortschemata (handgebaut nach Doku – Verifikationspflicht, s. db-endpunkte.ts)
+// Antwortschema, verifiziert gegen die echte API (31.08.2026).
 interface StopPlace {
   evaNumber?: string;
   names?: { DE?: { nameLong?: string } };
   position?: { latitude?: number; longitude?: number };
+  /**
+   * Alle Verkehrsstellen des Bahnhofs. Steht NUR in den Suchantworten
+   * (by-name/by-position) und dort nur beim führenden Eintrag – weder
+   * `stop-places/{eva}` noch die Mitglieder tragen das Feld.
+   */
+  groupMembers?: string[];
+  /** StaDa-Bahnhofsnummer; steht auf jedem Mitglied der Gruppe. */
+  stationID?: string;
 }
 
 /**
@@ -99,31 +107,108 @@ export async function sucheBahnhoefeNahebei(
   return zuTreffern((await dbGet(url, fetchFn)) as { stopPlaces?: StopPlace[] });
 }
 
+/**
+ * Die Verkehrsstellen des Bahnhofs, zu dem `eva` gehört.
+ *
+ * `stop-places/{eva}` trägt `groupMembers` NICHT – auch nicht für den
+ * führenden Eintrag. Das Feld steht ausschliesslich in den Suchantworten.
+ * Aufgelöst wird deshalb über den Namen und den Abgleich der
+ * `stationID`, die auf jedem Mitglied steht: die Suche liefert immer den
+ * führenden Eintrag, und dessen `groupMembers` ist die Gruppe.
+ *
+ * Fällt die Suche aus, bleibt es bei der einen Verkehrsstelle – lieber die
+ * Gleise eines Bahnhofsteils als gar keine Route.
+ */
+async function ermittleGruppe(
+  eva: string,
+  name: string,
+  stationID: string | undefined,
+  fetchFn: typeof fetch,
+): Promise<string[]> {
+  if (!stationID) return [eva];
+  let treffer: StopPlace[];
+  try {
+    const body = (await dbGet(epStopPlacesByName(name), fetchFn)) as { stopPlaces?: StopPlace[] };
+    treffer = body.stopPlaces ?? [];
+  } catch {
+    return [eva];
+  }
+  const fuehrend = treffer.find(
+    (sp) => sp.stationID === stationID && (sp.groupMembers?.length ?? 0) > 0,
+  );
+  // istGueltigeEva schützt die Gruppe genauso wie die Trefferliste: Timetables
+  // und die Gleisliste kennen fremde Nummernräume nicht.
+  const mitglieder = (fuehrend?.groupMembers ?? []).filter(istGueltigeEva);
+  return mitglieder.includes(eva) ? [...new Set(mitglieder)] : [eva];
+}
+
+async function ladeStopPlace(eva: string, fetchFn: typeof fetch): Promise<StopPlace> {
+  const body = (await dbGet(epStopPlace(eva), fetchFn)) as StopPlace | { stopPlaces?: StopPlace[] };
+  // defensiv: Endpunkt kann Einzelobjekt oder umschlossene Liste liefern
+  return 'stopPlaces' in body && Array.isArray(body.stopPlaces)
+    ? (body.stopPlaces[0] ?? {})
+    : (body as StopPlace);
+}
+
+/**
+ * Die Verkehrsstellen des Bahnhofs – ohne die Gleislisten zu holen.
+ *
+ * Für die Fahrplantafel: Sie braucht die EVAs, nicht die Gleise. Berlin Hbf
+ * führt unter 8011160 KEINE Abfahrt; die Züge stehen unter 8098160 und
+ * 8089021.
+ */
+export async function holeGruppe(eva: string, fetchFn: typeof fetch = fetch): Promise<string[]> {
+  const stopPlace = await ladeStopPlace(eva, fetchFn);
+  return ermittleGruppe(
+    eva,
+    stopPlace.names?.DE?.nameLong ?? `EVA ${eva}`,
+    stopPlace.stationID,
+    fetchFn,
+  );
+}
+
 export async function holeStationsInfo(
   eva: string,
   fetchFn: typeof fetch = fetch,
 ): Promise<StationsInfo> {
-  const stopPlaceBody = (await dbGet(epStopPlace(eva), fetchFn)) as
-    | StopPlace
-    | { stopPlaces?: StopPlace[] };
-  // defensiv: Endpunkt kann Einzelobjekt oder umschlossene Liste liefern
-  const stopPlace: StopPlace =
-    'stopPlaces' in stopPlaceBody && Array.isArray(stopPlaceBody.stopPlaces)
-      ? (stopPlaceBody.stopPlaces[0] ?? {})
-      : (stopPlaceBody as StopPlace);
+  const stopPlace = await ladeStopPlace(eva, fetchFn);
+  const name = stopPlace.names?.DE?.nameLong ?? `EVA ${eva}`;
+  const evas = await ermittleGruppe(eva, name, stopPlace.stationID, fetchFn);
 
-  const platformsBody = (await dbGet(epPlatforms(eva), fetchFn)) as {
-    platforms?: { name?: string }[];
-  };
-  const gleise = (platformsBody.platforms ?? [])
-    .filter((p) => p.name)
-    .map((p) => ({ gleis: p.name! }));
+  // Gleislisten aller Mitglieder, vereinigt nach Gleisnamen. Vereinigung statt
+  // Verkettung, weil dieselbe Nummer unter mehreren Verkehrsstellen stehen
+  // kann – München führt Gleis 13 unter dreien. Die Unterteilung ist
+  // betrieblich, nicht physisch; Koordinaten trägt die Liste ohnehin nicht.
+  const listen = await Promise.all(
+    evas.map(async (mitglied) => {
+      try {
+        const body = (await dbGet(epPlatforms(mitglied), fetchFn)) as {
+          platforms?: { name?: string }[];
+        };
+        return body.platforms ?? [];
+      } catch {
+        // Ein ausgefallener Bahnhofsteil darf die übrigen nicht mitnehmen.
+        return [];
+      }
+    }),
+  );
+  const gesehen = new Set<string>();
+  const gleise: { gleis: string }[] = [];
+  for (const liste of listen) {
+    for (const p of liste) {
+      if (!p.name || gesehen.has(p.name)) continue;
+      gesehen.add(p.name);
+      gleise.push({ gleis: p.name });
+    }
+  }
 
   return {
     eva,
-    name: stopPlace.names?.DE?.nameLong ?? `EVA ${eva}`,
+    name,
     lat: stopPlace.position?.latitude,
     lon: stopPlace.position?.longitude,
+    evas,
+    ...(stopPlace.stationID ? { stationID: stopPlace.stationID } : {}),
     gleise,
   };
 }

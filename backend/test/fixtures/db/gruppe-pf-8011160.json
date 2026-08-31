@@ -1,0 +1,81 @@
+{
+  "_hinweis": "AUFGEZEICHNET von der echten RIS::Stations-API am 31.08.2026 (nicht handgebaut). Endpunkt: GET /platforms/8011160",
+  "platforms": [
+    {
+      "name": "11",
+      "heights": [
+        {
+          "start": 0.0,
+          "end": 431.65,
+          "height": 76.0
+        }
+      ],
+      "end": 431.65,
+      "headPlatform": false,
+      "ifopt": "de:11000:900003201:1:50",
+      "length": 431.65,
+      "linkedPlatforms": [
+        "12"
+      ],
+      "sectors": [],
+      "start": 0.0
+    },
+    {
+      "name": "12",
+      "heights": [
+        {
+          "start": 0.0,
+          "end": 436.9,
+          "height": 76.0
+        }
+      ],
+      "end": 436.9,
+      "headPlatform": false,
+      "ifopt": "de:11000:900003201:1:51",
+      "length": 436.9,
+      "linkedPlatforms": [
+        "11"
+      ],
+      "sectors": [],
+      "start": 0.0
+    },
+    {
+      "name": "13",
+      "heights": [
+        {
+          "start": 0.0,
+          "end": 431.5,
+          "height": 76.0
+        }
+      ],
+      "end": 431.5,
+      "headPlatform": false,
+      "ifopt": "de:11000:900003201:2:52",
+      "length": 431.5,
+      "linkedPlatforms": [
+        "14"
+      ],
+      "sectors": [],
+      "start": 0.0
+    },
+    {
+      "name": "14",
+      "heights": [
+        {
+          "start": 0.0,
+          "end": 436.9,
+          "height": 76.0
+        }
+      ],
+      "end": 436.9,
+      "headPlatform": false,
+      "ifopt": "de:11000:900003201:2:53",
+      "length": 436.9,
+      "linkedPlatforms": [
+        "13"
+      ],
+      "sectors": [],
+      "start": 0.0
+    }
+  ]
+}

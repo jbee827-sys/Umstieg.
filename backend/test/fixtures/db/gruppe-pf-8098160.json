@@ -1,0 +1,307 @@
+{
+  "_hinweis": "AUFGEZEICHNET von der echten RIS::Stations-API am 31.08.2026 (nicht handgebaut). Endpunkt: GET /platforms/8098160",
+  "platforms": [
+    {
+      "name": "1",
+      "heights": [
+        {
+          "start": 0.6,
+          "end": 430.9,
+          "height": 76.0
+        }
+      ],
+      "end": 430.9,
+      "headPlatform": false,
+      "ifopt": "de:11000:900003200:1:50",
+      "length": 431.5,
+      "linkedPlatforms": [
+        "1 A - D",
+        "1 D - G",
+        "2 A - D",
+        "2 D - G",
+        "2"
+      ],
+      "sectors": [],
+      "start": 0.6
+    },
+    {
+      "name": "1 A - D",
+      "heights": [
+        {
+          "start": 0.0,
+          "end": 0.0,
+          "height": 76.0
+        }
+      ],
+      "end": 0.0,
+      "headPlatform": false,
+      "ifopt": "de:11000:900003200:1:50",
+      "linkedPlatforms": [
+        "1 D - G",
+        "2 A - D",
+        "2 D - G",
+        "1",
+        "2"
+      ],
+      "parentPlatform": "1",
+      "sectors": [],
+      "start": 0.0
+    },
+    {
+      "name": "1 D - G",
+      "heights": [
+        {
+          "start": 0.0,
+          "end": 0.0,
+          "height": 76.0
+        }
+      ],
+      "end": 0.0,
+      "headPlatform": false,
+      "ifopt": "de:11000:900003200:1:50",
+      "linkedPlatforms": [
+        "1 A - D",
+        "2 A - D",
+        "2 D - G",
+        "1",
+        "2"
+      ],
+      "parentPlatform": "1",
+      "sectors": [],
+      "start": 0.0
+    },
+    {
+      "name": "2",
+      "heights": [
+        {
+          "start": 0.6,
+          "end": 430.8,
+          "height": 76.0
+        }
+      ],
+      "end": 430.8,
+      "headPlatform": false,
+      "ifopt": "de:11000:900003200:1:51",
+      "length": 431.4,
+      "linkedPlatforms": [
+        "1 A - D",
+        "1 D - G",
+        "2 A - D",
+        "2 D - G",
+        "1"
+      ],
+      "sectors": [],
+      "start": 0.6
+    },
+    {
+      "name": "2 A - D",
+      "heights": [
+        {
+          "start": 0.0,
+          "end": 0.0,
+          "height": 76.0
+        }
+      ],
+      "end": 0.0,
+      "headPlatform": false,
+      "ifopt": "de:11000:900003200:1:51",
+      "length": 0.0,
+      "linkedPlatforms": [
+        "1 A - D",
+        "1 D - G",
+        "2 D - G",
+        "1",
+        "2"
+      ],
+      "parentPlatform": "2",
+      "sectors": [],
+      "start": 0.0
+    },
+    {
+      "name": "2 D - G",
+      "heights": [
+        {
+          "start": 0.0,
+          "end": 0.0,
+          "height": 76.0
+        }
+      ],
+      "end": 0.0,
+      "headPlatform": false,
+      "ifopt": "de:11000:900003200:1:51",
+      "length": 0.0,
+      "linkedPlatforms": [
+        "1 A - D",
+        "1 D - G",
+        "2 A - D",
+        "1",
+        "2"
+      ],
+      "parentPlatform": "2",
+      "sectors": [],
+      "start": 0.0
+    },
+    {
+      "name": "3",
+      "heights": [
+        {
+          "start": 0.6,
+          "end": 430.8,
+          "height": 76.0
+        }
+      ],
+      "end": 430.8,
+      "headPlatform": false,
+      "ifopt": "de:11000:900003200:2:52",
+      "length": 435.0,
+      "linkedPlatforms": [
+        "4"
+      ],
+      "sectors": [],
+      "start": 0.6
+    },
+    {
+      "name": "4",
+      "heights": [
+        {
+          "start": 0.6,
+          "end": 430.8,
+          "height": 76.0
+        }
+      ],
+      "end": 430.8,
+      "headPlatform": false,
+      "ifopt": "de:11000:900003200:2:53",
+      "length": 431.4,
+      "linkedPlatforms": [
+        "3"
+      ],
+      "sectors": [],
+      "start": 0.6
+    },
+    {
+      "name": "5",
+      "heights": [
+        {
+          "start": 0.0,
+          "end": 430.15,
+          "height": 76.0
+        }
+      ],
+      "end": 430.15,
+      "headPlatform": false,
+      "ifopt": "de:11000:900003200:3:54",
+      "length": 431.75,
+      "linkedPlatforms": [
+        "6"
+      ],
+      "sectors": [],
+      "start": 0.0
+    },
+    {
+      "name": "6",
+      "heights": [
+        {
+          "start": 0.6,
+          "end": 430.85,
+          "height": 76.0
+        }
+      ],
+      "end": 430.85,
+      "headPlatform": false,
+      "ifopt": "de:11000:900003200:3:55",
+      "length": 431.45,
+      "linkedPlatforms": [
+        "5"
+      ],
+      "sectors": [],
+      "start": 0.6
+    },
+    {
+      "name": "7",
+      "heights": [
+        {
+          "start": 0.6,
+          "end": 430.8,
+          "height": 76.0
+        }
+      ],
+      "end": 430.8,
+      "headPlatform": false,
+      "ifopt": "de:11000:900003200:4:56",
+      "length": 431.4,
+      "linkedPlatforms": [
+        "7 A - D",
+        "7 D - G",
+        "8"
+      ],
+      "sectors": [],
+      "start": 0.6
+    },
+    {
+      "name": "7 A - D",
+      "heights": [
+        {
+          "start": 0.0,
+          "end": 0.0,
+          "height": 76.0
+        }
+      ],
+      "end": 0.0,
+      "headPlatform": false,
+      "ifopt": "de:11000:900003200:4:56",
+      "length": 0.0,
+      "linkedPlatforms": [
+        "7 D - G",
+        "7",
+        "8"
+      ],
+      "parentPlatform": "7",
+      "sectors": [],
+      "start": 0.0
+    },
+    {
+      "name": "7 D - G",
+      "heights": [
+        {
+          "start": 0.0,
+          "end": 0.0,
+          "height": 76.0
+        }
+      ],
+      "end": 0.0,
+      "headPlatform": false,
+      "ifopt": "de:11000:900003200:4:56",
+      "length": 0.0,
+      "linkedPlatforms": [
+        "7 A - D",
+        "7",
+        "8"
+      ],
+      "parentPlatform": "7",
+      "sectors": [],
+      "start": 0.0
+    },
+    {
+      "name": "8",
+      "heights": [
+        {
+          "start": 0.6,
+          "end": 431.0,
+          "height": 76.0
+        }
+      ],
+      "end": 431.0,
+      "headPlatform": false,
+      "ifopt": "de:11000:900003200:4:57",
+      "length": 431.6,
+      "linkedPlatforms": [
+        "7 A - D",
+        "7 D - G",
+        "7"
+      ],
+      "sectors": [],
+      "start": 0.6
+    }
+  ]
+}

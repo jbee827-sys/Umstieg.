@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { erzeugeCache, GRAPH_TTL_MS } from '../cache/lru.js';
+import { erzeugeCache, graphTtlMs, GRAPH_TTL_MS } from '../cache/lru.js';
 import { FehlendeZugangsdatenError, istGueltigeEva } from '../clients/stations.js';
 import { gehzeitSekunden } from '../core/gehzeit.js';
 import { berlinTeile } from '../core/zeit.js';
@@ -30,6 +30,8 @@ export interface StationsClient {
     radiusM: number,
   ): Promise<BahnhofTreffer[]>;
   holeStationsInfo(eva: string): Promise<StationsInfo>;
+  /** Alle Verkehrsstellen des Bahnhofs – ohne die Gleislisten zu holen. */
+  ermittleGruppe(eva: string): Promise<string[]>;
 }
 
 export type TafelFn = (eva: string, typ: 'arr' | 'dep') => Promise<TafelEintrag[]>;
@@ -40,7 +42,12 @@ export type WagenpositionFn = (
   wagen: string,
 ) => Promise<{ abschnitt: string } | null>;
 
-export type FastaFn = (eva: string) => Promise<FastaAnlage[]>;
+/**
+ * FaSta adressiert die StaDa-BAHNHOFSNUMMER (`stationID` aus RIS::Stations),
+ * nicht die EVA. Mit einer EVA antwortet die API mit HTTP 200 und leerer
+ * Liste – ein stiller leerer Erfolg, der wie „keine Aufzüge" aussieht.
+ */
+export type FastaFn = (stationsnummer: string) => Promise<FastaAnlage[]>;
 
 export interface ApiClients {
   overpass: OverpassFn;
@@ -81,7 +88,26 @@ function heuteJJJJMMTT(): string {
 
 export function registriereApiRouten(app: FastifyInstance, clients: ApiClients): void {
   const graphCache = erzeugeCache<GraphEintrag>(100, GRAPH_TTL_MS);
+  // Gruppenzugehörigkeit ist Stammdatum – sie ändert sich nicht im Tagesbetrieb.
+  // Ohne diesen Cache kostete jeder SSE-Poll zwei zusätzliche DB-Aufrufe.
+  const gruppenCache = erzeugeCache<{ evas: string[] }>(200, GRAPH_TTL_MS);
   const ERKENNUNG_RADIUS_M = 1000;
+
+  async function gruppeVon(eva: string): Promise<string[]> {
+    const gecacht = gruppenCache.get(eva);
+    if (gecacht) return gecacht.evas;
+    let evas: string[];
+    try {
+      evas = await clients.stations.ermittleGruppe(eva);
+    } catch (e) {
+      if (e instanceof FehlendeZugangsdatenError) throw e;
+      // Gruppenauflösung ist eine Verbesserung, keine Voraussetzung.
+      evas = [eva];
+    }
+    if (evas.length === 0) evas = [eva];
+    gruppenCache.set(eva, { evas });
+    return evas;
+  }
 
   app.get<{ Querystring: { q?: string; lat?: string; lon?: string } }>('/api/stations', async (req, reply) => {
     const q = req.query.q?.trim();
@@ -148,7 +174,38 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
           .send({ fehler: 'parameter-ungueltig', detail: 'type muss arr oder dep sein' });
       }
       try {
-        return await clients.tafel(req.params.eva, typ);
+        // Über die ganze Verkehrsstellengruppe: Berlin Hbf führt unter der
+        // EVA, die die Suche liefert (8011160), KEINE Abfahrt – die Züge
+        // stehen unter 8098160 und 8089021. Ohne die Gruppe blieb die
+        // Zugauswahl für den meistgenannten Bahnhof leer.
+        const evas = await gruppeVon(req.params.eva);
+        const ergebnisse = await Promise.allSettled(evas.map((e) => clients.tafel(e, typ)));
+
+        const erfolgreich = ergebnisse.filter(
+          (r): r is PromiseFulfilledResult<TafelEintrag[]> => r.status === 'fulfilled',
+        );
+        // Ein ausgefallener Bahnhofsteil darf die übrigen nicht mitnehmen –
+        // eine unvollständige Tafel ist besser als gar keine. Fallen alle aus,
+        // bleibt der Fehler stehen (503 bei fehlendem Zugang).
+        if (erfolgreich.length === 0 && ergebnisse.length > 0) {
+          throw (ergebnisse[0] as PromiseRejectedResult).reason;
+        }
+
+        // Nach Zug UND Sollzeit entdoppeln: derselbe Zug steht in mehreren
+        // Bahnhofsteilen. Nur nach Zugnummer würde ein durchfahrender Zug mit
+        // zwei Halten fälschlich zu einem zusammenfallen – derselbe Schlüssel
+        // wie in core/ueberwachung.ts, aus demselben Grund.
+        const gesehen = new Set<string>();
+        const zusammengefuehrt: TafelEintrag[] = [];
+        for (const r of erfolgreich) {
+          for (const eintrag of r.value) {
+            const schluessel = `${eintrag.zug}|${eintrag.zeitSoll}`;
+            if (gesehen.has(schluessel)) continue;
+            gesehen.add(schluessel);
+            zusammengefuehrt.push(eintrag);
+          }
+        }
+        return zusammengefuehrt.sort((a, b) => a.zeitSoll.localeCompare(b.zeitSoll));
       } catch (e) {
         if (e instanceof FehlendeZugangsdatenError) {
           return reply.code(503).send({ fehler: 'db-zugang-fehlt' });
@@ -176,7 +233,9 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
       return reply.code(400).send({ fehler: 'parameter-ungueltig' });
     }
 
-    // Graph beschaffen (Cache 24 h je EVA)
+    // Graph beschaffen (Cache 24 h). Geschlüsselt wird auf den BAHNHOF, nicht
+    // auf die Verkehrsstelle: Berlin Hbf über 8011160 und über 8098160 ist
+    // derselbe Bahnhof, derselbe Graph, ein Overpass-Abruf.
     let eintrag = graphCache.get(eva);
     if (!eintrag) {
       let info: StationsInfo;
@@ -188,8 +247,22 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
         }
         throw e;
       }
-      eintrag = await baueGraphEintrag(info, clients.overpass);
-      graphCache.set(eva, eintrag);
+      // Sortiert, damit jedes Mitglied denselben Schlüssel bildet –
+      // `groupMembers` kommt nicht in stabiler Reihenfolge.
+      const bahnhofSchluessel = [...info.evas].sort().join(',');
+      eintrag = graphCache.get(bahnhofSchluessel);
+      if (!eintrag) {
+        eintrag = await baueGraphEintrag(info, clients.overpass);
+        // Frist nach Qualität: Ein Stufe-3-Notbehelf darf den Bahnhof nicht
+        // einen Tag lang degradiert halten, nachdem Overpass sich erholt hat.
+        const ttl = graphTtlMs(eintrag.graph.stufe);
+        graphCache.set(bahnhofSchluessel, eintrag, { ttl });
+        // Kurzweg, damit der nächste Aufruf die Stationsauskunft nicht
+        // braucht - mit derselben Frist, sonst überlebte der Notbehelf hier.
+        graphCache.set(eva, eintrag, { ttl });
+      } else {
+        graphCache.set(eva, eintrag, { ttl: graphTtlMs(eintrag.graph.stufe) });
+      }
     }
 
     const hinweise = [...eintrag.hinweise];
@@ -200,14 +273,23 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
     // erzeugt einen ehrlichen Hinweis (Degradationstabelle, Konzept 8).
     let fastaAnlagen: FastaAnlage[] = [];
     if (variante === 'barrierefrei') {
-      try {
-        fastaAnlagen = await clients.fasta(eva);
-        // Auf einer Kopie arbeiten: Ein gerade defekter Aufzug darf nicht im
-        // 24-Stunden-Graphcache landen und dort gesperrt bleiben.
-        graph = kopiereGraph(graph);
-        wendeFastaAn(graph, fastaAnlagen);
-      } catch {
+      // Ohne Bahnhofsnummer gar nicht erst fragen: Die EVA quittiert FaSta mit
+      // einer leeren Liste, und die wäre von „dieser Bahnhof hat keine
+      // Aufzüge" nicht zu unterscheiden. Offen zu sagen, dass der Status
+      // fehlt, ist ehrlicher als eine falsche Auskunft.
+      const stationsnummer = eintrag.info.stationID;
+      if (!stationsnummer) {
         hinweise.push('Aufzugstatus unbekannt – Anlagendaten derzeit nicht abrufbar.');
+      } else {
+        try {
+          fastaAnlagen = await clients.fasta(stationsnummer);
+          // Auf einer Kopie arbeiten: Ein gerade defekter Aufzug darf nicht im
+          // 24-Stunden-Graphcache landen und dort gesperrt bleiben.
+          graph = kopiereGraph(graph);
+          wendeFastaAn(graph, fastaAnlagen);
+        } catch {
+          hinweise.push('Aufzugstatus unbekannt – Anlagendaten derzeit nicht abrufbar.');
+        }
       }
     }
 

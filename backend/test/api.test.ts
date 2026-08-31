@@ -18,6 +18,9 @@ const miniOsm = ladeFixture('synthetisch/mini-bahnhof');
 
 const ministadt: StationsInfo = {
   eva: '8000001',
+  evas: ['8000001'],
+  // StaDa-Bahnhofsnummer - FaSta wird damit adressiert, nicht mit der EVA.
+  stationID: '4711',
   name: 'Ministadt',
   lat: 52.0,
   lon: 12.0,
@@ -38,6 +41,7 @@ function macheClients({ overpassWirft = false, abschnitt = null as string | null
       sucheBahnhoefeNahebei: vi.fn(async () => [
         { name: 'Ministadt', eva: '8000001', lat: 52.0, lon: 12.0 },
       ]),
+      ermittleGruppe: vi.fn(async (eva: string) => [eva]),
     },
     tafel: vi.fn(async () => [
       {
@@ -184,6 +188,7 @@ describe('GET /api/route – FaSta (barrierefrei)', () => {
         holeStationsInfo: vi.fn(async () => ministadt),
         sucheBahnhoefe: vi.fn(async () => []),
         sucheBahnhoefeNahebei: vi.fn(async () => []),
+        ermittleGruppe: vi.fn(async (eva: string) => [eva]),
       },
       tafel: vi.fn(async () => []),
       wagenposition: vi.fn(async () => null),
@@ -239,11 +244,14 @@ describe('GET /api/route – FaSta (barrierefrei)', () => {
     expect(clients.fasta).not.toHaveBeenCalled();
   });
 
-  it('fragt FaSta mit der EVA-Nummer ab', async () => {
+  it('fragt FaSta mit der StaDa-Bahnhofsnummer ab, nicht mit der EVA', async () => {
+    // Mit der EVA antwortet FaSta mit HTTP 200 und leerer Liste - ein stiller
+    // leerer Erfolg, der wie "dieser Bahnhof hat keine Aufzuege" aussieht.
     const clients = aufzugClients(async () => [{ ...AUFZUG, status: 'ACTIVE' }]);
     const app = buildApp(clients);
     await app.inject({ method: 'GET', url: BF_URL });
-    expect(clients.fasta).toHaveBeenCalledWith('8000001');
+    expect(clients.fasta).toHaveBeenCalledWith('4711');
+    expect(clients.fasta).not.toHaveBeenCalledWith('8000001');
   });
 });
 
