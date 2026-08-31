@@ -10,6 +10,7 @@ import { Angekommen } from './screens/Angekommen'
 import { Navileiste } from './components/Navileiste'
 import { Dashboard, type VariantenStand } from './screens/Dashboard'
 import { Navigation } from './screens/Navigation'
+import { Stoerung, type Vorschlag } from './screens/Stoerung'
 import { Eingabe, type EingabeWerte } from './components/Eingabe'
 import { LiveBanner } from './components/LiveBanner'
 import { StandortStreifen } from './components/StandortStreifen'
@@ -53,6 +54,9 @@ function App() {
   // funktioniert auch, wenn die Verbindung im Bahnhof abreißt (Konzept).
   const [route, setRoute] = useState<RouteErgebnis | null>(null)
   const [varianten, setVarianten] = useState<VariantenStand>({ gewaehlt: 'schnellste' })
+  // Ein Gleiswechsel-Vorschlag. Liegt einer vor, traegt die Leiste ein
+  // Kennzeichen; uebernommen wird er nur auf Knopfdruck.
+  const [vorschlag, setVorschlag] = useState<Vorschlag | null>(null)
   const [werte, setWerte] = useState<EingabeWerte | null>(null)
   const [laden, setLaden] = useState(false)
   const [fehler, setFehler] = useState<string | null>(null)
@@ -197,11 +201,14 @@ function App() {
     [werte, berechne],
   )
 
-  // Live-Überwachung nur in der Routenansicht. Ein Gleiswechsel ändert die
-  // Eingabewerte und stößt die Neuberechnung an – die Route zeigt sofort den
-  // neuen Weg, statt still falsch zu bleiben (Konzept 7).
+  // Live-Überwachung, solange eine Route offen ist.
+  //
+  // Ein Gleiswechsel wird NICHT mehr still übernommen. Bisher rechnete die App
+  // neu und schrieb das neue Gleis in die Eingabewerte – der Nutzer erfuhr es
+  // hinterher aus einem Banner. Jetzt entsteht ein Vorschlag, den er auf dem
+  // Störungsbildschirm annimmt oder verwirft.
   useEffect(() => {
-    if (bildschirm !== 'dashboard' && bildschirm !== 'navigation' || !werte?.eva) return
+    if ((bildschirm !== 'dashboard' && bildschirm !== 'navigation') || !werte?.eva) return
     return verbindeLive({
       eva: werte.eva,
       zugAn: werte.zugAnName,
@@ -216,11 +223,24 @@ function App() {
         if (ereignis.typ !== 'gleiswechsel' || !ereignis.neu) return
         navigator.vibrate?.([200, 100, 200])
         const betrifftAnkunft = ereignis.zug === werte.zugAnName
-        void berechne({
+        const neueWerte: EingabeWerte = {
           ...werte,
           gleisAn: betrifftAnkunft ? ereignis.neu : werte.gleisAn,
           gleisAb: betrifftAnkunft ? werte.gleisAb : ereignis.neu,
+        }
+        // Berechnen ja, anwenden nein. Schlägt es fehl, bleibt es beim Banner –
+        // dann weiß der Nutzer wenigstens vom Wechsel.
+        void holeRoute({
+          eva: neueWerte.eva,
+          gleisAn: neueWerte.gleisAn,
+          gleisAb: neueWerte.gleisAb,
+          profil: neueWerte.profil,
+          variante: neueWerte.variante,
+          zugAn: neueWerte.zugAn,
+          wagen: neueWerte.wagen || undefined,
         })
+          .then((neueRoute) => setVorschlag({ route: neueRoute, werte: neueWerte, anlass: ereignis }))
+          .catch(() => setVorschlag(null))
       },
     })
   }, [bildschirm, werte, berechne])
@@ -261,6 +281,41 @@ function App() {
   // Neurendern aus; hier nur lesen - deshalb genau eine Stelle.
   const jetzt = Date.now()
 
+  if (bildschirm === 'stoerung' && vorschlag && route && werte) {
+    const restSek = vorschlag.werte.abfahrtZeit
+      ? (heuteUm(vorschlag.werte.abfahrtZeit).getTime() - jetzt) / 1000
+      : undefined
+    return (
+      <main className="app">
+        <Stoerung
+          vorschlag={vorschlag}
+          alteRoute={route}
+          alteWerte={werte}
+          restSek={restSek}
+          onUebernehmen={() => {
+            setWerte(vorschlag.werte)
+            setRoute(vorschlag.route)
+            setStartZeit(Date.now())
+            setVersatz(0)
+            setVorschlag(null)
+            setBildschirm('dashboard')
+          }}
+          onBehalten={() => {
+            setVorschlag(null)
+            setBildschirm('dashboard')
+          }}
+        />
+        <Fusszeile />
+        <Navileiste
+          aktuell="dashboard"
+          hatRoute={route !== null}
+          hinweis={false}
+          onWechsel={setBildschirm}
+        />
+      </main>
+    )
+  }
+
   if (bildschirm === 'dashboard' && route && werte) {
     const restSek = werte.abfahrtZeit
       ? (heuteUm(werte.abfahrtZeit).getTime() - jetzt) / 1000
@@ -277,7 +332,7 @@ function App() {
           restSek={restSek}
           abgefahren={abgefahren}
           varianten={varianten}
-          hinweis={false}
+          hinweis={vorschlag !== null}
           onVariante={waehleVariante}
           onNavigation={() => setBildschirm('navigation')}
           onStoerung={() => setBildschirm('stoerung')}
@@ -286,7 +341,7 @@ function App() {
         <Navileiste
           aktuell={bildschirm}
           hatRoute={route !== null}
-          hinweis={false}
+          hinweis={vorschlag !== null}
           onWechsel={setBildschirm}
         />
       </main>

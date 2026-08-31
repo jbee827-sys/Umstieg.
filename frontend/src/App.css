@@ -889,3 +889,67 @@
   font-weight: 700;
   cursor: pointer;
 }
+
+/* Stoerung / Gleiswechsel (Screen 4) */
+.stoerung-titel {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 6px 0 4px;
+}
+.stoerung-satz {
+  font-size: 15px;
+  color: var(--color-neutral-600, #6b6767);
+  margin: 0 0 18px;
+}
+.stoerung-gegenueber {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.stoerung-seite {
+  flex: 1;
+  padding: 14px;
+  border-radius: 14px;
+  border: 2px solid var(--color-divider);
+}
+.stoerung-neu {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, #ec3013 8%, transparent);
+}
+.stoerung-gleis {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.stoerung-detail {
+  font-size: 13px;
+  color: var(--color-neutral-600, #6b6767);
+}
+.stoerung-pfeil {
+  font-size: 22px;
+  font-weight: 800;
+}
+.stoerung-werte {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  margin: 18px 0 0;
+  font-size: 15px;
+}
+.stoerung-werte dt {
+  color: var(--color-neutral-600, #6b6767);
+}
+.stoerung-werte dd {
+  margin: 0;
+  font-weight: 700;
+}
+.stoerung-ampel {
+  margin: 18px 0;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-size: 15px;
+  line-height: 1.4;
+}
