@@ -1,20 +1,17 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import './App.css'
 import { holeRoute, RouteFehler } from './api/client'
 import { verbindeLive } from './api/sse'
 import type { BahnhofTreffer, LiveEreignis, RouteErgebnis, RoutenVariante } from './api/typen'
-import { Ampel } from './components/Ampel'
-import { Bahnhofsschema } from './components/Bahnhofsschema'
 import { Datenschutz } from './components/Datenschutz'
 import { Fusszeile } from './components/Fusszeile'
 import { Impressum } from './components/Impressum'
 import { Angekommen } from './components/Angekommen'
 import { Navileiste } from './components/Navileiste'
 import { Dashboard, type VariantenStand } from './screens/Dashboard'
+import { Navigation } from './screens/Navigation'
 import { Eingabe, type EingabeWerte } from './components/Eingabe'
 import { LiveBanner } from './components/LiveBanner'
-import { Schrittliste } from './components/Schrittliste'
-import { Schrittsteuerung } from './components/Schrittsteuerung'
 import { StandortStreifen } from './components/StandortStreifen'
 import { ANKUNFT_START, pruefeAnkunft, zielKoordinate } from './standort/ankunft'
 import { ABGEFAHREN_KULANZ_MS } from './standort/schwellen'
@@ -23,8 +20,6 @@ import type { Bildschirm } from './navigation/bildschirme'
 import { erkenneBahnhof } from './standort/bahnhofErkennung'
 import { useStandort } from './standort/useStandort'
 
-// MapLibre ist groß und die Karte standardmäßig eingeklappt → erst bei Bedarf laden.
-const Karte = lazy(() => import('./components/Karte').then((m) => ({ default: m.Karte })))
 
 const FEHLER_TEXTE: Record<string, string> = {
   'db-zugang-fehlt':
@@ -49,13 +44,6 @@ function heuteUm(hhmm: string): Date {
     zeitpunkt.setDate(zeitpunkt.getDate() + 1)
   }
   return zeitpunkt
-}
-
-/** Ampel relativ zur Gehzeit (identische Formel wie backend gehzeit.ts). */
-function ampelFarbe(restSek: number, gehzeitSek: number): 'gruen' | 'gelb' | 'rot' {
-  if (restSek < gehzeitSek || restSek < 0) return 'rot'
-  if (restSek >= 2 * gehzeitSek) return 'gruen'
-  return 'gelb'
 }
 
 function App() {
@@ -305,25 +293,8 @@ function App() {
 
   if (bildschirm === 'navigation' && route && werte) {
     const position = aktiverSchritt(route.schritte, startZeit, jetzt, versatz)
-    const restSek = werte.abfahrtZeit
-      ? (heuteUm(werte.abfahrtZeit).getTime() - jetzt) / 1000
-      : undefined
-    const abgefahren = restSek !== undefined && restSek * 1000 < -ABGEFAHREN_KULANZ_MS
-    const farbe = restSek === undefined || abgefahren ? null : ampelFarbe(restSek, route.gehzeitSek)
     return (
       <main className="app">
-        <Ampel
-          farbe={farbe}
-          gehzeitSek={route.gehzeitSek}
-          restSek={restSek}
-          abgefahren={abgefahren}
-        />
-        {abgefahren && (
-          <div className="hinweis-box" role="status">
-            Der Zug ist abgefahren. Eine Alternativsuche gehört nicht zum Funktionsumfang – such
-            den nächsten Anschluss bitte im Fahrplan.
-          </div>
-        )}
         {liveEreignis && (
           <LiveBanner ereignis={liveEreignis} onSchliessen={() => setLiveEreignis(null)} />
         )}
@@ -342,16 +313,16 @@ function App() {
             {new Date(stand).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
           </p>
         )}
-        <hr className="trennlinie" />
-        <Schrittliste schritte={route.schritte} aktiv={position} />
-        {route.schritte.length > 1 && (
-          <Schrittsteuerung
-            position={position}
-            anzahl={route.schritte.length}
-            onZurueck={() => setVersatz((v) => v - 1)}
-            onWeiter={() => setVersatz((v) => v + 1)}
-          />
-        )}
+        <Navigation
+          route={route}
+          gleisAn={werte.gleisAn}
+          gleisAb={werte.gleisAb}
+          bahnhofName={werte.bahnhofName || 'Umstieg'}
+          position={position}
+          standort={standort}
+          onZurueck={() => setVersatz((v) => v - 1)}
+          onWeiter={() => setVersatz((v) => v + 1)}
+        />
         {ankunftVorschlag && (
           <StandortStreifen gleis={werte.gleisAb} onBestaetigen={bestaetigeAnkunft} />
         )}
@@ -360,23 +331,6 @@ function App() {
             Ich bin da
           </button>
         )}
-        {route.stufe === 3 ? (
-          <Bahnhofsschema
-            schritte={route.schritte}
-            aktiv={position}
-            bahnhofName={werte.bahnhofName || 'Umstieg'}
-          />
-        ) : (
-          route.karte && (
-            <Suspense fallback={<div className="lade-hinweis">Karte wird geladen …</div>}>
-              <Karte
-                karte={route.karte}
-                standort={standort}
-                aktiverSchritt={route.schritte[position] ?? null}
-              />
-            </Suspense>
-          )
-        )}
         {route.hinweise.length > 0 && (
           <ul className="hinweisliste">
             {route.hinweise.map((hinweis) => (
@@ -384,16 +338,6 @@ function App() {
             ))}
           </ul>
         )}
-        <button
-          className="knopf-sekundaer"
-          type="button"
-          onClick={() => {
-            setBildschirm('eingabe')
-            setFehler(null)
-          }}
-        >
-          Neue Eingabe
-        </button>
         <Fusszeile />
         <Navileiste
           aktuell={bildschirm}
