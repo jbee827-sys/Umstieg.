@@ -94,6 +94,16 @@ export interface StationsInfo {
   name: string;
   lat?: number; // Stationsposition (für den Overpass-Abruf)
   lon?: number;
+  /**
+   * Alle Verkehrsstellen dieses Bahnhofs (RIS::Stations `groupMembers`),
+   * einschliesslich `eva`. Grosse Bahnhöfe sind mehrere: Berlin Hbf ist
+   * 8011160 (Halle), 8098160 (tief) und 8089021 (S-Bahn) – kein einzelnes
+   * EVA kennt Gleis 6 und 14 zugleich. `gleise` ist die Vereinigung über
+   * alle Mitglieder.
+   */
+  evas: string[];
+  /** StaDa-Bahnhofsnummer – die Adressierung, die FaSta erwartet. */
+  stationID?: string;
   gleise: { gleis: string; lat?: number; lon?: number }[];
 }
 

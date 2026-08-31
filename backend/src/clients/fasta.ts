@@ -16,10 +16,10 @@ interface FastaFacility {
  * sich nie auf eine Anlage mit unklarem Status.
  */
 export async function holeAnlagen(
-  eva: string,
+  stationsnummer: string,
   fetchFn: typeof fetch = fetch,
 ): Promise<FastaAnlage[]> {
-  const antwort = await fetchFn(epFastaFacilities(eva), {
+  const antwort = await fetchFn(epFastaFacilities(stationsnummer), {
     headers: { ...dbAuthHeader(), Accept: 'application/json' },
     signal: AbortSignal.timeout(15000),
   });

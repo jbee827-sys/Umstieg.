@@ -10,6 +10,7 @@ describe('syntheseGraph', () => {
   it('4-Gleis-Station ohne Koordinaten: Querung vorhanden, jede Gleis-zu-Gleis-Route existiert', () => {
     const info: StationsInfo = {
       eva: '8000001',
+      evas: ['8000001'],
       name: 'Teststadt',
       gleise: [{ gleis: '1' }, { gleis: '2' }, { gleis: '3' }, { gleis: '4' }],
     };
@@ -30,7 +31,7 @@ describe('syntheseGraph', () => {
 
   it('ohne FaSta-Anlagen gibt es keine barrierefreie Route (nur Treppen)', () => {
     const info: StationsInfo = {
-      eva: 'x', name: 'T',
+      eva: 'x', evas: ['x'], name: 'T',
       gleise: [{ gleis: '1', lat: 51, lon: 10 }, { gleis: '2', lat: 51, lon: 10 + M15_LON }],
     };
     const graph = syntheseGraph(info);
@@ -40,7 +41,7 @@ describe('syntheseGraph', () => {
 
   it('FaSta-Aufzüge ACTIVE → barrierefreie Route existiert', () => {
     const info: StationsInfo = {
-      eva: 'x', name: 'T',
+      eva: 'x', evas: ['x'], name: 'T',
       gleise: [{ gleis: '1', lat: 51, lon: 10 }, { gleis: '2', lat: 51, lon: 10 + M15_LON }],
     };
     const anlagen: FastaAnlage[] = [
@@ -54,7 +55,7 @@ describe('syntheseGraph', () => {
 
   it('FaSta-Aufzug INACTIVE → barrierefreie Route null', () => {
     const info: StationsInfo = {
-      eva: 'x', name: 'T',
+      eva: 'x', evas: ['x'], name: 'T',
       gleise: [{ gleis: '1', lat: 51, lon: 10 }, { gleis: '2', lat: 51, lon: 10 + M15_LON }],
     };
     const anlagen: FastaAnlage[] = [
@@ -68,7 +69,7 @@ describe('syntheseGraph', () => {
 
   it('Gleise mit (nahezu) gleichen Koordinaten teilen sich den Bahnsteig', () => {
     const info: StationsInfo = {
-      eva: 'x', name: 'T',
+      eva: 'x', evas: ['x'], name: 'T',
       gleise: [
         { gleis: '4', lat: 51, lon: 10 },
         { gleis: '5', lat: 51, lon: 10 },
@@ -104,6 +105,7 @@ describe('Verankerung des Synthesemodells', () => {
   // Karte zeigte echte OSM-Kacheln von dort.
   const berlinHbf: StationsInfo = {
     eva: '8098160',
+    evas: ['8098160'],
     name: 'Berlin Hbf (tief)',
     lat: 52.525592,
     lon: 13.369545,
@@ -126,7 +128,7 @@ describe('Verankerung des Synthesemodells', () => {
   });
 
   it('faellt ohne Stationsposition auf den bisherigen Nullpunkt zurueck', () => {
-    const ohneOrt: StationsInfo = { eva: '8000001', name: 'Ohne Ort', gleise: [{ gleis: '1' }] };
+    const ohneOrt: StationsInfo = { eva: '8000001', evas: ['8000001'], name: 'Ohne Ort', gleise: [{ gleis: '1' }] };
     const graph = syntheseGraph(ohneOrt);
     const erster = [...graph.knoten.values()][0];
     expect(erster.lat).toBeCloseTo(51, 5);

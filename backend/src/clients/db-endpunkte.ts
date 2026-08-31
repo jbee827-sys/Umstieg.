@@ -40,8 +40,12 @@ export const epTafelAenderungen = (eva: string): string =>
   `${TIMETABLES_BASIS}/fchg/${encodeURIComponent(eva)}`;
 
 // FaSta (Aufzüge/Rolltreppen mit Betriebsstatus).
-// TODO vor Live-Betrieb: FaSta adressiert Bahnhofsnummern (StaDa), nicht
-// EVA-Nummern – Zuordnung klären; bis dahin wird die EVA durchgereicht.
+//
+// Adressiert wird die StaDa-BAHNHOFSNUMMER, die RIS::Stations als `stationID`
+// mitliefert (Berlin Hbf: 1071) - NICHT die EVA. Eine EVA quittiert FaSta mit
+// HTTP 200 und leerer Liste; das sah wie "keine Aufzüge" aus, statt wie ein
+// Fehler. Verifiziert 31.08.2026: stationnumber=1071 -> 70 Anlagen,
+// stationnumber=8011160 -> [ ].
 export const FASTA_BASIS = 'https://apis.deutschebahn.com/db-api-marketplace/apis/fasta/v2';
 
 export const epFastaFacilities = (stationsnummer: string): string =>

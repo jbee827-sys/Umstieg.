@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { buildApp } from './app.js';
+import { LISTEN_HOST } from './server-host.js';
 import type { ApiClients } from './routes/api.js';
 import type { OverpassAntwort } from './core/typen.js';
 
@@ -30,8 +31,10 @@ function fixtureClients(): Partial<ApiClients> {
         name: 'Berlin Hbf (Fixture)',
         lat: 52.5251,
         lon: 13.3694,
+        evas: [eva],
         gleise: [],
       }),
+      ermittleGruppe: async (eva) => [eva],
     },
   };
 }
@@ -39,7 +42,7 @@ function fixtureClients(): Partial<ApiClients> {
 const app = buildApp(fixtureClients());
 
 app
-  .listen({ port, host: '0.0.0.0' })
+  .listen({ port, host: LISTEN_HOST })
   .then(() => console.log(`Umstiegs-Navigator Backend läuft auf Port ${port}`))
   .catch((err) => {
     console.error(err);

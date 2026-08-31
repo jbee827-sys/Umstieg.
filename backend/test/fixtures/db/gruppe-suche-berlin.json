@@ -1,0 +1,118 @@
+{
+  "_hinweis": "AUFGEZEICHNET von der echten RIS::Stations-API am 31.08.2026 (nicht handgebaut). Endpunkt: GET /stop-places/by-name/Berlin%20Hbf",
+  "stopPlaces": [
+    {
+      "evaNumber": "8011160",
+      "groupMembers": [
+        "8011160",
+        "8089021",
+        "8098160"
+      ],
+      "names": {
+        "DE": {
+          "nameLong": "Berlin Hbf",
+          "nameLocal": "B Hbf",
+          "speechLong": "Berlin Hauptbahnhof",
+          "speechShort": "Berlin Hauptbahnhof",
+          "synonyms": [
+            "BHBF",
+            "Berlin Hauptbahnhof - Lehrter Bahnhof",
+            "Berlin Central Station"
+          ]
+        }
+      },
+      "availableTransports": [
+        "HIGH_SPEED_TRAIN",
+        "INTERCITY_TRAIN",
+        "INTER_REGIONAL_TRAIN",
+        "REGIONAL_TRAIN",
+        "CITY_TRAIN"
+      ],
+      "position": {
+        "longitude": 13.369545,
+        "latitude": 52.525592
+      },
+      "replacementTransportsAvailable": false,
+      "stationID": "1071"
+    },
+    {
+      "evaNumber": "8070952",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Berlin Hbf (Invalidenstraße)",
+          "nameShort": "Berlin Hbf(Invldstr)",
+          "speechLong": "Berlin Hbf Europaplatz",
+          "speechShort": "Bln Hbf Europapl",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "INTER_REGIONAL_TRAIN"
+      ],
+      "position": {
+        "longitude": 13.36882,
+        "latitude": 52.52663
+      },
+      "replacementTransportsAvailable": true
+    },
+    {
+      "evaNumber": "8089522",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Berlin Hbf (S-Bahn)",
+          "speechLong": "Berlin Hauptbahnhof",
+          "speechShort": "Berlin Hauptbahnhof",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "CITY_TRAIN"
+      ],
+      "position": {
+        "longitude": 13.37031,
+        "latitude": 52.52543
+      },
+      "replacementTransportsAvailable": false
+    },
+    {
+      "evaNumber": "730749",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Berlin Hauptbahnhof (S+U), Berlin",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "SUBWAY",
+        "TRAM",
+        "BUS"
+      ],
+      "position": {
+        "longitude": 13.369379,
+        "latitude": 52.526462
+      },
+      "replacementTransportsAvailable": false
+    },
+    {
+      "evaNumber": "727269",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Hauptbahnhof (S+U)/Washingtonplatz, Berlin",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "BUS"
+      ],
+      "position": {
+        "longitude": 13.370497,
+        "latitude": 52.523389
+      },
+      "replacementTransportsAvailable": false
+    }
+  ]
+}

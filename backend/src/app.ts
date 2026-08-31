@@ -2,7 +2,12 @@ import cors from '@fastify/cors';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { holeAnlagen } from './clients/fasta.js';
 import { overpassQuery } from './clients/overpass.js';
-import { holeStationsInfo, sucheBahnhoefe, sucheBahnhoefeNahebei } from './clients/stations.js';
+import {
+  holeGruppe,
+  holeStationsInfo,
+  sucheBahnhoefe,
+  sucheBahnhoefeNahebei,
+} from './clients/stations.js';
 import { holeTafel } from './clients/timetables.js';
 import { holeWagenposition } from './clients/wagenreihung.js';
 import { Ueberwachung } from './core/ueberwachung.js';
@@ -47,11 +52,12 @@ export function buildApp(clients: Partial<AppClients> = {}): FastifyInstance {
       sucheBahnhoefe: (q) => sucheBahnhoefe(q),
       sucheBahnhoefeNahebei: (lat, lon, radiusM) => sucheBahnhoefeNahebei(lat, lon, radiusM),
       holeStationsInfo: (eva) => holeStationsInfo(eva),
+      ermittleGruppe: (eva) => holeGruppe(eva),
     },
     tafel,
     wagenposition:
       clients.wagenposition ?? ((zug, datum, wagen) => holeWagenposition(zug, datum, wagen)),
-    fasta: clients.fasta ?? ((eva) => holeAnlagen(eva)),
+    fasta: clients.fasta ?? ((stationsnummer) => holeAnlagen(stationsnummer)),
   });
 
   // Eine Überwachung je App-Instanz. Sie beobachtet beide Tafeln, damit sowohl

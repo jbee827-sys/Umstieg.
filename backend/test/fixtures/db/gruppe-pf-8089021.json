@@ -1,0 +1,43 @@
+{
+  "_hinweis": "AUFGEZEICHNET von der echten RIS::Stations-API am 31.08.2026 (nicht handgebaut). Endpunkt: GET /platforms/8089021",
+  "platforms": [
+    {
+      "name": "15",
+      "heights": [
+        {
+          "start": 0.0,
+          "end": 0.0,
+          "height": 96.0
+        }
+      ],
+      "end": 0.0,
+      "headPlatform": false,
+      "ifopt": "de:11000:900003201:3:54",
+      "length": 0.0,
+      "linkedPlatforms": [
+        "16"
+      ],
+      "sectors": [],
+      "start": 0.0
+    },
+    {
+      "name": "16",
+      "heights": [
+        {
+          "start": 0.0,
+          "end": 0.0,
+          "height": 96.0
+        }
+      ],
+      "end": 0.0,
+      "headPlatform": false,
+      "ifopt": "de:11000:900003201:3:55",
+      "length": 0.0,
+      "linkedPlatforms": [
+        "15"
+      ],
+      "sectors": [],
+      "start": 0.0
+    }
+  ]
+}

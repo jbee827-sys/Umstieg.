@@ -1,0 +1,43 @@
+{
+  "_hinweis": "AUFGEZEICHNET von der echten RIS::Stations-API am 31.08.2026 (nicht handgebaut). Endpunkt: GET /stop-places/8098160",
+  "stopPlaces": [
+    {
+      "evaNumber": "8098160",
+      "names": {
+        "DE": {
+          "nameLong": "Berlin Hbf",
+          "speechLong": "Berlin Hauptbahnhof",
+          "speechShort": "Berlin Hauptbahnhof",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "HIGH_SPEED_TRAIN",
+        "INTERCITY_TRAIN",
+        "INTER_REGIONAL_TRAIN",
+        "REGIONAL_TRAIN"
+      ],
+      "availablePhysicalTransports": [
+        "HIGH_SPEED_TRAIN",
+        "INTERCITY_TRAIN",
+        "INTER_REGIONAL_TRAIN",
+        "REGIONAL_TRAIN"
+      ],
+      "countryCode": "DE",
+      "timeZone": "Europe/Berlin",
+      "metropolis": {},
+      "municipalityKey": "11000000",
+      "position": {
+        "longitude": 13.369545,
+        "latitude": 52.525592
+      },
+      "postalCode": "10557",
+      "replacementTransportsAvailable": false,
+      "state": "BE",
+      "stationID": "1071",
+      "transportAssociations": [
+        "VBB"
+      ]
+    }
+  ]
+}
