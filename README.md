@@ -19,7 +19,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 ## Hier weitermachen (Stand 31.08.2026)
 
 ```bash
-cd backend && npm test        # muss 178 von 178 grün sein
+cd backend && npm test        # muss 180 von 180 grün sein
 cd backend && npm run lint    # tsc --noEmit, muss sauber sein
 cd frontend && npm test       # muss 37 von 37 grün sein
 cd frontend && npm run build  # muss grün sein
@@ -57,6 +57,7 @@ braucht Handarbeit an einem echten Gerät.
 | ~~1~~ | ~~**EVA-Split bei grossen Bahnhöfen**~~ ✅ **erledigt 31.08.2026** | Gelöst über `groupMembers` aus RIS::Stations. Einzelheiten im Abschnitt „Verkehrsstellengruppen". |
 | ~~1b~~ | ~~**Graph-Cache vergiftet sich selbst**~~ ✅ **erledigt 31.08.2026** | Frist jetzt nach Qualität: Stufe 1/2 volle 24 h, Stufe 3 zehn Minuten (`graphTtlMs` in `cache/lru.ts`). |
 | ~~2~~ | ~~**FaSta-Adressierung schließen**~~ ✅ **erledigt 31.08.2026** | `stationID` wird durchgereicht. Der Fund dabei: Mit der EVA antwortete FaSta **nicht** mit einem Fehler, sondern mit HTTP 200 und `[ ]`. |
+| 3a | **Erkennungsradius von 1000 m prüfen** | Am 31.08. beobachtet: Von `52.84/13.81` aus liegt Eberswalde Hbf **1094 m** entfernt – 94 m zu weit, die Umkreissuche liefert nichts, und die Vorbelegung bleibt leer. Die Rohantwort enthält dort 17 Bushaltestellen, aber keine Eisenbahn-Verkehrsstelle; der Filter arbeitet also richtig. Zu entscheiden ist der Radius (`ERKENNUNG_RADIUS_M` in `routes/api.ts`) – gehört in die Mobilabnahme. |
 | 3 | **Mobilabnahme am echten Gerät** | Die Sichtprüfung am Desktop ist am 29./30.08. erfolgt (siehe „Abnahme im Browser"). Offen bleibt, was nur ein Handy zeigt: Berechtigungsdialog, Wiederkehrer ohne Dialog, Genauigkeit im Bahnhof, Ankunftserkennung am Gleis, und ob die automatische Ebenenwahl als Hilfe oder als Bevormundung ankommt. `mkcert`-Zertifikate in `frontend/.cert/` schalten den Dev-Server auf HTTPS. |
 | 4 | **4 Lint-Warnungen im Frontend** (`cd frontend && npm run lint`) | Drei `set-state-in-effect` (Task 13/15 und die Bahnhofs-Vorbelegung), eine `purity` (`Date.now()` im Render). Alle bestehen bewusst; neue Warnungen wurden bei jeder Änderung behoben statt übernommen. |
 | 5 | **Vercel: Framework-Preset steht auf „Services"** | Rückstand der `experimentalServices`-Erkennung beim `vercel link`. Die `vercel.json` überschreibt es, der Build ist nachweislich korrekt – kosmetisch, aber irreführend. Settings → Build & Deployment. |
@@ -129,7 +130,7 @@ Verifiziert am 28.08.2026 gegen die Produktion:
 Der Durchstich läuft damit erstmals gegen **echte** DB-Daten und echtes
 Overpass, nicht mehr gegen Fixtures.
 
-### Drei Fallen, die dabei aufgeschlagen sind
+### Vier Fallen, die dabei aufgeschlagen sind
 
 **1. Fly legt ungefragt eine zweite Maschine an.** `min_machines_running = 1`
 ist eine Unter-, keine Obergrenze. Zwei Maschinen teilen weder Poller-Zustand
@@ -149,7 +150,31 @@ unter `/_/backend` mitdeployen würde – genau die Zusammenlegung, gegen die
 `docs/deployment.md` argumentiert. Zweimal passiert, zweimal zurückgesetzt.
 **Nach jedem `vercel link` oder `vercel deploy` die `vercel.json` prüfen.**
 
-**3. CORS ist der leicht vergessene vierte Schritt.** Ohne `CORS_ORIGIN`
+**3. `0.0.0.0` reicht Fly nicht – es muss `::` sein.** Der Fly-Proxy
+verbindet sich mit der Maschine über deren **private IPv6-Adresse**
+(`fdaa:…`). Bindet der Server auf `0.0.0.0`, lauscht er nur auf IPv4: Die App
+läuft, meldet sich gesund, und ist von aussen trotzdem tot. Am 31.08.2026 in
+Produktion gemessen:
+
+```
+http://127.0.0.1:3001/api/health                     → {"status":"ok"}
+http://[fdaa:be:db0f:a7b:1c0:f24d:ac5a:2]:3001/…     → Connection refused
+```
+
+Fly meldet das als `[PU03] unreachable worker host … this is a Fly issue` –
+was nach einem Plattformausfall klingt, aber nur heisst: kein erreichbarer
+Kandidat. `flyctl machines list` zeigte dabei durchgehend `started` und
+`1/1 passing`. **Die Zeile stand seit dem ersten Commit unverändert**, und bis
+zum 30.08. funktionierte alles; geändert hat sich der Weg, den Fly nimmt.
+`LISTEN_HOST = '::'` in `src/server-host.ts` nimmt beide Protokolle an und
+macht die App von dieser Wahl unabhängig.
+
+Kein Test hätte das gefunden: Die ganze Suite läuft über `app.inject()`, das
+gar keinen Socket öffnet. `test/listen.test.ts` ist der erste Test, der
+wirklich lauscht – und er scheitert ohne den Fix mit demselben
+`ECONNREFUSED ::1` wie der Proxy.
+
+**4. CORS ist der leicht vergessene vierte Schritt.** Ohne `CORS_ORIGIN`
 antwortet das Backend zwar mit 200, aber ohne `access-control-allow-origin` –
 der Browser blockiert dann jeden Aufruf, und im Frontend sieht es aus, als
 täte die App gar nichts. Gesetzt sind alle drei Produktions-Aliase; fremde
@@ -245,7 +270,7 @@ Teil des Schlüssels, und das Ergebnis ist ein stiller 401. Genau so passiert.
 | Schrittnavigation (Spec 30.08.2026, 8 Tasks) | ✅ fertig, **im Browser gegen die Produktion verifiziert** (30.08.) |
 | Verkehrsstellengruppen + Cache-Frist + FaSta-Adressierung (31.08.2026) | ✅ fertig, **gegen die echte DB-API verifiziert** (31.08.) |
 
-**Tests:** `cd backend && npm test` → **178 von 178 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm test` → **37 von 37 grün**, `npm run build` grün; `npm run lint` meldet 4 Warnungen (siehe ToDo 4).
+**Tests:** `cd backend && npm test` → **180 von 180 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm test` → **37 von 37 grün**, `npm run build` grün; `npm run lint` meldet 4 Warnungen (siehe ToDo 4).
 
 Die Backend-Suite läuft mit **`TZ=UTC`** (`vitest.config.ts`) – wie die Produktion. Ohne das sind Zeitzonenfehler auf einem deutschen Rechner unsichtbar; genau so ist der Fehler entstanden, dass die Zugauswahl nur abgefahrene Züge zeigte.
 
