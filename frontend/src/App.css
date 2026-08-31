@@ -739,3 +739,89 @@
   border-radius: 50%;
   background: var(--color-accent);
 }
+
+/* Ebenenschema und Schritt-Sheet (Screen 3) */
+.schema-hinweis {
+  font-size: 12px;
+  color: var(--color-neutral-600, #6b6767);
+  margin: 6px 0 0;
+}
+.karte-aufklappbar {
+  margin-top: 16px;
+}
+.karte-aufklappbar > summary {
+  cursor: pointer;
+  font-weight: 700;
+  padding: 12px 0;
+  min-height: 44px;
+}
+.schrittsheet {
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--color-bg);
+  border: 2px solid var(--color-text);
+}
+.schrittsheet-zaehler {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+.schrittsheet-text {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 8px 0 0;
+}
+.schrittsheet-detail {
+  font-size: 13px;
+  color: var(--color-neutral-600, #6b6767);
+  margin: 4px 0 0;
+}
+.schrittsheet-knoepfe {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.schrittsheet-knoepfe > * {
+  flex: 1;
+}
+.schrittsheet-liste > summary {
+  cursor: pointer;
+  padding: 12px 0 0;
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Dashboard-Bloecke (Screen 2) */
+.dashboard-bloecke {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.dashboard-block {
+  flex: 1;
+  padding: 14px;
+  border-radius: 14px;
+  border: 2px solid var(--color-divider);
+}
+.dashboard-zug {
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+.dashboard-gleis {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-top: 2px;
+}
+.dashboard-zeit {
+  font-size: 13px;
+  color: var(--color-neutral-600, #6b6767);
+}
+.wahl-gruppe-spalte {
+  flex-direction: column;
+}
