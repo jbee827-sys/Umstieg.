@@ -430,14 +430,50 @@
   gap: 8px;
 }
 
-.tafel {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+/*
+ * EINE Auswahlflaeche, darin mehrere Kategorien. Der Rahmen sitzt deshalb
+ * hier und nicht mehr an der Liste selbst - sonst saehe jede Kategorie aus
+ * wie ein eigenes Bedienelement.
+ */
+.tafel-bloecke {
   border: 1px solid var(--color-neutral-300);
   border-radius: 14px;
   overflow: hidden;
   background: var(--color-neutral-100);
+}
+
+.tafel-block + .tafel-block {
+  border-top: 1px solid var(--color-neutral-300);
+}
+
+.tafel-block-titel {
+  margin: 0;
+  padding: 10px 14px 6px;
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-neutral-500);
+  background: var(--color-neutral-100);
+  /* Bleibt beim Rollen der eigenen Kategorie stehen: Wer mitten in einer
+     langen S-Bahn-Liste steht, soll noch sehen, worin er blaettert. */
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.tafel {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--color-neutral-100);
+  /* Jede Kategorie rollt fuer sich. Rund vier Zeilen: genug, um die Auswahl
+     zu erkennen, wenig genug, dass alle vier Kategorien zugleich sichtbar
+     bleiben - der Grund, warum ueberhaupt kategorisiert wird. */
+  max-height: 216px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .tafel button {
@@ -458,6 +494,16 @@
 
 .tafel li:last-child button {
   border-bottom: 0;
+}
+
+/* Rollbalken nur andeuten - er sitzt in einem 216px hohen Fenster. */
+.tafel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tafel::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-300);
+  border-radius: 3px;
 }
 
 .tafel button:hover {

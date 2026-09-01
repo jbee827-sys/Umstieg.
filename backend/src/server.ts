@@ -34,14 +34,14 @@ function fixtureClients(): Partial<ApiClients> {
     overpass: async () => osm,
     stations: {
       sucheBahnhoefe: async () => [
-        { name: 'Berlin Hbf (Fixture)', eva: '8011160', lat: 52.5251, lon: 13.3694 },
+        { name: 'Berlin Hbf', eva: '8011160', lat: 52.5251, lon: 13.3694 },
       ],
       sucheBahnhoefeNahebei: async () => [
-        { name: 'Berlin Hbf (Fixture)', eva: '8011160', lat: 52.5251, lon: 13.3694 },
+        { name: 'Berlin Hbf', eva: '8011160', lat: 52.5251, lon: 13.3694 },
       ],
       holeStationsInfo: async (eva) => ({
         eva,
-        name: 'Berlin Hbf (Fixture)',
+        name: 'Berlin Hbf',
         lat: 52.5251,
         lon: 13.3694,
         evas: BERLIN_HBF_GRUPPE,
