@@ -9,15 +9,17 @@ type HoleFn = (p: RouteParameter) => Promise<RouteErgebnis>
 /**
  * Laedt die Routenvarianten NACHEINANDER, nicht gleichzeitig.
  *
- * Der Grund ist gemessen: Zwei gleichzeitige Anfragen fuer denselben Bahnhof
- * finden beide den Graph-Cache leer, bauen den Graphen unabhaengig und fragen
- * Overpass doppelt. Am 31.08.2026 kostete das 24 s und 61 s statt 2 s - die
- * App wirkte eingefroren. Nacheinander trifft die zweite Anfrage den warmen
- * Cache und ist praktisch umsonst.
+ * Urspruenglich war das ein Notbehelf: Zwei gleichzeitige Anfragen fuer
+ * denselben Bahnhof fanden beide den Graph-Cache leer und fragten Overpass
+ * doppelt - am 31.08.2026 gemessen 24 s und 61 s statt 2 s. Das ist seit dem
+ * 01.09.2026 im Backend behoben (gebuendelte Graphbauten in `routes/api.ts`);
+ * gleichzeitig waere jetzt gefahrlos.
  *
- * Die gewaehlte Variante kommt zuerst: Sobald sie da ist, kann das Dashboard
- * stehen. Die zweite liefert nur noch die Minutenangabe fuer ihren Knopf;
- * faellt sie aus, bleibt der Knopf ohne Minuten - das ist kein Fehler.
+ * Geblieben ist es trotzdem, aus einem eigenen Grund: Die gewaehlte Variante
+ * kommt zuerst, und sobald sie da ist, kann das Dashboard stehen. Die zweite
+ * liefert nur noch die Minutenangabe fuer ihren Knopf; faellt sie aus, bleibt
+ * der Knopf ohne Minuten - das ist kein Fehler. Gleichzeitiges Laden wuerde
+ * daran nichts beschleunigen, nur die Nebensache frueher liefern.
  */
 export async function ladeVarianten(
   basis: Basis,
