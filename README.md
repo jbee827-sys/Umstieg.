@@ -16,12 +16,12 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 31.08.2026)
+## Hier weitermachen (Stand 01.09.2026)
 
 ```bash
-cd backend && npm test        # muss 180 von 180 grün sein
+cd backend && npm test        # muss 183 von 183 grün sein
 cd backend && npm run lint    # tsc --noEmit, muss sauber sein
-cd frontend && npm test       # muss 110 von 110 grün sein
+cd frontend && npm test       # muss 121 von 121 grün sein
 cd frontend && npm run build  # muss grün sein
 ```
 
@@ -40,6 +40,11 @@ sind umgesetzt und maschinell geprüft.
 seine Verkehrsstellen ausgewertet, ein degradierter Graph blockiert den
 Bahnhof nicht mehr einen ganzen Tag, und FaSta wird endlich richtig
 adressiert. Alles gegen die echte DB-API verifiziert.
+
+**Am 01.09.2026 sind zwei ToDos aus der Sofort-Liste geschlossen:** Der
+Backend-Fix gegen doppelte Graphbauten (3c) und die vier Lint-Warnungen im
+Frontend (4). Letzteres brachte nebenbei die ersten Tests für `Zugauswahl`
+und `Eingabe` – beide waren bis dahin ungetestet.
 
 **Was fehlt, ist keine Zeile Code, sondern der Blick darauf:** Die
 Sichtprüfung am Desktop ist am 29./30.08. erfolgt (Abschnitt „Abnahme im
@@ -80,18 +85,17 @@ waren allesamt nur im Browser sichtbar.
 
 ### Bekannter Rückstand, bewusst offen
 
-**Der Kaltstart bleibt langsam.** Ursache, am 31.08. gemessen: Zwei
-gleichzeitige Anfragen für denselben Bahnhof finden beide den Graph-Cache
-leer, bauen den Graphen unabhängig und fragen Overpass doppelt – **24 s und
-61 s statt 2 s**. Das Frontend umgeht das jetzt, indem es die Varianten
-**nacheinander** lädt (`api/varianten.ts`); die zweite trifft den warmen
-Cache.
+**Der Kaltstart bleibt langsam – aber nicht mehr doppelt so lange.** Ursache,
+am 31.08. gemessen: Zwei gleichzeitige Anfragen für denselben Bahnhof fanden
+beide den Graph-Cache leer, bauten den Graphen unabhängig und fragten Overpass
+doppelt – **24 s und 61 s statt 2 s**. Am 01.09. im Backend behoben (ToDo 3c);
+das Frontend lädt die Varianten weiterhin nacheinander, jetzt aber aus einem
+eigenen Grund (siehe `api/varianten.ts`).
 
-Der eigentliche Fix gehört ins Backend: gleichzeitige Graphbauten für
-dieselbe EVA zusammenführen (eine Karte laufender Versprechen, `Map<string,
-Promise<GraphEintrag>>`). Ohne das kostet der erste Aufruf eines
-unbekannten Bahnhofs weiterhin rund 24 Sekunden. **Nicht umgesetzt, weil
-Backend-Änderungen in diesem Vorhaben ausgeschlossen waren.**
+**Was bleibt:** Ein unbekannter Bahnhof kostet beim ersten Aufruf immer noch
+rund 24 Sekunden – so lange braucht Overpass. Gebrochen ist nur die
+Verdopplung, nicht der Abruf selbst. Wer das kürzen will, muss beim
+Overpass-Abruf ansetzen, nicht am Cache.
 
 **Der Umbau ist nicht deployt.** Produktion läuft weiter mit der alten
 Oberfläche (`vercel deploy --prod` steht aus). Das Backend ist aktuell.
@@ -107,10 +111,10 @@ Oberfläche (`vercel deploy --prod` steht aus). Das Backend ist aktuell.
 | ~~2~~ | ~~**FaSta-Adressierung schließen**~~ ✅ **erledigt 31.08.2026** | `stationID` wird durchgereicht. Der Fund dabei: Mit der EVA antwortete FaSta **nicht** mit einem Fehler, sondern mit HTTP 200 und `[ ]`. |
 | 3a | **Erkennungsradius von 1000 m prüfen** | Am 31.08. beobachtet: Von `52.84/13.81` aus liegt Eberswalde Hbf **1094 m** entfernt – 94 m zu weit, die Umkreissuche liefert nichts, und die Vorbelegung bleibt leer. Die Rohantwort enthält dort 17 Bushaltestellen, aber keine Eisenbahn-Verkehrsstelle; der Filter arbeitet also richtig. Zu entscheiden ist der Radius (`ERKENNUNG_RADIUS_M` in `routes/api.ts`) – gehört in die Mobilabnahme. |
 | 3b | **Sichtprüfung der neuen Bildschirme** | Weg, Angekommen, Störmeldung und die korrigierte Ampel sind nie im Browser gesehen worden – Einzelheiten oben unter „Offen: was NICHT geprüft ist" (P1–P5). |
-| 3c | **Gleichzeitige Graphbauten zusammenführen** (Backend) | Zwei gleichzeitige Anfragen für dieselbe EVA bauen den Graphen doppelt: am 31.08. 24 s und 61 s statt 2 s. Das Frontend umgeht es durch Nacheinanderladen; der Kaltstart bleibt bei ~24 s. Fix: `Map<string, Promise<GraphEintrag>>` in `routes/api.ts`, damit der zweite Aufruf auf den ersten wartet. |
+| ~~3c~~ | ~~**Gleichzeitige Graphbauten zusammenführen**~~ ✅ **erledigt 01.09.2026** | Zwei Karten laufender Versprechen in `routes/api.ts` – eine auf die EVA, eine auf den Bahnhofsschlüssel. Wer als Zweiter kommt, wartet auf den laufenden Bau, statt danebenher einen eigenen zu starten. Drei Tests in `test/cache.test.ts`. **Die Falle dabei:** Bei einem Bahnhof aus einer einzigen Verkehrsstelle sind EVA und Gruppenschlüssel dieselbe Zeichenkette – in **einer** Karte fand der innere Bau das noch offene äussere Versprechen und wartete auf sich selbst. Der Testlauf lief in den Timeout, nicht in eine Fehlermeldung. |
 | 3d | **Frontend deployen** | Der Umbau liegt auf `feat/mvp` und `main`, ist aber **nicht** ausgeliefert. Produktion zeigt weiter die alte Oberfläche. |
 | 3 | **Mobilabnahme am echten Gerät** | Die Sichtprüfung am Desktop ist am 29./30.08. erfolgt (siehe „Abnahme im Browser"). Offen bleibt, was nur ein Handy zeigt: Berechtigungsdialog, Wiederkehrer ohne Dialog, Genauigkeit im Bahnhof, Ankunftserkennung am Gleis, und ob die automatische Ebenenwahl als Hilfe oder als Bevormundung ankommt. `mkcert`-Zertifikate in `frontend/.cert/` schalten den Dev-Server auf HTTPS. |
-| 4 | **4 Lint-Warnungen im Frontend** (`cd frontend && npm run lint`) | Drei `set-state-in-effect` (Task 13/15 und die Bahnhofs-Vorbelegung), eine `purity` (`Date.now()` im Render). Alle bestehen bewusst; neue Warnungen wurden bei jeder Änderung behoben statt übernommen. |
+| ~~4~~ | ~~**4 Lint-Warnungen im Frontend**~~ ✅ **erledigt 01.09.2026** | `npm run lint` ist jetzt ohne Ausgabe. Einzelheiten im Abschnitt „Lint-Warnungen aufgelöst“. Voraussetzung waren 11 neue Tests für `Zugauswahl` und `Eingabe` – beide Komponenten hatten vorher **keine**. |
 | 5 | **Vercel: Framework-Preset steht auf „Services"** | Rückstand der `experimentalServices`-Erkennung beim `vercel link`. Die `vercel.json` überschreibt es, der Build ist nachweislich korrekt – kosmetisch, aber irreführend. Settings → Build & Deployment. |
 | 6 | **Vercel-Preview-Variable nur für `feat/mvp`** | `VITE_API_BASE` konnte nicht „für alle Preview-Zweige" gesetzt werden (CLI-Fehler in v53.1.0: der vorgeschlagene Befehl ist derselbe, der scheitert). Neue Zweige brauchen einen eigenen Eintrag oder das Dashboard. |
 
@@ -638,6 +642,28 @@ Bahnhofssuche gegen RIS::Stations, `watchPosition` und die Genauigkeitsgrenze
 („Standort zu ungenau (± 124 m) – Punkt ausgeblendet"). Kein horizontales
 Scrollen; `App.css` hat **null** Media-Queries, das Layout ist rein fluid mit
 `max-width: 430px`.
+
+## Lint-Warnungen aufgelöst (01.09.2026)
+
+Vier Warnungen standen seit dem Frontend-Umbau, alle vier „bewusst“. Beim
+Hinsehen war jede davon ein Hinweis auf einen überflüssigen zweiten
+Rendergang – keine Geschmacksfrage.
+
+| Datei | Warnung | Aufgelöst durch |
+|---|---|---|
+| `components/Zugauswahl.tsx` | `set-state-in-effect` | Die Tafel wird aus dem **Klick** geladen, der die Liste aufklappt, nicht aus einem Effekt, der auf `offen` lauscht. Der Effekt brauchte einen zusätzlichen Rendergang, nur um mit dem Laden zu beginnen. |
+| `components/Eingabe.tsx` | `set-state-in-effect` (Vorbelegung) | Zustandsanpassung beim Prop-Wechsel statt Effekt – das von React dafür vorgesehene Muster. **Die Falle:** Als Anfangswert des Vergleichs darf nicht `erkannt` stehen, sonst ist der Vergleich beim ersten Rendern wahr und ein bereits erkannter Bahnhof landet nie im Feld. Der Anfangswert ist `null` – als Prop unmöglich. |
+| `components/Eingabe.tsx` | `set-state-in-effect` (Vorschläge) | Ob Vorschläge sichtbar sind, steht beim Rendern schon fest (`sichtbareVorschlaege`). Sie im Effekt zu **löschen** war der einzige Grund, dort überhaupt Zustand zu setzen. |
+| `App.tsx` | `purity` (`Date.now()` im Render) | Der Tick-Zähler ist durch den Zeitpunkt selbst ersetzt: `jetzt` ist Zustand, fortgeschrieben vom 10-Sekunden-Takt **und** von jedem Seitenwechsel. Ohne den zweiten Auslöser ginge die Ampel mit einer bis zu zehn Sekunden alten Zahl auf. |
+
+Voraussetzung war Testabdeckung: `Zugauswahl` und `Eingabe` hatten **keine**.
+Die 11 Tests in `Zugauswahl.test.tsx` und `Eingabe.test.tsx` wurden **vor**
+dem Umbau geschrieben und liefen gegen den alten Code grün – nur so belegen
+sie, dass der Umbau nichts verändert hat.
+
+Ein Nachzieher: `setBildschirm` ist jetzt ein `useCallback` statt eines
+nackten Setters. Der Linter kann seine Stabilität nicht sehen und will ihn in
+der Abhängigkeitsliste von `berechne` genannt haben.
 
 ## Rechtliches
 
