@@ -60,20 +60,31 @@ export function Eingabe({ laden, fehler, erkannt, onBerechnen }: EingabeProps) {
 
   // Vorbelegt wird NUR ein leeres Feld: Die Erkennung trifft verzoegert ein
   // und darf eine bereits getippte Eingabe nicht ueberschreiben.
-  useEffect(() => {
-    if (erkennungVerworfen || gewaehlt || suchtext !== '') return
-    if (!erkannt || erkannt.length !== 1) return
-    setGewaehlt(erkannt[0])
-    setSuchtext(erkannt[0].name)
-  }, [erkannt, erkennungVerworfen, gewaehlt, suchtext])
+  //
+  // Angepasst wird beim Wechsel des Props, nicht in einem Effekt: Ein Effekt
+  // haette den bereits gezeichneten leeren Bildschirm nachtraeglich
+  // ueberschrieben - ein sichtbarer zweiter Rendergang fuer etwas, das schon
+  // beim ersten feststeht.
+  // `null` heisst „noch nie gesehen“ und ist als Prop unmoeglich (dort gibt es
+  // nur eine Liste oder `undefined`). Mit `erkannt` als Anfangswert waere der
+  // Vergleich beim ersten Rendern wahr - und ein bereits erkannter Bahnhof
+  // haette es nie ins Feld geschafft.
+  const [zuletztErkannt, setZuletztErkannt] = useState<BahnhofTreffer[] | undefined | null>(null)
+  if (erkannt !== zuletztErkannt) {
+    setZuletztErkannt(erkannt)
+    if (!erkennungVerworfen && !gewaehlt && suchtext === '' && erkannt?.length === 1) {
+      setGewaehlt(erkannt[0])
+      setSuchtext(erkannt[0].name)
+    }
+  }
 
   // Bahnhofssuche mit Entprellung; 503 → Freitext-Fallback (EVA direkt eingeben)
   useEffect(() => {
     window.clearTimeout(suchTimer.current)
-    if (gewaehlt || suchtext.trim().length < 2) {
-      setVorschlaege([])
-      return
-    }
+    // Nicht leeren, nur nicht suchen: Ob Vorschlaege sichtbar sind, steht
+    // beim Rendern schon fest (siehe `sichtbareVorschlaege`). Das hier war
+    // der einzige Grund, im Effekt Zustand zu setzen.
+    if (gewaehlt || suchtext.trim().length < 2) return
     suchTimer.current = window.setTimeout(async () => {
       const ergebnis = await sucheStationen(suchtext.trim())
       if (ergebnis.ok) {
@@ -93,6 +104,12 @@ export function Eingabe({ laden, fehler, erkannt, onBerechnen }: EingabeProps) {
     }, 300)
     return () => window.clearTimeout(suchTimer.current)
   }, [suchtext, gewaehlt])
+
+  // Abgeleitet statt gespeichert: Vorschlaege gehoeren zu einem Suchtext ab
+  // zwei Zeichen ohne getroffene Wahl. Steht das nicht mehr, sind sie weg -
+  // ohne dass jemand sie loeschen muss.
+  const sichtbareVorschlaege =
+    gewaehlt || suchtext.trim().length < 2 ? [] : vorschlaege
 
   const eva = gewaehlt?.eva ?? (dbFehlt ? evaManuell.trim() : '')
   const bereit = eva !== '' && gleisAn.trim() !== '' && gleisAb.trim() !== '' && !laden
@@ -138,9 +155,9 @@ export function Eingabe({ laden, fehler, erkannt, onBerechnen }: EingabeProps) {
             setErkennungVerworfen(true)
           }}
         />
-        {vorschlaege.length > 0 && (
+        {sichtbareVorschlaege.length > 0 && (
           <ul className="vorschlaege">
-            {vorschlaege.map((treffer) => (
+            {sichtbareVorschlaege.map((treffer) => (
               <li key={treffer.eva}>
                 <button
                   type="button"
