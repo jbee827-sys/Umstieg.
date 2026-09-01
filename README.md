@@ -21,7 +21,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 ```bash
 cd backend && npm test        # muss 187 von 187 grün sein
 cd backend && npm run lint    # tsc --noEmit, muss sauber sein
-cd frontend && npm test       # muss 121 von 121 grün sein
+cd frontend && npm test       # muss 137 von 137 grün sein
 cd frontend && npm run build  # muss grün sein
 ```
 
@@ -87,7 +87,7 @@ waren allesamt nur im Browser sichtbar.
 
 | Was | Beobachtung |
 |---|---|
-| **Die Zugtafel ist ungekappt** | Berlin Hbf liefert über die Gruppe **129 Ankünfte**. Alle werden gezeichnet; das Zeichnen dauerte so lange, dass die Bildschirmaufnahme in eine 30-Sekunden-Zeitüberschreitung lief. Auf dem Handy ist das eine sehr lange Liste. Der Text „Keine Züge in der aktuellen Stunde gefunden“ legt nahe, dass eine Stunde gemeint war. |
+| ~~**Die Zugtafel ist ungekappt**~~ ✅ behoben | Berlin Hbf lieferte über die Gruppe **129 Ankünfte**, alle gezeichnet – das Zeichnen dauerte so lange, dass die Bildschirmaufnahme in eine 30-Sekunden-Zeitüberschreitung lief. Siehe „Die Zugauswahl“. |
 | **Barrierefrei ist schneller als „schnellste“** | Im Dashboard stand „Schnellste Route 6 min“ über „Barrierefrei (Aufzug) 5 min“. Die schnellste Route darf nie langsamer sein als eine andere Variante – die Gehzeitgewichtung der Varianten passt nicht zusammen. |
 | **Standort ohne GPS** | Am Rechner meldet die App „Dein Standort ist nur auf ± 2000 m genau – zu grob“ und verlangt Handeingabe. Sauber formuliert, kein stiller Fehlschlag. |
 
@@ -188,7 +188,7 @@ Oberfläche (`vercel deploy --prod` steht aus). Das Backend ist aktuell.
 | 3a | **Erkennungsradius von 1000 m prüfen** | Am 31.08. beobachtet: Von `52.84/13.81` aus liegt Eberswalde Hbf **1094 m** entfernt – 94 m zu weit, die Umkreissuche liefert nichts, und die Vorbelegung bleibt leer. Die Rohantwort enthält dort 17 Bushaltestellen, aber keine Eisenbahn-Verkehrsstelle; der Filter arbeitet also richtig. Zu entscheiden ist der Radius (`ERKENNUNG_RADIUS_M` in `routes/api.ts`) – gehört in die Mobilabnahme. |
 | 3b | **Sichtprüfung der neuen Bildschirme** – *größtenteils erledigt 01.09.2026* | Ampel (P1) und Angekommen-Seite (P3) sind gesehen und in Ordnung, die Weg-Seite (P2) steht, hat aber einen **echten Fehler** in der Ebenenzuordnung. Offen bleiben P4 und P5 – sie brauchen ein Live-Ereignis, das sich nicht erzwingen lässt. Einzelheiten oben. |
 | ~~3e~~ | ~~**Der Ebenensprung**~~ ✅ **erledigt 01.09.2026** | Strukturell, nicht Berliner Eigenart: eine geratene Ebene 0 plus zwei Bahnsteige, die sich eine Gleisnummer teilen. Einzelheiten und Auszählung unter „Der Ebenensprung“. Der volle Abgleich OSM ↔ DB-Gleisliste (§4.3, ToDo 7) bleibt davon unberührt offen. |
-| 3f | **Zugtafel kappen** | 129 Ankünfte werden ungefiltert gezeichnet; das Zeichnen dauerte länger als 30 s. Auf dem Handy unbrauchbar. Zu entscheiden: nach Zeitfenster kappen (der Leertext sagt „in der aktuellen Stunde“) oder nach Anzahl. |
+| ~~3f~~ | ~~**Zugtafel kappen**~~ ✅ **erledigt 01.09.2026** | Zeitfenster −5/+45 Minuten und vier Kategorien statt einer Bandwurmliste. Aus 113 Einträgen wurden 51 in drei Blöcken. Siehe „Die Zugauswahl“. |
 | 3g | **„Schnellste“ ist langsamer als „barrierefrei“** | 6 min gegen 5 min im selben Dashboard. Die schnellste Route darf nie langsamer sein als eine andere Variante. |
 | ~~3c~~ | ~~**Gleichzeitige Graphbauten zusammenführen**~~ ✅ **erledigt 01.09.2026** | Zwei Karten laufender Versprechen in `routes/api.ts` – eine auf die EVA, eine auf den Bahnhofsschlüssel. Wer als Zweiter kommt, wartet auf den laufenden Bau, statt danebenher einen eigenen zu starten. Drei Tests in `test/cache.test.ts`. **Die Falle dabei:** Bei einem Bahnhof aus einer einzigen Verkehrsstelle sind EVA und Gruppenschlüssel dieselbe Zeichenkette – in **einer** Karte fand der innere Bau das noch offene äussere Versprechen und wartete auf sich selbst. Der Testlauf lief in den Timeout, nicht in eine Fehlermeldung. |
 | 3d | **Frontend deployen** | Der Umbau liegt auf `feat/mvp` und `main`, ist aber **nicht** ausgeliefert. Produktion zeigt weiter die alte Oberfläche. |
@@ -721,6 +721,50 @@ Bahnhofssuche gegen RIS::Stations, `watchPosition` und die Genauigkeitsgrenze
 („Standort zu ungenau (± 124 m) – Punkt ausgeblendet"). Kein horizontales
 Scrollen; `App.css` hat **null** Media-Queries, das Layout ist rein fluid mit
 `max-width: 430px`.
+
+## Die Zugauswahl (01.09.2026)
+
+Die Auswahlliste zeigte alles, was die Tafel hergab. Über die drei
+Verkehrsstellen von Berlin Hbf waren das **113 Abfahrten** – als eine einzige
+Liste. Das Zeichnen dauerte so lange, dass die Bildschirmaufnahme in eine
+30-Sekunden-Zeitüberschreitung lief; auf einem Handy wäre die Liste
+unbenutzbar gewesen.
+
+**Zwei Griffe, beide in `api/tafelauswahl.ts`** – reine Funktionen, ohne DOM
+prüfbar:
+
+**1. Ein Zeitfenster um jetzt.** −5 bis +45 Minuten (`FENSTER_VOR_MIN`,
+`FENSTER_NACH_MIN`). Gemessen wird an der **wirklichen** Zeit
+(`zeitIst ?? zeitSoll`): Ein Zug, dessen Sollzeit längst durch ist, der aber
+verspätet noch fährt, gehört in die Liste – ihn wegzulassen wäre der
+schlimmere Fehler. Der Abstand wird über Mitternacht gefaltet, sonst fällt um
+23:50 der halbe Nachtverkehr heraus.
+
+**2. Vier Kategorien** in fester Reihenfolge: Regionalverkehr, Fernverkehr,
+S-Bahn, U-Bahn. Leere Kategorien fallen weg.
+
+Die Zuordnung ist bewusst asymmetrisch: Die Fernverkehrsgattungen sind eine
+kurze, geschlossene Liste (ICE, IC, EC, IR, RJ, NJ, EN, TGV, FLX …), `S` und
+`U` sind eindeutig – **alles Übrige ist Regionalverkehr.** Der Grund steht in
+den Daten: Berlin Hbf führt neben RE auch `OE` (Ostdeutsche Eisenbahn), und
+die Liste der Regionalbetreiber ist offen (NEB, ODEG, ERB, WFB, VIA …). Eine
+Whitelist dafür wäre immer lückenhaft, und ein danebenliegender Zug
+verschwände in einer Kategorie „Sonstige“, die dem Reisenden nichts sagt.
+
+**Am Bildschirm:** eine Auswahlfläche, darin die Blöcke durch einen Strich
+getrennt. Jeder Block rollt für sich (`max-height: 216px`, rund vier Zeilen),
+die Kategorieüberschrift bleibt dabei stehen (`position: sticky`). Hätte die
+Fläche als Ganzes gerollt, müsste man an einer Kategorie vorbeiscrollen, die
+einen nicht angeht – genau der Zustand, der behoben werden sollte.
+
+Der Zeitpunkt des Fensters wird **beim Abruf** festgehalten, nicht bei jedem
+Rendern von der Uhr gelesen. Sonst schöbe sich das Fenster bei jedem
+Tastendruck im Formular weiter, und Züge verschwänden aus einer offenen
+Liste, während man sie ansieht – derselbe Fehler wie `Date.now()` im Render,
+nur an anderer Stelle.
+
+Aus 113 Einträgen wurden 51 in drei Blöcken (Regional 8, Fern 10, S-Bahn 33).
+16 Tests halten das fest.
 
 ## Lint-Warnungen aufgelöst (01.09.2026)
 
