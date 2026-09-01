@@ -173,8 +173,8 @@ rund 24 Sekunden – so lange braucht Overpass. Gebrochen ist nur die
 Verdopplung, nicht der Abruf selbst. Wer das kürzen will, muss beim
 Overpass-Abruf ansetzen, nicht am Cache.
 
-**Der Umbau ist nicht deployt.** Produktion läuft weiter mit der alten
-Oberfläche (`vercel deploy --prod` steht aus). Das Backend ist aktuell.
+**Ausgeliefert am 01.09.2026** – Frontend wie Backend. Siehe „Deployment
+01.09.2026“.
 
 ## Offene ToDos
 
@@ -191,7 +191,7 @@ Oberfläche (`vercel deploy --prod` steht aus). Das Backend ist aktuell.
 | ~~3f~~ | ~~**Zugtafel kappen**~~ ✅ **erledigt 01.09.2026** | Zeitfenster −5/+45 Minuten und vier Kategorien statt einer Bandwurmliste. Aus 113 Einträgen wurden 51 in drei Blöcken. Siehe „Die Zugauswahl“. |
 | 3g | **„Schnellste“ ist langsamer als „barrierefrei“** | 6 min gegen 5 min im selben Dashboard. Die schnellste Route darf nie langsamer sein als eine andere Variante. |
 | ~~3c~~ | ~~**Gleichzeitige Graphbauten zusammenführen**~~ ✅ **erledigt 01.09.2026** | Zwei Karten laufender Versprechen in `routes/api.ts` – eine auf die EVA, eine auf den Bahnhofsschlüssel. Wer als Zweiter kommt, wartet auf den laufenden Bau, statt danebenher einen eigenen zu starten. Drei Tests in `test/cache.test.ts`. **Die Falle dabei:** Bei einem Bahnhof aus einer einzigen Verkehrsstelle sind EVA und Gruppenschlüssel dieselbe Zeichenkette – in **einer** Karte fand der innere Bau das noch offene äussere Versprechen und wartete auf sich selbst. Der Testlauf lief in den Timeout, nicht in eine Fehlermeldung. |
-| 3d | **Frontend deployen** | Der Umbau liegt auf `feat/mvp` und `main`, ist aber **nicht** ausgeliefert. Produktion zeigt weiter die alte Oberfläche. |
+| ~~3d~~ | ~~**Frontend deployen**~~ ✅ **erledigt 01.09.2026** | Frontend auf Vercel, Backend auf Fly.io. Einzelheiten unter „Deployment 01.09.2026“ – dort steht auch, was dabei **nicht** nachweisbar war. |
 | 3 | **Mobilabnahme am echten Gerät** | Die Sichtprüfung am Desktop ist am 29./30.08. erfolgt (siehe „Abnahme im Browser"). Offen bleibt, was nur ein Handy zeigt: Berechtigungsdialog, Wiederkehrer ohne Dialog, Genauigkeit im Bahnhof, Ankunftserkennung am Gleis, und ob die automatische Ebenenwahl als Hilfe oder als Bevormundung ankommt. `mkcert`-Zertifikate in `frontend/.cert/` schalten den Dev-Server auf HTTPS. |
 | ~~4~~ | ~~**4 Lint-Warnungen im Frontend**~~ ✅ **erledigt 01.09.2026** | `npm run lint` ist jetzt ohne Ausgabe. Einzelheiten im Abschnitt „Lint-Warnungen aufgelöst“. Voraussetzung waren 11 neue Tests für `Zugauswahl` und `Eingabe` – beide Komponenten hatten vorher **keine**. |
 | 5 | **Vercel: Framework-Preset steht auf „Services"** | Rückstand der `experimentalServices`-Erkennung beim `vercel link`. Die `vercel.json` überschreibt es, der Build ist nachweislich korrekt – kosmetisch, aber irreführend. Settings → Build & Deployment. |
@@ -721,6 +721,53 @@ Bahnhofssuche gegen RIS::Stations, `watchPosition` und die Genauigkeitsgrenze
 („Standort zu ungenau (± 124 m) – Punkt ausgeblendet"). Kein horizontales
 Scrollen; `App.css` hat **null** Media-Queries, das Layout ist rein fluid mit
 `max-width: 430px`.
+
+## Deployment 01.09.2026
+
+Beide Ziele ausgeliefert, Stand `4cb3664` auf `feat/mvp` und `main`.
+
+| Ziel | Ergebnis |
+|---|---|
+| **Vercel** (`vercel deploy --prod`) | ✅ `Ready`, Aliase `umstieg.vercel.app`, `umstieg.online`, `www.umstieg.online` |
+| **Fly.io** (`flyctl deploy --ha=false`) | ✅ rollierender Neustart, Smoke- und Health-Checks bestanden, `/api/health` 200 |
+
+**Eine Falle beim Nachprüfen:** Der Dateiname des Frontend-Bundles taugt
+**nicht** als Beleg. Vercel baut selbst und erzeugt einen anderen
+Content-Hash als der lokale Build – `index-Ctmp4DAS.js` in Produktion gegen
+`index-CJ9LyV78.js` lokal, bei praktisch gleicher Größe. Wer danach geht,
+hält einen frischen Deploy für misslungen. Geprüft wird am **Inhalt**: Das
+Produktionsbundle enthält „Regionalverkehr“, „Fernverkehr“ und „S-Bahn“, und
+der alte Text „in der aktuellen Stunde“ ist verschwunden.
+
+**Der Git-Push löst eigene Deploys aus.** Die Vercel-Git-Anbindung baute nach
+`git push` zusätzlich einen Production-Deploy für `main` und einen Preview
+für `feat/mvp`. Der CLI-Deploy war der neueste und trägt die Aliase – aber
+die Liste in `vercel ls` zeigt drei Einträge, wo man einen erwartet.
+
+### Was am 01.09. NICHT nachweisbar war
+
+**Der Ebenen-Fix ist in Produktion nicht bestätigt.** Direkt nach dem Deploy
+lieferte Berlin Hbf **Stufe 3** – und im Synthesemodell gibt es gar keine
+OSM-Bahnsteige, der Fehler kann dort nicht auftreten. Die Antwort ist also
+kein Beleg, weder dafür noch dagegen. Grund ist ein Overpass-Ausfall:
+Gütersloh Hbf, ein kleiner Bahnhof, fiel nach 27 Sekunden ebenso auf Stufe 3
+mit „Kartendaten nicht verfügbar“. Overpass war zu dem Zeitpunkt generell
+nicht erreichbar, nicht unser Backend.
+
+Belegt ist der Fix durch 187 Tests – darunter die Invariante „keine ebene
+Kante zwischen zwei Ebenen“ – und durch die Sichtprüfung gegen dasselbe
+Fixture. **Der Nachweis an der echten Produktion steht aus** und ist beim
+nächsten Mal nachzuholen, sobald Overpass antwortet:
+
+```bash
+curl -s "https://umstieg-backend.fly.dev/api/route?eva=8011160&gleisAn=15&gleisAb=4&profil=normal&variante=schnellste"
+# erwartet: "stufe": 1 und der letzte Schritt auf level -2, nicht 0
+```
+
+Nebenbei war zu sehen, dass der Cache-Fix vom 31.08. (ToDo 1b) arbeitet: Der
+Stufe-3-Notbehelf hält nur zehn Minuten, der Bahnhof erholt sich also von
+selbst, sobald Overpass zurück ist – statt einen Tag lang degradiert zu
+bleiben.
 
 ## Die Zugauswahl (01.09.2026)
 
