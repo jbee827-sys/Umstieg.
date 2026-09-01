@@ -50,7 +50,19 @@ function heuteUm(hhmm: string): Date {
 
 function App() {
   // 'dashboard' und 'navigation' zeigen bis Task 3/5 denselben Inhalt.
-  const [bildschirm, setBildschirm] = useState<Bildschirm>('eingabe')
+  const [bildschirm, setzeBildschirmRoh] = useState<Bildschirm>('eingabe')
+  // EIN Zeitpunkt fuer alle Zweige - Ampel-Countdown und Schrittanzeige lesen
+  // dieselbe Zahl. Gehalten wird er als Zustand, nicht waehrend des Renderns
+  // von der Uhr gelesen: `Date.now()` im Render liefert bei jedem Durchlauf
+  // etwas anderes, auch bei Durchlaeufen, die React verwirft.
+  const [jetzt, setJetzt] = useState(() => Date.now())
+  // Beim Seitenwechsel frisch stellen. Ohne das ginge die Ampel mit einer bis
+  // zu zehn Sekunden alten Zahl auf - beim Countdown auf einen Anschluss die
+  // eine Stelle, an der das auffiele.
+  const setBildschirm = useCallback((naechster: Bildschirm) => {
+    setJetzt(Date.now())
+    setzeBildschirmRoh(naechster)
+  }, [])
   // Route bleibt nach Berechnung vollständig im Speicher – die Anzeige
   // funktioniert auch, wenn die Verbindung im Bahnhof abreißt (Konzept).
   const [route, setRoute] = useState<RouteErgebnis | null>(null)
@@ -69,7 +81,6 @@ function App() {
   const [fehler, setFehler] = useState<string | null>(null)
   const [liveEreignis, setLiveEreignis] = useState<LiveEreignis | null>(null)
   const [stand, setStand] = useState<string | null>(null)
-  const [, setTick] = useState(0)
   const { status: standortStatus, standort, starteVerfolgung, stoppeVerfolgung } = useStandort()
   const [erkannt, setErkannt] = useState<BahnhofTreffer[]>([])
   const [standortZuUngenau, setStandortZuUngenau] = useState(false)
@@ -102,11 +113,12 @@ function App() {
   }, [standort])
 
   // Live-Countdown: mit bekannter Abfahrtszeit alle 10 s neu rendern
-  // Alle 10 s neu rendern. Treibt zwei Dinge: den Countdown der Ampel und das
-  // Weiterruecken der Schrittanzeige - deshalb laeuft er auch ohne Zugauswahl.
+  // Alle 10 s die Uhr nachziehen. Treibt zwei Dinge: den Countdown der Ampel
+  // und das Weiterruecken der Schrittanzeige - deshalb laeuft der Takt auch
+  // ohne Zugauswahl.
   useEffect(() => {
     if (bildschirm !== 'dashboard' && bildschirm !== 'navigation') return
-    const timer = window.setInterval(() => setTick((t) => t + 1), 10000)
+    const timer = window.setInterval(() => setJetzt(Date.now()), 10000)
     return () => window.clearInterval(timer)
   }, [bildschirm])
 
@@ -187,7 +199,10 @@ function App() {
       const detail = e instanceof RouteFehler ? e.message : undefined
       setFehler(FEHLER_TEXTE[code] ?? detail ?? 'Unbekannter Fehler.')
     }
-  }, [])
+    // `setBildschirm` ist selbst ein useCallback ohne Abhaengigkeiten und
+    // damit stabil - anders als der nackte Setter davor kann der Linter das
+    // nicht sehen und will ihn genannt haben.
+  }, [setBildschirm])
 
   /** Variante wechseln, ohne neu zu rechnen wenn moeglich. */
   const waehleVariante = useCallback(
@@ -256,10 +271,6 @@ function App() {
 
   if (rechtsseite === 'impressum') return <Impressum onZurueck={schliesseRechtsseite} />
   if (rechtsseite === 'datenschutz') return <Datenschutz onZurueck={schliesseRechtsseite} />
-
-  // EIN Zeitpunkt fuer alle Zweige. Der 10-Sekunden-Tick oben loest das
-  // Neurendern aus; hier nur lesen - deshalb genau eine Stelle.
-  const jetzt = Date.now()
 
   // Eine Aenderung an Gleis oder Abfahrtszeit ist zu wichtig, um sie erst
   // beim naechsten Seitenwechsel zu zeigen - die Meldung liegt deshalb ueber

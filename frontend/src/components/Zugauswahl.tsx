@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { holeTafel } from '../api/client'
 import type { TafelEintrag } from '../api/typen'
 
@@ -18,8 +18,13 @@ export function Zugauswahl({ eva, typ, label, auswahl, onAuswahl }: ZugauswahlPr
   const [eintraege, setEintraege] = useState<TafelEintrag[] | null>(null)
   const [fehler, setFehler] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!offen || eintraege !== null || laden) return
+  // Geladen wird aus dem Ereignis, das es ausloest, nicht aus einem Effekt:
+  // Ein Effekt haette den Abruf erst nach einem zusaetzlichen Rendergang
+  // angestossen, und `setLaden(true)` darin einen weiteren erzwungen.
+  function klappeUm() {
+    const gehtAuf = !offen
+    setOffen(gehtAuf)
+    if (!gehtAuf || eintraege !== null || laden) return
     setLaden(true)
     holeTafel(eva, typ).then((ergebnis) => {
       setLaden(false)
@@ -34,7 +39,7 @@ export function Zugauswahl({ eva, typ, label, auswahl, onAuswahl }: ZugauswahlPr
         )
       }
     })
-  }, [offen, eintraege, laden, eva, typ])
+  }
 
   if (auswahl) {
     return (
@@ -64,7 +69,7 @@ export function Zugauswahl({ eva, typ, label, auswahl, onAuswahl }: ZugauswahlPr
         type="button"
         className="knopf-sekundaer"
         aria-expanded={offen}
-        onClick={() => setOffen(!offen)}
+        onClick={klappeUm}
       >
         {label}
       </button>
