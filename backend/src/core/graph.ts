@@ -33,14 +33,25 @@ function parseLevels(tag: string | undefined): number[] {
     .sort((a, b) => a - b);
 }
 
+/**
+ * Ebene eines "flachen" Ways – und ob sie belegt ist oder geraten.
+ *
+ * Die Unterscheidung ist kein Beiwerk: Ohne sie sieht eine Vermutung wie eine
+ * Tatsache aus, und bei zwei Bahnsteigen mit derselben Gleisnummer entschied
+ * die Verarbeitungsreihenfolge statt der Datenlage.
+ */
+function wayEbeneMitBeleg(tags: Record<string, string>): { ebene: number; ebeneBelegt: boolean } {
+  const levels = parseLevels(tags.level);
+  if (levels.length === 1) return { ebene: levels[0], ebeneBelegt: true };
+  if (levels.length > 1) return { ebene: levels[0], ebeneBelegt: true }; // uneindeutig – konservativ unterste
+  if (tags.tunnel === 'yes') return { ebene: -1, ebeneBelegt: true };
+  if (tags.bridge === 'yes') return { ebene: 1, ebeneBelegt: true };
+  return { ebene: 0, ebeneBelegt: false };
+}
+
 /** Ebene eines "flachen" Ways: level-Tag, sonst Tunnel/Brücke-Heuristik, sonst 0. */
 function wayEbene(tags: Record<string, string>): number {
-  const levels = parseLevels(tags.level);
-  if (levels.length === 1) return levels[0];
-  if (levels.length > 1) return levels[0]; // uneindeutig – konservativ unterste
-  if (tags.tunnel === 'yes') return -1;
-  if (tags.bridge === 'yes') return 1;
-  return 0;
+  return wayEbeneMitBeleg(tags).ebene;
 }
 
 // Bahnsteige laufen separat über Pass D (Ways UND Relationen einheitlich).
@@ -213,6 +224,8 @@ export function baueGraph(osm: OverpassAntwort): StationGraph {
     bahnsteigId: string;
     refs: string[];
     ebene: number;
+    /** true = aus level/tunnel/bridge gelesen, false = mangels Angabe auf 0 geraten. */
+    ebeneBelegt: boolean;
     tags: Record<string, string>;
     nodeListen: number[][];
   }
@@ -244,7 +257,7 @@ export function baueGraph(osm: OverpassAntwort): StationGraph {
       bahnsteige.push({
         bahnsteigId: `r${rel.id}`,
         refs: parseRefs(tags.ref),
-        ebene: wayEbene(tags),
+        ...wayEbeneMitBeleg(tags),
         tags,
         nodeListen,
       });
@@ -258,10 +271,35 @@ export function baueGraph(osm: OverpassAntwort): StationGraph {
     bahnsteige.push({
       bahnsteigId: `w${way.id}`,
       refs: parseRefs(tags.ref),
-      ebene: wayEbene(tags),
+      ...wayEbeneMitBeleg(tags),
       tags,
       nodeListen: [way.nodes!],
     });
+  }
+
+  /**
+   * Welcher Bahnsteig stellt die Punkte fuer eine Gleisnummer?
+   *
+   * Zwei verschiedene Bahnsteige koennen sich eine Nummer teilen – in Berlin
+   * Hbf traegt sowohl der U-Bahnsteig "S+U Hauptbahnhof" als auch "Berlin
+   * Hauptbahnhof (Tief)" ein Gleis 4. Bisher gewann schlicht der zuerst
+   * verarbeitete: Der Knoten `gleis4:*` behielt dessen Lage UND dessen
+   * (mangels level-Tag geratene) Ebene 0, wurde vom zweiten aber ans
+   * -2-Netz gehaengt. Heraus kam eine ebene Kante ueber zwei Stockwerke.
+   *
+   * Die Regel ist bewusst schmal: Ein belegtes Stockwerk schlaegt ein
+   * geratenes. Sie loest den beobachteten Fall und masst sich nicht an, den
+   * vollen Abgleich OSM <-> DB-Gleisliste (Konzept 4.3) zu ersetzen – haben
+   * beide einen Beleg, bleibt es bei der bisherigen Reihenfolge.
+   */
+  const quelleFuerGleis = new Map<string, BahnsteigDaten>();
+  for (const bahnsteig of bahnsteige) {
+    for (const gleis of bahnsteig.refs) {
+      const bisher = quelleFuerGleis.get(gleis);
+      if (!bisher || (!bisher.ebeneBelegt && bahnsteig.ebeneBelegt)) {
+        quelleFuerGleis.set(gleis, bahnsteig);
+      }
+    }
   }
 
   const gleisSet = new Set<string>();
@@ -316,6 +354,9 @@ export function baueGraph(osm: OverpassAntwort): StationGraph {
 
     for (const gleis of refs) {
       gleisSet.add(gleis);
+      // Ein anderer Bahnsteig ist die bessere Quelle fuer diese Nummer. Der
+      // Umriss oben bleibt trotzdem begehbar – er ist echte Geometrie.
+      if (quelleFuerGleis.get(gleis) !== bahnsteig) continue;
       const lagen: [string, number, number][] = [
         ['anfang', endeA.lat!, endeA.lon!],
         ['mitte', mitteLat, mitteLon],
@@ -345,11 +386,16 @@ export function baueGraph(osm: OverpassAntwort): StationGraph {
       // Anbindung ans Wegenetz: nächster physischer Knoten gleicher Ebene ≤ 30 m
       for (const [abschnitt, lat, lon] of lagen) {
         const syntId = `gleis${gleis}:${abschnitt}`;
+        // Die Ebene des KNOTENS, nicht die des gerade verarbeiteten
+        // Bahnsteigs. Beide sind hier identisch, seit nur die gewaehlte
+        // Quelle Punkte anlegt – aber eine ebene Kante ueber Stockwerke darf
+        // auch dann unmoeglich bleiben, wenn das jemand spaeter aufweicht.
+        const knotenEbene = knoten.get(syntId)?.level ?? ebene;
         let nahester: GraphKnoten | null = null;
         let nahesteDist = Number.POSITIVE_INFINITY;
         for (const kandidat of knoten.values()) {
           if (!kandidat.id.startsWith('n')) continue; // nur physische Knoten
-          if (kandidat.level !== ebene) continue;
+          if (kandidat.level !== knotenEbene) continue;
           const d = haversineM(lat, lon, kandidat.lat, kandidat.lon);
           if (d < nahesteDist) {
             nahesteDist = d;

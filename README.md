@@ -19,7 +19,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 ## Hier weitermachen (Stand 01.09.2026)
 
 ```bash
-cd backend && npm test        # muss 183 von 183 grün sein
+cd backend && npm test        # muss 187 von 187 grün sein
 cd backend && npm run lint    # tsc --noEmit, muss sauber sein
 cd frontend && npm test       # muss 121 von 121 grün sein
 cd frontend && npm run build  # muss grün sein
@@ -77,7 +77,7 @@ waren allesamt nur im Browser sichtbar.
 | # | Was | Stand |
 |---|---|---|
 | ~~P1~~ | ~~**Ampel-Layout nach der Korrektur**~~ | ✅ **gesehen 01.09.2026.** Statustext steht unter der Zeitleiste, kein „–:––“-Artefakt, Gehzeit rechts. Geprüft in beiden Zuständen: grün mit Countdown („Entspannt erreichbar“) und grau mit Begründung. Der Countdown lief zwischen zwei Aufnahmen weiter – der 10-Sekunden-Takt treibt die Anzeige auch nach dem Umbau auf `jetzt` als Zustand. |
-| P2 | **Weg-Seite** | ⚠️ **gesehen – und dabei ein echter Fehler gefunden.** Ebenenschema, Schritt-Sheet („Schritt 10 von 14“), „Alle Schritte“, der neue „Angekommen“-Knopf und „Echte Karte anzeigen“ stehen alle. Die Ebenenzuordnung des Ziels ist aber falsch – siehe „Der Ebenensprung“ weiter unten. |
+| ~~P2~~ | ~~**Weg-Seite**~~ | ✅ **gesehen 01.09.2026, Fehler gefunden und behoben.** Ebenenschema, Schritt-Sheet, „Alle Schritte“, der neue „Angekommen“-Knopf und „Echte Karte anzeigen“ stehen. Das Schema legte Gleis 4 anfangs auf Ebene 0 statt −2 – Ursache und Korrektur unter „Der Ebenensprung“. Nach der Korrektur erneut im Browser geprüft: Gleis 4 liegt auf EBENE −2. |
 | ~~P3~~ | ~~**Angekommen-Seite**~~ | ✅ **gesehen 01.09.2026.** Grüne Fläche mit weißem Haken, „Du bist da. / Gleis 4“, Kacheln Puffer und Abfahrt, „Neue Reise“. **Nicht** gesehen: der Wagenkasten – er verlangt `istFernverkehr(zugAbName) && (wagen \|\| abschnitt)`, und die Wagennummer war leer. Die Bedingung ist im Code geprüft, der Kasten selbst nicht. |
 | P4 | **Globale Störmeldung** | ❌ **weiterhin offen.** Der SSE-Strom steht nachweislich (Heartbeats alle 30 s, mit `curl -sN /api/live/8011160` mitgelesen), aber Ereignisse feuern nur bei einer Änderung zwischen zwei Abfragen. In rund 15 Minuten Beobachtung am 01.09. abends änderte sich an der Tafel nichts. **Nicht erzwingbar** – braucht Geduld oder einen Auslöser von Hand. |
 | P5 | **Störungsseite mit Verspätung** | ❌ **weiterhin offen**, aus demselben Grund wie P4. |
@@ -91,32 +91,73 @@ waren allesamt nur im Browser sichtbar.
 | **Barrierefrei ist schneller als „schnellste“** | Im Dashboard stand „Schnellste Route 6 min“ über „Barrierefrei (Aufzug) 5 min“. Die schnellste Route darf nie langsamer sein als eine andere Variante – die Gehzeitgewichtung der Varianten passt nicht zusammen. |
 | **Standort ohne GPS** | Am Rechner meldet die App „Dein Standort ist nur auf ± 2000 m genau – zu grob“ und verlangt Handeingabe. Sauber formuliert, kein stiller Fehlschlag. |
 
-### Der Ebenensprung (P2, gefunden 01.09.2026)
+### Der Ebenensprung (P2, gefunden und behoben 01.09.2026)
 
-Auf der Weg-Seite steht Gleis 4 im Schema auf **EBENE 0**. Die Route
-selbst endet auf **Ebene −2** (Berlin Hbf tief). Die Rohdaten zeigen, wo es
-auseinanderfällt – Schritt 13 ist der letzte:
+Auf der Weg-Seite stand Gleis 4 im Schema auf **EBENE 0** – die Route selbst
+endete auf **Ebene −2** (Berlin Hbf tief). Die Rohdaten zeigten, wo es
+auseinanderfiel:
 
 ```
 11  level=-2  typ=aufzug   Aufzug zur Ebene -2
 12  level=-2  typ=eben     Wenige Meter links
-13  level=0   typ=eben     Wenige Meter halbrechts zu Gleis 4
+13  level=0   typ=eben     Wenige Meter halbrechts zu Gleis 4   <-- unmöglich
 ```
 
-**Ein Schritt vom Typ `eben` wechselt zwei Stockwerke.** Der Zielknoten für
-Gleis 4 trägt im Graphen Ebene 0, obwohl der Weg ihn über −2 erreicht. Das
-Schema (`schema/ableitung.ts`) nimmt `zielLevel` aus dem letzten Schritt mit
-Ebenenangabe und übernimmt den Fehler treu – **die Ableitung ist nicht
-schuld, die Daten sind es.**
+**Ein Schritt vom Typ `eben` wechselte zwei Stockwerke.** Das ist strukturell,
+nicht Berliner Eigenart – zwei Fehler in `core/graph.ts` addierten sich:
 
-Das ist die erste sichtbare Auswirkung von Konzeptlücke §4.3 (Abgleich OSM
-↔ DB-Gleisliste, ToDo 7). Zwei Dinge wären zu tun, unabhängig voneinander:
+1. **Eine Vermutung sah aus wie eine Tatsache.** `wayEbene()` gab `0`
+   zurück, wenn OSM kein `level` führt. Nichts unterschied das noch von
+   einem echten Erdgeschoss.
+2. **Zwei Bahnsteige mit derselben Gleisnummer fielen zu einem Knoten
+   zusammen.** Bahnsteigpunkte heißen `gleisN:*` und wurden nur einmal
+   angelegt (`if (!knoten.has(id))`). In Berlin Hbf tragen **zwei
+   verschiedene** Bahnsteige ein Gleis 4:
 
-1. **Backend:** Die Ebene eines Bahnsteigknotens darf nicht stillschweigend
-   auf 0 fallen, wenn OSM sie nicht führt. Ein `eben`-Schritt, der die Ebene
-   wechselt, ist immer ein Datenfehler.
-2. **Frontend:** `leiteSchemaAb` könnte so einen Sprung erkennen und ihn
-   lieber offenlegen, statt ihn zu zeichnen.
+   | Element | `ref` | `level` | Name |
+   |---|---|---|---|
+   | `r6809883` | `4` | – | S+U Hauptbahnhof (U-Bahn) |
+   | `r13392159` | `3;4` | `-2` | Berlin Hauptbahnhof (Tief) |
+
+   Der zuerst verarbeitete U-Bahnsteig legte `gleis4:*` an – mit **seiner**
+   Lage und der geratenen Ebene 0. Der zweite fand den Knoten vor, legte ihn
+   nicht neu an, hängte ihn aber ans −2-Netz. Heraus kam eine ebene Kante
+   über zwei Stockwerke. Nicht nur die Ebene war falsch, auch die **Lage**:
+   Die Punkte lagen am U-Bahnsteig.
+
+**Wie breit trifft es?** Ausgezählt über alle drei echten Fixtures:
+
+| Fixture | Bahnsteig-Elemente ohne `level` | Gleisnummern auf mehreren Bahnsteigen |
+|---|---|---|
+| Berlin Hbf | 4 von 13 | **Gleis 4 und Gleis 5** – beide mit U-Bahn kollidiert |
+| Gütersloh | 1 von 5 | keine (das untagged Element führt keine `ref`) |
+| Zernitz | – (Stufe 3, keine Bahnsteigdaten) | keine |
+
+Gütersloh entkam nur, weil sein Element ohne `level` keine Gleisnummer
+trägt. Die Kombination „geteilte Gleisnummer + fehlendes `level`“ ist in OSM
+verbreitet, wo DB und Nahverkehr sich einen Bahnhof teilen.
+
+**Die Korrektur** (drei Teile, `core/graph.ts`):
+
+1. `wayEbeneMitBeleg()` trennt **belegt** von **geraten**. Ein `level`-Tag,
+   `tunnel` oder `bridge` gilt als Beleg; der Rest ist eine Vermutung, die
+   sich als solche zu erkennen gibt.
+2. **Eine Quelle je Gleisnummer**, vor dem Knotenbau bestimmt: Belegtes
+   Stockwerk schlägt geratenes. Der unterlegene Bahnsteig verliert nur seine
+   Punkte – sein Umriss bleibt begehbar, er ist echte Geometrie.
+3. **Die Anbindung hängt an der Ebene des Knotens**, nicht an der des gerade
+   verarbeiteten Bahnsteigs. Nach 1. und 2. sind beide gleich; die Zeile
+   steht da, damit eine ebene Kante über Stockwerke auch dann unmöglich
+   bleibt, wenn jemand später an der Auswahl dreht.
+
+Die Regel ist bewusst schmal. Sie löst den beobachteten Fall und ersetzt
+**nicht** den vollen Abgleich OSM ↔ DB-Gleisliste (Konzeptlücke §4.3, ToDo 7):
+Tragen beide Bahnsteige einen Beleg, bleibt es bei der Reihenfolge – dann
+wäre die DB-Gleisliste die einzige Instanz, die entscheiden könnte.
+
+Vier Tests in `test/graph.test.ts` halten das fest, darunter eine Invariante,
+die nichts über Berlin weiß: **keine ebene Kante zwischen zwei Ebenen.**
+Vorher schlugen 6 solcher Kanten auf.
 
 ### Bekannter Rückstand, bewusst offen
 
@@ -146,7 +187,7 @@ Oberfläche (`vercel deploy --prod` steht aus). Das Backend ist aktuell.
 | ~~2~~ | ~~**FaSta-Adressierung schließen**~~ ✅ **erledigt 31.08.2026** | `stationID` wird durchgereicht. Der Fund dabei: Mit der EVA antwortete FaSta **nicht** mit einem Fehler, sondern mit HTTP 200 und `[ ]`. |
 | 3a | **Erkennungsradius von 1000 m prüfen** | Am 31.08. beobachtet: Von `52.84/13.81` aus liegt Eberswalde Hbf **1094 m** entfernt – 94 m zu weit, die Umkreissuche liefert nichts, und die Vorbelegung bleibt leer. Die Rohantwort enthält dort 17 Bushaltestellen, aber keine Eisenbahn-Verkehrsstelle; der Filter arbeitet also richtig. Zu entscheiden ist der Radius (`ERKENNUNG_RADIUS_M` in `routes/api.ts`) – gehört in die Mobilabnahme. |
 | 3b | **Sichtprüfung der neuen Bildschirme** – *größtenteils erledigt 01.09.2026* | Ampel (P1) und Angekommen-Seite (P3) sind gesehen und in Ordnung, die Weg-Seite (P2) steht, hat aber einen **echten Fehler** in der Ebenenzuordnung. Offen bleiben P4 und P5 – sie brauchen ein Live-Ereignis, das sich nicht erzwingen lässt. Einzelheiten oben. |
-| 3e | **Der Ebenensprung** (Backend + Frontend) | Ein Schritt vom Typ `eben` wechselt zwei Stockwerke: Gleis 4 in Berlin Hbf trägt Ebene 0 statt −2. Siehe „Der Ebenensprung“. **Der greifbarste Teil von Konzeptlücke §4.3** – hier zum ersten Mal an einem konkreten Fall zu fassen. |
+| ~~3e~~ | ~~**Der Ebenensprung**~~ ✅ **erledigt 01.09.2026** | Strukturell, nicht Berliner Eigenart: eine geratene Ebene 0 plus zwei Bahnsteige, die sich eine Gleisnummer teilen. Einzelheiten und Auszählung unter „Der Ebenensprung“. Der volle Abgleich OSM ↔ DB-Gleisliste (§4.3, ToDo 7) bleibt davon unberührt offen. |
 | 3f | **Zugtafel kappen** | 129 Ankünfte werden ungefiltert gezeichnet; das Zeichnen dauerte länger als 30 s. Auf dem Handy unbrauchbar. Zu entscheiden: nach Zeitfenster kappen (der Leertext sagt „in der aktuellen Stunde“) oder nach Anzahl. |
 | 3g | **„Schnellste“ ist langsamer als „barrierefrei“** | 6 min gegen 5 min im selben Dashboard. Die schnellste Route darf nie langsamer sein als eine andere Variante. |
 | ~~3c~~ | ~~**Gleichzeitige Graphbauten zusammenführen**~~ ✅ **erledigt 01.09.2026** | Zwei Karten laufender Versprechen in `routes/api.ts` – eine auf die EVA, eine auf den Bahnhofsschlüssel. Wer als Zweiter kommt, wartet auf den laufenden Bau, statt danebenher einen eigenen zu starten. Drei Tests in `test/cache.test.ts`. **Die Falle dabei:** Bei einem Bahnhof aus einer einzigen Verkehrsstelle sind EVA und Gruppenschlüssel dieselbe Zeichenkette – in **einer** Karte fand der innere Bau das noch offene äussere Versprechen und wartete auf sich selbst. Der Testlauf lief in den Timeout, nicht in eine Fehlermeldung. |

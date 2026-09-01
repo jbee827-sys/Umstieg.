@@ -122,3 +122,60 @@ describe('graphZuGeoJSON', () => {
     expect(graphZuGeoJSON(graph, { knoten: [], kanten: [], laengeM: 0 })).toEqual({});
   });
 });
+
+/**
+ * Der Ebenensprung, gefunden am 01.09.2026 bei der Sichtpruefung: Die
+ * Weg-Seite zeigte Gleis 4 in Berlin Hbf auf Ebene 0 - zwei Stockwerke ueber
+ * seinem wirklichen Ort. Ursache waren zwei Fehler, die sich addierten:
+ *
+ * 1. `wayEbene` raet 0, wenn OSM kein `level` fuehrt. Eine Vermutung, die
+ *    wie eine Tatsache aussieht.
+ * 2. Bahnsteigknoten heissen `gleisN:*` und werden nur einmal angelegt.
+ *    Teilen sich zwei verschiedene Bahnsteige eine Gleisnummer - in Berlin
+ *    der U-Bahnsteig "S+U Hauptbahnhof" (ohne level) und "Berlin
+ *    Hauptbahnhof (Tief)" (level -2) -, behielt der Knoten die Ebene UND die
+ *    Lage des zuerst verarbeiteten, wurde aber vom zweiten ans -2-Netz
+ *    gehaengt. Ergebnis: eine ebene Kante ueber zwei Stockwerke.
+ */
+describe('Bahnsteigebenen - keine geratenen Stockwerke', () => {
+  const berlin = baueGraph(ladeFixture('overpass/berlin-hbf'));
+
+  it('legt keine ebene Kante zwischen zwei Ebenen an', () => {
+    const spruenge: string[] = [];
+    for (const [vonId, kanten] of berlin.adjazenz) {
+      for (const kante of kanten) {
+        if (kante.typ !== 'eben' && kante.typ !== 'rampe') continue;
+        const von = berlin.knoten.get(vonId)!;
+        const nach = berlin.knoten.get(kante.nach)!;
+        if (von.level !== nach.level) {
+          spruenge.push(`${vonId}(L${von.level}) -${kante.typ}-> ${kante.nach}(L${nach.level})`);
+        }
+      }
+    }
+    // Ein ebener Schritt, der die Ebene wechselt, ist immer ein Datenfehler -
+    // er waere zu Fuss nicht gehbar.
+    expect(spruenge).toEqual([]);
+  });
+
+  it('legt Gleis 4 und 5 in die Tiefe, nicht ins Erdgeschoss', () => {
+    const ebeneVon = (gleis: string) =>
+      [...berlin.knoten.values()].filter((k) => k.gleis === gleis).map((k) => k.level);
+    // "Berlin Hauptbahnhof (Tief)" fuehrt beide mit level=-2; der gleichnamige
+    // U-Bahnsteig fuehrt gar keine Ebene. Belegtes schlaegt Geraten.
+    expect(new Set(ebeneVon('4'))).toEqual(new Set([-2]));
+    expect(new Set(ebeneVon('5'))).toEqual(new Set([-2]));
+  });
+
+  it('laesst die uebrigen Gleise, wo sie waren', () => {
+    const ebeneVon = (gleis: string) => berlin.knoten.get(`gleis${gleis}:mitte`)?.level;
+    expect(ebeneVon('15')).toBe(2); // Stadtbahn oben
+    expect(ebeneVon('1')).toBe(-2); // Tief
+    expect(ebeneVon('8')).toBe(-2);
+  });
+
+  it('haelt Gleis 4 im Wegenetz erreichbar', () => {
+    // Die Korrektur darf den Bahnhof nicht zerschneiden: Wer die Ebene
+    // richtigstellt, aber die Anbindung verliert, hat nichts gewonnen.
+    expect(erreichbar(berlin, 'gleis15:mitte', 'gleis4:mitte')).toBe(true);
+  });
+});
