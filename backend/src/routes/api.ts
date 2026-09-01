@@ -88,6 +88,20 @@ function heuteJJJJMMTT(): string {
 
 export function registriereApiRouten(app: FastifyInstance, clients: ApiClients): void {
   const graphCache = erzeugeCache<GraphEintrag>(100, GRAPH_TTL_MS);
+  /**
+   * Der Cache haelt nur *fertige* Eintraege - ein *laufender* Graphbau war
+   * fuer den Zweiten unsichtbar. Die Oberflaeche laedt zwei Routenvarianten,
+   * beide fanden den Cache leer, beide fragten Overpass: am 31.08.2026
+   * gemessen 24 s und 61 s statt 2 s. Wer als Zweiter kommt, wartet jetzt auf
+   * das laufende Versprechen, statt daneben ein eigenes zu starten.
+   *
+   * Zwei Karten, keine gemeinsame: Bei einem Bahnhof aus einer einzigen
+   * Verkehrsstelle sind EVA und Gruppenschluessel dieselbe Zeichenkette. In
+   * einer Karte fand der innere Bau das noch offene aeussere Versprechen -
+   * und wartete auf sich selbst.
+   */
+  const laufendeAnfragen = new Map<string, Promise<GraphEintrag>>();
+  const laufendeGraphbauten = new Map<string, Promise<GraphEintrag>>();
   // Gruppenzugehörigkeit ist Stammdatum – sie ändert sich nicht im Tagesbetrieb.
   // Ohne diesen Cache kostete jeder SSE-Poll zwei zusätzliche DB-Aufrufe.
   const gruppenCache = erzeugeCache<{ evas: string[] }>(200, GRAPH_TTL_MS);
@@ -107,6 +121,25 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
     if (evas.length === 0) evas = [eva];
     gruppenCache.set(eva, { evas });
     return evas;
+  }
+
+  /**
+   * Ein Bau je Schluessel. Der Eintrag faellt nach Abschluss wieder heraus -
+   * auch nach einem Fehlschlag, sonst naegelte ein einmal gescheiterter
+   * Abruf den Bahnhof dauerhaft auf seinen Fehler fest.
+   */
+  function buendle(
+    laufende: Map<string, Promise<GraphEintrag>>,
+    schluessel: string,
+    erzeuge: () => Promise<GraphEintrag>,
+  ): Promise<GraphEintrag> {
+    const laufend = laufende.get(schluessel);
+    if (laufend) return laufend;
+    const versprechen = erzeuge().finally(() => {
+      laufende.delete(schluessel);
+    });
+    laufende.set(schluessel, versprechen);
+    return versprechen;
   }
 
   app.get<{ Querystring: { q?: string; lat?: string; lon?: string } }>('/api/stations', async (req, reply) => {
@@ -238,30 +271,38 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
     // derselbe Bahnhof, derselbe Graph, ein Overpass-Abruf.
     let eintrag = graphCache.get(eva);
     if (!eintrag) {
-      let info: StationsInfo;
       try {
-        info = await clients.stations.holeStationsInfo(eva);
+        // Gebuendelt auf zwei Ebenen: auf die EVA, weil zwei Varianten
+        // derselben Anfrage schon vor der Stationsauskunft zusammentreffen,
+        // und auf den Bahnhof, weil zwei Verkehrsstellen desselben Bahnhofs
+        // erst danach als dieselbe Sache erkennbar sind.
+        eintrag = await buendle(laufendeAnfragen, eva, async () => {
+          const info = await clients.stations.holeStationsInfo(eva);
+          // Sortiert, damit jedes Mitglied denselben Schlüssel bildet –
+          // `groupMembers` kommt nicht in stabiler Reihenfolge.
+          const bahnhofSchluessel = [...info.evas].sort().join(',');
+          const ausGruppe = graphCache.get(bahnhofSchluessel);
+          if (ausGruppe) {
+            graphCache.set(eva, ausGruppe, { ttl: graphTtlMs(ausGruppe.graph.stufe) });
+            return ausGruppe;
+          }
+          const gebaut = await buendle(laufendeGraphbauten, bahnhofSchluessel, () =>
+            baueGraphEintrag(info, clients.overpass),
+          );
+          // Frist nach Qualität: Ein Stufe-3-Notbehelf darf den Bahnhof nicht
+          // einen Tag lang degradiert halten, nachdem Overpass sich erholt hat.
+          const ttl = graphTtlMs(gebaut.graph.stufe);
+          graphCache.set(bahnhofSchluessel, gebaut, { ttl });
+          // Kurzweg, damit der nächste Aufruf die Stationsauskunft nicht
+          // braucht - mit derselben Frist, sonst überlebte der Notbehelf hier.
+          graphCache.set(eva, gebaut, { ttl });
+          return gebaut;
+        });
       } catch (e) {
         if (e instanceof FehlendeZugangsdatenError) {
           return reply.code(503).send({ fehler: 'db-zugang-fehlt' });
         }
         throw e;
-      }
-      // Sortiert, damit jedes Mitglied denselben Schlüssel bildet –
-      // `groupMembers` kommt nicht in stabiler Reihenfolge.
-      const bahnhofSchluessel = [...info.evas].sort().join(',');
-      eintrag = graphCache.get(bahnhofSchluessel);
-      if (!eintrag) {
-        eintrag = await baueGraphEintrag(info, clients.overpass);
-        // Frist nach Qualität: Ein Stufe-3-Notbehelf darf den Bahnhof nicht
-        // einen Tag lang degradiert halten, nachdem Overpass sich erholt hat.
-        const ttl = graphTtlMs(eintrag.graph.stufe);
-        graphCache.set(bahnhofSchluessel, eintrag, { ttl });
-        // Kurzweg, damit der nächste Aufruf die Stationsauskunft nicht
-        // braucht - mit derselben Frist, sonst überlebte der Notbehelf hier.
-        graphCache.set(eva, eintrag, { ttl });
-      } else {
-        graphCache.set(eva, eintrag, { ttl: graphTtlMs(eintrag.graph.stufe) });
       }
     }
 

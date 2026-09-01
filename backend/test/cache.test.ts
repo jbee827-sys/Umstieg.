@@ -111,3 +111,106 @@ describe('Ein degradierter Graph blockiert den Bahnhof nicht den ganzen Tag', ()
     expect(clients.overpass).toHaveBeenCalledTimes(1);
   });
 });
+
+/**
+ * Der Kaltstart kostete 24 s und 61 s statt 2 s (31.08.2026 gemessen): Die
+ * Oberflaeche laedt zwei Routenvarianten, beide fanden den Graph-Cache leer,
+ * beide bauten den Graphen, Overpass wurde doppelt befragt. Der Cache haelt
+ * nur *fertige* Eintraege - ein *laufender* Bau war fuer den Zweiten
+ * unsichtbar. Das Frontend umging es durch Nacheinanderladen; hier steht der
+ * Fix an der Wurzel.
+ */
+describe('Gleichzeitige Graphbauten werden zusammengefuehrt', () => {
+  /** Overpass, das erst antwortet, wenn der Test es freigibt. */
+  function angehalteneOverpass() {
+    const freigaben: Array<(a: OverpassAntwort) => void> = [];
+    const fn = () => new Promise<OverpassAntwort>((f) => freigaben.push(f));
+    return { freigaben, fn };
+  }
+
+  const warte = (ms: number) => new Promise((f) => setTimeout(f, ms));
+
+  it('fragt Overpass fuer zwei gleichzeitige Anfragen nur einmal', async () => {
+    const overpass = angehalteneOverpass();
+    const clients = clientsMitOverpass(overpass.fn);
+    const app = buildApp(clients as never);
+
+    // Beide Anfragen sind unterwegs, bevor eine von ihnen fertig ist.
+    const beide = Promise.all([
+      app.inject({ method: 'GET', url: ROUTE_URL }),
+      app.inject({ method: 'GET', url: ROUTE_URL }),
+    ]);
+    await warte(30);
+
+    // Vor der Freigabe zaehlen: danach liefe der zweite Bau in den warmen
+    // Cache und der Fehler waere nicht mehr zu sehen.
+    const baeuteGleichzeitig = overpass.freigaben.length;
+    overpass.freigaben.forEach((f) => f(miniOsm));
+    const [a, b] = await beide;
+
+    expect(baeuteGleichzeitig).toBe(1);
+    expect(clients.overpass).toHaveBeenCalledTimes(1);
+    expect(a.statusCode).toBe(200);
+    expect(b.statusCode).toBe(200);
+    expect(a.json().stufe).toBe(1);
+    expect(b.json().stufe).toBe(1);
+  });
+
+  it('buendelt auch zwei Verkehrsstellen desselben Bahnhofs', async () => {
+    const overpass = angehalteneOverpass();
+    const clients = clientsMitOverpass(overpass.fn);
+    // Berlin Hbf: 8011160 und 8098160 sind derselbe Bahnhof, derselbe Graph.
+    clients.stations.holeStationsInfo = vi.fn(async (eva: string) => ({
+      eva,
+      evas: ['8098160', '8011160'],
+      name: 'Ministadt',
+      lat: 52.0,
+      lon: 12.0,
+      gleise: [{ gleis: '1' }, { gleis: '2' }],
+    }));
+    const app = buildApp(clients as never);
+
+    const beide = Promise.all([
+      app.inject({ method: 'GET', url: ROUTE_URL.replace('8000001', '8011160') }),
+      app.inject({ method: 'GET', url: ROUTE_URL.replace('8000001', '8098160') }),
+    ]);
+    await warte(30);
+
+    const baeuteGleichzeitig = overpass.freigaben.length;
+    overpass.freigaben.forEach((f) => f(miniOsm));
+    const [a, b] = await beide;
+
+    expect(baeuteGleichzeitig).toBe(1);
+    expect(a.statusCode).toBe(200);
+    expect(b.statusCode).toBe(200);
+  });
+
+  it('merkt sich einen gescheiterten Bau nicht - der naechste Aufruf versucht es neu', async () => {
+    const clients = clientsMitOverpass(async () => miniOsm);
+    let ersterVersuch = true;
+    clients.stations.holeStationsInfo = vi.fn(async (eva: string) => {
+      if (ersterVersuch) {
+        ersterVersuch = false;
+        throw new Error('Stationsauskunft nicht erreichbar (Test)');
+      }
+      return {
+        eva,
+        evas: [eva],
+        name: 'Ministadt',
+        lat: 52.0,
+        lon: 12.0,
+        gleise: [{ gleis: '1' }, { gleis: '2' }],
+      };
+    });
+    const app = buildApp(clients as never);
+
+    // Ein haengengebliebenes Versprechen in der Karte wuerde den Bahnhof
+    // dauerhaft auf den ersten Fehlschlag festnageln.
+    const erste = await app.inject({ method: 'GET', url: ROUTE_URL });
+    expect(erste.statusCode).toBe(500);
+
+    const zweite = await app.inject({ method: 'GET', url: ROUTE_URL });
+    expect(zweite.statusCode).toBe(200);
+    expect(zweite.json().stufe).toBe(1);
+  });
+});
