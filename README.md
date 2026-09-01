@@ -53,7 +53,7 @@ GPS-Genauigkeit in der Bahnhofshalle, Ankunftserkennung am Gleis. Nächster
 Schritt ist deshalb P1 Task 12 (Mobilabnahme, fünf Punkte im Plan). Das
 braucht Handarbeit an einem echten Gerät.
 
-## Offen: was NICHT geprüft ist (Stand 31.08.2026, abends)
+## Offen: was NICHT geprüft ist (Stand 01.09.2026, abends)
 
 Der Frontend-Umbau und die sechs Feinschliffe sind **codeseitig fertig und
 maschinell grün** (110 Frontend-Tests, 180 Backend-Tests, Build und Lint
@@ -74,14 +74,49 @@ waren allesamt nur im Browser sichtbar.
 
 ### NICHT geprüft – hier bitte weitermachen
 
-| # | Was | Warum offen |
+| # | Was | Stand |
 |---|---|---|
-| P1 | **Ampel-Layout nach der Korrektur** | Die erste Sichtprüfung zeigte die Ampel **kaputt**: `.ampel-leiste` war `display:flex`, dadurch stand der Statustext rechts statt unter der Zeitleiste, und der Platzhalter „–:––" sah aus wie ein Strichartefakt. Beides ist behoben (`display:block`, kein Platzhalter mehr) und durch Tests gedeckt – **aber nach der Korrektur nicht mehr im Browser gesehen.** |
-| P2 | **Weg-Seite** | Ebenenschema, Schritt-Sheet und der neue „Angekommen"-Knopf (Feinschliff 3) sind nie im Browser gelaufen. Das Schema wird aus echter Geometrie abgeleitet – der fehleranfälligste Teil des Umbaus. |
-| P3 | **Angekommen-Seite** | Grüne Fläche auf ⅓, weißer Haken, Kacheln Puffer/Abfahrt, Wagenkasten nur bei ICE/IC (Feinschliffe 4 und 6) – nur über Tests abgesichert. |
-| P4 | **Globale Störmeldung** | Die rote Fläche von oben (Feinschliff 5) braucht ein echtes SSE-Ereignis. Sie wurde nie ausgelöst gesehen – weder Gleiswechsel noch Verspätung. |
-| P5 | **Störungsseite mit Verspätung** | Der Zweig „neue Abfahrtszeit → Vorschlag ohne Neuberechnung" ist neu und nie live durchlaufen. |
+| ~~P1~~ | ~~**Ampel-Layout nach der Korrektur**~~ | ✅ **gesehen 01.09.2026.** Statustext steht unter der Zeitleiste, kein „–:––“-Artefakt, Gehzeit rechts. Geprüft in beiden Zuständen: grün mit Countdown („Entspannt erreichbar“) und grau mit Begründung. Der Countdown lief zwischen zwei Aufnahmen weiter – der 10-Sekunden-Takt treibt die Anzeige auch nach dem Umbau auf `jetzt` als Zustand. |
+| P2 | **Weg-Seite** | ⚠️ **gesehen – und dabei ein echter Fehler gefunden.** Ebenenschema, Schritt-Sheet („Schritt 10 von 14“), „Alle Schritte“, der neue „Angekommen“-Knopf und „Echte Karte anzeigen“ stehen alle. Die Ebenenzuordnung des Ziels ist aber falsch – siehe „Der Ebenensprung“ weiter unten. |
+| ~~P3~~ | ~~**Angekommen-Seite**~~ | ✅ **gesehen 01.09.2026.** Grüne Fläche mit weißem Haken, „Du bist da. / Gleis 4“, Kacheln Puffer und Abfahrt, „Neue Reise“. **Nicht** gesehen: der Wagenkasten – er verlangt `istFernverkehr(zugAbName) && (wagen \|\| abschnitt)`, und die Wagennummer war leer. Die Bedingung ist im Code geprüft, der Kasten selbst nicht. |
+| P4 | **Globale Störmeldung** | ❌ **weiterhin offen.** Der SSE-Strom steht nachweislich (Heartbeats alle 30 s, mit `curl -sN /api/live/8011160` mitgelesen), aber Ereignisse feuern nur bei einer Änderung zwischen zwei Abfragen. In rund 15 Minuten Beobachtung am 01.09. abends änderte sich an der Tafel nichts. **Nicht erzwingbar** – braucht Geduld oder einen Auslöser von Hand. |
+| P5 | **Störungsseite mit Verspätung** | ❌ **weiterhin offen**, aus demselben Grund wie P4. |
 | P6 | **Mobilabnahme am Gerät** | Unverändert offen: Berechtigungsdialog, GPS in der Halle, Ankunftserkennung, Bedienbarkeit mit Gepäck. |
+
+### Nebenbefunde der Sichtprüfung (01.09.2026)
+
+| Was | Beobachtung |
+|---|---|
+| **Die Zugtafel ist ungekappt** | Berlin Hbf liefert über die Gruppe **129 Ankünfte**. Alle werden gezeichnet; das Zeichnen dauerte so lange, dass die Bildschirmaufnahme in eine 30-Sekunden-Zeitüberschreitung lief. Auf dem Handy ist das eine sehr lange Liste. Der Text „Keine Züge in der aktuellen Stunde gefunden“ legt nahe, dass eine Stunde gemeint war. |
+| **Barrierefrei ist schneller als „schnellste“** | Im Dashboard stand „Schnellste Route 6 min“ über „Barrierefrei (Aufzug) 5 min“. Die schnellste Route darf nie langsamer sein als eine andere Variante – die Gehzeitgewichtung der Varianten passt nicht zusammen. |
+| **Standort ohne GPS** | Am Rechner meldet die App „Dein Standort ist nur auf ± 2000 m genau – zu grob“ und verlangt Handeingabe. Sauber formuliert, kein stiller Fehlschlag. |
+
+### Der Ebenensprung (P2, gefunden 01.09.2026)
+
+Auf der Weg-Seite steht Gleis 4 im Schema auf **EBENE 0**. Die Route
+selbst endet auf **Ebene −2** (Berlin Hbf tief). Die Rohdaten zeigen, wo es
+auseinanderfällt – Schritt 13 ist der letzte:
+
+```
+11  level=-2  typ=aufzug   Aufzug zur Ebene -2
+12  level=-2  typ=eben     Wenige Meter links
+13  level=0   typ=eben     Wenige Meter halbrechts zu Gleis 4
+```
+
+**Ein Schritt vom Typ `eben` wechselt zwei Stockwerke.** Der Zielknoten für
+Gleis 4 trägt im Graphen Ebene 0, obwohl der Weg ihn über −2 erreicht. Das
+Schema (`schema/ableitung.ts`) nimmt `zielLevel` aus dem letzten Schritt mit
+Ebenenangabe und übernimmt den Fehler treu – **die Ableitung ist nicht
+schuld, die Daten sind es.**
+
+Das ist die erste sichtbare Auswirkung von Konzeptlücke §4.3 (Abgleich OSM
+↔ DB-Gleisliste, ToDo 7). Zwei Dinge wären zu tun, unabhängig voneinander:
+
+1. **Backend:** Die Ebene eines Bahnsteigknotens darf nicht stillschweigend
+   auf 0 fallen, wenn OSM sie nicht führt. Ein `eben`-Schritt, der die Ebene
+   wechselt, ist immer ein Datenfehler.
+2. **Frontend:** `leiteSchemaAb` könnte so einen Sprung erkennen und ihn
+   lieber offenlegen, statt ihn zu zeichnen.
 
 ### Bekannter Rückstand, bewusst offen
 
@@ -110,7 +145,10 @@ Oberfläche (`vercel deploy --prod` steht aus). Das Backend ist aktuell.
 | ~~1b~~ | ~~**Graph-Cache vergiftet sich selbst**~~ ✅ **erledigt 31.08.2026** | Frist jetzt nach Qualität: Stufe 1/2 volle 24 h, Stufe 3 zehn Minuten (`graphTtlMs` in `cache/lru.ts`). |
 | ~~2~~ | ~~**FaSta-Adressierung schließen**~~ ✅ **erledigt 31.08.2026** | `stationID` wird durchgereicht. Der Fund dabei: Mit der EVA antwortete FaSta **nicht** mit einem Fehler, sondern mit HTTP 200 und `[ ]`. |
 | 3a | **Erkennungsradius von 1000 m prüfen** | Am 31.08. beobachtet: Von `52.84/13.81` aus liegt Eberswalde Hbf **1094 m** entfernt – 94 m zu weit, die Umkreissuche liefert nichts, und die Vorbelegung bleibt leer. Die Rohantwort enthält dort 17 Bushaltestellen, aber keine Eisenbahn-Verkehrsstelle; der Filter arbeitet also richtig. Zu entscheiden ist der Radius (`ERKENNUNG_RADIUS_M` in `routes/api.ts`) – gehört in die Mobilabnahme. |
-| 3b | **Sichtprüfung der neuen Bildschirme** | Weg, Angekommen, Störmeldung und die korrigierte Ampel sind nie im Browser gesehen worden – Einzelheiten oben unter „Offen: was NICHT geprüft ist" (P1–P5). |
+| 3b | **Sichtprüfung der neuen Bildschirme** – *größtenteils erledigt 01.09.2026* | Ampel (P1) und Angekommen-Seite (P3) sind gesehen und in Ordnung, die Weg-Seite (P2) steht, hat aber einen **echten Fehler** in der Ebenenzuordnung. Offen bleiben P4 und P5 – sie brauchen ein Live-Ereignis, das sich nicht erzwingen lässt. Einzelheiten oben. |
+| 3e | **Der Ebenensprung** (Backend + Frontend) | Ein Schritt vom Typ `eben` wechselt zwei Stockwerke: Gleis 4 in Berlin Hbf trägt Ebene 0 statt −2. Siehe „Der Ebenensprung“. **Der greifbarste Teil von Konzeptlücke §4.3** – hier zum ersten Mal an einem konkreten Fall zu fassen. |
+| 3f | **Zugtafel kappen** | 129 Ankünfte werden ungefiltert gezeichnet; das Zeichnen dauerte länger als 30 s. Auf dem Handy unbrauchbar. Zu entscheiden: nach Zeitfenster kappen (der Leertext sagt „in der aktuellen Stunde“) oder nach Anzahl. |
+| 3g | **„Schnellste“ ist langsamer als „barrierefrei“** | 6 min gegen 5 min im selben Dashboard. Die schnellste Route darf nie langsamer sein als eine andere Variante. |
 | ~~3c~~ | ~~**Gleichzeitige Graphbauten zusammenführen**~~ ✅ **erledigt 01.09.2026** | Zwei Karten laufender Versprechen in `routes/api.ts` – eine auf die EVA, eine auf den Bahnhofsschlüssel. Wer als Zweiter kommt, wartet auf den laufenden Bau, statt danebenher einen eigenen zu starten. Drei Tests in `test/cache.test.ts`. **Die Falle dabei:** Bei einem Bahnhof aus einer einzigen Verkehrsstelle sind EVA und Gruppenschlüssel dieselbe Zeichenkette – in **einer** Karte fand der innere Bau das noch offene äussere Versprechen und wartete auf sich selbst. Der Testlauf lief in den Timeout, nicht in eine Fehlermeldung. |
 | 3d | **Frontend deployen** | Der Umbau liegt auf `feat/mvp` und `main`, ist aber **nicht** ausgeliefert. Produktion zeigt weiter die alte Oberfläche. |
 | 3 | **Mobilabnahme am echten Gerät** | Die Sichtprüfung am Desktop ist am 29./30.08. erfolgt (siehe „Abnahme im Browser"). Offen bleibt, was nur ein Handy zeigt: Berechtigungsdialog, Wiederkehrer ohne Dialog, Genauigkeit im Bahnhof, Ankunftserkennung am Gleis, und ob die automatische Ebenenwahl als Hilfe oder als Bevormundung ankommt. `mkcert`-Zertifikate in `frontend/.cert/` schalten den Dev-Server auf HTTPS. |
