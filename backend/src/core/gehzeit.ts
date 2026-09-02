@@ -1,18 +1,37 @@
 import type { Gehprofil, KantenTyp, RoutenPfad } from './typen.js';
 
 // Gehgeschwindigkeiten in m/s je Profil (Konzept 6.4).
-const GESCHWINDIGKEIT: Record<Gehprofil, number> = {
+export const GESCHWINDIGKEIT: Record<Gehprofil, number> = {
   zuegig: 1.4,
   normal: 1.0,
   langsam: 0.6,
 };
 
 // Pauschale Zuschläge in Sekunden je Ebenenwechsel-Kante.
-const ZUSCHLAG: Partial<Record<KantenTyp, number>> = {
+export const ZUSCHLAG: Partial<Record<KantenTyp, number>> = {
   treppe: 20,
   rolltreppe: 10,
   aufzug: 60,
 };
+
+/**
+ * Zeit fuer EINE Kante - dieselbe Rechnung, die auch die ausgewiesene
+ * Gehzeit anstellt.
+ *
+ * Der Grund, dass es diese Funktion gibt: Das Routing hatte frueher ein
+ * eigenes Kostenmodell. Eine Rolltreppe bekam dort -10 s gutgeschrieben,
+ * waehrend die angezeigte Gehzeit +10 s berechnete; eine Treppe kostete beim
+ * Routen 0, in der Anzeige 20. Der Router suchte also ein Optimum, das er
+ * anschliessend nicht auswies - und "Schnellste Route 6 min" stand ueber
+ * "Barrierefrei 5 min". Wer nach der schnellsten Route sucht, muss die Zeit
+ * minimieren, die er nachher hinschreibt.
+ */
+export function kantenZeitSekunden(
+  kante: { laengeM: number; typ: KantenTyp },
+  profil: Gehprofil,
+): number {
+  return kante.laengeM / GESCHWINDIGKEIT[profil] + (ZUSCHLAG[kante.typ] ?? 0);
+}
 
 export function gehzeitSekunden(pfad: RoutenPfad, profil: Gehprofil): number {
   const laengeM = pfad.kanten.reduce((s, k) => s + k.laengeM, 0);

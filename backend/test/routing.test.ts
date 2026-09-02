@@ -5,7 +5,23 @@ import {
   findeStartknoten,
   istGleicherBahnsteig,
 } from '../src/core/routing.js';
-import type { GraphKante, GraphKnoten, StationGraph } from '../src/core/typen.js';
+import { baueGraph } from '../src/core/graph.js';
+import { gehzeitSekunden, kantenZeitSekunden } from '../src/core/gehzeit.js';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import type {
+  Gehprofil,
+  GraphKante,
+  GraphKnoten,
+  OverpassAntwort,
+  RoutenVariante,
+  StationGraph,
+} from '../src/core/typen.js';
+
+function ladeFixture(name: string): OverpassAntwort {
+  const pfad = fileURLToPath(new URL(`./fixtures/${name}.json`, import.meta.url));
+  return JSON.parse(readFileSync(pfad, 'utf8')) as OverpassAntwort;
+}
 
 /** Baut einen StationGraph von Hand – bekannte Topologie für gezielte Routingfälle. */
 function macheGraph(knotenListe: GraphKnoten[], kanten: GraphKante[], gleise: string[]): StationGraph {
@@ -67,13 +83,22 @@ function treppeVsAufzugGraph(aufzugStatus: 'ACTIVE' | 'INACTIVE' = 'ACTIVE'): St
 }
 
 describe('GEWICHTE', () => {
-  it('enthält die Konstanten aus dem Plan', () => {
-    expect(GEWICHTE.basisMproSek).toBe(1.0);
-    expect(GEWICHTE.rolltreppeBonusSek).toBe(-10);
-    expect(GEWICHTE.aufzugMalusSek).toBe(60);
+  it('enthält nur noch die Vorlieben, nicht die Zeit', () => {
     expect(GEWICHTE.ebenenwechselMalusSek).toBe(45);
     expect(GEWICHTE.abbiegenMalusSek).toBe(15);
     expect(GEWICHTE.abbiegenSchwelleGrad).toBe(45);
+  });
+
+  it('rechnet die Zeit mit denselben Zahlen wie die Anzeige', () => {
+    // Frueher standen hier `basisMproSek`, `rolltreppeBonusSek` und
+    // `aufzugMalusSek` - ein zweites Kostenmodell neben dem der Gehzeit.
+    // Genau daran ging die Behauptung "schnellste" kaputt.
+    expect(kantenZeitSekunden({ laengeM: 100, typ: 'eben' }, 'normal')).toBe(100);
+    expect(kantenZeitSekunden({ laengeM: 0, typ: 'rolltreppe' }, 'normal')).toBe(10);
+    expect(kantenZeitSekunden({ laengeM: 0, typ: 'treppe' }, 'normal')).toBe(20);
+    expect(kantenZeitSekunden({ laengeM: 0, typ: 'aufzug' }, 'normal')).toBe(60);
+    // Zuschlaege sind fest, Strecke skaliert mit dem Profil.
+    expect(kantenZeitSekunden({ laengeM: 60, typ: 'treppe' }, 'langsam')).toBe(120);
   });
 });
 
@@ -221,5 +246,74 @@ describe('istGleicherBahnsteig', () => {
 
   it('Gleise an verschiedenen Bahnsteigen → false', () => {
     expect(istGleicherBahnsteig(treppeVsAufzugGraph(), '1', '2')).toBe(false);
+  });
+});
+
+/**
+ * "Schnellste Route 6 min" stand im Dashboard ueber "Barrierefrei 5 min" -
+ * die als schnellste bezeichnete Route war langsamer als beide Alternativen.
+ * Am 02.09.2026 gegen die Produktion gemessen: 304 s gegen 295 s.
+ *
+ * Ursache: Der Router minimierte eine ANDERE Funktion, als er anzeigte. Eine
+ * Rolltreppe bekam beim Routen -10 s gutgeschrieben, in der ausgewiesenen
+ * Gehzeit aber +10 s berechnet; eine Treppe kostete beim Routen 0, in der
+ * Anzeige +20 s. Zwei Kostenmodelle fuer dieselbe Sache.
+ */
+describe('Die schnellste Route ist die schnellste', () => {
+  const berlin = baueGraph(ladeFixture('overpass/berlin-hbf'));
+  const PAARE: [string, string][] = [
+    ['15', '4'],
+    ['16', '5'],
+    ['11', '1'],
+    ['15', '8'],
+    ['12', '3'],
+    ['14', '6'],
+  ];
+  const PROFILE: Gehprofil[] = ['zuegig', 'normal', 'langsam'];
+
+  function gehzeitFuer(
+    gleisAn: string,
+    gleisAb: string,
+    variante: RoutenVariante,
+    profil: Gehprofil,
+  ): number | null {
+    const start = findeStartknoten(berlin, gleisAn);
+    const ziel = findeStartknoten(berlin, gleisAb);
+    const pfad = berechneRoute(berlin, start.knoten.id, ziel.knoten.id, variante, profil);
+    return pfad ? gehzeitSekunden(pfad, profil) : null;
+  }
+
+  it('ist nie langsamer als eine andere Variante', () => {
+    const verstoesse: string[] = [];
+    for (const profil of PROFILE) {
+      for (const [an, ab] of PAARE) {
+        const schnellste = gehzeitFuer(an, ab, 'schnellste', profil);
+        if (schnellste === null) continue;
+        for (const andere of ['einfachste', 'barrierefrei'] as RoutenVariante[]) {
+          const zeit = gehzeitFuer(an, ab, andere, profil);
+          if (zeit === null) continue;
+          if (schnellste > zeit) {
+            verstoesse.push(
+              `${profil} ${an}->${ab}: schnellste ${schnellste}s > ${andere} ${zeit}s`,
+            );
+          }
+        }
+      }
+    }
+    // Eine eingeschraenkte Suche (barrierefrei) kann das Optimum der
+    // unbeschraenkten nicht unterbieten - vorausgesetzt, beide messen dasselbe.
+    expect(verstoesse).toEqual([]);
+  });
+
+  it('richtet sich nach dem Gehprofil', () => {
+    // Zuschlaege sind fest, Strecke nicht: Wer langsam geht, zahlt fuer
+    // Meter mehr und darf deshalb eine andere Route bekommen als ein
+    // Zuegiger. Ein profilblinder Router kann das nicht abbilden.
+    const start = findeStartknoten(berlin, '15');
+    const ziel = findeStartknoten(berlin, '4');
+    for (const profil of PROFILE) {
+      const pfad = berechneRoute(berlin, start.knoten.id, ziel.knoten.id, 'schnellste', profil);
+      expect(pfad).not.toBeNull();
+    }
   });
 });
