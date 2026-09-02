@@ -1,18 +1,23 @@
 import { peilungGrad } from './textgen.js';
 import type {
+  Gehprofil,
   GraphKante,
   GraphKnoten,
   RoutenPfad,
   RoutenVariante,
   StationGraph,
 } from './typen.js';
+import { kantenZeitSekunden } from './gehzeit.js';
 
-// Kantengewichte in Sekunden (Plan Task 7). Basisgewicht = laengeM / basisMproSek;
-// Varianten-Zu- und Abschläge siehe kantenKosten().
+/**
+ * Zuschlaege, die eine VORLIEBE ausdruecken, keine Zeit.
+ *
+ * Die Zeit selbst kommt aus `kantenZeitSekunden` in gehzeit.ts - dieselbe
+ * Rechnung, die auch die ausgewiesene Gehzeit anstellt. Was hier steht, gilt
+ * nur fuer `einfachste`: Wer einen einfachen Weg sucht, nimmt Umwege in Kauf,
+ * um Ebenenwechsel und Abbiegungen zu sparen.
+ */
 export const GEWICHTE = {
-  basisMproSek: 1.0,
-  rolltreppeBonusSek: -10,
-  aufzugMalusSek: 60,
   ebenenwechselMalusSek: 45,
   abbiegenMalusSek: 15,
   abbiegenSchwelleGrad: 45,
@@ -74,17 +79,25 @@ function kanteErlaubt(kante: GraphKante, variante: RoutenVariante): boolean {
   return kante.barrierefrei && kante.status !== 'INACTIVE';
 }
 
-/** Kosten einer Kante in Sekunden, ohne Abbiege-Malus (der hängt vom Vorgänger ab). */
-function kantenKosten(kante: GraphKante, variante: RoutenVariante): number {
-  let kosten = kante.laengeM / GEWICHTE.basisMproSek;
-  if (variante === 'schnellste') {
-    if (kante.typ === 'rolltreppe') kosten += GEWICHTE.rolltreppeBonusSek;
-    if (kante.typ === 'aufzug') kosten += GEWICHTE.aufzugMalusSek;
-  }
+/**
+ * Kosten einer Kante in Sekunden, ohne Abbiege-Malus (der hängt vom
+ * Vorgänger ab).
+ *
+ * Grundlage ist immer die echte Gehzeit. `einfachste` legt eine Vorliebe
+ * obendrauf, `schnellste` und `barrierefrei` nicht - sie unterscheiden sich
+ * allein darin, welche Kanten überhaupt erlaubt sind.
+ *
+ * Alle Summanden sind >= 0. Das ist keine Formsache: Dijkstra setzt
+ * nichtnegative Kanten voraus. Der frühere Rolltreppen-BONUS von -10 s
+ * konnte eine kurze Rolltreppe negativ machen; ein `Math.max(0, ...)` fing
+ * das ab und verbog dabei still die Kosten.
+ */
+function kantenKosten(kante: GraphKante, variante: RoutenVariante, profil: Gehprofil): number {
+  let kosten = kantenZeitSekunden(kante, profil);
   if (variante === 'einfachste' && kante.deltaLevel !== 0) {
     kosten += GEWICHTE.ebenenwechselMalusSek;
   }
-  return Math.max(0, kosten);
+  return kosten;
 }
 
 interface SuchZustand {
@@ -103,6 +116,13 @@ export function berechneRoute(
   startId: string,
   zielId: string,
   variante: RoutenVariante,
+  /**
+   * Zuschlaege sind fest, Strecke nicht: Wer langsam geht, zahlt fuer Meter
+   * mehr und bekommt deshalb zu Recht eine andere Route als ein Zuegiger.
+   * Voreinstellung `normal`, weil das der Geschwindigkeit entspricht, mit der
+   * frueher fest gerechnet wurde.
+   */
+  profil: Gehprofil = 'normal',
 ): RoutenPfad | null {
   if (!graph.knoten.has(startId) || !graph.knoten.has(zielId)) return null;
 
@@ -148,7 +168,7 @@ export function berechneRoute(
       const naechster = graph.knoten.get(naechsterId);
       if (!naechster) continue;
 
-      let kosten = kantenKosten(kante, variante);
+      let kosten = kantenKosten(kante, variante, profil);
       if (variante === 'einfachste' && vorherPeilung !== null) {
         const neuePeilung = peilungGrad(hier, naechster);
         if (richtungswechselGrad(vorherPeilung, neuePeilung) > GEWICHTE.abbiegenSchwelleGrad) {

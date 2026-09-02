@@ -377,7 +377,9 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
     }
     if (start.hinweis) hinweise.push(start.hinweis);
 
-    const pfad = berechneRoute(graph, start.knoten.id, ziel.knoten.id, variante);
+    // Profil mitgeben: Die schnellste Route fuer einen Zuegigen ist nicht
+    // zwingend die fuer jemanden mit Gepaeck.
+    const pfad = berechneRoute(graph, start.knoten.id, ziel.knoten.id, variante, profil);
     if (!pfad) {
       return reply.code(404).send({
         fehler: 'keine-route',
