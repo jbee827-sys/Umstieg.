@@ -26,7 +26,7 @@ function zeige(ueber: Partial<Parameters<typeof Dashboard>[0]> = {}) {
     hinweis: false,
     onVariante: vi.fn(),
     onNavigation: vi.fn(),
-    onStoerung: vi.fn(),
+    onMeldungen: vi.fn(),
     ...ueber,
   }
   render(<Dashboard {...props} />)
@@ -57,15 +57,15 @@ describe('Dashboard', () => {
     expect(bf.textContent).not.toMatch(/min/)
   })
 
-  it('zeigt den Stoerungsknopf nur bei Hinweis', () => {
+  it('zeigt die Abkuerzung zu den Meldungen nur bei Hinweis', () => {
     zeige({ hinweis: false })
-    expect(screen.queryByRole('button', { name: /Störung/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Meldung/ })).toBeNull()
   })
 
-  it('meldet den Klick auf den Stoerungsknopf', async () => {
+  it('meldet den Klick auf die Abkuerzung zu den Meldungen', async () => {
     const props = zeige({ hinweis: true })
-    await userEvent.click(screen.getByRole('button', { name: /Störung/ }))
-    expect(props.onStoerung).toHaveBeenCalled()
+    await userEvent.click(screen.getByRole('button', { name: /Meldung/ }))
+    expect(props.onMeldungen).toHaveBeenCalled()
   })
 
   it('startet die Navigation auf Knopfdruck', async () => {

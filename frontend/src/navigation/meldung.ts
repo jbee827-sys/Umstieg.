@@ -15,6 +15,13 @@ export function meldungsText(ereignis: LiveEreignis): { titel: string; text: str
   }
 }
 
+/** "2026-08-27T14:32:10.000Z" → "14:32" in Ortszeit. */
+export function uhrzeit(iso: string): string {
+  const zeitpunkt = new Date(iso)
+  if (Number.isNaN(zeitpunkt.getTime())) return '–'
+  return zeitpunkt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+}
+
 /** Nur der Fernverkehr hat eine Wagenreihung mit Bahnsteigabschnitten. */
 export function istFernverkehr(zug?: string): boolean {
   return /^(ICE|IC|EC|ECE)\b/i.test((zug ?? '').trim())
