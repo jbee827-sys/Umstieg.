@@ -41,7 +41,28 @@ export class Ueberwachung {
     private readonly tafelFn: TafelAbrufFn,
     private readonly intervallMs = 30_000,
     private readonly log?: Protokoll,
+    /**
+     * Wie viele EVA-Nummern hoechstens gleichzeitig ueberwacht werden.
+     *
+     * Nicht die Verbindung kostet, sondern der Poller dahinter: Jede neue EVA
+     * startet eine eigene Abfrage gegen Timetables, alle 30 Sekunden,
+     * dauerhaft. Wer viele verschiedene EVA-Nummern abonniert, vervielfacht
+     * damit den Verbrauch - ohne dass mehr Verbindungen noetig waeren.
+     */
+    private readonly maxEvas = 35,
   ) {}
+
+  /**
+   * Ist Platz fuer diese EVA?
+   *
+   * Eine bereits ueberwachte EVA kostet nichts extra - gepollt wird ohnehin
+   * nur einmal je EVA, unabhaengig von der Zahl der Zuschauer
+   * (Konzeptkorrektur 1). Die Grenze gilt deshalb nur fuer NEUE Nummern.
+   */
+  hatKapazitaetFuer(eva: string): boolean {
+    if (this.jeEva.has(eva)) return true;
+    return this.jeEva.size < this.maxEvas;
+  }
 
   /** Meldet einen Abonnenten an; Rückgabe ist die Abmeldefunktion. */
   abonniere(eva: string, zuege: string[], sende: (e: LiveEreignis) => void): () => void {

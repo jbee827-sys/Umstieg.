@@ -67,6 +67,36 @@ describe('Datenschutzerklaerung sagt, was die App wirklich tut', () => {
     expect(text).toMatch(/Art\. 21/)
   })
 
+  /**
+   * Am 03.09.2026 kamen Ratenbegrenzung und Sicherheitsprotokoll dazu (P1 und
+   * P18 der Haertungsrunde). Damit wurde „Die Anwendung selbst schreibt keine
+   * Protokolle" unwahr - es waere das vierte Mal in fuenf Tagen gewesen, dass
+   * eine Zusage nebenbei verlorengeht.
+   *
+   * Der Gegenwert: Das Backend haelt die neue Fassung nachweislich ein, siehe
+   * backend/test/datenschutz.test.ts („meldet eine gegriffene Grenze - ohne
+   * Adresse, ohne URL, ohne Koordinate").
+   */
+  it('behauptet nicht mehr, gar keine Protokolle zu schreiben', () => {
+    expect(zeige()).not.toMatch(/schreibt keine Protokolle/)
+  })
+
+  it('haelt fest, dass die Eintraege ohne Personenbezug sind', () => {
+    expect(zeige()).toMatch(/ohne Personenbezug/)
+  })
+
+  it('benennt die Missbrauchsabwehr und was dabei mit der Adresse geschieht', () => {
+    const text = zeige()
+    expect(text).toMatch(/Missbrauch/)
+    expect(text).toMatch(/nicht gespeichert/)
+  })
+
+  // Diese Zusage BLEIBT wahr und ist die wichtigste der Seite: Die URL der
+  // Bahnhofssuche traegt die Koordinate.
+  it('haelt an der Zusage zum Koordinaten-Zugriffsprotokoll fest', () => {
+    expect(zeige()).toMatch(/Zugriffsprotokoll mit Koordinaten wird nicht/)
+  })
+
   it('nennt die Rechtsgrundlage der Speicherung', () => {
     // Ohne sie steht dort eine Tatsache ohne Begruendung, und beim naechsten
     // Mal fragt jemand wieder nach einem Zustimmungsbanner.

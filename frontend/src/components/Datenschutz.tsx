@@ -13,6 +13,16 @@ import { BETREIBER } from '../rechtliches/betreiber'
 //   analytik/ereignis.test.ts und components/Datenschutz.test.tsx
 // - Backend ohne Zugriffsprotokoll: backend/src/app.ts
 //   (disableRequestLogging), abgesichert in backend/test/datenschutz.test.ts
+// - Ratenbegrenzung und Sicherheitsprotokoll: backend/src/app.ts (GRENZEN,
+//   trustProxy), backend/src/core/sicherheitsprotokoll.ts, abgesichert in
+//   backend/test/ratelimit.test.ts und backend/test/datenschutz.test.ts
+//
+//   Seit dem 03.09.2026 begrenzt der Server die Anfragen je Aufrufer und
+//   meldet, WENN eine Grenze gegriffen hat. Der Eintrag traegt Ereignisart,
+//   Routen-Muster und Trefferzahl - keine Adresse, keine URL. Die Adresse
+//   bleibt im Zaehlwerk im Arbeitsspeicher. Damit war der Satz „Die Anwendung
+//   selbst schreibt keine Protokolle" nicht mehr zu halten; er ist durch die
+//   genauere Aussage ersetzt, dass kein ZUGRIFFSPROTOKOLL gefuehrt wird.
 //
 //   Nicht mehr `logger: false`: Seit dem 02.09.2026 protokolliert das Backend
 //   Ausfaelle (Overpass, FaSta, RIS::Stations, Timetables), damit sie nicht
@@ -84,10 +94,34 @@ export function Datenschutz({ onZurueck }: { onZurueck: () => void }) {
 
         <h2>Server-Protokolle</h2>
         <p>
-          Die Anwendung selbst schreibt keine Protokolle. Die eingesetzten
-          Hosting-Anbieter erfassen technisch bedingt Verbindungsdaten
-          einschließlich IP-Adresse, um den Betrieb sicherzustellen und Angriffe
-          abzuwehren (Art. 6 Abs. 1 lit. f DSGVO).
+          Die Anwendung führt <strong>kein Zugriffsprotokoll</strong>. Es wird
+          nicht festgehalten, wer wann welche Seite oder welchen Bahnhof
+          aufgerufen hat.
+        </p>
+        <p>
+          Geschrieben werden ausschließlich Einträge{' '}
+          <strong>ohne Personenbezug</strong>: Ausfälle der Datenquellen – damit
+          sie nicht lautlos geschehen – und Sicherheitsereignisse, etwa dass
+          eine Anfragegrenze gegriffen hat und auf welcher Route. Wer sie
+          ausgelöst hat, steht nicht darin, und die aufgerufene Adresse
+          ebenfalls nicht.
+        </p>
+        <p>
+          <strong>Missbrauchsabwehr:</strong> Der Server begrenzt, wie viele
+          Anfragen ein einzelner Aufrufer stellen darf – sonst könnte jeder die
+          kostenpflichtigen Datenquellen dahinter leerlaufen lassen. Dafür wird
+          deine IP-Adresse flüchtig im Arbeitsspeicher mitgezählt und nach
+          kurzer Zeit verworfen. Sie wird <strong>nicht gespeichert</strong> und
+          nicht protokolliert; ein Neustart des Servers löscht die Zähler
+          vollständig. Rechtsgrundlage ist das berechtigte Interesse am sicheren
+          Betrieb (Art. 6 Abs. 1 lit. f DSGVO, Erwägungsgrund 49). Du kannst
+          dem nach Art. 21 DSGVO widersprechen – ohne diese Begrenzung ließe
+          sich der Dienst allerdings nicht offen betreiben.
+        </p>
+        <p>
+          Die eingesetzten Hosting-Anbieter erfassen technisch bedingt
+          Verbindungsdaten einschließlich IP-Adresse, um den Betrieb
+          sicherzustellen und Angriffe abzuwehren (Art. 6 Abs. 1 lit. f DSGVO).
         </p>
         <ul>
           <li>
