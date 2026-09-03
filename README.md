@@ -30,7 +30,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > Ankunftserkennung am Gleis, Bedienbarkeit mit Gepäck.
 
 ```bash
-cd backend && npm test        # muss 221 von 221 grün sein
+cd backend && npm test        # muss 223 von 223 grün sein
 cd backend && npm run lint    # oxlint + tsc --noEmit, muss sauber sein
 cd frontend && npm test       # muss 179 von 179 grün sein
 cd frontend && npm run lint   # oxlint + tsc --noEmit, muss sauber sein
@@ -97,7 +97,7 @@ Von den sechs Punkten steht nur noch einer offen: **P6, die Mobilabnahme.**
 | ~~P1~~ | ~~**Ampel-Layout nach der Korrektur**~~ | ✅ **gesehen 01.09.2026.** Statustext steht unter der Zeitleiste, kein „–:––“-Artefakt, Gehzeit rechts. Geprüft in beiden Zuständen: grün mit Countdown („Entspannt erreichbar“) und grau mit Begründung. Der Countdown lief zwischen zwei Aufnahmen weiter – der 10-Sekunden-Takt treibt die Anzeige auch nach dem Umbau auf `jetzt` als Zustand. |
 | ~~P2~~ | ~~**Weg-Seite**~~ | ✅ **gesehen 01.09.2026, Fehler gefunden und behoben.** Ebenenschema, Schritt-Sheet, „Alle Schritte“, der neue „Angekommen“-Knopf und „Echte Karte anzeigen“ stehen. Das Schema legte Gleis 4 anfangs auf Ebene 0 statt −2 – Ursache und Korrektur unter „Der Ebenensprung“. Nach der Korrektur erneut im Browser geprüft: Gleis 4 liegt auf EBENE −2. |
 | ~~P3~~ | ~~**Angekommen-Seite**~~ | ✅ **gesehen 01.09.2026.** Grüne Fläche mit weißem Haken, „Du bist da. / Gleis 4“, Kacheln Puffer und Abfahrt, „Neue Reise“. **Nicht** gesehen: der Wagenkasten – er verlangt `istFernverkehr(zugAbName) && (wagen \|\| abschnitt)`, und die Wagennummer war leer. Die Bedingung ist im Code geprüft, der Kasten selbst nicht. |
-| ~~P4~~ | ~~**Globale Störmeldung**~~ | ✅ **gesehen 03.09.2026.** Das rote Band fährt von oben ein, bedeckt etwa ein Drittel und trägt Titel, Klartext und Zeitstempel – über dem Dashboard, ohne Seitenwechsel. Wartete seit dem 01.09. auf ein Live-Ereignis; statt weiter zu warten, wurde eines eingespeist (siehe „Wie P4 und P5 doch noch sichtbar wurden"). **Was damit NICHT belegt ist:** dass das Backend eine echte Änderung erkennt. Geprüft ist der Weg ab dem SSE-Strom. |
+| ~~P4~~ | ~~**Globale Störmeldung**~~ | ✅ **gesehen 03.09.2026.** Das rote Band fährt von oben ein, bedeckt etwa ein Drittel und trägt Titel, Klartext und Zeitstempel – über dem Dashboard, ohne Seitenwechsel. Wartete seit dem 01.09. auf ein Live-Ereignis; statt weiter zu warten, wurde eines eingespeist (siehe „Wie P4 und P5 doch noch sichtbar wurden"). **Was damit NICHT belegt ist:** dass das Backend eine echte Änderung erkennt. Geprüft ist der Weg ab dem SSE-Strom. Der Test lief lokal – in Produktion war der Strom zu dem Zeitpunkt gar nicht erreichbar, siehe „Der Live-Strom war in Produktion nie erreichbar". |
 | ~~P5~~ | ~~**Störungsseite mit Verspätung**~~ | ✅ **gesehen 03.09.2026**, auf demselben Weg. Aus der Störungsseite ist inzwischen die Meldungsseite geworden; gesehen wurden beide Ereignistypen, der Zähler, der Verlauf und das Übernehmen. Einzelheiten unter „Meldungsseite". |
 | P6 | **Mobilabnahme am Gerät** | Unverändert offen: Berechtigungsdialog, GPS in der Halle, Ankunftserkennung, Bedienbarkeit mit Gepäck. |
 
@@ -763,6 +763,11 @@ der alte Text „in der aktuellen Stunde“ ist verschwunden.
 für `feat/mvp`. Der CLI-Deploy war der neueste und trägt die Aliase – aber
 die Liste in `vercel ls` zeigt drei Einträge, wo man einen erwartet.
 
+> **Nachtrag 03.09.2026:** Der Satz „Der SSE-Strom steht nachweislich" aus
+> dieser Zeit stützte sich auf `curl`. Er war für `curl` wahr und für den
+> Browser falsch – der Strom sendete keine CORS-Header. Siehe „Der Live-Strom
+> war in Produktion nie erreichbar".
+
 ### Was am 01.09. NICHT nachweisbar war
 
 **Der Ebenen-Fix ist in Produktion nicht bestätigt.** Direkt nach dem Deploy
@@ -1106,6 +1111,46 @@ Die Liste ist **unbegrenzt**. Ein Umstieg dauert Minuten und Ereignisse sind
 selten; eine Obergrenze wäre ein geratener Schwellenwert mehr. Im Versuch
 standen fünf Einträge übereinander – das trägt. Wer je eine lange Liste sieht,
 weiß dann auch, wo zu kappen wäre.
+
+## Der Live-Strom war in Produktion nie erreichbar (03.09.2026)
+
+Gefunden bei der Abnahme des Deploys im Browser, und der schwerste Fund seit
+der Datenschutzsache: **`/api/live/:eva` sendete keine CORS-Header.** Für den
+Browser war der Strom damit unerreichbar – seit der Trennung von Frontend und
+Backend am 28.08.2026. Jede Live-Eigenschaft in Produktion war tot: das
+Störband, Gleiswechsel, Verspätungen, der Zeitstempel des letzten Kontakts.
+
+**Die Ursache steht in `routes/live.ts` seit dem ersten Tag.** Die Route ruft
+`reply.hijack()` und schreibt ihre Header mit `reply.raw.writeHead()` selbst
+auf den Socket. Was `@fastify/cors` an die *Fastify*-Antwort gehängt hat, kommt
+dabei nie auf die Leitung. `/api/stations` und `/api/route` waren nie
+betroffen – sie hijacken nicht.
+
+**Warum es zwei Tage überlebt hat, ist der eigentliche Punkt.** Beide
+Prüfungen, die es hätten finden müssen, konnten es nicht sehen:
+
+| Prüfung | Warum sie blind war |
+|---|---|
+| `test/cors.test.ts` | Prüfte ausschließlich `/api/health` – eine Route **ohne** `hijack()`. Vier grüne Tests belegten CORS für genau den Fall, der nie das Problem war. |
+| `curl -sN .../api/live/8011160` | **`curl` setzt CORS nicht durch.** Es schickt den Origin-Header mit und zeigt die Antwort, ganz gleich ob eine Freigabe zurückkommt. Der Strom sah einwandfrei aus – Heartbeats inklusive. Genau mit diesem Befehl stand am 01.09. im README „Der SSE-Strom steht nachweislich". Er stand – nur nicht für einen Browser. |
+
+Dasselbe Muster wie am 02.09.: Zwei verschiedene Zustände („erreichbar" und
+„erreichbar, aber nicht für den, der es braucht") fallen auf dieselbe
+Beobachtung zusammen, und danach ist der Unterschied nicht mehr herstellbar.
+
+**Die Korrektur.** `registriereLiveRouten` bekommt die Allowlist und spiegelt
+im `writeHead` selbst, was `@fastify/cors` für eine einfache GET-Anfrage täte:
+die passende Herkunft zurück, sonst nichts, dazu `Vary: Origin` – sonst darf
+ein Zwischenspeicher die Antwort für eine Herkunft an eine andere ausliefern.
+
+Zwei Tests halten es fest, beide über einen **echten Socket** statt
+`app.inject()` (inject bricht eine hijack-Antwort nicht ab und liefe in den
+Timeout): erlaubte Herkunft bekommt die Freigabe, fremde nicht.
+
+**Die Lehre für dieses Projekt:** `curl` ist kein Ersatz für einen Browser,
+sobald eine Eigenschaft im Browser durchgesetzt wird – CORS, CSP,
+Mixed-Content, `Permissions-Policy`. Bei allem, was der Browser und nicht der
+Server entscheidet, zählt nur der Blick im Browser.
 
 ## Rechtliches
 
