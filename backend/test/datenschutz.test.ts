@@ -6,8 +6,9 @@ import { buildApp } from '../src/app.js';
  * Die veroeffentlichte Datenschutzerklaerung sagt zwei Dinge zu, die der
  * Code halten muss (`frontend/src/components/Datenschutz.tsx`):
  *
- *   „Die Anwendung selbst schreibt keine Protokolle."
+ *   „Die Anwendung fuehrt kein Zugriffsprotokoll."
  *   „Ein Zugriffsprotokoll mit Koordinaten wird nicht gefuehrt."
+ *   Sicherheits- und Diagnoseeintraege „ohne Personenbezug".
  *
  * Beide Saetze stammen aus der Zeit von `logger: false`. Als am 02.09.2026
  * die Protokollierung eingeschaltet wurde, damit Degradationen nicht laenger
@@ -74,9 +75,10 @@ describe('Das Backend haelt seine Datenschutzzusage', () => {
   });
 
   it('fuehrt ueberhaupt kein Anfrageprotokoll', async () => {
-    // „Die Anwendung selbst schreibt keine Protokolle" - gemeint ist das
-    // Zugriffsprotokoll. Diagnoseeintraege zu Ausfaellen sind etwas anderes:
-    // Sie haengen an einem Bahnhof, nicht an einem Menschen.
+    // „Die Anwendung fuehrt kein Zugriffsprotokoll." Diagnose- und
+    // Sicherheitseintraege sind etwas anderes: Sie haengen an einem Bahnhof
+    // oder an einer Route, nicht an einem Menschen. Eine gewoehnliche Anfrage
+    // hinterlaesst weiterhin GAR NICHTS.
     const log = sammelLogger();
     const app = buildApp(clients() as never, log.optionen as never);
 
@@ -98,6 +100,41 @@ describe('Das Backend haelt seine Datenschutzzusage', () => {
     await app.inject({ method: 'GET', url: '/api/board/8000001?type=dep' });
 
     expect(log.zeilen.find((z) => z.degradation === 'gruppe-unbekannt')).toBeDefined();
+  });
+
+  /**
+   * Seit der Haertungsrunde meldet das Backend auch Sicherheitsereignisse
+   * (Punkt 18). Das ist die Stelle, an der die Datenschutzzusage haette
+   * kippen koennen: Ein Eintrag je abgewiesener Anfrage MIT Adresse waere
+   * genau das Zugriffsprotokoll, das es nicht geben soll.
+   *
+   * Gemeldet wird deshalb nur, DASS eine Grenze gegriffen hat und WO - nie,
+   * wer sie ausgeloest hat. Faellt dieser Test, ist die
+   * Datenschutzerklaerung unwahr geworden.
+   */
+  it('meldet eine gegriffene Grenze - ohne Adresse, ohne URL, ohne Koordinate', async () => {
+    const log = sammelLogger();
+    const app = buildApp(clients() as never, log.optionen as never);
+
+    // Ueber die Grenze von 21 hinaus, und zwar auf der Route, deren URL die
+    // Koordinate traegt.
+    for (let i = 0; i < 24; i++) {
+      await app.inject({
+        method: 'GET',
+        url: '/api/stations?lat=52.52&lon=13.37',
+        headers: { 'x-forwarded-for': '203.0.113.9' },
+      });
+    }
+
+    const grenze = log.zeilen.find((z) => z.ereignis === 'ratelimit');
+    expect(grenze).toBeDefined();
+    expect(grenze!.route).toBe('/api/stations');
+
+    const alles = log.roh.join('\n');
+    expect(alles).not.toContain('203.0.113.9');
+    expect(alles).not.toContain('52.52');
+    expect(alles).not.toContain('13.37');
+    expect(alles).not.toContain('remoteAddress');
   });
 
   it('meldet einen 500er - ohne URL und ohne IP', async () => {

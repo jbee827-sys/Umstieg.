@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { Ueberwachung } from '../core/ueberwachung.js';
+import type { Sicherheitsprotokoll } from '../core/sicherheitsprotokoll.js';
 
 /**
  * SSE-Strom je EVA-Nummer. Die Ereignisse stammen aus der Überwachung, die
@@ -13,15 +14,66 @@ import type { Ueberwachung } from '../core/ueberwachung.js';
  * den Kommentar am `writeHead` weiter unten, warum diese Route sie selbst
  * braucht.
  */
+export interface SseGrenzen {
+  /** Offene Stroeme insgesamt. */
+  gesamt: number;
+  /** Offene Stroeme je Aufrufer. */
+  jeAufrufer: number;
+}
+
+/**
+ * Bewusst niedrig. Ein Umstieg braucht EINEN Strom; zwei sind Reserve fuer den
+ * Moment, in dem ein Reload den alten noch nicht abgeraeumt hat.
+ */
+export const SSE_GRENZEN_STANDARD: SseGrenzen = { gesamt: 140, jeAufrufer: 2 };
+
 export function registriereLiveRouten(
   app: FastifyInstance,
   ueberwachung: Ueberwachung,
   erlaubteHerkuenfte: string[] = [],
+  grenzen: SseGrenzen = SSE_GRENZEN_STANDARD,
+  sicherheit?: Sicherheitsprotokoll,
 ): void {
+  /**
+   * Zaehler der offenen Stroeme - nur im Arbeitsspeicher, je App-Instanz.
+   *
+   * Eine Ratenbegrenzung je Anfrage hilft hier nicht: Ein Strom wird EINMAL
+   * geoeffnet und bleibt dann stundenlang bestehen. Gezaehlt werden muss
+   * deshalb, was offen ist, nicht was ankommt.
+   *
+   * `jeAufrufer` wird bei null wieder entfernt. Sonst waechst die Karte mit
+   * jeder je gesehenen Adresse weiter - ein Speicherleck, das ausgerechnet
+   * ueber die Adressen der Besucher liefe.
+   */
+  let offen = 0;
+  const jeAufrufer = new Map<string, number>();
+
   app.get<{ Params: { eva: string }; Querystring: { zugAn?: string; zugAb?: string } }>(
     '/api/live/:eva',
     (req, reply) => {
       const zuege = [req.query.zugAn, req.query.zugAb].filter((z): z is string => Boolean(z));
+
+      /*
+       * Erst pruefen, dann uebernehmen: Nach `reply.hijack()` ist der Kopf
+       * mit 200 schon auf der Leitung, eine Ablehnung waere dann nicht mehr
+       * moeglich. Die Absage laeuft ueber die normale Fastify-Antwort und
+       * traegt deshalb die CORS-Header von `@fastify/cors` ganz von selbst.
+       */
+      const aufrufer = req.ip;
+      if (offen >= grenzen.gesamt || (jeAufrufer.get(aufrufer) ?? 0) >= grenzen.jeAufrufer) {
+        sicherheit?.melde('sse-verbindungen', '/api/live/:eva');
+        return reply.code(503).send({
+          fehler: 'zu-viele-verbindungen',
+          detail: 'Zu viele gleichzeitige Live-Verbindungen. Bitte spaeter erneut versuchen.',
+        });
+      }
+      if (!ueberwachung.hatKapazitaetFuer(req.params.eva)) {
+        sicherheit?.melde('sse-bahnhoefe', '/api/live/:eva');
+        return reply.code(503).send({
+          fehler: 'zu-viele-bahnhoefe',
+          detail: 'Es werden derzeit zu viele Bahnhoefe live beobachtet.',
+        });
+      }
 
       const kopf: Record<string, string> = {
         'Content-Type': 'text/event-stream; charset=utf-8',
@@ -63,6 +115,9 @@ export function registriereLiveRouten(
         kopf['Access-Control-Allow-Origin'] = herkunft;
       }
 
+      offen++;
+      jeAufrufer.set(aufrufer, (jeAufrufer.get(aufrufer) ?? 0) + 1);
+
       // Fastify soll die Antwort nicht selbst abschließen – der Strom bleibt offen.
       reply.hijack();
       reply.raw.writeHead(200, kopf);
@@ -77,7 +132,20 @@ export function registriereLiveRouten(
 
       // Verbindungsabbruch (Tunnel, Tabwechsel, Reload) meldet ab. Ohne das
       // pollt die EVA weiter, obwohl niemand mehr zuhört.
-      req.raw.on('close', abmelden);
+      //
+      // `beendet` schuetzt gegen ein doppeltes Herunterzaehlen: `close` kann
+      // mehr als einmal feuern, und ein zu niedriger Zaehler waere schlimmer
+      // als ein zu hoher - er gaebe Plaetze frei, die es nicht gibt.
+      let beendet = false;
+      req.raw.on('close', () => {
+        if (beendet) return;
+        beendet = true;
+        abmelden();
+        offen--;
+        const rest = (jeAufrufer.get(aufrufer) ?? 1) - 1;
+        if (rest > 0) jeAufrufer.set(aufrufer, rest);
+        else jeAufrufer.delete(aufrufer);
+      });
     },
   );
 }
