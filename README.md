@@ -32,7 +32,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 ```bash
 cd backend && npm test        # muss 224 von 224 grün sein
 cd backend && npm run lint    # oxlint + tsc --noEmit, muss sauber sein
-cd frontend && npm test       # muss 180 von 180 grün sein
+cd frontend && npm test       # muss 190 von 190 grün sein
 cd frontend && npm run lint   # oxlint + tsc --noEmit, muss sauber sein
 cd frontend && npm run build  # muss grün sein
 ```
@@ -1137,6 +1137,52 @@ Die Liste ist **unbegrenzt**. Ein Umstieg dauert Minuten und Ereignisse sind
 selten; eine Obergrenze wäre ein geratener Schwellenwert mehr. Im Versuch
 standen fünf Einträge übereinander – das trägt. Wer je eine lange Liste sieht,
 weiß dann auch, wo zu kappen wäre.
+
+## Reichweitenmessung (03.09.2026)
+
+`@vercel/analytics` in `main.tsx`, nicht in `App.tsx`: Die Messung gehört zur
+Auslieferung, nicht zur Anwendung, und die Komponententests sollen sie nicht
+mitrendern. Im Vercel-Projekt war Web Analytics bereits eingeschaltet – es
+fehlte allein das Skript.
+
+**Die Datenschutzerklärung wäre damit zum dritten Mal in vier Tagen nebenbei
+unwahr geworden.** Drei Sätze standen dem entgegen:
+
+| Stelle | Sagte |
+|---|---|
+| Kurzfassung | „bindet keine Analyse- oder Werbedienste ein" |
+| „Keine Cookies, kein Tracking" | „Es gibt keine Reichweitenmessung" |
+| Anbieterliste | Vercel „liefert die Webseite aus" – ohne die Messung |
+
+Alle drei sind korrigiert, und **beide Richtungen hängen an Tests**
+(`Datenschutz.test.tsx`): dass die Messung benannt wird, und dass die alten
+Formulierungen nicht zurückkehren.
+
+### `beforeSend` ist keine Kosmetik
+
+Vercel sendet je Seitenaufruf die aufgerufene Adresse. `analytik/ereignis.ts`
+**schneidet die Abfragezeichenkette ab**, bevor irgendetwas das Gerät
+verlässt – eine reine Funktion mit sechs Tests.
+
+Heute trägt keine Adresse dieser App einen Parameter; die gerundete Koordinate
+geht an die API, nicht in die URL des Frontends. Der Punkt ist die Zukunft:
+Genau dieser Fall ist im **Backend schon einmal eingetreten**. Fastifys
+Anfrageprotokoll trug `url`, und die URL der Bahnhofssuche IST die Koordinate –
+nachzulesen unter „Die Datenschutzerklärung war zwei Tage lang unwahr". Dort
+wurde daraufhin das Routen*muster* protokolliert statt der Adresse. Hier ist
+die Entsprechung, dass die Abfragezeichenkette gar nicht erst mitgeht.
+
+### Was rechtlich angenommen wurde
+
+Die Messung läuft **ohne Cookies und ohne Speicher auf dem Gerät**. Damit
+greift § 25 TTDSG nicht (der regelt Speichern und Auslesen auf dem Endgerät),
+und ein Zustimmungsbanner ist nicht erforderlich. Als Rechtsgrundlage für die
+Verarbeitung ist das berechtigte Interesse nach Art. 6 Abs. 1 lit. f DSGVO
+genannt, mit Hinweis auf das Widerspruchsrecht nach Art. 21.
+
+**Das ist die verbreitete Lesart für cookielose Messung, aber keine
+Rechtsberatung** – wer es sicher wissen will, lässt es prüfen. Die Alternative
+wäre ein Einwilligungsbanner, das die App bisher bewusst nicht hat.
 
 ## Die Leiste sass an drei verschiedenen Hoehen (03.09.2026)
 

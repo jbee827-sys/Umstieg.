@@ -39,6 +39,34 @@ describe('Datenschutzerklaerung sagt, was die App wirklich tut', () => {
     expect(zeige()).toContain('localStorage')
   })
 
+  // Am 03.09.2026 kam Vercel Web Analytics dazu. Damit wurden drei Saetze
+  // dieser Seite auf einen Schlag unwahr - zum dritten Mal in vier Tagen
+  // waere sonst eine Zusage nebenbei verlorengegangen.
+  it('benennt die Reichweitenmessung', () => {
+    const text = zeige()
+    expect(text).toMatch(/Vercel Web Analytics/)
+    expect(text).toMatch(/Reichweitenmessung/)
+  })
+
+  it('behauptet nicht mehr, ohne Analyse und ohne Reichweitenmessung zu arbeiten', () => {
+    const text = zeige()
+    expect(text).not.toMatch(/bindet keine Analyse-\s*oder\s*Werbedienste ein/)
+    expect(text).not.toMatch(/Es gibt keine Reichweitenmessung/)
+  })
+
+  // Die Zusage, die BLEIBT - und die einzige, die die Messung ueberhaupt
+  // vertretbar macht: keine Cookies, kein Speicher auf dem Geraet, deshalb
+  // kein Zustimmungsbanner.
+  it('haelt fest, dass die Messung ohne Cookies auskommt', () => {
+    expect(zeige()).toMatch(/ohne Cookies/)
+  })
+
+  it('nennt das Widerspruchsrecht bei berechtigtem Interesse', () => {
+    const text = zeige()
+    expect(text).toMatch(/Art\. 6 Abs\. 1 lit\. f/)
+    expect(text).toMatch(/Art\. 21/)
+  })
+
   it('nennt die Rechtsgrundlage der Speicherung', () => {
     // Ohne sie steht dort eine Tatsache ohne Begruendung, und beim naechsten
     // Mal fragt jemand wieder nach einem Zustimmungsbanner.
