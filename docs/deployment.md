@@ -184,12 +184,55 @@ gesamte Standortfunktion (P1) im Browser blockiert.
 
 Schritt 4 kommt zwingend nach 3 – vorher ist die Frontend-Domain nicht bekannt.
 
+## CORS_ORIGIN: was drinsteht (Stand 03.09.2026)
+
+Sechs Herkünfte, kommagetrennt:
+
+| Herkunft | Erreichbarkeit |
+|---|---|
+| `https://umstieg.vercel.app` | öffentlich |
+| `https://umstieg.online` | öffentlich (leitet auf `www.` um) |
+| `https://www.umstieg.online` | öffentlich |
+| `https://umstieg-jbeerbaum827-8346s-projects.vercel.app` | **hinter Vercel-SSO** |
+| `https://umstieg-git-main-jbeerbaum827-8346s-projects.vercel.app` | **hinter Vercel-SSO** |
+| `https://umstieg-git-feat-mvp-jbeerbaum827-8346s-projects.vercel.app` | **hinter Vercel-SSO** |
+
+Die drei projektbezogenen Vercel-Aliase antworten mit `302` auf
+`vercel.com/sso-api`. Sie sind also nur für den eingeloggten Eigentümer
+erreichbar – ihre Aufnahme in die Allowlist vergrössert die öffentliche
+Angriffsfläche nicht, sondern macht Vorschautests möglich.
+
+### Zwei Fallen beim Ändern
+
+1. **`flyctl secrets set` ERSETZT den Wert, es hängt nichts an.** Wer nur die
+   neue Domain setzt, kappt alle bisherigen – und merkt es erst, wenn die
+   Produktionsseite keine Daten mehr bekommt. Immer die **volle** Liste
+   setzen.
+2. **Der Wert ist nicht zurücklesbar.** `flyctl secrets list` zeigt nur einen
+   Digest; `flyctl ssh console -C "printenv CORS_ORIGIN"` ist der einzige
+   direkte Weg. Steht der nicht zur Verfügung, lässt sich der Bestand nur
+   **erfragen**: je Kandidat eine Anfrage mit `Origin:`-Kopf und schauen, ob
+   eine Freigabe zurückkommt. Genau deshalb steht die Liste oben in diesem
+   Dokument – sonst ist sie beim nächsten Mal wieder zu rekonstruieren.
+
+```bash
+# Bestand erfragen, wenn die Liste fehlt:
+for D in <kandidat> ...; do
+  printf "%-60s " "$D"
+  curl -s -m 15 -D - -o /dev/null -H "Origin: https://$D"     https://umstieg-backend.fly.dev/api/health | grep -ci access-control-allow-origin
+done
+```
+
 ## Vercel-Vorschau-Deployments
 
-Jeder Zweig bekommt eine eigene URL mit wechselndem Namen. Diese URLs stehen
-nicht in `CORS_ORIGIN` und können die API deshalb nicht erreichen. Für einen
-Vorschautest die konkrete URL vorübergehend in `CORS_ORIGIN` aufnehmen.
-Absicht: eine Wildcard würde jede fremde Vercel-App an die API lassen.
+Der **Zweig-Alias** (`umstieg-git-<zweig>-...vercel.app`) ist stabil und steht
+für `main` und `feat/mvp` in `CORS_ORIGIN`. Ein **neuer Zweig** braucht einen
+eigenen Eintrag.
+
+Die URL des einzelnen Deployments (`umstieg-<hash>-...`) wechselt dagegen bei
+jedem Build und lässt sich nicht dauerhaft eintragen – für einen Test mit
+dieser konkreten URL vorübergehend aufnehmen. Eine Wildcard kommt nicht in
+Frage: Sie liesse jede fremde Vercel-App an die API.
 
 ## Was hier bewusst NICHT steht
 
