@@ -1187,7 +1187,7 @@ behauptete, `@fastify/cors` zu spiegeln – und das war nur fast wahr.
 | Prüfung | Ergebnis |
 |---|---|
 | Alle fünf Routen (`health`, `stations`, `board`, `route`, `live`) | ✅ Freigabe-Header |
-| Alle drei Produktionsdomains (`umstieg.vercel.app`, `umstieg.online`, `www.umstieg.online`) | ✅ alle in `CORS_ORIGIN`, alle bekommen die Freigabe – auch auf dem SSE-Strom |
+| Alle drei Produktionsdomains (`umstieg.vercel.app`, `umstieg.online`, `www.umstieg.online`) | ✅ alle in `CORS_ORIGIN`, alle bekommen die Freigabe – auch auf dem SSE-Strom. **Im Browser** nachgeprüft auf `umstieg.vercel.app` und `www.umstieg.online` (dorthin leitet `umstieg.online` um): Live-Zeitstempel auf der Meldungsseite. Nur `curl` hätte hier nach der Lehre unten nicht gereicht. |
 | Fremde Herkunft | ✅ keine Freigabe, auf keiner Route |
 | Weitere Routen mit `hijack()` | ✅ keine – `live.ts` ist die einzige, der Rest läuft über Fastifys normalen Weg |
 
@@ -1196,6 +1196,23 @@ Meldungsseite selbst: Vor dem Fix stand dort dauerhaft „Die Live-Verbindung
 steht noch nicht." – der Zustand für „`stand` ist null", also kein Heartbeat.
 Nach dem Fix erschien „Live-Daten · Stand: 13:08 Uhr". Damit läuft der
 Live-Strom zum ersten Mal aus dem ausgelieferten Frontend.
+
+### Was auch danach offen bleibt
+
+- **Ein echtes Ereignis ist in Produktion weiterhin nie beobachtet worden.**
+  Durch den Browser gelaufen ist der **Heartbeat**. Gleiswechsel und
+  Verspätung nehmen dieselbe Verbindung und denselben
+  `addEventListener`-Pfad – CORS-seitig sind sie damit abgedeckt –, aber die
+  **Erkennung** im Backend (`core/ueberwachung.ts`) hängt weiter allein an
+  ihren Tests. Das ist eine andere Frage als diese hier und nach wie vor
+  nicht erzwingbar.
+- **Vorschau-Deployments erreichen die API weiterhin nicht.** Ihre URLs
+  stehen nicht in `CORS_ORIGIN`, absichtlich: Eine Wildcard liesse jede
+  fremde Vercel-App an die API. Siehe ToDo 6.
+- **Eine neue Domain fällt niemandem auf.** Wer einen Alias hinzufügt, muss
+  ihn in `CORS_ORIGIN` nachtragen; kein Test merkt das. Ebenso würde eine
+  **künftige zweite Route mit `hijack()`** den Fehler wiederholen – die
+  Tests decken heute `live.ts`, nicht „jede Route, die hijackt".
 
 **Die Lehre für dieses Projekt:** `curl` ist kein Ersatz für einen Browser,
 sobald eine Eigenschaft im Browser durchgesetzt wird – CORS, CSP,
