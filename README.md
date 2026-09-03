@@ -1210,7 +1210,10 @@ Live-Strom zum ersten Mal aus dem ausgelieferten Frontend.
   stehen nicht in `CORS_ORIGIN`, absichtlich: Eine Wildcard liesse jede
   fremde Vercel-App an die API. Siehe ToDo 6.
 - **Eine neue Domain fällt niemandem auf.** Wer einen Alias hinzufügt, muss
-  ihn in `CORS_ORIGIN` nachtragen; kein Test merkt das. Ebenso würde eine
+  ihn in `CORS_ORIGIN` nachtragen; kein Test merkt das. Am 03.09. war genau
+  das der Fall: Der Zweig-Alias von `feat/mvp` fehlte. Nachgetragen; die
+  vollständige Liste und die zwei Fallen beim Ändern stehen jetzt in
+  [`docs/deployment.md`](./docs/deployment.md). Ebenso würde eine
   **künftige zweite Route mit `hijack()`** den Fehler wiederholen – die
   Tests decken heute `live.ts`, nicht „jede Route, die hijackt".
 
