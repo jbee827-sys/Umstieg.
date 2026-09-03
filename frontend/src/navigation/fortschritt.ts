@@ -1,46 +1,23 @@
-import type { Schritt } from '../api/typen';
-import { MINDEST_SCHRITT_MS } from './schwellen';
-
-/** Auf [0, laenge-1] begrenzen; leere Liste ergibt 0. */
-function begrenze(index: number, laenge: number): number {
-  if (laenge === 0) return 0;
-  return Math.min(Math.max(index, 0), laenge - 1);
-}
-
 /**
  * Welcher Schritt ist gerade dran?
  *
- * Rein: Die Zeit kommt als Parameter herein, damit die Logik ohne Fake-Timer
- * pruefbar ist – dieselbe Entscheidung wie bei pruefeAnkunft.
+ * Der Nutzer schaltet weiter, nicht die Uhr. Bis zum 02.09.2026 schaetzte
+ * diese Datei aus den Gehzeiten der Schritte, wo jemand sein duerfte, und
+ * rueckte die Anzeige alle zehn Sekunden von selbst vor; der Nutzer konnte
+ * diese Schaetzung nur korrigieren.
  *
- * `versatz` ist die Summe der Nutzerkorrekturen und wirkt DAUERHAFT: Die Uhr
- * schlaegt vor, der Mensch entscheidet, und seine Entscheidung wird nicht von
- * der naechsten Zeitschaetzung ueberstimmt.
+ * Eine Uhr weiss aber nicht, ob jemand vor der Rolltreppe wartet, sich
+ * verlaufen hat oder stehengeblieben ist, um das Schild zu lesen. Sie
+ * schaltet trotzdem weiter - und dann steht auf dem Bildschirm ein anderer
+ * Schritt als der, den der Mensch gerade geht. Genau in dem Moment, in dem
+ * man sich auf die Anzeige verlassen will, wird sie unzuverlaessig.
  *
- * Fehlt auch nur einem Schritt `sekunden` (aeltere Backend-Version), wird gar
- * nicht geschaetzt – dann zaehlt allein der Versatz, also reines manuelles
- * Weiterschalten. Halbe Schaetzungen waeren schlimmer als keine.
+ * Uebrig bleibt das Begrenzen: `zaehler` ist die Summe der Weiter- und
+ * Zurueck-Tipps und darf die Liste nach keiner Seite verlassen. Eine leere
+ * Liste ergibt 0 - sonst waere die Position -1 und der Zugriff darauf
+ * `undefined`.
  */
-export function aktiverSchritt(
-  schritte: Schritt[],
-  startZeitMs: number,
-  jetztMs: number,
-  versatz: number,
-): number {
-  if (schritte.length === 0) return 0;
-
-  const zeitgesteuert = schritte.every((s) => typeof s.sekunden === 'number');
-  if (!zeitgesteuert) return begrenze(versatz, schritte.length);
-
-  const verstrichen = Math.max(0, jetztMs - startZeitMs);
-  let summe = 0;
-  let ausZeit = schritte.length - 1;
-  for (let i = 0; i < schritte.length; i++) {
-    summe += Math.max((schritte[i].sekunden ?? 0) * 1000, MINDEST_SCHRITT_MS);
-    if (verstrichen < summe) {
-      ausZeit = i;
-      break;
-    }
-  }
-  return begrenze(ausZeit + versatz, schritte.length);
+export function schrittPosition(zaehler: number, laenge: number): number {
+  if (laenge === 0) return 0;
+  return Math.min(Math.max(zaehler, 0), laenge - 1);
 }

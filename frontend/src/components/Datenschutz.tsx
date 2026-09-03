@@ -3,9 +3,21 @@ import { BETREIBER } from '../rechtliches/betreiber'
 // Beschreibt ausschliesslich, was der Code tatsaechlich tut. Bei Aenderungen
 // an der Datenverarbeitung ist diese Seite mitzupflegen:
 // - Standort: standort/useStandort.ts, standort/bahnhofErkennung.ts (Rundung)
+// - Eingabe im sessionStorage: sitzung/eingabespeicher.ts, abgesichert in
+//   sitzung/eingabespeicher.test.ts ("fasst localStorage nicht an") und
+//   components/Datenschutz.test.tsx
 // - Kartenkacheln: components/Karte.tsx
 // - Schriften: index.css (lokale @font-face, KEIN Google Fonts)
-// - Backend ohne Logging: backend/src/app.ts (logger: false)
+// - Backend ohne Zugriffsprotokoll: backend/src/app.ts
+//   (disableRequestLogging), abgesichert in backend/test/datenschutz.test.ts
+//
+//   Nicht mehr `logger: false`: Seit dem 02.09.2026 protokolliert das Backend
+//   Ausfaelle (Overpass, FaSta, RIS::Stations, Timetables), damit sie nicht
+//   lautlos geschehen. Diese Eintraege haengen an einem Bahnhof, nicht an
+//   einem Menschen - kein Personenbezug. Was ausbleibt, ist Fastifys
+//   Anfrageprotokoll: Es traegt `url` und `remoteAddress`, und die URL der
+//   Bahnhofssuche IST die Koordinate. Genau dieser Satz auf dieser Seite
+//   waere damit unwahr geworden.
 export function Datenschutz({ onZurueck }: { onZurueck: () => void }) {
   return (
     <main className="app">
@@ -18,11 +30,12 @@ export function Datenschutz({ onZurueck }: { onZurueck: () => void }) {
       <div className="rechtstext">
         <h2>Kurzfassung</h2>
         <p>
-          Diese App setzt keine Cookies, speichert nichts auf deinem Gerät und
-          bindet keine Analyse- oder Werbedienste ein. Es gibt kein
-          Nutzerkonto. Dein Standort wird nur mit deiner Erlaubnis verwendet,
-          bereits im Browser auf etwa 110 Meter gerundet und nirgends
-          gespeichert.
+          Diese App setzt keine Cookies und bindet keine Analyse- oder
+          Werbedienste ein. Es gibt kein Nutzerkonto. Auf deinem Gerät bleibt
+          allein deine eigene Eingabe – Bahnhof, Gleise, Zug – und nur so
+          lange, wie dieser Browser-Tab offen ist. Dein Standort wird nur mit
+          deiner Erlaubnis verwendet, bereits im Browser auf etwa 110 Meter
+          gerundet und nirgends gespeichert.
         </p>
 
         <h2>Verantwortlicher</h2>
@@ -113,10 +126,26 @@ export function Datenschutz({ onZurueck }: { onZurueck: () => void }) {
 
         <h2>Keine Cookies, kein Tracking</h2>
         <p>
-          Es werden keine Cookies gesetzt und weder <code>localStorage</code> noch{' '}
-          <code>sessionStorage</code> verwendet. Es gibt keine
-          Reichweitenmessung, kein Profiling und keine automatisierte
-          Entscheidungsfindung.
+          Es werden keine Cookies gesetzt und <code>localStorage</code> wird
+          nicht verwendet. Es gibt keine Reichweitenmessung, kein Profiling und
+          keine automatisierte Entscheidungsfindung.
+        </p>
+
+        <h2>Deine Eingabe im Browser</h2>
+        <p>
+          Damit du Bahnhof, Gleise und Zugauswahl nicht erneut eingeben musst,
+          wenn du zwischen den Ansichten wechselst oder die Seite neu lädt,
+          bleibt deine Eingabe im <code>sessionStorage</code> deines Browsers.
+          Das ist der Speicher eines einzelnen Tabs: Er wird geleert, sobald du
+          den Tab schließt – und außerdem, sobald du „Angekommen“ bestätigst
+          oder einen neuen Umstieg eingibst.
+        </p>
+        <p>
+          Diese Daten verlassen dein Gerät nicht; sie werden zu keinem Zeitpunkt
+          an uns übertragen. Es handelt sich um eine Speicherung, die für den
+          von dir ausdrücklich gewünschten Dienst erforderlich ist
+          (§ 25 Abs. 2 Nr. 2 TTDSG) – eine Einwilligung ist dafür nicht nötig,
+          und ein Zustimmungsbanner gibt es deshalb bewusst nicht.
         </p>
 
         <h2>Deine Rechte</h2>

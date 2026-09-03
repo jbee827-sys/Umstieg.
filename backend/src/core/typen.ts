@@ -104,6 +104,32 @@ export interface StationsInfo {
   evas: string[];
   /** StaDa-Bahnhofsnummer – die Adressierung, die FaSta erwartet. */
   stationID?: string;
+  /**
+   * Wie viele Verkehrsstellen ihre Gleisliste schuldig blieben.
+   *
+   * Ohne diese Zahl war eine unvollständige Liste von einer vollständigen
+   * nicht zu unterscheiden. Wer dann nach einem fehlenden Gleis fragte, bekam
+   * „gleis-unbekannt“ – die falsche Auskunft: Nicht das Gleis ist unbekannt,
+   * wir konnten nur nicht fragen.
+   *
+   * Fehlt das Feld, ist nichts ausgefallen. Optional, weil es genau EINEN
+   * echten Erzeuger gibt (`holeStationsInfo`); alles andere sind Fixtures,
+   * die sich damit nicht befassen sollen.
+   */
+  gleisteileOhneAntwort?: number;
+  /**
+   * Ob die Verkehrsstellengruppe gar nicht erst aufgelöst werden konnte.
+   *
+   * Der Unterschied zu `gleisteileOhneAntwort` ist wichtig genug für ein
+   * eigenes Feld: Dort haben wir gefragt und keine Antwort bekommen, hier
+   * haben wir nie gefragt. Scheitert die Namenssuche, bleibt es bei der einen
+   * Verkehrsstelle – deren Gleisliste kann tadellos ankommen, und der Zähler
+   * steht trotzdem auf 0. Die Liste ist deshalb nicht weniger unvollständig:
+   * Berlin Hbf führt Gleis 6 unter 8098160, das dann nie abgefragt wurde.
+   *
+   * Fehlt das Feld, war die Gruppe vollständig (oder es gibt keine).
+   */
+  gruppeUnvollstaendig?: boolean;
   gleise: { gleis: string; lat?: number; lon?: number }[];
 }
 

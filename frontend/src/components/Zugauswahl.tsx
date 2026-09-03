@@ -35,19 +35,30 @@ export function Zugauswahl({ eva, typ, label, auswahl, onAuswahl }: ZugauswahlPr
     if (!gehtAuf || eintraege !== null || laden) return
     setLaden(true)
     setGeholtUm(new Date())
-    holeTafel(eva, typ).then((ergebnis) => {
-      setLaden(false)
-      if (ergebnis.ok) {
-        setEintraege(ergebnis.eintraege)
-        setFehler(null)
-      } else {
-        setFehler(
-          ergebnis.fehler === 'db-zugang-fehlt'
-            ? 'Live-Tafel nicht verfügbar (kein DB-Zugang) – Gleis bitte manuell eingeben.'
-            : 'Live-Tafel derzeit nicht erreichbar.',
-        )
-      }
-    })
+    holeTafel(eva, typ)
+      .then((ergebnis) => {
+        setLaden(false)
+        if (ergebnis.ok) {
+          setEintraege(ergebnis.eintraege)
+          setFehler(null)
+        } else {
+          setFehler(
+            ergebnis.fehler === 'db-zugang-fehlt'
+              ? 'Live-Tafel nicht verfügbar (kein DB-Zugang) – Gleis bitte manuell eingeben.'
+              : 'Live-Tafel derzeit nicht erreichbar.',
+          )
+        }
+      })
+      // `holeTafel` fängt heute selbst ab und antwortet mit `{ ok: false }`.
+      // Das ist eine Zusicherung des Aufgerufenen, und darauf darf sich der
+      // Ladezustand nicht verlassen: Bricht sie, bliebe `setLaden(false)`
+      // ungelaufen, und „Tafel wird geladen …" stünde bis zum Neuladen der
+      // Seite. Ein hängender Spinner ist die unehrlichste aller Anzeigen –
+      // er verspricht, dass gleich etwas kommt.
+      .catch(() => {
+        setLaden(false)
+        setFehler('Live-Tafel derzeit nicht erreichbar.')
+      })
   }
 
   // Abgeleitet, nicht gespeichert: Die Bloecke haengen an nichts als den

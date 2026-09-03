@@ -207,3 +207,51 @@ describe('EVA-Filter', () => {
     expect(treffer.map((t) => t.eva)).toEqual(['8011160']);
   });
 });
+
+/**
+ * Faellt die Gleisliste EINES Bahnhofsteils aus, blieb die Vereinigung
+ * unvollstaendig - ohne dass irgendwo stand, dass etwas fehlt. Wer dann nach
+ * dem fehlenden Gleis fragte, bekam "gleis-unbekannt". Das ist die falsche
+ * Auskunft: Nicht das Gleis ist unbekannt, wir konnten nur nicht fragen.
+ */
+describe('holeStationsInfo: unvollstaendige Gleisliste', () => {
+  beforeEach(() => {
+    vi.stubEnv('DB_CLIENT_ID', 'test-id');
+    vi.stubEnv('DB_CLIENT_SECRET', 'test-secret');
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  /** Wie fetchMock, aber die Gleisliste bestimmter Mitglieder faellt aus. */
+  function fetchMitAusfall(kaputteEvas: string[]): typeof fetch {
+    return vi.fn(async (eingabe: RequestInfo | URL) => {
+      const url = String(eingabe);
+      let fixture: unknown;
+      if (url.includes('/stop-places/by-name/')) fixture = ladeFixture('stations-suche');
+      else if (url.includes('/platforms/')) {
+        if (kaputteEvas.some((e) => url.includes(e))) {
+          return new Response('kaputt', { status: 502 });
+        }
+        fixture = ladeFixture('stations-platforms');
+      } else if (url.includes('/stop-places/')) fixture = ladeFixture('stations-stopplace');
+      else throw new Error(`unerwartete URL im Test: ${url}`);
+      return new Response(JSON.stringify(fixture), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }) as unknown as typeof fetch;
+  }
+
+  it('meldet, wie viele Bahnhofsteile die Gleisliste schuldig blieben', async () => {
+    const heil = await holeStationsInfo('8011160', fetchMitAusfall([]));
+    expect(heil.gleisteileOhneAntwort).toBe(0);
+
+    const kaputt = await holeStationsInfo('8011160', fetchMitAusfall(['8011160']));
+    expect(kaputt.gleisteileOhneAntwort).toBeGreaterThan(0);
+  });
+
+  it('bleibt trotzdem benutzbar - ein Teil nimmt die uebrigen nicht mit', async () => {
+    const info = await holeStationsInfo('8011160', fetchMitAusfall(['8011160']));
+    expect(info.name).toBeTruthy();
+    expect(Array.isArray(info.gleise)).toBe(true);
+  });
+});

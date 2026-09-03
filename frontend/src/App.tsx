@@ -17,7 +17,8 @@ import { Stoermeldung } from './components/Stoermeldung'
 import { StandortStreifen } from './components/StandortStreifen'
 import { ANKUNFT_START, pruefeAnkunft, zielKoordinate } from './standort/ankunft'
 import { ABGEFAHREN_KULANZ_MS } from './standort/schwellen'
-import { aktiverSchritt } from './navigation/fortschritt'
+import { schrittPosition } from './navigation/fortschritt'
+import { leere as leereEntwurf, lies as liesEntwurf, schreibe as schreibeEntwurf } from './sitzung/eingabespeicher'
 import type { Bildschirm } from './navigation/bildschirme'
 import { erkenneBahnhof } from './standort/bahnhofErkennung'
 import { useStandort } from './standort/useStandort'
@@ -27,6 +28,13 @@ const FEHLER_TEXTE: Record<string, string> = {
   'db-zugang-fehlt':
     'Der Server hat keinen DB-Datenzugang. Bitte später erneut versuchen oder EVA-Nummer prüfen.',
   'gleis-unbekannt': 'Eines der Gleise wurde an diesem Bahnhof nicht gefunden.',
+  // Der Unterschied zur Zeile darueber ist der ganze Punkt: Dort wissen wir,
+  // dass es das Gleis nicht gibt. Hier wissen wir nur, dass wir nicht fragen
+  // konnten. „Nicht gefunden" laesst den Nutzer den Fehler bei sich suchen und
+  // seine Eingabe korrigieren – bei einem Teilausfall von RIS::Stations waere
+  // das der falsche Rat. Richtig ist: gleich noch einmal versuchen.
+  'gleisliste-unvollstaendig':
+    'Die Gleisliste dieses Bahnhofs ist gerade unvollständig – das Gleis lässt sich nicht prüfen. Bitte in einem Moment erneut versuchen.',
   'keine-route': 'Keine passende Route gefunden.',
   netz: 'Keine Verbindung zum Server.',
 }
@@ -97,25 +105,34 @@ function App() {
   useEffect(() => {
     if (!standort || erkennungFertig.current || erkennungLaeuft.current) return
     erkennungLaeuft.current = true
-    void erkenneBahnhof(standort).then((ergebnis) => {
-      erkennungLaeuft.current = false
-      if (ergebnis.ok) {
+    void erkenneBahnhof(standort)
+      .then((ergebnis) => {
+        erkennungLaeuft.current = false
+        if (ergebnis.ok) {
+          erkennungFertig.current = true
+          setStandortZuUngenau(false)
+          setErkannt(ergebnis.treffer.slice(0, 6))
+        } else if (ergebnis.fehler === 'zu-ungenau') {
+          setStandortZuUngenau(true)
+        } else {
+          // Netz- oder DB-Fehler: nicht endlos wiederholen.
+          erkennungFertig.current = true
+        }
+      })
+      // Ohne diesen Zweig bliebe `erkennungLaeuft` bei einem Wurf dauerhaft
+      // auf true, und die Bedingung oben laesst dann keinen zweiten Versuch
+      // mehr zu: Die Erkennung waere fuer die ganze Sitzung tot, ohne dass
+      // irgendetwas davon zu sehen waere. `erkenneBahnhof` wirft heute nicht -
+      // aber das Flag darf nicht davon abhaengen, dass das so bleibt.
+      .catch(() => {
+        erkennungLaeuft.current = false
         erkennungFertig.current = true
-        setStandortZuUngenau(false)
-        setErkannt(ergebnis.treffer.slice(0, 6))
-      } else if (ergebnis.fehler === 'zu-ungenau') {
-        setStandortZuUngenau(true)
-      } else {
-        // Netz- oder DB-Fehler: nicht endlos wiederholen.
-        erkennungFertig.current = true
-      }
-    })
+      })
   }, [standort])
 
-  // Live-Countdown: mit bekannter Abfahrtszeit alle 10 s neu rendern
-  // Alle 10 s die Uhr nachziehen. Treibt zwei Dinge: den Countdown der Ampel
-  // und das Weiterruecken der Schrittanzeige - deshalb laeuft der Takt auch
-  // ohne Zugauswahl.
+  // Alle 10 s die Uhr nachziehen - fuer den Countdown der Ampel und die
+  // Restzeit auf der Angekommen-Seite. Die Schrittanzeige haengt seit dem
+  // 02.09.2026 NICHT mehr daran: Weitergeschaltet wird per Knopf.
   useEffect(() => {
     if (bildschirm !== 'dashboard' && bildschirm !== 'navigation') return
     const timer = window.setInterval(() => setJetzt(Date.now()), 10000)
@@ -129,11 +146,8 @@ function App() {
     return stoppeVerfolgung
   }, [bildschirm, starteVerfolgung, stoppeVerfolgung])
 
-  // Die Uhr laeuft ab dem Oeffnen der Routenansicht. Als State, nicht als Ref:
-  // Der Wert wird waehrend des Renderns gelesen, und ein Ref darf das nicht -
-  // er kann sich ohne Render aendern. Gesetzt wird er im Ereignisbehandler
-  // (berechne), nicht in einem Effect.
-  const [startZeit, setStartZeit] = useState(0)
+  // Wie weit der Nutzer sich durchgetippt hat. Summe der Weiter- und
+  // Zurueck-Tipps; die Uhr redet hier nicht mehr mit (siehe fortschritt.ts).
   const [versatz, setVersatz] = useState(0)
 
   const ankunft = useRef(ANKUNFT_START)
@@ -187,7 +201,6 @@ function App() {
           setWerte(eingabe)
           setRoute(haupt)
           setVarianten({ gewaehlt, [gewaehlt]: haupt.gehzeitSek })
-          setStartZeit(Date.now())
           setVersatz(0)
           setBildschirm('dashboard')
         },
@@ -288,6 +301,10 @@ function App() {
     ) : null
 
   function bestaetigeAnkunft() {
+    // Angekommen heisst: Dieser Umstieg ist erledigt. Die Eingabe dafuer
+    // weiter vorzuhalten hiesse, die naechste Reise mit der letzten zu
+    // beginnen.
+    leereEntwurf()
     ankunft.current = { ...ankunft.current, bestaetigt: true }
     setAnkunftVorschlag(false)
     stoppeVerfolgung()
@@ -297,7 +314,6 @@ function App() {
   if (bildschirm === 'angekommen' && werte) {
     return (
       <main className="app">
-      {meldung}
         {meldung}
         <Angekommen
           gleis={werte.gleisAb}
@@ -330,7 +346,6 @@ function App() {
       : undefined
     return (
       <main className="app">
-      {meldung}
         {meldung}
         <Stoerung
           vorschlag={vorschlag}
@@ -340,7 +355,6 @@ function App() {
           onUebernehmen={() => {
             setWerte(vorschlag.werte)
             setRoute(vorschlag.route)
-            setStartZeit(Date.now())
             setVersatz(0)
             setVorschlag(null)
             setBildschirm('dashboard')
@@ -367,7 +381,6 @@ function App() {
     const abgefahren = restSek !== undefined && restSek * 1000 < -ABGEFAHREN_KULANZ_MS
     return (
       <main className="app">
-      {meldung}
         {meldung}
         <Dashboard
           werte={werte}
@@ -391,10 +404,9 @@ function App() {
   }
 
   if (bildschirm === 'navigation' && route && werte) {
-    const position = aktiverSchritt(route.schritte, startZeit, jetzt, versatz)
+    const position = schrittPosition(versatz, route.schritte.length)
     return (
       <main className="app">
-      {meldung}
         {meldung}
         <div className="routen-kopf">
           <div>
@@ -424,11 +436,6 @@ function App() {
         />
         {ankunftVorschlag && (
           <StandortStreifen gleis={werte.gleisAb} onBestaetigen={bestaetigeAnkunft} />
-        )}
-        {!zielKoordinate(route) && (
-          <button type="button" className="knopf-sekundaer" onClick={bestaetigeAnkunft}>
-            Ich bin da
-          </button>
         )}
         {route.hinweise.length > 0 && (
           <ul className="hinweisliste">
@@ -474,7 +481,19 @@ function App() {
         </div>
       )}
       <hr className="trennlinie" />
-      <Eingabe laden={laden} fehler={fehler} erkannt={erkannt} onBerechnen={berechne} />
+      <Eingabe
+        laden={laden}
+        fehler={fehler}
+        erkannt={erkannt}
+        entwurf={liesEntwurf()}
+        onBerechnen={(neueWerte, entwurf) => {
+          // Erst sichern, dann rechnen: Scheitert der Abruf, steht die
+          // Eingabe trotzdem noch da. Sie ist die Arbeit des Nutzers, nicht
+          // das Ergebnis der Rechnung.
+          schreibeEntwurf(entwurf)
+          void berechne(neueWerte)
+        }}
+      />
       <Fusszeile />
         <Navileiste
           aktuell={bildschirm}

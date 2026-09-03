@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { sucheStationen } from '../api/client'
 import type { BahnhofTreffer, Gehprofil, RoutenVariante, TafelEintrag } from '../api/typen'
 import { Zugauswahl } from './Zugauswahl'
+import type { EingabeEntwurf } from '../sitzung/eingabespeicher'
 
 export interface EingabeWerte {
   eva: string
@@ -30,7 +31,20 @@ interface EingabeProps {
   fehler: string | null
   /** Per Standort erkannte Bahnhoefe; leer, solange nichts erkannt wurde. */
   erkannt?: BahnhofTreffer[]
-  onBerechnen: (werte: EingabeWerte) => void
+  /**
+   * Die zuletzt abgesendete Eingabe dieser Sitzung, als Vorbelegung.
+   *
+   * Kommt als Prop herein und nicht aus dem Speicher: Die Maske soll nicht
+   * wissen, WO das herkommt - so bleibt sie ohne sessionStorage pruefbar,
+   * und der Speicher hat genau einen Aufrufer.
+   */
+  entwurf?: EingabeEntwurf | null
+  /**
+   * Beides auf einmal: was gerechnet werden soll, und wie das Formular dabei
+   * aussah. Der Entwurf laesst sich aus `EingabeWerte` nicht zurueckgewinnen –
+   * dort sind Bahnhof und Zugauswahl bereits eingedampft.
+   */
+  onBerechnen: (werte: EingabeWerte, entwurf: EingabeEntwurf) => void
 }
 
 const PROFILE: { wert: Gehprofil; label: string }[] = [
@@ -42,19 +56,23 @@ const PROFILE: { wert: Gehprofil; label: string }[] = [
 // Eingabemaske nach dem Onboarding-Screen des Designs: Bahnhofssuche mit
 // Vervollständigung, Gleis an/ab (Pflicht), Wagennummer optional, große
 // Auswahlflächen für Gehprofil und Routenvariante.
-export function Eingabe({ laden, fehler, erkannt, onBerechnen }: EingabeProps) {
-  const [suchtext, setSuchtext] = useState('')
+export function Eingabe({ laden, fehler, erkannt, entwurf, onBerechnen }: EingabeProps) {
+  // Anfangswerte aus dem Entwurf. Nur beim ERSTEN Rendern - danach gehoert
+  // das Formular dem Nutzer. Ein spaeter eintreffender Entwurf duerfte eine
+  // laufende Eingabe nicht ueberschreiben, und einen solchen gibt es nicht:
+  // Geschrieben wird beim Absenden, und danach ist die Maske verlassen.
+  const [suchtext, setSuchtext] = useState(entwurf?.suchtext ?? '')
   const [vorschlaege, setVorschlaege] = useState<BahnhofTreffer[]>([])
-  const [gewaehlt, setGewaehlt] = useState<BahnhofTreffer | null>(null)
+  const [gewaehlt, setGewaehlt] = useState<BahnhofTreffer | null>(entwurf?.gewaehlt ?? null)
   const [dbFehlt, setDbFehlt] = useState(false)
   const [netzFehlt, setNetzFehlt] = useState(false)
-  const [evaManuell, setEvaManuell] = useState('')
-  const [gleisAn, setGleisAn] = useState('')
-  const [gleisAb, setGleisAb] = useState('')
-  const [wagen, setWagen] = useState('')
-  const [profil, setProfil] = useState<Gehprofil>('normal')
-  const [zugAnkunft, setZugAnkunft] = useState<TafelEintrag | null>(null)
-  const [zugAbfahrt, setZugAbfahrt] = useState<TafelEintrag | null>(null)
+  const [evaManuell, setEvaManuell] = useState(entwurf?.evaManuell ?? '')
+  const [gleisAn, setGleisAn] = useState(entwurf?.gleisAn ?? '')
+  const [gleisAb, setGleisAb] = useState(entwurf?.gleisAb ?? '')
+  const [wagen, setWagen] = useState(entwurf?.wagen ?? '')
+  const [profil, setProfil] = useState<Gehprofil>(entwurf?.profil ?? 'normal')
+  const [zugAnkunft, setZugAnkunft] = useState<TafelEintrag | null>(entwurf?.zugAnkunft ?? null)
+  const [zugAbfahrt, setZugAbfahrt] = useState<TafelEintrag | null>(entwurf?.zugAbfahrt ?? null)
   const suchTimer = useRef<number | undefined>(undefined)
   const [erkennungVerworfen, setErkennungVerworfen] = useState(false)
 
@@ -116,20 +134,36 @@ export function Eingabe({ laden, fehler, erkannt, onBerechnen }: EingabeProps) {
 
   function absenden() {
     if (!bereit) return
-    onBerechnen({
-      eva,
-      bahnhofName: gewaehlt?.name ?? suchtext.trim(),
-      gleisAn: gleisAn.trim(),
-      gleisAb: gleisAb.trim(),
-      wagen: wagen.trim(),
+    // Der Entwurf ist das Formular selbst, ungetrimmt und ungedeutet - er
+    // soll die Maske spaeter genau so wiederherstellen, wie sie eben stand.
+    const abbild: EingabeEntwurf = {
+      suchtext,
+      gewaehlt,
+      evaManuell,
+      gleisAn,
+      gleisAb,
+      wagen,
       profil,
-      variante: 'schnellste',
-      zugAn: zugAnkunft ? zugnummer(zugAnkunft.zug) : undefined,
-      zugAnName: zugAnkunft?.zug,
-      zugAbName: zugAbfahrt?.zug,
-      ankunftZeit: zugAnkunft ? (zugAnkunft.zeitIst ?? zugAnkunft.zeitSoll) : undefined,
-      abfahrtZeit: zugAbfahrt ? (zugAbfahrt.zeitIst ?? zugAbfahrt.zeitSoll) : undefined,
-    })
+      zugAnkunft,
+      zugAbfahrt,
+    }
+    onBerechnen(
+      {
+        eva,
+        bahnhofName: gewaehlt?.name ?? suchtext.trim(),
+        gleisAn: gleisAn.trim(),
+        gleisAb: gleisAb.trim(),
+        wagen: wagen.trim(),
+        profil,
+        variante: 'schnellste',
+        zugAn: zugAnkunft ? zugnummer(zugAnkunft.zug) : undefined,
+        zugAnName: zugAnkunft?.zug,
+        zugAbName: zugAbfahrt?.zug,
+        ankunftZeit: zugAnkunft ? (zugAnkunft.zeitIst ?? zugAnkunft.zeitSoll) : undefined,
+        abfahrtZeit: zugAbfahrt ? (zugAbfahrt.zeitIst ?? zugAbfahrt.zeitSoll) : undefined,
+      },
+      abbild,
+    )
   }
 
   return (

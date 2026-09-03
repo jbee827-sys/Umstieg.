@@ -1,6 +1,10 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyBaseLogger, FastifyInstance, FastifyReply } from 'fastify';
 import { erzeugeCache, graphTtlMs, GRAPH_TTL_MS } from '../cache/lru.js';
-import { FehlendeZugangsdatenError, istGueltigeEva } from '../clients/stations.js';
+import {
+  FehlendeZugangsdatenError,
+  gleislisteUnvollstaendig,
+  istGueltigeEva,
+} from '../clients/stations.js';
 import { gehzeitSekunden } from '../core/gehzeit.js';
 import { berlinTeile } from '../core/zeit.js';
 import { baueGraph, graphZuGeoJSON, kopiereGraph } from '../core/graph.js';
@@ -107,7 +111,7 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
   const gruppenCache = erzeugeCache<{ evas: string[] }>(200, GRAPH_TTL_MS);
   const ERKENNUNG_RADIUS_M = 1000;
 
-  async function gruppeVon(eva: string): Promise<string[]> {
+  async function gruppeVon(eva: string, log: FastifyBaseLogger): Promise<string[]> {
     const gecacht = gruppenCache.get(eva);
     if (gecacht) return gecacht.evas;
     let evas: string[];
@@ -115,7 +119,14 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
       evas = await clients.stations.ermittleGruppe(eva);
     } catch (e) {
       if (e instanceof FehlendeZugangsdatenError) throw e;
-      // Gruppenauflösung ist eine Verbesserung, keine Voraussetzung.
+      // Gruppenauflösung ist eine Verbesserung, keine Voraussetzung - aber
+      // eine teure: Berlin Hbf führt unter seiner eigenen EVA KEINE Abfahrt.
+      // Scheitert sie, sieht eine leere Tafel aus wie "keine Züge", und
+      // niemand erfährt den Unterschied. Deshalb hier eine Spur.
+      log.warn(
+        { degradation: 'gruppe-unbekannt', eva, grund: String(e) },
+        'Verkehrsstellengruppe nicht ermittelbar - Tafel nur ueber die eigene EVA',
+      );
       evas = [eva];
     }
     if (evas.length === 0) evas = [eva];
@@ -211,7 +222,7 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
         // EVA, die die Suche liefert (8011160), KEINE Abfahrt – die Züge
         // stehen unter 8098160 und 8089021. Ohne die Gruppe blieb die
         // Zugauswahl für den meistgenannten Bahnhof leer.
-        const evas = await gruppeVon(req.params.eva);
+        const evas = await gruppeVon(req.params.eva, req.log);
         const ergebnisse = await Promise.allSettled(evas.map((e) => clients.tafel(e, typ)));
 
         const erfolgreich = ergebnisse.filter(
@@ -283,15 +294,17 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
           const bahnhofSchluessel = [...info.evas].sort().join(',');
           const ausGruppe = graphCache.get(bahnhofSchluessel);
           if (ausGruppe) {
-            graphCache.set(eva, ausGruppe, { ttl: graphTtlMs(ausGruppe.graph.stufe) });
+            graphCache.set(eva, ausGruppe, {
+              ttl: graphTtlMs(ausGruppe.graph.stufe, gleislisteUnvollstaendig(ausGruppe.info)),
+            });
             return ausGruppe;
           }
           const gebaut = await buendle(laufendeGraphbauten, bahnhofSchluessel, () =>
-            baueGraphEintrag(info, clients.overpass),
+            baueGraphEintrag(info, clients.overpass, req.log),
           );
           // Frist nach Qualität: Ein Stufe-3-Notbehelf darf den Bahnhof nicht
           // einen Tag lang degradiert halten, nachdem Overpass sich erholt hat.
-          const ttl = graphTtlMs(gebaut.graph.stufe);
+          const ttl = graphTtlMs(gebaut.graph.stufe, gleislisteUnvollstaendig(gebaut.info));
           graphCache.set(bahnhofSchluessel, gebaut, { ttl });
           // Kurzweg, damit der nächste Aufruf die Stationsauskunft nicht
           // braucht - mit derselben Frist, sonst überlebte der Notbehelf hier.
@@ -328,7 +341,21 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
           // 24-Stunden-Graphcache landen und dort gesperrt bleiben.
           graph = kopiereGraph(graph);
           wendeFastaAn(graph, fastaAnlagen);
-        } catch {
+        } catch (e) {
+          // Der Hinweis geht an den Reisenden, der Eintrag an den Betrieb.
+          // Beides wird gebraucht: Der eine plant um, der andere stellt die
+          // Ursache ab. Bisher gab es nur den Hinweis – ein FaSta-Ausfall
+          // war in den Protokollen von „dieser Bahnhof hat keine Aufzüge"
+          // nicht zu unterscheiden.
+          req.log.warn(
+            {
+              degradation: 'aufzugstatus-unbekannt',
+              eva: eintrag.info.eva,
+              stationsnummer,
+              grund: String(e),
+            },
+            'FaSta nicht erreichbar - barrierefreie Route ohne Betriebsstatus',
+          );
           hinweise.push('Aufzugstatus unbekannt – Anlagendaten derzeit nicht abrufbar.');
         }
       }
@@ -338,7 +365,21 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
     // der Normalfall → Bahnsteigmitte mit transparentem Hinweis (Konzept 7).
     let abschnittEffektiv = abschnitt;
     if (wagen && zugAn) {
-      const position = await clients.wagenposition(zugAn, heuteJJJJMMTT(), wagen);
+      // Zwei Wege enden hier in derselben Bahnsteigmitte, und der Unterschied
+      // gehört ins Protokoll, nicht in die Antwort: `null` heisst „die
+      // Auskunft steht, sie kennt den Wagen nur nicht" (Konzept 7, der
+      // Normalfall). Ein Wurf heisst „wir haben die Auskunft nicht erreicht".
+      // Für den Reisenden ist beides dieselbe Nachricht; für den Betrieb ist
+      // nur das zweite ein Vorfall.
+      let position: { abschnitt: string } | null = null;
+      try {
+        position = await clients.wagenposition(zugAn, heuteJJJJMMTT(), wagen);
+      } catch (e) {
+        req.log.warn(
+          { degradation: 'wagenposition-unbekannt', zug: zugAn, wagen, grund: String(e) },
+          'Wagenreihung nicht erreichbar - Route ab Bahnsteigmitte',
+        );
+      }
       if (position) {
         abschnittEffektiv = position.abschnitt;
       } else {
@@ -351,6 +392,37 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
       const ergebnis = gleicherBahnsteigErgebnis(gleisAb, graph.stufe);
       return { ...ergebnis, hinweise: [...hinweise, ...ergebnis.hinweise] };
     }
+
+    /**
+     * „Das Gleis kenne ich nicht“ darf nur sagen, wer vollständig gefragt hat.
+     *
+     * Berlin Hbf führt Gleis 6 unter 8098160. Fällt dessen Gleisliste aus,
+     * fehlt Gleis 6 in der Vereinigung – und die Antwort war bisher 404
+     * „gleis-unbekannt“, im Frontend: „Eines der Gleise wurde an diesem
+     * Bahnhof nicht gefunden.“ Das ist falsch und klingt endgültig; der
+     * Nutzer sucht daraufhin den Fehler bei sich. Richtig ist: Die Quelle ist
+     * gerade weg. Deshalb 503 statt 404 – wiederkommen hilft, korrigieren
+     * nicht.
+     */
+    const unvollstaendig = gleislisteUnvollstaendig(eintrag.info);
+    const gleisNichtGefunden = (): FastifyReply => {
+      if (!unvollstaendig) return reply.code(404).send({ fehler: 'gleis-unbekannt' });
+      req.log.warn(
+        {
+          degradation: 'gleisliste-unvollstaendig',
+          eva: eintrag.info.eva,
+          bahnhof: eintrag.info.name,
+          gleisteileOhneAntwort: eintrag.info.gleisteileOhneAntwort ?? 0,
+          gruppeUnvollstaendig: eintrag.info.gruppeUnvollstaendig === true,
+        },
+        'Gleis nicht in einer unvollstaendigen Gleisliste - kein Beleg fuer "gibt es nicht"',
+      );
+      return reply.code(503).send({
+        fehler: 'gleisliste-unvollstaendig',
+        detail:
+          'Die Gleisliste dieses Bahnhofs ist derzeit unvollständig – das Gleis lässt sich nicht prüfen.',
+      });
+    };
 
     // Startpunkt/Ziel bestimmen; fehlt ein Gleis im OSM-Graphen → Synthese-Rückfall
     let start: { knoten: GraphKnoten; hinweis?: string };
@@ -369,10 +441,10 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
           start = findeStartknoten(graph, gleisAn, abschnittEffektiv);
           ziel = findeStartknoten(graph, gleisAb);
         } catch {
-          return reply.code(404).send({ fehler: 'gleis-unbekannt' });
+          return gleisNichtGefunden();
         }
       } else {
-        return reply.code(404).send({ fehler: 'gleis-unbekannt' });
+        return gleisNichtGefunden();
       }
     }
     if (start.hinweis) hinweise.push(start.hinweis);
@@ -401,8 +473,21 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
   });
 }
 
-/** OSM-Graph bauen; bei Overpass-Ausfall oder unbrauchbaren Daten → Synthesemodell. */
-async function baueGraphEintrag(info: StationsInfo, overpass: OverpassFn): Promise<GraphEintrag> {
+/**
+ * OSM-Graph bauen; bei Overpass-Ausfall oder unbrauchbaren Daten →
+ * Synthesemodell.
+ *
+ * Der Rueckfall wird protokolliert, und zwar mit Unterscheidung: Ein
+ * Overpass-Ausfall ist ein anderer Zustand als brauchbar erreichte, aber
+ * unbrauchbare OSM-Daten. Beide enden im selben Standardmodell - wer den
+ * Bahnhof verbessern will, muss aber wissen, welcher von beiden vorliegt.
+ */
+async function baueGraphEintrag(
+  info: StationsInfo,
+  overpass: OverpassFn,
+  log: FastifyBaseLogger,
+): Promise<GraphEintrag> {
+  let grund = 'keine Koordinaten zum Bahnhof';
   if (info.lat !== undefined && info.lon !== undefined) {
     try {
       const osm = await overpass(info.lat, info.lon, OVERPASS_RADIUS_M);
@@ -411,10 +496,15 @@ async function baueGraphEintrag(info: StationsInfo, overpass: OverpassFn): Promi
       if (graph.stufe !== 3) {
         return { graph, info, hinweise: [] };
       }
-    } catch {
-      // fällt unten auf das Synthesemodell zurück
+      grund = 'OSM-Daten unbrauchbar (Stufe 3 nach Klassifikation)';
+    } catch (e) {
+      grund = `Overpass nicht erreichbar: ${String(e)}`;
     }
   }
+  log.warn(
+    { degradation: 'kartendaten-fehlen', eva: info.eva, bahnhof: info.name, grund },
+    'Rueckfall auf das Standardmodell',
+  );
   return {
     graph: syntheseGraph(info),
     info,
