@@ -5,6 +5,7 @@ import {
   gleislisteUnvollstaendig,
   istGueltigeEva,
 } from '../clients/stations.js';
+import { namensvarianten } from '../core/bahnhofsname.js';
 import { gehzeitSekunden } from '../core/gehzeit.js';
 import { berlinTeile } from '../core/zeit.js';
 import { baueGraph, graphZuGeoJSON, kopiereGraph } from '../core/graph.js';
@@ -192,7 +193,33 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
         }
         return await clients.stations.sucheBahnhoefeNahebei(lat, lon, ERKENNUNG_RADIUS_M);
       }
-      return await clients.stations.sucheBahnhoefe(q!);
+      /*
+       * Schreibvarianten der Reihe nach probieren.
+       *
+       * Ein aus einer Verbund-App uebernommener Name ("S+U Berlin
+       * Gesundbrunnen Bhf") liefert bei RIS::Stations nichts, derselbe Ort
+       * als "Berlin Gesundbrunnen" schon. Statt das im Client zu raten - was
+       * jede App anders braeuchte - probiert die Suche selbst.
+       *
+       * Ein sauberer Name ergibt genau eine Variante und kostet damit auch
+       * genau einen Aufruf; die Tippsuche wird also nicht teurer.
+       *
+       * Faellt eine Variante mit einem Fehler aus, laeuft die naechste
+       * trotzdem: Die DB-API quittiert manche Eingaben mit einem Fehler statt
+       * mit einer leeren Liste. Erst wenn KEINE durchkam, wird gemeldet.
+       */
+      let ersterFehler: unknown;
+      for (const variante of namensvarianten(q!)) {
+        try {
+          const treffer = await clients.stations.sucheBahnhoefe(variante);
+          if (treffer.length > 0) return treffer;
+        } catch (e) {
+          if (e instanceof FehlendeZugangsdatenError) throw e;
+          ersterFehler ??= e;
+        }
+      }
+      if (ersterFehler) throw ersterFehler;
+      return [];
     } catch (e) {
       if (e instanceof FehlendeZugangsdatenError) {
         return reply.code(503).send({ fehler: 'db-zugang-fehlt' });

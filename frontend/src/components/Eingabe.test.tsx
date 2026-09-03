@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Eingabe } from './Eingabe'
 import { sucheStationen } from '../api/client'
@@ -167,5 +167,110 @@ describe('Eingabe: gespeicherter Entwurf', () => {
     // sonst springt das Feld um, waehrend der Nutzer schon liest.
     zeige([BERNAU], ENTWURF)
     expect(feld().value).toBe('Berlin Hbf')
+  })
+})
+
+describe('Eingabe: Reise importieren', () => {
+  beforeEach(() => {
+    sucheMock.mockReset()
+    sucheMock.mockResolvedValue({ ok: true, treffer: [BERLIN, BERNAU] })
+  })
+
+  const REISE = [
+    'Mannheim Hbf → Berlin Hbf',
+    '15.08.2026',
+    '',
+    'ICE 74',
+    'Nach Hamburg Hbf',
+    'Ab 11:03 Mannheim Hbf, Gleis 2',
+    'An 11:40 Berlin Hbf, Gleis 8',
+    '',
+    'ICE 1134',
+    'Nach Berlin Hbf',
+    'Ab 12:02 Berlin Hbf, Gleis 7',
+    'An 16:01 Eberswalde Hbf, Gleis 3',
+  ].join('\n')
+
+  it('bietet den Knopf unter der Wagennummer an', () => {
+    zeige()
+    expect(screen.getByRole('button', { name: 'Reise importieren' })).toBeTruthy()
+  })
+
+  it('oeffnet ein Fenster, keine Seite', async () => {
+    zeige()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Reise importieren' }))
+    expect(screen.getByRole('dialog')).toBeTruthy()
+  })
+
+  /**
+   * Der eigentliche Zweck: Bahnhof und BEIDE Gleise stehen danach im
+   * Formular, ohne dass jemand sie getippt hat.
+   */
+  it('uebernimmt Bahnhof und beide Gleise und schliesst das Fenster', async () => {
+    zeige()
+    await userEvent.click(screen.getByRole('button', { name: 'Reise importieren' }))
+    await userEvent.click(screen.getByRole('textbox', { name: /Text der Verbindung/i }))
+    await userEvent.paste(REISE)
+
+    // Nichts wird ungefragt uebernommen - erst die Bestaetigung im Fenster.
+    expect(feld().value).toBe('')
+    await userEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: /Berlin Hbf/ }),
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Übernehmen' }))
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(feld().value).toBe('Berlin Hbf')
+    expect((screen.getByLabelText('Ankunft: Gleis') as HTMLInputElement).value).toBe('8')
+    expect((screen.getByLabelText('Anschluss: Gleis') as HTMLInputElement).value).toBe('7')
+  })
+
+  /**
+   * Der Name allein reicht nicht: Berlin Hbf fuehrt drei EVA-Nummern, und
+   * 8011160 hat ueberhaupt keinen Fahrplan (gemessen 03.09.2026). Welche
+   * Verkehrsstelle gemeint ist, entscheidet die Bahnhofssuche - deshalb steht
+   * der Bahnhof danach als Suchtext da und nicht als getroffene Wahl.
+   */
+  it('laesst die Verkehrsstelle weiterhin von der Bahnhofssuche bestimmen', async () => {
+    zeige()
+    await userEvent.click(screen.getByRole('button', { name: 'Reise importieren' }))
+    await userEvent.click(screen.getByRole('textbox', { name: /Text der Verbindung/i }))
+    await userEvent.paste(REISE)
+    await userEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: /Berlin Hbf/ }),
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Übernehmen' }))
+
+    expect(await screen.findByRole('button', { name: 'Berlin Hbf' })).toBeTruthy()
+  })
+
+  /**
+   * Wie bei der normalen Auswahl aus der Live-Tafel: Nicht nur Bahnhof und
+   * Gleise, sondern auch die beiden Zuege. Sie sind es, an denen die
+   * Live-Ueberwachung spaeter filtert - ohne sie kaeme jede Meldung des
+   * ganzen Bahnhofs an.
+   *
+   * Sichtbar werden sie erst, wenn ein Bahnhof gewaehlt ist: Die Zugauswahl
+   * haengt an der EVA.
+   */
+  it('belegt auch Ankunfts- und Anschlusszug', async () => {
+    zeige()
+    await userEvent.click(screen.getByRole('button', { name: 'Reise importieren' }))
+    await userEvent.click(screen.getByRole('textbox', { name: /Text der Verbindung/i }))
+    await userEvent.paste(REISE)
+    await userEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: /Berlin Hbf/ }),
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Übernehmen' }))
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Berlin Hbf' }))
+
+    const text = document.body.textContent ?? ''
+    expect(text).toMatch(/ICE 74/)
+    expect(text).toMatch(/ICE 1134/)
+    // Und mit Ziel und Zeit, nicht nur der Zugname.
+    expect(text).toMatch(/Hamburg Hbf/)
+    expect(text).toMatch(/11:40/)
   })
 })

@@ -1,0 +1,76 @@
+import { describe, expect, it } from 'vitest';
+import { namensvarianten } from '../src/core/bahnhofsname.js';
+
+/**
+ * Verkehrsverbuende schreiben Haltestellennamen anders als die Bahn.
+ *
+ * Gemessen am 03.09.2026 gegen die echte RIS::Stations-Suche:
+ *
+ *   "Berlin Gesundbrunnen"      -> Berlin Gesundbrunnen (EVA 8011102)
+ *   "S+U Berlin Gesundbrunnen"  -> NICHTS
+ *   "Berlin Gesundbrunnen Bhf"  -> NICHTS
+ *   "Hockenheim"                -> Hockenheim
+ *   "Hockenheim, Bahnhof"       -> NICHTS
+ *   "Eberswalde, Hauptbahnhof"  -> Eberswalde Hbf
+ *   "S Potsdam Hauptbahnhof"    -> Potsdam Hbf
+ *
+ * Die Suche verkraftet also "Hauptbahnhof" statt "Hbf" und ein einzelnes
+ * "S", aber weder die kombinierte Vorsilbe "S+U" noch ein angehaengtes
+ * "Bhf"/"Bahnhof".
+ *
+ * Ueber die Verkehrsstellengruppe laesst sich das NICHT loesen: An die
+ * Gruppe kommt man nur ueber eine EVA, und an die EVA nur ueber einen Namen,
+ * den die Suche annimmt. Deshalb wird hier eine Reihe von Schreibvarianten
+ * gebildet, die der Reihe nach probiert werden - von genau nach grob.
+ */
+describe('namensvarianten', () => {
+  it('probiert den Namen zuerst unveraendert', () => {
+    expect(namensvarianten('Berlin Hbf')[0]).toBe('Berlin Hbf');
+  });
+
+  it('entfernt die Verkehrsmittel-Vorsilbe', () => {
+    expect(namensvarianten('S+U Berlin Gesundbrunnen')).toContain('Berlin Gesundbrunnen');
+  });
+
+  it('entfernt eine angehaengte Bahnhofs-Nachsilbe', () => {
+    expect(namensvarianten('Berlin Gesundbrunnen Bhf')).toContain('Berlin Gesundbrunnen');
+    expect(namensvarianten('Hockenheim, Bahnhof')).toContain('Hockenheim');
+  });
+
+  it('entfernt beides zusammen', () => {
+    expect(namensvarianten('S+U Berlin Gesundbrunnen Bhf')).toContain('Berlin Gesundbrunnen');
+  });
+
+  /**
+   * "Hauptbahnhof" DARF nicht fallen - die Suche kommt damit klar und
+   * loeste "Eberswalde, Hauptbahnhof" korrekt auf. Faellt es doch, bliebe
+   * "Eberswalde" uebrig, und das ist ein anderer Ort als der Bahnhof.
+   */
+  it('laesst Hauptbahnhof unangetastet', () => {
+    const varianten = namensvarianten('Eberswalde, Hauptbahnhof');
+    expect(varianten[0]).toBe('Eberswalde, Hauptbahnhof');
+    expect(varianten).not.toContain('Eberswalde');
+  });
+
+  it('entfernt den Klammerzusatz der Verbuende', () => {
+    expect(namensvarianten('S+U Berlin Hauptbahnhof [Gleis 1-8]')).toContain(
+      'Berlin Hauptbahnhof',
+    );
+  });
+
+  it('liefert keine Dubletten und nichts Leeres', () => {
+    const v = namensvarianten('Berlin Hbf');
+    expect(new Set(v).size).toBe(v.length);
+    expect(v.every((x) => x.trim().length > 0)).toBe(true);
+  });
+
+  it('gibt bei leerer Eingabe nichts zurueck', () => {
+    expect(namensvarianten('   ')).toEqual([]);
+  });
+
+  // Ein Name ohne Zusaetze soll genau EINEN Versuch ergeben - sonst kostet
+  // jede gewoehnliche Suche unnoetige Aufrufe gegen die Quote.
+  it('erzeugt fuer einen sauberen Namen keinen zweiten Versuch', () => {
+    expect(namensvarianten('Berlin Gesundbrunnen')).toEqual(['Berlin Gesundbrunnen']);
+  });
+});

@@ -1322,6 +1322,266 @@ sobald eine Eigenschaft im Browser durchgesetzt wird – CORS, CSP,
 Mixed-Content, `Permissions-Policy`. Bei allem, was der Browser und nicht der
 Server entscheidet, zählt nur der Blick im Browser.
 
+## Grenzen gegen den Missbrauch der Quellen (03.09.2026)
+
+Ausgangspunkt war eine generische Härtungsliste („20 Dinge vor dem Deploy").
+Dreizehn ihrer Punkte haben hier keinen Anknüpfungspunkt – die App hat keine
+Konten, keine Sessions, keine Cookies, keine Datenbank, keine Uploads, kein
+LLM. Der Kern der Liste traf aber genau: **Das Backend war ein
+unauthentifizierter, öffentlicher Proxy vor vier kostenpflichtigen APIs.**
+
+**CORS schützt davor nicht.** Es ist eine Regel für Browser, kein
+Zugriffsschutz; `curl` ignoriert sie vollständig. Wer die Fly-Domain kannte,
+konnte die Quoten von RIS::Stations, Timetables, FaSta und Overpass
+leerlaufen lassen.
+
+Vier Maßnahmen:
+
+- **Ratenbegrenzung je Aufrufer UND Route** (14/21/21/70 je Minute). Der
+  Zählschlüssel trägt die Route mit, sonst sperrte die Tippsuche die
+  Routenberechnung mit aus. `/api/health` bleibt ausgenommen: Liefe Flys
+  Gesundheitsprüfung in die Grenze, hätte die Schutzmaßnahme den Ausfall
+  selbst erzeugt.
+- **Obergrenzen für den Live-Strom** (140 gesamt, 2 je Aufrufer, 35 EVAs).
+  Nicht die Verbindung kostet, sondern der Poller dahinter: Jede neue EVA ist
+  eine weitere Abfrage gegen Timetables, alle 30 Sekunden, dauerhaft.
+- **Zwischenspeicher mit Bündelung** für Stammdaten (24 h), Suche (10 min),
+  FaSta (5 min) und Tafel (20 s). Die Bündelung wiegt schwerer als der
+  Speicher: Ein Schwall läuft an einem reinen Cache vorbei, weil beim
+  Eintreffen der zweiten Anfrage die erste noch unterwegs und der Speicher
+  deshalb leer ist. Fehler werden bewusst nicht gespeichert, sonst überlebt
+  ein Ausfall seine Ursache.
+- **Sicherheitsereignisse ohne Personenbezug** (`core/sicherheitsprotokoll.ts`).
+
+Der Live-Poller umgeht den Tafel-Speicher vollständig. Er ist die
+Frischequelle; ein Cache in seinem Pfad verschluckte genau die Änderung, wegen
+der es den SSE-Strom gibt.
+
+Nicht zwischengespeichert wird die Umkreissuche: Ihr Schlüssel wäre die
+Koordinate, und die zehn Minuten zu halten widerspräche der Zusage, sie sofort
+zu verwerfen. Es geht dabei auch nichts verloren – gegen den Missbrauchsfall
+hälfe ein Speicher ohnehin nicht, weil geratene Koordinaten jedes Mal einen
+neuen Schlüssel bilden.
+
+### Zwei Fallen, die beide unsichtbar waren
+
+**`trustProxy` fehlte.** Ohne das ist `req.ip` auf Fly die Adresse des
+Fly-Proxys – alle Besucher landeten in EINEM Zähler. Die Grenze wäre
+wirkungslos gewesen und hätte beim ersten Andrang alle gleichzeitig
+ausgesperrt.
+
+**Die Routen wurden vor dem Plugin registriert.** `onRoute`-Haken feuern
+sofort, `app.register()` ist aufgeschoben: Das Plugin war geladen, die Grenzen
+aber an keine einzige Route geknüpft. Es sah exakt so aus wie jetzt, nur ohne
+Wirkung. Deshalb liegen die Routen jetzt in einer eigenen Registrierung.
+
+Beides ist in `test/ratelimit.test.ts` festgehalten.
+
+### `@fastify/static` ist raus
+
+`npm audit` meldete vier High-Advisories, darunter Path Traversal im
+Directory Listing. Das Paket war deklariert, wurde im Code aber **nirgends
+verwendet**. Die richtige Behebung war deshalb nicht das Upgrade, sondern der
+Rauswurf. Jetzt: 0 vulnerabilities.
+
+### Die Datenschutzerklärung zog im selben Commit mit
+
+„Die Anwendung selbst schreibt keine Protokolle" wäre mit dem
+Sicherheitsprotokoll unwahr geworden – es wäre das vierte Mal in fünf Tagen
+gewesen, dass eine Zusage nebenbei verlorengeht.
+
+Aufgelöst nicht durch einen Kompromiss, sondern durch eine Unterscheidung:
+**Protokolliert wird, DASS eine Grenze gegriffen hat und WO – nie, wer sie
+ausgelöst hat.** Der Eintrag trägt Ereignisart, Routen-Muster, Trefferzahl und
+Fensterlänge. Die Adresse bleibt im Zählwerk im Arbeitsspeicher und wird nie
+geschrieben.
+
+Aggregiert wird aus einem zweiten Grund: Ein Eintrag je abgewiesener Anfrage
+wäre selbst die Schwachstelle. Wer schnell genug anfragt, füllte damit die
+Platte – der Schutz wäre der Angriff.
+
+Rechtsgrundlage Art. 6 Abs. 1 lit. f DSGVO; Erwägungsgrund 49 nennt Netz- und
+Informationssicherheit ausdrücklich. Die Zusage „Ein Zugriffsprotokoll mit
+Koordinaten wird nicht geführt" bleibt wahr und bleibt stehen. Nachgewiesen in
+`test/datenschutz.test.ts`: Eine gegriffene Grenze hinterlässt weder Adresse
+noch URL noch Koordinate, und eine gewöhnliche Anfrage weiterhin gar nichts.
+
+### Gemessen am laufenden Server
+
+21 Anfragen durch, die 22. abgewiesen, Health unberührt. Vier Abweisungen
+ergaben **einen** Protokolleintrag:
+
+```json
+{"ereignis":"ratelimit","route":"/api/stations","treffer":1,"fenster":"60s"}
+```
+
+## Reise-Import aus Fahrplan-Apps (03.09.2026)
+
+Statt Bahnhof und zwei Gleise zu tippen, den geteilten Text aus der
+Fahrplan-App einfügen. Knopf unter der Wagennummer, Fenster statt Seite,
+Auswertung **ausschließlich im Browser** – kein Upload-Endpunkt, keine
+Speicherung, keine Konten.
+
+### Warum Text und nicht die Fahrkarte
+
+Zwei echte Dateien verglichen. Der Textexport („Verbindung teilen") enthält
+Zug, Zeit, Bahnhof und **Gleis** je Abschnitt – und keinen Namen, keine
+Anschrift, keine Auftragsnummer. Die DB-Rechnung als PDF ist das
+Gegenbeispiel: Name, Wohnanschrift, Auftragsnummer, Zahlungsmittel – und von
+den gebrauchten Feldern **kein einziges**. Sie sagt selbst: „Dieses Dokument
+berechtigt nicht zur Fahrt."
+
+PDFs gar nicht erst anzunehmen ist deshalb Datenminimierung (Art. 5 Abs. 1
+lit. c DSGVO), keine Einschränkung. Nimmt man sie an, laden Leute Rechnungen
+mit ihrer Wohnanschrift hoch.
+
+**Wagen und Sitzplatz stehen in keiner der beiden Dateien.** Sie bleiben
+manuell; das Feld ist ohnehin als optional gekennzeichnet.
+
+Echte Beispieldateien liegen unter `Beispiel Ticket/` und sind gitignored –
+die Rechnung trägt Name, Anschrift und Zahlungsmittel.
+
+### Live verfolgen geht erst am Reisetag
+
+Gemessen gegen die echte Timetables-API, zwei Bahnhöfe, gleiches Ergebnis:
+
+| Vorlauf | `/plan` |
+|---|---|
+| ~15 h | 200, 57 Halte |
+| ~23 h | **404** |
+| 2 bis 14 Tage | **404** |
+
+Kein leeres Ergebnis, sondern gar keine Daten. Eine Reise lässt sich also
+Wochen vorher eintragen, aber erst am Reisetag verfolgen. Das Fenster sagt es,
+statt einen leeren Live-Strom zu zeigen.
+
+**Nebenbefund: EVA 8011160 (Berlin Hbf) führt überhaupt keinen Fahrplan.** Die
+Daten liegen unter 8098160 und 8089021. Dass die App Verkehrsstellengruppen
+zusammenführt, ist damit tragend, nicht kosmetisch.
+
+### Felder erkennen, nicht Formate
+
+Die erste Fassung kannte genau ein Format (DB Navigator) und scheiterte am
+ersten VBB-Text. Ein Erkenner je App hätte für jede weitere App einen weiteren
+gebraucht – es gibt Dutzende Verbund-Apps, keine davon dokumentiert.
+
+`frontend/src/reise/reisetext.ts` klopft deshalb jede Zeile auf **Felder** ab:
+Zeit und Rolle (Pflicht), Ort (was nach Abzug des Übrigen bleibt), Gleis, Zug,
+Richtung. Wo sie in der Zeile stehen, ist gleichgültig:
+
+```text
+DB:   Ab 22:53 Eberswalde, Gleis 4          Schlüsselwort zuerst
+VBB:  22:53 - Abfahrt Eberswalde, Gleis 4   ZEIT zuerst
+```
+
+Auch ob die Zugbezeichnung über der Abfahrt steht (DB) oder darunter (VBB,
+„mit RE3 Richtung ..."), spielt keine Rolle – gesucht wird im Umfeld des
+Halts. Ein neues Format wird durch **ein Wort mehr im Vokabular** unterstützt,
+nicht durch neuen Code.
+
+Geraten wird trotzdem nicht: Ohne Zeit, Rolle und Ort entsteht kein Abschnitt,
+ohne Abschnitt kommt `null`. Ein falsch erkanntes Gleis ist schlimmer als ein
+nicht erkanntes.
+
+### Drei Fehler, die echte Texte aufgedeckt haben
+
+1. **Reihenfolge.** Der VBB schreibt die Zeit zuerst; der Ausdruck verlangte
+   das Schlüsselwort am Zeilenanfang. Keine einzige Zeile passte.
+2. **„S+U" war nie ein Text, sondern ein Ausdruck.** Die Maskierung erfasste
+   nur den Punkt, also wurde daraus die Regel „ein oder mehr S, gefolgt von
+   U". Traf nie.
+3. **Der Klammerzusatz.** „S+U Berlin Hauptbahnhof [Gleis 1-8], Gleis 4" – der
+   Zusatz in eckigen Klammern ist Namensbestandteil, nicht das Gleis. Ohne ihn
+   vorher zu entfernen, las die Erkennung „1-8" statt „4".
+
+### Bahnhofsnamen: die Suche probiert Varianten
+
+Der eigentliche Blocker fiel erst im Browser auf, nicht im Test. Gemessen
+gegen die echte RIS::Stations-Suche:
+
+```text
+Berlin Hauptbahnhof          -> Berlin Hbf             ok
+Eberswalde, Hauptbahnhof     -> Eberswalde Hbf         ok
+S Potsdam Hauptbahnhof       -> Potsdam Hbf            ok
+S+U Berlin Gesundbrunnen     -> NICHTS
+Berlin Gesundbrunnen Bhf     -> NICHTS
+Hockenheim, Bahnhof          -> NICHTS
+```
+
+Die Gleise wären übernommen worden, der Bahnhof aber nicht auflösbar – und
+ohne EVA rechnet die App nicht.
+
+**Über die Verkehrsstellengruppe ist das nicht zu lösen.** Die Gruppe zu
+Gesundbrunnen gibt es und sie enthält genau die gesuchte S-Bahn-Stelle
+(8011102 plus 8089015 „Berlin Gesundbrunnen(S)"). Nur kommt man an die Gruppe
+ausschließlich über eine EVA – und an die EVA nur über einen Namen, den die
+Suche annimmt. Für einen Namen, der ins Leere läuft, gibt es keinen Einstieg.
+
+Deshalb löst `backend/src/core/bahnhofsname.ts` das eine Stufe früher: Die
+Suchroute probiert Schreibvarianten der Reihe nach durch, von genau nach grob,
+und hört beim ersten Treffer auf. Zwei Eigenschaften waren dabei wichtig:
+
+- **Ein sauberer Name kostet genau einen Aufruf.** Sonst zahlte die Tippsuche
+  die Varianten bei jedem Tastendruck mit.
+- **„Hauptbahnhof" bleibt unangetastet.** Die Suche kommt damit klar; ein
+  abgeschnittenes „Eberswalde" wäre ein anderer Ort als der Bahnhof. Deshalb
+  muss vor der Nachsilbe ein Trenner stehen.
+
+Das hilft auch jedem, der von Hand „S+U Gesundbrunnen" eintippt. Nachgemessen
+am laufenden Server: „S+U Berlin Gesundbrunnen Bhf" löst jetzt auf „Berlin
+Gesundbrunnen" auf, „Hockenheim, Bahnhof" auf „Hockenheim".
+
+### Übernommen wird erst nach Bestätigung
+
+Anfangs schloss das Fenster bei genau einem Umstieg sofort und füllte die
+Felder. Das war falsch: Gelesen werden fremde, undokumentierte Formate, und
+ein falsch erkanntes Gleis, das ungefragt im Formular landet, fällt niemandem
+auf – bis man am falschen Ende des Bahnsteigs steht.
+
+Jetzt zwei Stufen: Umstieg antippen zeigt, **was genau in welches Feld
+wandert**; erst „Übernehmen" schreibt es. Dazu „Zurück zur Auswahl".
+
+Mit übernommen werden auch **Ankunfts- und Anschlusszug**, wie bei der Auswahl
+aus der Live-Tafel. `zeitIst` und `gleisIst` bleiben dabei bewusst leer: Sie
+bedeuten „laut Live-Tafel geändert", und aus einem geteilten Text weiß niemand
+etwas über Änderungen. Gefüllt hätten sie einen Gleiswechsel behauptet, den es
+nie gab.
+
+Der Bahnhof landet als **Suchtext**, nicht als getroffene Wahl: Berlin Hbf
+führt drei EVA-Nummern, von denen eine gar keinen Fahrplan hat. Welche gemeint
+ist, entscheidet die Bahnhofssuche, nicht der Text.
+
+## Was morgen drankommt (Stand 03.09.2026, abends)
+
+**Zuerst: Browsertest auf einem echten Gerät.** Alles Bisherige ist gegen
+Chrome am Rechner geprüft. Was ein Handy im Bahnhof zeigt – Teilen-Menü des
+Betriebssystems, Einfügen ins Textfeld, Trefferflächen mit Gepäck in der Hand
+– ist ungeprüft.
+
+Offene Punkte, nach Dringlichkeit:
+
+1. **Vokabular liegt doppelt.** Die Vorsilben- und Nachsilbenliste steht im
+   Frontend-Parser (macht den angezeigten Namen sauber) und im Backend (löst
+   die Suche auf). Zwei Zwecke, dieselben Wörter – das läuft auseinander. Die
+   Frontend-Variante sollte fallen, die Auflösung ganz ans Backend.
+2. **Weitere echte Texte durchprobieren.** Bisher belegt: DB Navigator und
+   VBB. Was scheitert, ist nach dem Umbau fast immer eine fehlende Vokabel –
+   und die ist eine Zeile.
+3. **P2 der Härtung ist offen:** CSP-Header in `vercel.json` (der einzige
+   fehlende) und ein hartes Oberlimit auf Upstream-Aufrufe je Stunde mit
+   degradierter Auslieferung. Die Ratenbegrenzung bremst je Aufrufer; viele
+   Aufrufer summieren sich weiterhin.
+4. **Die Deprecation-Warnung** zu `disableRequestLogging` (Fastify 6 entfernt
+   die Option) steht bei jedem Start im Protokoll.
+
+Nicht geplant, bewusst: **keine KI für die Texterkennung.** Der Text müsste
+das Gerät verlassen, was die gesamte Datenschutzarchitektur kippt; die App
+soll im Bahnhof ohne Netz funktionieren; und die Art des Scheiterns wäre
+falsch herum. Ein Parser scheitert laut („nicht erkannt"), ein Sprachmodell
+leise und plausibel – es schreibt bereitwillig ein Gleis, das im Text nie
+stand. Mit Gepäck und zwölf Minuten Umsteigezeit ist ein selbstbewusst
+falsches Gleis schlimmer als gar keins.
+
 ## Rechtliches
 
 Impressum und Datenschutzerklärung sind erreichbar über `#impressum` und
@@ -1387,6 +1647,20 @@ keine Eingabe hätte. Der steht allerdings ohnehin unter Stufe 2.
 Die Arbeitsliste steht oben unter [„Offene ToDos"](#offene-todos). Hier nur,
 was dauerhaft gilt oder bewusst so ist:
 
+- **Der Reise-Import kennt nur zwei echte Textproben.** Belegt sind DB
+  Navigator und VBB-App (je eine reale Verbindung, als Fixture in den Tests).
+  Die Formate sind nicht dokumentiert und können sich ohne Vorwarnung ändern.
+  Der Ausfallweg ist harmlos: Erkennung scheitert, es wird von Hand
+  eingetippt – geraten wird nichts.
+- **Wagen und Sitzplatz kommen aus keinem geteilten Text.** Weder der
+  DB-Textexport noch die Rechnung führen sie. Das Feld bleibt manuell.
+- **Live-Daten erst am Reisetag.** Timetables `/plan` kennt nur ein
+  rollierendes Fenster von unter 24 Stunden (gemessen: 15 h voraus liefert
+  Daten, 23 h voraus 404). Eine früher importierte Reise füllt die Felder,
+  wird aber erst am Reisetag verfolgt.
+- **Die Vorsilben-/Nachsilbenliste für Bahnhofsnamen liegt doppelt** – im
+  Frontend-Parser und in `backend/src/core/bahnhofsname.ts`. Zwei Zwecke,
+  dieselben Wörter; das kann auseinanderlaufen. Auflösung steht an.
 - **Nur am Desktop gesehen, nie auf einem Handy.** Die Sichtprüfung am
   30.08. hat Layout, WebGL-Karte, Bahnhofssuche und den Standortpfad
   bestätigt. Was ein echtes Gerät zeigt – Berechtigungsdialog, GPS-Genauigkeit

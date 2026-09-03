@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { sucheStationen } from '../api/client'
 import type { BahnhofTreffer, Gehprofil, RoutenVariante, TafelEintrag } from '../api/typen'
 import { Zugauswahl } from './Zugauswahl'
+import { ReiseImport } from './ReiseImport'
+import type { Umstieg } from '../reise/reisetext'
 import type { EingabeEntwurf } from '../sitzung/eingabespeicher'
 
 export interface EingabeWerte {
@@ -23,7 +25,12 @@ export interface EingabeWerte {
 
 /** "ICE 1006" → "1006" */
 function zugnummer(zug: string): string | undefined {
-  return zug.split(' ').pop() || undefined
+  const letztes = zug.split(' ').pop() || undefined
+  if (!letztes) return undefined
+  // "RE3 (3352)" → "3352". Geteilte Reisetexte schreiben die Nummer in
+  // Klammern hinter die Linie; die Wagenreihung braucht die blanke Zahl.
+  const inKlammern = /^\((\d+)\)$/.exec(letztes)
+  return inKlammern ? inKlammern[1] : letztes
 }
 
 interface EingabeProps {
@@ -75,6 +82,46 @@ export function Eingabe({ laden, fehler, erkannt, entwurf, onBerechnen }: Eingab
   const [zugAbfahrt, setZugAbfahrt] = useState<TafelEintrag | null>(entwurf?.zugAbfahrt ?? null)
   const suchTimer = useRef<number | undefined>(undefined)
   const [erkennungVerworfen, setErkennungVerworfen] = useState(false)
+  const [importOffen, setImportOffen] = useState(false)
+
+  /**
+   * Uebernimmt einen Umstieg aus dem DB-Navigator-Export.
+   *
+   * Der Bahnhof wird als SUCHTEXT gesetzt, nicht als Treffer: Die App braucht
+   * die Verkehrsstelle, und ein Name reicht dafuer nicht. Berlin Hbf fuehrt
+   * drei EVA-Nummern, und 8011160 hat ueberhaupt keinen Fahrplan - welche
+   * gemeint ist, entscheidet die Bahnhofssuche, nicht der Text.
+   *
+   * Die Zugauswahl wird geleert: Ein zuvor angetippter Zug gehoert zu einer
+   * anderen Reise und waere nach dem Import stillschweigend falsch.
+   */
+  function uebernimmUmstieg(u: Umstieg) {
+    setGewaehlt(null)
+    setSuchtext(u.bahnhof)
+    setGleisAn(u.anGleis ?? '')
+    setGleisAb(u.abGleis ?? '')
+
+    /*
+     * Die beiden Zuege werden mit uebernommen - wie bei der Auswahl aus der
+     * Live-Tafel. Sie sind es, an denen die Live-Ueberwachung spaeter
+     * filtert; ohne sie kaeme jede Meldung des ganzen Bahnhofs an.
+     *
+     * `zeitIst` und `gleisIst` bleiben BEWUSST leer. Sie bedeuten "laut
+     * Live-Tafel geaendert", und aus einem geteilten Reisetext weiss
+     * niemand etwas ueber Aenderungen. Ein gefuelltes `gleisIst` faerbte die
+     * Anzeige rot und behauptete einen Gleiswechsel, den es nie gab.
+     */
+    setZugAnkunft(
+      u.anZug
+        ? { zug: u.anZug, zeitSoll: u.anZeit, gleisSoll: u.anGleis ?? '', ziel: u.anZiel }
+        : null,
+    )
+    setZugAbfahrt(
+      u.abZug
+        ? { zug: u.abZug, zeitSoll: u.abZeit, gleisSoll: u.abGleis ?? '', ziel: u.abZiel }
+        : null,
+    )
+  }
 
   // Vorbelegt wird NUR ein leeres Feld: Die Erkennung trifft verzoegert ein
   // und darf eine bereits getippte Eingabe nicht ueberschreiben.
@@ -326,6 +373,25 @@ export function Eingabe({ laden, fehler, erkannt, entwurf, onBerechnen }: Eingab
           onChange={(e) => setWagen(e.target.value)}
         />
       </div>
+
+      {/* Der schnelle Weg an denselben Feldern vorbei: Statt Bahnhof und zwei
+          Gleise zu tippen, den Text aus „Verbindung teilen" einfuegen. */}
+      <div className="feld">
+        <button
+          type="button"
+          className="knopf-sekundaer knopf-breit"
+          onClick={() => setImportOffen(true)}
+        >
+          Reise importieren
+        </button>
+      </div>
+
+      {importOffen && (
+        <ReiseImport
+          onSchliessen={() => setImportOffen(false)}
+          onUebernehmen={uebernimmUmstieg}
+        />
+      )}
 
       {/* Im Entwurf kommt das Gehtempo nicht vor. Ersatzlos streichen waere
           fuer langsame Gehende aber ein Rueckschritt - deshalb eingeklappt. */}
