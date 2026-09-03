@@ -32,7 +32,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 ```bash
 cd backend && npm test        # muss 224 von 224 grün sein
 cd backend && npm run lint    # oxlint + tsc --noEmit, muss sauber sein
-cd frontend && npm test       # muss 179 von 179 grün sein
+cd frontend && npm test       # muss 180 von 180 grün sein
 cd frontend && npm run lint   # oxlint + tsc --noEmit, muss sauber sein
 cd frontend && npm run build  # muss grün sein
 ```
@@ -1137,6 +1137,60 @@ Die Liste ist **unbegrenzt**. Ein Umstieg dauert Minuten und Ereignisse sind
 selten; eine Obergrenze wäre ein geratener Schwellenwert mehr. Im Versuch
 standen fünf Einträge übereinander – das trägt. Wer je eine lange Liste sieht,
 weiß dann auch, wo zu kappen wäre.
+
+## Die Leiste sass an drei verschiedenen Hoehen (03.09.2026)
+
+Gemeldet als „die Leiste springt auf der Meldungsseite nach oben". Sie sprang
+nicht – sie stand dort nie unten. `.navileiste` war `position: sticky;
+bottom: 0`, und **Sticky hilft nur, wenn es etwas zu rollen gibt.** Auf einer
+kurzen Seite gibt es das nicht; die Leiste stand einfach im Fluss, direkt
+hinter dem Text. Auf allen anderen Seiten füllte der Inhalt die Höhe, und es
+fiel nicht auf. Die leere Meldungsseite war der erste Bildschirm, der kürzer
+ist als das Sichtfeld.
+
+Beim Nachmessen kam ein zweiter Fall dazu: Dieselbe Leiste sass an **drei**
+verschiedenen Höhen.
+
+| Lage | Abstand zum Unterrand | Ursache |
+|---|---|---|
+| Kurze Seite | mitten im Bild | `sticky` ohne Rollweg wirkt nicht |
+| Lange Seite, mitten im Rollen | 0 px | `sticky` greift |
+| Lange Seite, am Ende des Rollens | 40 px | `padding-bottom` von `.app` |
+
+**Drei Griffe:**
+
+1. **`margin-top: auto`** statt `24px`. Der automatische Rand schluckt den
+   freien Platz in der Spalte und schiebt die Leiste auf die volle Höhe
+   hinunter – auch ohne Rollweg.
+2. **`.app` bekommt unten kein Polster mehr.** Die Leiste ist das letzte
+   Kind; ein Polster darunter schob sie genau dort vom Rand weg, wo sie im
+   Fluss liegt. Ihr eigenes Polster samt `safe-area-inset` trägt den Abstand.
+3. **`min-height: 100dvh`** neben `100vh`. Auf dem Handy zählt `100vh` die
+   Adressleiste mit – die Spalte wäre höher als das Sichtfeld und die Leiste
+   stünde um deren Höhe unterhalb des Bildrands. Gehört zur Mobilabnahme, die
+   als Nächstes ansteht.
+
+Dazu ein **`z-index: 10`**: über der Ampel (5), unter der Störmeldung (50).
+Vorher hatte die Leiste keinen, ihre Stapelposition hing allein daran, dass
+sie zufällig das letzte Element im DOM ist. Gegenüber positionierten Nachbarn
+ist das keine Zusicherung.
+
+**Nachgemessen statt angesehen.** Die Screenshots skalierten unzuverlässig,
+deshalb im DOM gemessen (`getBoundingClientRect` gegen `innerHeight`).
+Ergebnis auf allen vier Seiten und in allen drei Rollzuständen: **0 px
+Abstand zum Unterrand**, Höhe 70, gleicher Hintergrund, gleicher Rahmen,
+gleiches Polster.
+
+Ein Unit-Test kann das nicht halten: jsdom hat keine Layout-Engine und liefert
+für jede Box 0×0. Was maschinell prüfbar ist, ist geprüft – dass die Leiste
+auf **jeder** Seite mit denselben Werten gerendert wird (`bildschirme.test.ts`,
+`Navileiste.test.tsx`). Die Lage im Bild bleibt eine Sache des Messens im
+Browser.
+
+**Nebenbei:** Der Leisteneintrag „Dashboard" heißt jetzt **„Übersicht"** – die
+App spricht sonst durchgehend Deutsch. Der interne Schlüssel bleibt
+`dashboard`; Beschriftung und Schlüssel gehen hier bewusst auseinander. Die
+Beschriftungen hängen jetzt an einem eigenen Test.
 
 ## Der Live-Strom war in Produktion nie erreichbar (03.09.2026)
 

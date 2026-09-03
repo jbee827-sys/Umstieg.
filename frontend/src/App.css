@@ -3,10 +3,26 @@
 .app {
   max-width: 430px;
   margin: 0 auto;
+  /*
+   * `dvh` nach `vh`: Auf dem Handy zaehlt `100vh` die Adressleiste mit, die
+   * Spalte waere also hoeher als das Sichtfeld - und die Leiste stuende
+   * genau um deren Hoehe unterhalb des Bildrands. `dvh` misst, was
+   * tatsaechlich zu sehen ist. Die `vh`-Zeile bleibt als Rueckfall stehen.
+   */
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  padding: 24px 20px 40px;
+  /*
+   * Unten KEIN Polster. Die Leiste ist das letzte Kind; ein Polster
+   * darunter schiebt sie vom Rand weg - und zwar nur dort, wo sie im Fluss
+   * liegt. Beim Rollen einer langen Seite haelt `sticky` sie buendig am
+   * Sichtrand, am Ende des Rollens rutschte sie um dieselben 40 px wieder
+   * hoch. Dieselbe Leiste sass damit je nach Seite und Rollstand an drei
+   * verschiedenen Hoehen. Ihr eigenes Polster samt `safe-area-inset`
+   * uebernimmt den Abstand nach unten.
+   */
+  padding: 24px 20px 0;
   gap: 18px;
 }
 
@@ -749,10 +765,26 @@
   bottom: 0;
   display: flex;
   gap: 4px;
-  margin-top: 24px;
+  /*
+   * `auto`, nicht `24px`. Die Leiste ist das letzte Kind der Spalte `.app`;
+   * `sticky` haelt sie nur dann unten, wenn es ueberhaupt etwas zu rollen
+   * gibt. Auf einer kurzen Seite - die leere Meldungsseite ist der Fall, an
+   * dem es auffiel - gab es das nicht, und die Leiste stand mitten im Bild
+   * direkt hinter dem Text. Der automatische Rand schluckt den freien Platz
+   * und schiebt sie auf die volle Hoehe hinunter; `sticky` haelt sie danach
+   * beim Rollen langer Seiten weiter am unteren Rand.
+   */
+  margin-top: auto;
   padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
   background: var(--color-bg);
   border-top: 2px solid var(--color-divider);
+  /*
+   * Ueber der Ampel (5), unter der Stoermeldung (50). Ohne eigenen Wert hing
+   * die Stapelreihenfolge allein daran, dass die Leiste zufaellig das letzte
+   * Element im DOM ist - gegenueber positionierten Nachbarn ist das keine
+   * Zusicherung. Die Stoermeldung MUSS oben bleiben: Sie ist die dringende.
+   */
+  z-index: 10;
 }
 .navileiste-knopf {
   flex: 1;
