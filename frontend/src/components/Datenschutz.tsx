@@ -8,6 +8,9 @@ import { BETREIBER } from '../rechtliches/betreiber'
 //   components/Datenschutz.test.tsx
 // - Kartenkacheln: components/Karte.tsx
 // - Schriften: index.css (lokale @font-face, KEIN Google Fonts)
+// - Reichweitenmessung: main.tsx (<Analytics>), analytik/ereignis.ts
+//   (schneidet die Abfragezeichenkette ab), abgesichert in
+//   analytik/ereignis.test.ts und components/Datenschutz.test.tsx
 // - Backend ohne Zugriffsprotokoll: backend/src/app.ts
 //   (disableRequestLogging), abgesichert in backend/test/datenschutz.test.ts
 //
@@ -30,8 +33,9 @@ export function Datenschutz({ onZurueck }: { onZurueck: () => void }) {
       <div className="rechtstext">
         <h2>Kurzfassung</h2>
         <p>
-          Diese App setzt keine Cookies und bindet keine Analyse- oder
-          Werbedienste ein. Es gibt kein Nutzerkonto. Auf deinem Gerät bleibt
+          Diese App setzt keine Cookies und bindet keine Werbedienste ein. Zur
+          Reichweitenmessung zählen wir Seitenaufrufe – ohne Cookies, ohne
+          Kennung und ohne Profil. Es gibt kein Nutzerkonto. Auf deinem Gerät bleibt
           allein deine eigene Eingabe – Bahnhof, Gleise, Zug – und nur so
           lange, wie dieser Browser-Tab offen ist. Dein Standort wird nur mit
           deiner Erlaubnis verwendet, bereits im Browser auf etwa 110 Meter
@@ -87,7 +91,8 @@ export function Datenschutz({ onZurueck }: { onZurueck: () => void }) {
         </p>
         <ul>
           <li>
-            <strong>Vercel Inc.</strong> liefert die Webseite aus.
+            <strong>Vercel Inc.</strong> liefert die Webseite aus und stellt die
+            Reichweitenmessung bereit (siehe unten).
           </li>
           <li>
             <strong>Fly.io Inc.</strong> betreibt den Server, der die Wege
@@ -124,11 +129,38 @@ export function Datenschutz({ onZurueck }: { onZurueck: () => void }) {
           keine Kennung, die auf dich zurückführt.
         </p>
 
-        <h2>Keine Cookies, kein Tracking</h2>
+        <h2>Reichweitenmessung</h2>
         <p>
-          Es werden keine Cookies gesetzt und <code>localStorage</code> wird
-          nicht verwendet. Es gibt keine Reichweitenmessung, kein Profiling und
-          keine automatisierte Entscheidungsfindung.
+          Wir zählen, welche Seiten wie oft aufgerufen werden – mit{' '}
+          <strong>Vercel Web Analytics</strong> (Vercel Inc.). Ohne diese Zahlen
+          wüssten wir nicht, ob die App überhaupt jemand benutzt.
+        </p>
+        <p>
+          <strong>Ohne Cookies und ohne Speicher auf deinem Gerät.</strong> Es
+          wird nichts gesetzt und nichts ausgelesen; deshalb greift § 25 TTDSG
+          nicht und es gibt kein Zustimmungsbanner. Es wird keine Kennung
+          vergeben, die dich über mehrere Aufrufe oder über verschiedene
+          Webseiten hinweg wiedererkennt.
+        </p>
+        <p>
+          <strong>Was übermittelt wird:</strong> die aufgerufene Adresse, der
+          Verweis, aus dem du kamst, sowie Land, Betriebssystem und Browser in
+          grober Form. Die <strong>Abfragezeichenkette der Adresse wird vorher
+          abgeschnitten</strong> – sie könnte künftig Angaben tragen, die die
+          Messung nichts angehen. Deine IP-Adresse wird zur Bestimmung des
+          Landes verarbeitet und nicht gespeichert.
+        </p>
+        <p>
+          <strong>Rechtsgrundlage:</strong> unser berechtigtes Interesse an
+          einer Nutzungsstatistik nach Art. 6 Abs. 1 lit. f DSGVO. Du kannst
+          dieser Verarbeitung nach Art. 21 DSGVO widersprechen; ein Browser mit
+          aktiviertem Tracking-Schutz oder ein Inhaltsblocker verhindert die
+          Zählung bereits technisch.
+        </p>
+        <p>
+          Es findet <strong>kein Profiling</strong> und keine automatisierte
+          Entscheidungsfindung statt. <code>localStorage</code> wird nach wie vor
+          nicht verwendet.
         </p>
 
         <h2>Deine Eingabe im Browser</h2>
