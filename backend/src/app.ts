@@ -155,7 +155,7 @@ export function buildApp(
       undefined,
       app.log,
     );
-  registriereLiveRouten(app, ueberwachung);
+  registriereLiveRouten(app, ueberwachung, erlaubteHerkuenfte);
 
   return app;
 }
