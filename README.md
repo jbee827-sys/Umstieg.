@@ -741,6 +741,32 @@ Bahnhofssuche gegen RIS::Stations, `watchPosition` und die Genauigkeitsgrenze
 Scrollen; `App.css` hat **null** Media-Queries, das Layout ist rein fluid mit
 `max-width: 430px`.
 
+## Deployment 03.09.2026
+
+Beide Ziele ausgeliefert, Stand `217bfe1` auf `feat/mvp` und `main`.
+
+| Ziel | Ergebnis |
+|---|---|
+| **Fly.io** (`flyctl deploy --ha=false`) | ✅ genau **eine** Maschine (`flyctl machines list`), `/api/health` 200 |
+| **Vercel** (`vercel deploy --prod`) | ✅ `Ready`, Alias `umstieg.vercel.app` |
+
+Geprüft wurde am **Inhalt** des Produktionsbundles, nicht am Dateinamen (siehe
+die Falle unter „Deployment 01.09.2026"): `Aktuell keine Meldungen`,
+`ungelesene`, `Route übernehmen` sind da – und **`Alte Route behalten` ist
+verschwunden**, der Beleg, dass die alte Störungsseite wirklich ersetzt ist.
+
+**In Produktion im Browser gesehen:** Bahnhofssuche gegen die echte DB-API,
+Route Gleis 6 → 14 in **Stufe 1** (der Ebenen-Fix vom 01.09. ist damit
+nebenbei an echten OSM-Daten bestätigt, was am 01.09. am Overpass-Ausfall
+scheiterte), „Schnellste 10 min" über „Barrierefrei 13 min" – die Reihenfolge
+stimmt, ToDo 3g hält. Die Eingabe überlebte einen Reload aus dem
+`sessionStorage`. Die Meldungsseite steht mit Live-Zeitstempel.
+
+**Der Deploy hat einen Fehler zutage gefördert, der zwei Tage unbemerkt
+lief** – siehe „Der Live-Strom war in Produktion nie erreichbar". Das Backend
+wurde deshalb zweimal ausgeliefert: einmal mit dem Stand `d51fe87`, dann mit
+dem Fix `217bfe1`.
+
 ## Deployment 01.09.2026
 
 Beide Ziele ausgeliefert, Stand `4cb3664` auf `feat/mvp` und `main`.
@@ -1146,6 +1172,12 @@ ein Zwischenspeicher die Antwort für eine Herkunft an eine andere ausliefern.
 Zwei Tests halten es fest, beide über einen **echten Socket** statt
 `app.inject()` (inject bricht eine hijack-Antwort nicht ab und liefe in den
 Timeout): erlaubte Herkunft bekommt die Freigabe, fremde nicht.
+
+**In Produktion bestätigt (03.09.2026, nach dem Deploy).** Der Beleg ist die
+Meldungsseite selbst: Vor dem Fix stand dort dauerhaft „Die Live-Verbindung
+steht noch nicht." – der Zustand für „`stand` ist null", also kein Heartbeat.
+Nach dem Fix erschien „Live-Daten · Stand: 13:08 Uhr". Damit läuft der
+Live-Strom zum ersten Mal aus dem ausgelieferten Frontend.
 
 **Die Lehre für dieses Projekt:** `curl` ist kein Ersatz für einen Browser,
 sobald eine Eigenschaft im Browser durchgesetzt wird – CORS, CSP,
