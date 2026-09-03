@@ -12,6 +12,17 @@ describe('leisteneintraege', () => {
     expect(leisteneintraege(true).every((x) => x.aktiv)).toBe(true)
   })
 
+  // Die Beschriftungen sind das, was der Reisende liest - der Schluessel
+  // daneben ist interner Name und bleibt `dashboard`.
+  it('beschriftet die Eintraege auf Deutsch', () => {
+    expect(leisteneintraege(true).map((x) => x.label)).toEqual([
+      'Eingabe',
+      'Übersicht',
+      'Weg',
+      'Meldungen',
+    ])
+  })
+
   it('fuehrt die Meldungen als festen Eintrag', () => {
     // Frueher fehlte die Stoerung hier bewusst: Sie war nur bei einem
     // Gleiswechsel erreichbar und waere sonst ein Knopf gewesen, der meistens

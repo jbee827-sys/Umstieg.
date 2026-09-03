@@ -21,7 +21,10 @@ export interface LeistenEintrag {
 export function leisteneintraege(hatRoute: boolean): LeistenEintrag[] {
   return [
     { id: 'eingabe', label: 'Eingabe', aktiv: true },
-    { id: 'dashboard', label: 'Dashboard', aktiv: hatRoute },
+    // Schluessel und Beschriftung gehen hier bewusst auseinander: `dashboard`
+    // ist der interne Name, den App.tsx und die Tests kennen; gelesen wird
+    // „Übersicht". Die App spricht sonst durchgehend Deutsch.
+    { id: 'dashboard', label: 'Übersicht', aktiv: hatRoute },
     { id: 'navigation', label: 'Weg', aktiv: hatRoute },
     { id: 'meldungen', label: 'Meldungen', aktiv: hatRoute },
   ]

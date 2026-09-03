@@ -15,7 +15,7 @@ describe('Navileiste', () => {
         onWechsel={onWechsel}
       />,
     )
-    const dash = screen.getByRole('button', { name: /Dashboard/ })
+    const dash = screen.getByRole('button', { name: /Übersicht/ })
     expect(dash.getAttribute('aria-disabled')).toBe('true')
     await userEvent.click(dash)
     expect(onWechsel).not.toHaveBeenCalled()
@@ -26,7 +26,7 @@ describe('Navileiste', () => {
     render(
       <Navileiste aktuell="eingabe" hatRoute ungelesen={0} hervorgehoben={false} onWechsel={onWechsel} />,
     )
-    await userEvent.click(screen.getByRole('button', { name: /Dashboard/ }))
+    await userEvent.click(screen.getByRole('button', { name: /Übersicht/ }))
     expect(onWechsel).toHaveBeenCalledWith('dashboard')
   })
 
