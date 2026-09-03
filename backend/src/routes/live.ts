@@ -48,13 +48,19 @@ export function registriereLiveRouten(
        *
        * Gespiegelt wird, was `@fastify/cors` für eine einfache GET-Anfrage mit
        * Allowlist täte: die passende Herkunft zurückspiegeln, sonst nichts.
-       * `Vary: Origin` gehört dazu, sonst darf ein Zwischenspeicher die
-       * Antwort für eine Herkunft an eine andere ausliefern.
+       *
+       * `Vary: Origin` steht bewusst AUSSERHALB der Bedingung. Auch die
+       * Ablehnung hängt an der Herkunft: Ohne `Vary` darf ein
+       * Zwischenspeicher die kopflose Antwort einer fremden Herkunft an eine
+       * erlaubte ausliefern – die scheiterte dann an einer Freigabe, die es
+       * eigentlich gibt. `@fastify/cors` sendet den Header deshalb in beiden
+       * Fällen. Hier stand er zuerst nur im erlaubten; aufgefallen beim
+       * Nachprüfen der Ränder am 03.09.2026.
        */
+      kopf['Vary'] = 'Origin';
       const herkunft = req.headers.origin;
       if (herkunft && erlaubteHerkuenfte.includes(herkunft)) {
         kopf['Access-Control-Allow-Origin'] = herkunft;
-        kopf['Vary'] = 'Origin';
       }
 
       // Fastify soll die Antwort nicht selbst abschließen – der Strom bleibt offen.

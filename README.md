@@ -30,7 +30,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > Ankunftserkennung am Gleis, Bedienbarkeit mit Gepäck.
 
 ```bash
-cd backend && npm test        # muss 223 von 223 grün sein
+cd backend && npm test        # muss 224 von 224 grün sein
 cd backend && npm run lint    # oxlint + tsc --noEmit, muss sauber sein
 cd frontend && npm test       # muss 179 von 179 grün sein
 cd frontend && npm run lint   # oxlint + tsc --noEmit, muss sauber sein
@@ -1172,6 +1172,24 @@ ein Zwischenspeicher die Antwort für eine Herkunft an eine andere ausliefern.
 Zwei Tests halten es fest, beide über einen **echten Socket** statt
 `app.inject()` (inject bricht eine hijack-Antwort nicht ab und liefe in den
 Timeout): erlaubte Herkunft bekommt die Freigabe, fremde nicht.
+
+**Ein Rest fiel erst beim Nachprüfen der Ränder auf.** `Vary: Origin` stand
+zuerst nur im erlaubten Fall. Auch die **Ablehnung** hängt aber an der
+Herkunft: Ohne `Vary` darf ein Zwischenspeicher die kopflose Antwort einer
+fremden Herkunft an eine erlaubte ausliefern – die scheiterte dann an einer
+Freigabe, die es eigentlich gibt. `@fastify/cors` sendet den Header in beiden
+Fällen; jetzt tut es diese Route auch. Praktisch war das Risiko klein (die
+Antwort trägt `Cache-Control: no-cache`), aber der Kommentar im Code
+behauptete, `@fastify/cors` zu spiegeln – und das war nur fast wahr.
+
+**Alle Ränder nachgeprüft (03.09.2026), am lebenden Objekt statt gefolgert:**
+
+| Prüfung | Ergebnis |
+|---|---|
+| Alle fünf Routen (`health`, `stations`, `board`, `route`, `live`) | ✅ Freigabe-Header |
+| Alle drei Produktionsdomains (`umstieg.vercel.app`, `umstieg.online`, `www.umstieg.online`) | ✅ alle in `CORS_ORIGIN`, alle bekommen die Freigabe – auch auf dem SSE-Strom |
+| Fremde Herkunft | ✅ keine Freigabe, auf keiner Route |
+| Weitere Routen mit `hijack()` | ✅ keine – `live.ts` ist die einzige, der Rest läuft über Fastifys normalen Weg |
 
 **In Produktion bestätigt (03.09.2026, nach dem Deploy).** Der Beleg ist die
 Meldungsseite selbst: Vor dem Fix stand dort dauerhaft „Die Live-Verbindung
