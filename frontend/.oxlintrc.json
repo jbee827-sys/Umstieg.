@@ -1,8 +1,58 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
+  "plugins": ["react", "typescript", "oxc", "promise", "node"],
+  "ignorePatterns": ["dist", "node_modules"],
+
+  // Gleiche Strenge wie im Backend. Vorher fehlten `suspicious`, `perf` und
+  // das promise-Plugin – das Frontend prüfte also weniger als das Backend,
+  // ohne dass diese Entscheidung je getroffen worden wäre. Beim Angleichen am
+  // 02.09.2026 kamen drei `promise/always-return` zum Vorschein, von denen
+  // zwei echte hängende Zustände waren (Spinner, Erkennungs-Flag).
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "error"
+  },
+
   "rules": {
     "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+    "react/only-export-components": ["warn", { "allowConstantExport": true }],
+
+    // Die Regel mit Zähnen, und sie steht in keiner der Kategorien oben.
+    // Eine `.then()`-Kette ohne `.catch()` schluckt den Fehler nicht – sie
+    // lässt ihn als unbehandelte Rejection liegen und überspringt dabei
+    // jedes `setLaden(false)` im Rumpf. Genau so entstand der Spinner in
+    // `Zugauswahl`, der bis zum Neuladen der Seite drehte.
+    //
+    // Achtung beim Lesen der Ausgabe: `void promise.then(...)` gilt der Regel
+    // als bewusste Entsorgung und wird NICHT gemeldet. Der zweite Fund vom
+    // 02.09.2026 (`erkenneBahnhof` in App.tsx) stand deshalb nicht hier
+    // drin – gefunden hat ihn `always-return`.
+    "promise/catch-or-return": "error",
+
+    // Aus, weil hier falsch – nicht, weil unbequem:
+    //
+    // always-return verlangt ein `return` in jedem `.then()`. Das ist richtig
+    // für Ketten, die einen Wert weiterreichen, und Lärm für die drei
+    // Ketten hier, die reine Seiteneffekte sind (setState, Ref setzen). Die
+    // Runde am 02.09.2026 hat die Regel einmal durchlaufen lassen und ihre
+    // zwei echten Funde behoben; als Dauerregel bliebe nur der Lärm.
+    "promise/always-return": "off",
+
+    // Aus, weil hier falsch – nicht, weil unbequem:
+    //
+    // react-in-jsx-scope stammt aus der Zeit vor dem neuen JSX-Transform.
+    // Mit `"jsx": "react-jsx"` wird `React` nicht mehr gebraucht; die Regel
+    // meldete allein in App.tsx und Eingabe.tsx über 50 Treffer, jeder davon
+    // ein Fehlalarm. Sie an hätte den Rest der Ausgabe unlesbar gemacht.
+    "react/react-in-jsx-scope": "off",
+
+    // no-array-index-key trifft zu, wenn der Index der GANZE Schlüssel ist –
+    // dann wandert Zustand beim Umsortieren auf das falsche Element. Alle
+    // drei Fundstellen (Schrittliste, Bahnhofsschema, Zugauswahl) setzen den
+    // Index mit Daten zusammen (`${i}-${schritt.text}`), und keine dieser
+    // Listen sortiert um. Nachgeprüft am 02.09.2026, Fundstelle für
+    // Fundstelle.
+    "react/no-array-index-key": "off"
   }
 }

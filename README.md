@@ -16,12 +16,23 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 01.09.2026)
+## Hier weitermachen (Stand 02.09.2026, abends)
+
+> **Nächster Schritt: die Meldungsseite bauen.** Das Konzept ist abgestimmt und
+> freigegeben und steht vollständig im Abschnitt
+> [„Meldungsseite — freigegebenes Konzept"](#meldungsseite--freigegebenes-konzept-02092026-noch-nicht-gebaut).
+> Es ist so geschrieben, dass es ohne den Chat umsetzbar ist. **Noch keine Zeile
+> davon existiert.**
+>
+> Der gesamte Stand vom 02.09.2026 liegt **unversioniert im Arbeitsverzeichnis**
+> (`git status` zeigt ~30 Dateien). Vor dem Weiterbauen committen.
+
 
 ```bash
-cd backend && npm test        # muss 187 von 187 grün sein
-cd backend && npm run lint    # tsc --noEmit, muss sauber sein
-cd frontend && npm test       # muss 137 von 137 grün sein
+cd backend && npm test        # muss 221 von 221 grün sein
+cd backend && npm run lint    # oxlint + tsc --noEmit, muss sauber sein
+cd frontend && npm test       # muss 154 von 154 grün sein
+cd frontend && npm run lint   # oxlint + tsc --noEmit, muss sauber sein
 cd frontend && npm run build  # muss grün sein
 ```
 
@@ -56,7 +67,7 @@ braucht Handarbeit an einem echten Gerät.
 ## Offen: was NICHT geprüft ist (Stand 01.09.2026, abends)
 
 Der Frontend-Umbau und die sechs Feinschliffe sind **codeseitig fertig und
-maschinell grün** (110 Frontend-Tests, 180 Backend-Tests, Build und Lint
+maschinell grün** (Stand 02.09.2026: 138 Frontend-Tests, 221 Backend-Tests, Build und Lint
 sauber). Was fehlt, ist der Blick darauf. Dieser Abschnitt trennt bewusst,
 **was gesehen wurde und was nicht** – die schwersten Fehler dieses Projekts
 waren allesamt nur im Browser sichtbar.
@@ -214,7 +225,7 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | 12 | **Ticket-PDF-Import** | Im Prototyp als UI-Flow vorhanden, laut Konzept Stufe 2. Backend fehlt. |
 | 13 | **Repo-Sichtbarkeit** | Repo ist öffentlich. Inhaltlich unbedenklich (Historie mehrfach auf Secrets geprüft, zuletzt 28.08.2026 über alle Blobs – 0 Treffer), aber bewusst zu entscheiden. |
 | ~~14~~ | ~~**Frontend kann keine Komponenten testen**~~ ✅ **erledigt 31.08.2026** | jsdom und Testing Library sind eingerichtet (`vitest.config.ts`, `src/test-setup.ts`). Die Komponententests waren die Voraussetzung für den Frontend-Umbau. |
-| 15 | **Drei geratene Schwellenwerte** | `MINDEST_SCHRITT_MS = 8000` (Anzeigedauer je Schritt), `ERKENNUNG_MAX_M = 1000` (Genauigkeitsbudget der Bahnhofserkennung) und `NOTBEHELF_TTL_MS = 600000` (Cache-Frist für Stufe 3; über `GRAPH_NOTBEHELF_TTL_MS` ohne Neubau verstellbar) sind begründete Startwerte ohne Messung dahinter. Zu hoch gewählt hinkt die Schrittanzeige hinterher, zu niedrig flackert sie. Erst die Mobilabnahme zeigt die Richtung. |
+| 15 | **Zwei geratene Schwellenwerte** | `ERKENNUNG_MAX_M = 1000` (Genauigkeitsbudget der Bahnhofserkennung) und `NOTBEHELF_TTL_MS = 600000` (Cache-Frist für Stufe 3; über `GRAPH_NOTBEHELF_TTL_MS` ohne Neubau verstellbar) sind begründete Startwerte ohne Messung dahinter. Erst die Mobilabnahme zeigt die Richtung. *Der dritte Wert, `MINDEST_SCHRITT_MS = 8000` (Anzeigedauer je Schritt), ist am 02.09.2026 entfallen: Die Schrittanzeige rückt nicht mehr nach Zeit vor, damit gibt es keine Anzeigedauer mehr zu raten.* |
 
 ### P1 – Standort & Live-Navigation
 
@@ -419,7 +430,7 @@ Arbeitsverzeichnisses hoch, unabhängig davon, wo HEAD gerade steht.
 | Verkehrsstellengruppen + Cache-Frist + FaSta-Adressierung (31.08.2026) | ✅ fertig, **gegen die echte DB-API verifiziert** (31.08.) |
 | Frontend-Umbau nach dem Designkonzept (31.08.2026) | ✅ fertig – fünf Bildschirme, Navigationsleiste, Schema statt Karte, Gleiswechsel als Vorschlag; **Browser-Sichtprüfung offen** |
 
-**Tests:** `cd backend && npm test` → **180 von 180 grün**, `npm run lint` (`tsc --noEmit`) sauber. Frontend: `cd frontend && npm test` → **110 von 110 grün** (jsdom + Testing Library), `npm run build` grün; `npm run lint` meldet 4 Warnungen (siehe ToDo 4).
+**Tests:** `cd backend && npm test` → **221 von 221 grün**, `npm run lint` (`oxlint` + `tsc --noEmit`) sauber. Frontend: `cd frontend && npm test` → **138 von 138 grün** (jsdom + Testing Library), `npm run build` grün; `npm run lint` (seit 02.09.2026 ebenfalls `oxlint` + `tsc --noEmit`) sauber.
 
 Die Backend-Suite läuft mit **`TZ=UTC`** (`vitest.config.ts`) – wie die Produktion. Ohne das sind Zeitzonenfehler auf einem deutschen Rechner unsichtbar; genau so ist der Fehler entstanden, dass die Zugauswahl nur abgefahrene Züge zeigte.
 
@@ -835,6 +846,260 @@ Ein Nachzieher: `setBildschirm` ist jetzt ein `useCallback` statt eines
 nackten Setters. Der Linter kann seine Stabilität nicht sehen und will ihn in
 der Abhängigkeitsliste von `berechne` genannt haben.
 
+## Eingabe bleibt in der Sitzung (02.09.2026)
+
+Wer vom Dashboard zur Eingabe zurückging oder unterwegs die Seite neu lud,
+fand ein leeres Formular vor und musste Bahnhof, Gleise und Zugauswahl erneut
+zusammensuchen — am Bahnsteig, mit dem Anschluss im Nacken, die teuerste
+Stelle für verlorene Eingaben.
+
+Die Eingabe liegt jetzt im **`sessionStorage`** (`src/sitzung/eingabespeicher.ts`).
+Gespeichert wird beim Absenden, geleert bei „Angekommen". Bewusste Grenze: Wer
+mitten im Tippen neu lädt, verliert das Halbfertige — von der Eingabeseite kommt
+man ohnehin nur durch Absenden weg.
+
+Gespeichert wird ein **Abbild des Formulars**, nicht `EingabeWerte`. Aus dem
+Absende-Datensatz ließe sich die Maske nicht zurückbauen: Der gewählte Bahnhof
+ist dort auf Name und EVA eingedampft, die Zugauswahl auf Zugname und Zeit.
+Drei Dinge muss der Speicher aushalten, jedes mit eigenem Test: `sessionStorage`
+**wirft** in Safaris privatem Modus schon beim Zugriff auf die Eigenschaft;
+ein beschädigter oder fremder Eintrag darf das Formular nicht sprengen
+(Schemaprüfung beim Lesen); ein Eintrag aus einer älteren Feldfassung wird über
+einen Versionsschlüssel verworfen statt fehlgedeutet.
+
+**Kein Zustimmungsbanner.** Die Speicherung ist für den ausdrücklich gewünschten
+Dienst erforderlich (§ 25 Abs. 2 Nr. 2 TTDSG); `localStorage` wird weiterhin
+nicht angefasst. Die Datenschutzerklärung sagte bis dahin „speichert nichts auf
+deinem Gerät" und „weder `localStorage` noch `sessionStorage`" — beides ist
+korrigiert, und **beide Zusagen hängen jetzt an Tests**: `eingabespeicher.test.ts`
+belegt, dass nie in `localStorage` geschrieben wird, `Datenschutz.test.tsx`, dass
+die Seite den neuen Zustand benennt und die alten Sätze nicht zurückkehren.
+Zum zweiten Mal in zwei Tagen wäre sonst eine Zusage nebenbei unwahr geworden.
+
+### Drei Rücknahmen in der Navigation
+
+- **„Ich bin da" entfernt.** Der Ersatzknopf erschien nur ohne Zielkoordinate
+  und tat dasselbe wie „Angekommen", der immer da steht. Der Streifen „Ja, ich
+  bin da" bleibt — das ist die Rückfrage bei erkannter Ankunft, kein Dauerknopf.
+- **Kein Weiterschalten nach Zeit mehr.** `aktiverSchritt` schätzte aus den
+  Gehzeiten, welcher Schritt dran sein dürfte. Eine Uhr weiß aber nicht, ob
+  jemand vor der Rolltreppe wartet oder stehengeblieben ist, um ein Schild zu
+  lesen — sie schaltet trotzdem weiter, und dann steht auf dem Bildschirm ein
+  anderer Schritt als der, den der Mensch geht. Übrig bleibt `schrittPosition`:
+  reines Begrenzen des Nutzer-Zählers. `startZeit` und
+  `navigation/schwellen.ts` sind damit entfallen.
+- **„Angekommen" aus der Leiste.** Das Ende der Reise ist kein Ort zum
+  Nachschlagen; als Dauereintrag lud die Leiste dazu ein, ihn mitten im Umstieg
+  zu treffen und die laufende Navigation zu beenden. Erreichbar bleibt der
+  Bildschirm über den Knopf auf der Weg-Seite.
+
+### Nebenbei
+
+`{meldung}` stand in vier Zweigen von `App.tsx` **doppelt** — die Störmeldung
+wurde übereinander gezeichnet. Fiel nie auf, weil beide Kopien identisch
+aussehen und die obere die untere verdeckt.
+
+**Stand:** 154 Frontend-Tests (vorher 138), Lint, Typprüfung und Build sauber.
+
+## Stille Fehler aufgelöst (02.09.2026)
+
+Der Vorlauf: Am selben Tag war die Protokollierung eingeschaltet worden, damit
+Rückfälle nicht länger lautlos geschehen. Diese Runde ist die Nachprüfung —
+**was ist dabei liegengeblieben, und was lief die ganze Zeit still mit?**
+
+Ein Muster zieht sich durch alle Funde: Zwei verschiedene Zustände werden auf
+denselben Wert abgebildet, und danach ist der Unterschied nicht mehr
+herstellbar. „Kenne ich nicht" und „konnte nicht fragen" ergeben beide eine
+kurze Gleisliste. „Keine Daten" und „kein Netz" ergeben beide `null`. Wer den
+Wert später liest, sieht nur noch den harmloseren der beiden Fälle.
+
+| # | Fund | Ursache | Behoben durch |
+|---|---|---|---|
+| 1 | **`gleis-unbekannt` war eine Falschaussage** | Fällt die Gleisliste einer Verkehrsstelle aus, fehlt deren Gleis in der Vereinigung. Berlin Hbf führt Gleis 6 unter 8098160 — die Route Gleis 6 → 14 antwortete mit 404 „Eines der Gleise wurde an diesem Bahnhof nicht gefunden." Das Gleis gibt es; wir konnten nur nicht fragen. Der Zähler `gleisteileOhneAntwort` war am Vortag eingebaut worden — und wurde **von niemandem gelesen**. | `gleislisteUnvollstaendig()` trennt beide Fälle. Unvollständig → **503 `gleisliste-unvollstaendig`** mit eigener Meldung im Frontend: erneut versuchen hilft, korrigieren nicht. Vollständig → weiterhin 404. |
+| 2 | **Das `gruppe-unbekannt`-Log war auf dem Hauptpfad tot** | `ermittleGruppe` fing den Ausfall intern ab und gab still `[eva]` zurück, warf also nie. Der Eintrag in `api.ts` hängt an einem `catch`, das damit unerreichbar war. **Grün war sein Test nur, weil das Mock warf.** | Der Rückfall gehört dem Aufrufer — er ist der Einzige mit Logger. `ermittleGruppe` wirft jetzt; `holeStationsInfo` fängt und vermerkt `gruppeUnvollstaendig`. |
+| 3 | **Der Live-Poller verstummte lautlos** | `ueberwachung.pruefeJetzt` kehrte bei Timetables-Ausfall still zurück. Der SSE-Strom bleibt offen und wird einfach stumm — vom Fall „es ändert sich nichts" nicht zu unterscheiden. Bei der Protokollierungsrunde übersehen. | `Ueberwachung` nimmt einen Logger (eigene Minimal-Schnittstelle, `core` kennt Fastify weiterhin nicht). |
+| 4 | **Ein Teilausfall überlebte seine Ursache um 24 Stunden** | `graphTtlMs` bewertete allein die Graphqualität. Ein sauberer OSM-Graph mit lückenhafter Gleisliste bekam die vollen 24 h — dieselbe Falle wie bei Stufe 3, nur an der anderen Datenquelle. | Die Frist richtet sich nach dem schlechteren von beidem. |
+| 5 | **FaSta und Wagenreihung hinterließen keine Spur** | Von fünf dokumentierten Degradationen protokollierten nur drei. Diese beiden erzeugten allein einen Hinweis **für den Reisenden**. Der liest ihn und plant um; wer die Ursache abstellen müsste, erfuhr nichts. | Beide protokollieren. `holeWagenposition` trennt außerdem Ausfall (wirft) von „kennt den Wagen nicht" (`null`) — sonst wäre der neue Eintrag genauso tot gewesen wie Fund 2. |
+| 6 | **Das Frontend prüfte weniger als das Backend** | Kein `suspicious`, kein `perf`, kein promise-Plugin, und `lint` rief kein `tsc --noEmit`. Diese Entscheidung war nie getroffen worden, sie hatte sich ergeben. | Profile angeglichen. Zutage kamen zwei hängende Zustände (siehe unten). |
+| 7 | **Die Datenschutzerklärung war unwahr geworden** | Siehe eigener Abschnitt. | `disableRequestLogging` plus eigener Fehlerbehandler. |
+
+### Zwei hängende Zustände im Frontend
+
+Das angeglichene Lintprofil fand sie, nachgeprüft wurden sie von Hand:
+
+- **`Zugauswahl`**: `holeTafel(...).then(...)` ohne `.catch()`. Wirft der Abruf,
+  läuft `setLaden(false)` nie — „Tafel wird geladen …" dreht bis zum Neuladen
+  der Seite. Ein hängender Spinner ist die unehrlichste aller Anzeigen: Er
+  verspricht, dass gleich etwas kommt.
+- **`App`**: Bei einem Wurf bliebe `erkennungLaeuft` dauerhaft `true`, und die
+  Bedingung lässt dann keinen zweiten Versuch mehr zu — die Bahnhofserkennung
+  wäre für die ganze Sitzung tot, ohne sichtbares Zeichen.
+
+Beide Aufrufe werfen heute nicht: Der API-Client fängt selbst ab. Das ist eine
+Zusicherung des Aufgerufenen, und daran darf ein Ladezustand nicht hängen.
+
+### Was der Linter meldete und trotzdem falsch lag
+
+Drei Regeln wurden Fundstelle für Fundstelle nachgeprüft und **abgeschaltet
+statt befolgt** — die Begründung steht jeweils in `.oxlintrc.json`:
+
+- `unicorn/no-array-sort` (8 Treffer): jedes `.sort()` läuft auf einem frisch
+  erzeugten Array. Kein geteilter Zustand wird mutiert.
+- `react/no-array-index-key` (3 Treffer): alle Schlüssel sind zusammengesetzt
+  (`${i}-${schritt.text}`), und keine dieser Listen sortiert um.
+- `eslint/no-await-in-loop`: die Treffer sind Wiederholschleifen — dort ist das
+  sequenzielle `await` der Zweck.
+
+Aufgenommen wurde dafür `promise/catch-or-return`, die in keiner Kategorie
+steht und Fund 6 gefunden hätte. Vorsicht beim Lesen: `void promise.then(...)`
+gilt ihr als bewusste Entsorgung und wird **nicht** gemeldet.
+
+### Die Datenschutzerklärung war zwei Tage lang unwahr
+
+Der schwerwiegendste Fund, und er entstand als Nebenwirkung des Fixes vom
+Vortag. Das Einschalten von `logger` aktiviert Fastifys **Anfrageprotokoll**
+mit — je Anfrage ein Eintrag mit `url` und `remoteAddress`. Auf der
+Datenschutzseite steht:
+
+> „Die Anwendung selbst schreibt keine Protokolle."
+> „Ein Zugriffsprotokoll mit Koordinaten wird nicht geführt."
+
+Beides war damit falsch. Die URL der Bahnhofssuche **ist** die Koordinate
+(`/api/stations?lat=..&lon=..`); die Rundung auf ~110 m macht den
+Personenbezug gröber, nicht abwesend. Nachgewiesen, nicht vermutet: Der Test
+fand `52.52` und `remoteAddress` im Protokollstrom.
+
+`disableRequestLogging: true` nimmt Fastify allerdings auch die Meldung eines
+500ers ab — ein echter Serverfehler wäre danach völlig still gewesen, also
+genau der Zustand, gegen den diese Runde angeht. Deshalb ein eigener
+Fehlerbehandler: Er meldet das Routen**muster** (`/api/stations`) statt der
+aufgerufenen URL. Der Unterschied zwischen beiden ist exakt die
+Abfragezeichenkette. Fehler unter 500 gehen unprotokolliert durch, sonst kann
+jeder Aufrufer das Protokoll von außen füllen.
+
+Eine Zusage in einer Datenschutzerklärung ist keine Formulierung, sondern eine
+Eigenschaft des Systems. `backend/test/datenschutz.test.ts` hält sie jetzt
+fest, damit sie nicht ein zweites Mal nebenbei verlorengeht.
+
+### Stand danach
+
+**221 Backend-Tests** (vorher 196) und **138 Frontend-Tests** (vorher 137),
+Lint, Typprüfung und Build auf beiden Seiten sauber. Neu: `unvollstaendig`,
+`datenschutz` und `wagenreihung` — Letzterer hatte bis dahin keine eigene
+Datei; seine Tests lagen in `timetables.test.ts` und sind mit umgezogen.
+
+Ein Test hat dabei die Seite gewechselt: `Netzfehler → null (normaler Fall
+laut Konzept)` behauptete mehr, als das Konzept hergibt. Als Normalfall nennt
+es „ohne **Daten**", nicht „ohne **Netz**" — der Test hatte beides in einen
+Topf geworfen, und genau diese Gleichsetzung machte den Ausfall unsichtbar.
+Für den Reisenden ändert sich nichts: Beide Wege enden in derselben
+Bahnsteigmitte mit demselben Hinweis. Nur im Protokoll stehen sie jetzt
+auseinander.
+
+## Meldungsseite — freigegebenes Konzept (02.09.2026, NOCH NICHT GEBAUT)
+
+Abgestimmt und freigegeben am 02.09.2026; **keine Zeile davon ist umgesetzt.**
+Dieser Abschnitt ist der Wiedereinstiegspunkt und absichtlich so ausführlich,
+dass er ohne den Gesprächsverlauf trägt.
+
+### Zuerst: die Vorlagenfrage, damit sie nicht zweimal gestellt wird
+
+Die Anforderung lautete „baue die Seite exakt nach
+`2026-08-24-umstiegs-navigator-design.md`". **Dort steht keine Vorlage für eine
+Meldungsseite.** Das Dokument ist das Umsetzungskonzept: Abschnitt 9
+beschreibt zwei Ansichten (Eingabe, Routenansicht) plus „LiveBanner",
+Abschnitt 7 die drei Ereignistypen. Kein Layout.
+
+Die visuelle Vorlage liegt in [`design/Umstieg.dc.html`](./design/Umstieg.dc.html)
+mit sechs Screens: Onboarding · Dashboard · Navigation · **Störung:
+Gleiswechsel** · Wagenreihung · Angekommen. Screen 4 ist das, was heute
+`src/screens/Stoerung.tsx` umsetzt — eine **Entscheidungsseite für ein
+einzelnes Ereignis**, keine Liste mit Zähler. „Exakt nach Vorlage" ist deshalb
+nicht wörtlich einlösbar. Die Auflösung: Screen 4 bleibt das Muster für die
+**Darstellung der jeweils neuesten Änderung**; Verlauf und Zähler kommen hinzu.
+
+### Was gebaut wird
+
+**Ein neuer Bildschirm `meldungen`, fest in der unteren Leiste.** Er ersetzt
+den bisherigen Bildschirm `stoerung`, der darin aufgeht — zwei fast gleiche
+Seiten für dasselbe Ereignis wären eine Seite zu viel. Damit entfällt die
+bisherige Begründung in `bildschirme.ts` („wäre sonst ein Knopf, der meistens
+ins Leere führt"): Der Eintrag führt jetzt nie ins Leere, weil er einen leeren
+Zustand hat.
+
+**Leerer Zustand.** „Aktuell keine Meldungen." und darunter der Zeitstempel des
+letzten Live-Kontakts — den gibt es bereits als `stand` in `App.tsx`. Er belegt,
+dass wir noch hinhören, statt nur nichts zu sagen; das ist Grundprinzip 3 des
+Konzepts (keine vorgetäuschte Aktualität) auf den leeren Fall angewandt.
+
+**Mit Änderungen.** Die neueste Änderung groß, im Stil von Screen 4:
+
+- Der neue Wert **groß und in Rot** (`--color-rot`, identisch mit
+  `--color-accent`), der alte Wert daneben **durchgestrichen**. Das Mittel gibt
+  es schon: `<s className="tafel-alt">` in `Zugauswahl.tsx` streicht dort alte
+  Zeiten genauso durch. Nicht neu erfinden.
+- Alt→Neu-Vergleich mit Gehzeit wie in `Stoerung.tsx` (`.stoerung-gegenueber`,
+  `.stoerung-seite`, `.stoerung-neu` stehen in `App.css` bereit).
+- Der Ampelsatz aus `Stoerung.tsx` bleibt unverändert übernommen.
+- **Genau ein Knopf: „Route übernehmen".** „Alte Route behalten" entfällt.
+
+**Zur Auslegung von „keine alte Route behalten":** Der Knopf verschwindet, die
+Entscheidung nicht. Ein Gleiswechsel wird weiterhin **nicht still übernommen** —
+das war eine ausdrückliche Festlegung (Kommentarkopf in `Stoerung.tsx`: „Bisher
+rechnete die App neu und der Nutzer erfuhr es hinterher aus einem Banner. Jetzt
+sieht er alt gegen neu und entscheidet selbst."). Wer nicht übernehmen will,
+verlässt die Seite; das ist dann das Behalten. Diese Lesart wurde ausdrücklich
+bestätigt.
+
+**Verlauf.** Ältere Meldungen darunter als knappe Zeilen: Uhrzeit · Zug ·
+alt→neu. Übernehmen lässt sich **nur die neueste** — eine ältere zu übernehmen
+hieße, auf überholte Daten zurückzugehen.
+
+### Der Zähler
+
+| Zustand | Leisteneintrag „Meldungen" |
+|---|---|
+| Keine Änderung in dieser Reise | normal |
+| Ungelesene Änderungen | rotes Abzeichen mit **Anzahl**, rechts oben |
+| Gesehen, aber es gab welche | **kein** Abzeichen, Eintrag bleibt hervorgehoben |
+
+Die Hervorhebung hält bis „Angekommen". Begründung für das Zurücksetzen beim
+Öffnen: Ein Punkt, der dauerhaft steht, verliert seine Warnwirkung — nach der
+zweiten Meldung schaut niemand mehr hin.
+
+**Gezählt wird**, was ausdrücklich genannt wurde: Gleiswechsel **beider** Züge
+(Ankunft und Abfahrt) sowie Zeitänderungen.
+
+### Was das im Code bedeutet
+
+Heute hält `App.tsx` **eine einzige** Änderung: `const [vorschlag, setVorschlag]
+= useState<Vorschlag | null>(null)`. Jedes neue Ereignis überschreibt das
+vorige — deshalb gibt es bis jetzt nichts zu zählen. Beide Ereignistypen
+erzeugen bereits einen `vorschlag` (`gleiswechsel` rechnet die Route neu,
+`verspaetung` schreibt nur `abfahrtZeit` fort); das bleibt, wird aber zur Liste.
+
+| Datei | Änderung |
+|---|---|
+| `src/meldungen/` (neu) | Modell: `Meldung`, Liste anlegen, ungelesen zählen, als gelesen markieren. Rein und ohne React — wie `navigation/fortschritt.ts`, damit es ohne Rendern prüfbar ist. |
+| `src/screens/Meldungen.tsx` (neu) | Der Bildschirm: leerer Zustand, neueste Änderung, Verlauf. |
+| `src/screens/Stoerung.tsx` | Geht in `Meldungen` auf. Der Ampelsatz, `verschiebung()` und `minutenText()` wandern mit — sie sind getestet und gut. |
+| `src/navigation/bildschirme.ts` | `stoerung` → `meldungen`, als Leisteneintrag. Kommentarkopf anpassen. |
+| `src/components/Navileiste.tsx` | Abzeichen mit Anzahl statt des Punkts; Kennzeichen wandert vom Dashboard auf „Meldungen". |
+| `src/App.tsx` | `vorschlag` → `meldungen[]`; `Stoermeldung` verweist auf `meldungen`; Ankunft leert die Liste. |
+| `src/App.css` | Abzeichen, Hervorhebung, Verlaufszeilen. |
+
+### Tests, die dazugehören
+
+Leerer Zustand nennt keine Änderungen und zeigt den Zeitstempel · Zähler steht
+auf der Zahl der ungelesenen Änderungen · Öffnen setzt den Zähler zurück, die
+Hervorhebung bleibt · „Angekommen" räumt beides ab · Gleiswechsel **beider**
+Züge und Zeitänderungen zählen mit · die alte Zeit wird durchgestrichen
+dargestellt · „Route übernehmen" rechnet um, und es gibt **keinen**
+Behalten-Knopf mehr · nur die neueste Meldung ist übernehmbar.
+
+Die sechs Tests aus `Stoerung.test.tsx` ziehen mit um, statt gelöscht zu
+werden — sie prüfen Verhalten, das erhalten bleibt.
+
 ## Rechtliches
 
 Impressum und Datenschutzerklärung sind erreichbar über `#impressum` und
@@ -845,10 +1110,18 @@ Datenschutzerklärung lesen beide von dort. Stehen dort Platzhalter, zeigt die
 Impressumsseite eine rote Warnung.
 
 Die Datenschutzerklärung beschreibt ausschließlich, was der Code nachweislich
-tut: keine Cookies, kein `localStorage`, kein Tracking, Backend ohne Protokoll
-(`logger: false`), Standort im Browser auf ~110 m gerundet, Kartenkacheln erst
-beim Aufklappen. Schriften liegen lokal (`frontend/src/assets/fonts/`, SIL OFL
-1.1) – **kein** Google Fonts.
+tut: keine Cookies, kein `localStorage`, kein Tracking, Backend ohne
+**Zugriffsprotokoll** (`disableRequestLogging`), Standort im Browser auf ~110 m
+gerundet, Kartenkacheln erst beim Aufklappen. Schriften liegen lokal
+(`frontend/src/assets/fonts/`, SIL OFL 1.1) – **kein** Google Fonts.
+
+Bis zum 02.09.2026 stand hier `logger: false`. Das Backend protokolliert
+inzwischen **Ausfälle** – Overpass, FaSta, RIS::Stations, Timetables –, damit
+sie nicht länger lautlos geschehen. Diese Einträge nennen einen Bahnhof, keinen
+Menschen. Was ausbleibt, ist Fastifys Anfrageprotokoll: Es trägt `url` und
+`remoteAddress`, und die URL der Bahnhofssuche **ist** die Koordinate. Der Satz
+„Ein Zugriffsprotokoll mit Koordinaten wird nicht geführt" war zwischenzeitlich
+unwahr; `backend/test/datenschutz.test.ts` hält ihn jetzt fest.
 
 ## Konzeptlücken
 

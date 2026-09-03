@@ -13,6 +13,16 @@ export interface LiveEreignis {
 
 export type TafelAbrufFn = (eva: string) => Promise<TafelEintrag[]>;
 
+/**
+ * Genau so viel Logger, wie hier gebraucht wird.
+ *
+ * `core` kennt Fastify nicht und soll es nicht kennen. Fastifys Logger passt
+ * strukturell in diese Form, ohne dass die Abhaengigkeit hereinreicht.
+ */
+export interface Protokoll {
+  warn(daten: Record<string, unknown>, nachricht: string): void;
+}
+
 interface Abonnent {
   zuege: Set<string>; // leer = alle Züge
   sende: (ereignis: LiveEreignis) => void;
@@ -30,6 +40,7 @@ export class Ueberwachung {
   constructor(
     private readonly tafelFn: TafelAbrufFn,
     private readonly intervallMs = 30_000,
+    private readonly log?: Protokoll,
   ) {}
 
   /** Meldet einen Abonnenten an; Rückgabe ist die Abmeldefunktion. */
@@ -62,8 +73,16 @@ export class Ueberwachung {
     let tafel: TafelEintrag[];
     try {
       tafel = await this.tafelFn(eva);
-    } catch {
-      // Timetables-Ausfall: kein Heartbeat mit veralteten Daten, Poller läuft weiter
+    } catch (e) {
+      // Timetables-Ausfall: kein Heartbeat mit veralteten Daten, Poller läuft
+      // weiter. Der Strom bleibt offen und wird einfach stumm - vom Fall „es
+      // ändert sich gerade nichts" ist das für den Zuschauer nicht zu
+      // unterscheiden. Deshalb wenigstens hier eine Spur; ohne sie war ein
+      // Ausfall der Live-Überwachung im Betrieb an gar nichts zu erkennen.
+      this.log?.warn(
+        { degradation: 'tafel-unerreichbar', eva, grund: String(e) },
+        'Live-Ueberwachung ohne Tafeldaten - dieser Durchlauf faellt aus',
+      );
       return;
     }
 

@@ -140,3 +140,23 @@ describe('Zugauswahl: Kategorien und Zeitfenster', () => {
     expect(await screen.findByText(/45 Minuten/)).toBeDefined()
   })
 })
+
+/**
+ * `holeTafel` faengt heute jeden Netzfehler selbst ab und antwortet mit
+ * `{ ok: false }` - deshalb hatte die `.then()`-Kette nie ein `.catch()`.
+ * Das ist eine Zusicherung des Aufgerufenen, keine des Aufrufers: Bricht sie
+ * (ein Umbau des Clients, ein Wurf im Rueckgabepfad), bleibt `setLaden(false)`
+ * ungelaufen. Der Nutzer sieht dann "Tafel wird geladen ..." bis zum Neuladen
+ * der Seite, und in der Konsole steht eine unbehandelte Rejection, die
+ * niemand sucht.
+ */
+describe('Zugauswahl: die Tafel bleibt nicht ewig am Laden', () => {
+  it('kommt aus dem Ladezustand heraus, wenn der Abruf wirft', async () => {
+    holeTafelMock.mockRejectedValue(new Error('kaputt'))
+    zeige()
+    await aufklappen()
+
+    expect(screen.queryByText(/Tafel wird geladen/)).toBeNull()
+    expect(screen.getByText(/nicht erreichbar/i)).toBeTruthy()
+  })
+})

@@ -17,6 +17,13 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    /* Strenge. Beim Einschalten am 02.09.2026 gemessen: null Fehler - der
+       Code war laengst streng-sauber, nur hielt nichts diesen Zustand fest.
+       Ohne strict laufen `null` und `undefined` ungeprueft durch und
+       untypisierte Parameter sind still `any`. Das Backend hatte das von
+       Anfang an; das Frontend nicht. */
+    "strict": true,
+
     /* Linting */
     "noUnusedLocals": true,
     "noUnusedParameters": true,

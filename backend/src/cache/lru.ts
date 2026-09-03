@@ -28,8 +28,18 @@ function notbehelfTtl(): number {
   return Number.isFinite(gesetzt) && gesetzt > 0 ? gesetzt : NOTBEHELF_TTL_MS;
 }
 
-export function graphTtlMs(stufe: Stufe): number {
-  return stufe === 3 ? notbehelfTtl() : GRAPH_TTL_MS;
+/**
+ * Wie lange dieser Eintrag gelten darf.
+ *
+ * Zwei Dinge können ihn zum Notbehelf machen, und die Frist richtet sich nach
+ * dem schlechteren von beiden. Bisher zählte nur die Graphqualität: Ein
+ * sauberer OSM-Graph bekam die vollen 24 Stunden, auch wenn die Gleisliste
+ * dazu aus einem Teilausfall von RIS::Stations stammte. Damit überlebte der
+ * Ausfall seine Ursache um einen Tag – dieselbe Falle wie bei der Stufe 3,
+ * nur an der anderen Datenquelle.
+ */
+export function graphTtlMs(stufe: Stufe, gleislisteUnvollstaendig = false): number {
+  return stufe === 3 || gleislisteUnvollstaendig ? notbehelfTtl() : GRAPH_TTL_MS;
 }
 
 export function erzeugeCache<V extends object>(max: number, ttlMs: number): LRUCache<string, V> {

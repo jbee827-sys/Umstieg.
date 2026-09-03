@@ -116,8 +116,14 @@ export async function sucheBahnhoefeNahebei(
  * `stationID`, die auf jedem Mitglied steht: die Suche liefert immer den
  * führenden Eintrag, und dessen `groupMembers` ist die Gruppe.
  *
- * Fällt die Suche aus, bleibt es bei der einen Verkehrsstelle – lieber die
- * Gleise eines Bahnhofsteils als gar keine Route.
+ * Fällt die Suche aus, WIRFT diese Funktion – der Rückfall auf die eine
+ * Verkehrsstelle ist richtig, aber er gehört dem Aufrufer.
+ *
+ * Vorher wurde hier still `[eva]` zurückgegeben. Beide Aufrufer fielen damit
+ * korrekt zurück, nur wusste es niemand: Der Logeintrag `gruppe-unbekannt` in
+ * `api.ts` hängt an einem `catch`, das so nie erreicht wurde. Grün war sein
+ * Test allein deshalb, weil das Mock warf – die echte Funktion tat es nie.
+ * Wer zurückfällt, entscheidet der Aufrufer; er ist der Einzige mit Logger.
  */
 async function ermittleGruppe(
   eva: string,
@@ -125,14 +131,11 @@ async function ermittleGruppe(
   stationID: string | undefined,
   fetchFn: typeof fetch,
 ): Promise<string[]> {
+  // Kein Ausfall, sondern eine Auskunft: Ohne Bahnhofsnummer gibt es keine
+  // Gruppe, nach der sich fragen liesse. Das bleibt still.
   if (!stationID) return [eva];
-  let treffer: StopPlace[];
-  try {
-    const body = (await dbGet(epStopPlacesByName(name), fetchFn)) as { stopPlaces?: StopPlace[] };
-    treffer = body.stopPlaces ?? [];
-  } catch {
-    return [eva];
-  }
+  const body = (await dbGet(epStopPlacesByName(name), fetchFn)) as { stopPlaces?: StopPlace[] };
+  const treffer = body.stopPlaces ?? [];
   const fuehrend = treffer.find(
     (sp) => sp.stationID === stationID && (sp.groupMembers?.length ?? 0) > 0,
   );
@@ -173,12 +176,23 @@ export async function holeStationsInfo(
 ): Promise<StationsInfo> {
   const stopPlace = await ladeStopPlace(eva, fetchFn);
   const name = stopPlace.names?.DE?.nameLong ?? `EVA ${eva}`;
-  const evas = await ermittleGruppe(eva, name, stopPlace.stationID, fetchFn);
+
+  // Ohne Gruppe ist die Route immer noch besser als keine – aber sie steht
+  // dann auf der Gleisliste EINER Verkehrsstelle, und das muss mitreisen.
+  let evas: string[];
+  let gruppeUnvollstaendig = false;
+  try {
+    evas = await ermittleGruppe(eva, name, stopPlace.stationID, fetchFn);
+  } catch {
+    evas = [eva];
+    gruppeUnvollstaendig = true;
+  }
 
   // Gleislisten aller Mitglieder, vereinigt nach Gleisnamen. Vereinigung statt
   // Verkettung, weil dieselbe Nummer unter mehreren Verkehrsstellen stehen
   // kann – München führt Gleis 13 unter dreien. Die Unterteilung ist
   // betrieblich, nicht physisch; Koordinaten trägt die Liste ohnehin nicht.
+  let gleisteileOhneAntwort = 0;
   const listen = await Promise.all(
     evas.map(async (mitglied) => {
       try {
@@ -187,7 +201,10 @@ export async function holeStationsInfo(
         };
         return body.platforms ?? [];
       } catch {
-        // Ein ausgefallener Bahnhofsteil darf die übrigen nicht mitnehmen.
+        // Ein ausgefallener Bahnhofsteil darf die übrigen nicht mitnehmen –
+        // aber gezählt wird er. Eine unvollständige Liste, die sich für
+        // vollständig ausgibt, ist schlimmer als eine kurze mit Vermerk.
+        gleisteileOhneAntwort++;
         return [];
       }
     }),
@@ -210,5 +227,19 @@ export async function holeStationsInfo(
     evas,
     ...(stopPlace.stationID ? { stationID: stopPlace.stationID } : {}),
     gleise,
+    gleisteileOhneAntwort,
+    ...(gruppeUnvollstaendig ? { gruppeUnvollstaendig } : {}),
   };
+}
+
+/**
+ * Ob dieser Gleisliste etwas fehlt, das eigentlich dazugehört.
+ *
+ * Die beiden Ausfälle unterscheiden sich in der Ursache, nicht in der Folge:
+ * Die Liste ist kürzer, als der Bahnhof ist. Für jeden, der sie auswertet,
+ * zählt nur diese eine Frage – deshalb hier gebündelt statt an jeder
+ * Auswertungsstelle neu zusammengesetzt.
+ */
+export function gleislisteUnvollstaendig(info: StationsInfo): boolean {
+  return (info.gleisteileOhneAntwort ?? 0) > 0 || info.gruppeUnvollstaendig === true;
 }
