@@ -56,7 +56,7 @@ describe('CORS', () => {
   //
   // Ueber einen echten Socket statt app.inject(): inject bricht die
   // hijack-Antwort nicht ab und liefe in den Timeout.
-  async function sseAntwort(herkunft: string) {
+  async function sseKopf(herkunft: string) {
     const app = buildApp({ ueberwachung: new Ueberwachung(async () => []) });
     await app.listen({ port: 0, host: '127.0.0.1' });
     const { port } = app.server.address() as AddressInfo;
@@ -66,7 +66,10 @@ describe('CORS', () => {
         headers: { origin: herkunft },
         signal: steuerung.signal,
       });
-      return antwort.headers.get('access-control-allow-origin');
+      return {
+        freigabe: antwort.headers.get('access-control-allow-origin'),
+        vary: antwort.headers.get('vary'),
+      };
     } finally {
       steuerung.abort();
       await app.close();
@@ -75,12 +78,25 @@ describe('CORS', () => {
 
   it('auch der SSE-Strom traegt den Freigabe-Header', async () => {
     process.env.CORS_ORIGIN = 'https://umstieg.vercel.app';
-    expect(await sseAntwort('https://umstieg.vercel.app')).toBe('https://umstieg.vercel.app');
+    expect((await sseKopf('https://umstieg.vercel.app')).freigabe).toBe(
+      'https://umstieg.vercel.app',
+    );
   });
 
   it('der SSE-Strom gibt fremden Herkuenften keine Freigabe', async () => {
     process.env.CORS_ORIGIN = 'https://umstieg.vercel.app';
-    expect(await sseAntwort('https://angreifer.example')).toBeNull();
+    expect((await sseKopf('https://angreifer.example')).freigabe).toBeNull();
+  });
+
+  // Auch die ABLEHNUNG haengt an der Herkunft. Ohne `Vary` darf ein
+  // Zwischenspeicher die kopflose Antwort, die eine fremde Herkunft bekommen
+  // hat, an eine erlaubte ausliefern - und die scheiterte dann an einer
+  // Freigabe, die es eigentlich gibt. @fastify/cors sendet den Header
+  // deshalb in BEIDEN Faellen; diese Route tat es zuerst nur im erlaubten.
+  it('nennt Origin in beiden Faellen als Variationsgrund', async () => {
+    process.env.CORS_ORIGIN = 'https://umstieg.vercel.app';
+    expect((await sseKopf('https://umstieg.vercel.app')).vary).toBe('Origin');
+    expect((await sseKopf('https://angreifer.example')).vary).toBe('Origin');
   });
 
   it('mehrere Herkuenfte kommagetrennt, Leerzeichen werden getrimmt', async () => {
