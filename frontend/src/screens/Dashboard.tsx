@@ -22,11 +22,11 @@ interface DashboardProps {
   startPufferSek?: number
   abgefahren: boolean
   varianten: VariantenStand
-  /** Ein Gleiswechsel-Vorschlag liegt vor. */
+  /** Ungelesene Meldungen liegen vor. */
   hinweis: boolean
   onVariante: (v: RoutenVariante) => void
   onNavigation: () => void
-  onStoerung: () => void
+  onMeldungen: () => void
 }
 
 const KNOEPFE: { wert: RoutenVariante; label: string; feld: keyof VariantenStand }[] = [
@@ -60,7 +60,7 @@ export function Dashboard({
   hinweis,
   onVariante,
   onNavigation,
-  onStoerung,
+  onMeldungen,
 }: DashboardProps) {
   const farbe = farbeVon(restSek, route.gehzeitSek, abgefahren)
   return (
@@ -130,8 +130,8 @@ export function Dashboard({
       )}
 
       {hinweis && (
-        <button type="button" className="knopf-sekundaer" onClick={onStoerung}>
-          Störung ansehen
+        <button type="button" className="knopf-sekundaer" onClick={onMeldungen}>
+          Meldung ansehen
         </button>
       )}
 

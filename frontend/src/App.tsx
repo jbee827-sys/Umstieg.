@@ -11,13 +11,22 @@ import { Angekommen } from './screens/Angekommen'
 import { Navileiste } from './components/Navileiste'
 import { Dashboard, type VariantenStand } from './screens/Dashboard'
 import { Navigation } from './screens/Navigation'
-import { Stoerung, type Vorschlag } from './screens/Stoerung'
+import { Meldungen } from './screens/Meldungen'
 import { Eingabe, type EingabeWerte } from './components/Eingabe'
 import { Stoermeldung } from './components/Stoermeldung'
 import { StandortStreifen } from './components/StandortStreifen'
 import { ANKUNFT_START, pruefeAnkunft, zielKoordinate } from './standort/ankunft'
 import { ABGEFAHREN_KULANZ_MS } from './standort/schwellen'
 import { schrittPosition } from './navigation/fortschritt'
+import {
+  alleGelesen,
+  ergaenze,
+  hervorgehoben,
+  markiereUebernommen,
+  setzeVorschlag,
+  ungelesen,
+  type Meldung,
+} from './meldungen/modell'
 import { leere as leereEntwurf, lies as liesEntwurf, schreibe as schreibeEntwurf } from './sitzung/eingabespeicher'
 import type { Bildschirm } from './navigation/bildschirme'
 import { erkenneBahnhof } from './standort/bahnhofErkennung'
@@ -45,6 +54,14 @@ const STUFEN_TEXT: Record<number, string> = {
   3: 'Standardmodell (ca.-Angaben)',
 }
 
+/**
+ * Die Bildschirme, auf denen eine Reise laeuft: Hier tickt die Uhr und hier
+ * haengt der Live-Strom. `meldungen` gehoert dazu, seit es ein Dauereintrag
+ * ist - eine Seite, die Live-Aenderungen zeigt, muss angeschlossen sein,
+ * solange sie offen ist.
+ */
+const AUF_REISE: Bildschirm[] = ['dashboard', 'navigation', 'meldungen']
+
 /** 'HH:MM' → heutiger Zeitpunkt; kurz nach Mitternacht zählt eine frühe Abfahrt als morgen. */
 function heuteUm(hhmm: string): Date {
   const [h, m] = hhmm.split(':').map(Number)
@@ -67,17 +84,24 @@ function App() {
   // Beim Seitenwechsel frisch stellen. Ohne das ginge die Ampel mit einer bis
   // zu zehn Sekunden alten Zahl auf - beim Countdown auf einen Anschluss die
   // eine Stelle, an der das auffiele.
+  // Alle Aenderungen dieser Reise, neueste zuerst. Bis zum 03.09.2026 stand
+  // hier EIN Vorschlag - jedes neue Ereignis ueberschrieb das vorige, und
+  // danach war nicht mehr feststellbar, dass es das vorige gegeben hatte.
+  // Deshalb gab es auch nichts zu zaehlen.
+  const [meldungen, setMeldungen] = useState<Meldung[]>([])
   const setBildschirm = useCallback((naechster: Bildschirm) => {
     setJetzt(Date.now())
+    // Das Lesen ist ein Ereignis, kein Zustandsabgleich: Wer die Seite
+    // oeffnet, hat gelesen. Ein Punkt, der dauerhaft steht, verliert seine
+    // Warnwirkung - nach der zweiten Meldung schaut niemand mehr hin. Dass
+    // es Meldungen GAB, bleibt an der Hervorhebung sichtbar.
+    if (naechster === 'meldungen') setMeldungen(alleGelesen)
     setzeBildschirmRoh(naechster)
   }, [])
   // Route bleibt nach Berechnung vollständig im Speicher – die Anzeige
   // funktioniert auch, wenn die Verbindung im Bahnhof abreißt (Konzept).
   const [route, setRoute] = useState<RouteErgebnis | null>(null)
   const [varianten, setVarianten] = useState<VariantenStand>({ gewaehlt: 'schnellste' })
-  // Ein Gleiswechsel-Vorschlag. Liegt einer vor, traegt die Leiste ein
-  // Kennzeichen; uebernommen wird er nur auf Knopfdruck.
-  const [vorschlag, setVorschlag] = useState<Vorschlag | null>(null)
   // Die aktuelle Route fuer den SSE-Behandler, ohne ihn bei jeder Aenderung
   // neu zu abonnieren.
   const routeRef = useRef<RouteErgebnis | null>(null)
@@ -134,7 +158,7 @@ function App() {
   // Restzeit auf der Angekommen-Seite. Die Schrittanzeige haengt seit dem
   // 02.09.2026 NICHT mehr daran: Weitergeschaltet wird per Knopf.
   useEffect(() => {
-    if (bildschirm !== 'dashboard' && bildschirm !== 'navigation') return
+    if (!AUF_REISE.includes(bildschirm)) return
     const timer = window.setInterval(() => setJetzt(Date.now()), 10000)
     return () => window.clearInterval(timer)
   }, [bildschirm])
@@ -233,7 +257,11 @@ function App() {
   // hinterher aus einem Banner. Jetzt entsteht ein Vorschlag, den er auf dem
   // Störungsbildschirm annimmt oder verwirft.
   useEffect(() => {
-    if ((bildschirm !== 'dashboard' && bildschirm !== 'navigation') || !werte?.eva) return
+    // Auch auf der Meldungsseite - ihr leerer Zustand sagt zu, dass noch
+    // hingehoert wird, und der Zeitstempel daneben belegt es. Waere der Strom
+    // dort geschlossen, waere beides unwahr, sobald jemand die Seite offen
+    // laesst.
+    if (!AUF_REISE.includes(bildschirm) || !werte?.eva) return
     return verbindeLive({
       eva: werte.eva,
       zugAn: werte.zugAnName,
@@ -251,11 +279,21 @@ function App() {
         // Route bleibt, nur die Zeit wird neu. Ein Gleiswechsel dagegen
         // braucht eine neue Berechnung.
         if (ereignis.typ === 'verspaetung' && ereignis.neu) {
-          setVorschlag((alt) => ({
-            route: alt?.route ?? routeRef.current!,
-            werte: { ...werte, abfahrtZeit: ereignis.neu },
-            anlass: ereignis,
-          }))
+          // Auf dem letzten Vorschlag aufsetzen, nicht daneben: Liegt ein
+          // noch nicht uebernommener Gleiswechsel vor, traegt die neueste
+          // Meldung beides - neues Gleis UND neue Zeit. Sonst waere nach
+          // einer Verspaetung der Gleiswechsel nicht mehr uebernehmbar, denn
+          // uebernehmen laesst sich nur die neueste.
+          setMeldungen((liste) => {
+            const basis = liste[0]?.vorschlag
+            const ergaenzt = ergaenze(liste, ereignis, {
+              route: basis?.route ?? routeRef.current!,
+              werte: { ...(basis?.werte ?? werte), abfahrtZeit: ereignis.neu! },
+              anlass: ereignis,
+            })
+            // Wer die Seite offen hat, liest mit.
+            return bildschirm === 'meldungen' ? alleGelesen(ergaenzt) : ergaenzt
+          })
           return
         }
         if (ereignis.typ !== 'gleiswechsel' || !ereignis.neu) return
@@ -265,8 +303,16 @@ function App() {
           gleisAn: betrifftAnkunft ? ereignis.neu : werte.gleisAn,
           gleisAb: betrifftAnkunft ? werte.gleisAb : ereignis.neu,
         }
-        // Berechnen ja, anwenden nein. Schlägt es fehl, bleibt es beim Banner –
-        // dann weiß der Nutzer wenigstens vom Wechsel.
+        // Die Meldung entsteht SOFORT, die Route wird nachgetragen. Entstuende
+        // sie erst mit der Route, zaehlte ein fehlgeschlagener Abruf gar
+        // nicht - und der Reisende erfuehre vom Wechsel allein aus dem
+        // Banner, das er wegwischen kann.
+        setMeldungen((liste) => {
+          const ergaenzt = ergaenze(liste, ereignis)
+          return bildschirm === 'meldungen' ? alleGelesen(ergaenzt) : ergaenzt
+        })
+        // Berechnen ja, anwenden nein. Schlägt es fehl, bleibt die Meldung
+        // ohne Route stehen und sagt das auch.
         void holeRoute({
           eva: neueWerte.eva,
           gleisAn: neueWerte.gleisAn,
@@ -276,8 +322,18 @@ function App() {
           zugAn: neueWerte.zugAn,
           wagen: neueWerte.wagen || undefined,
         })
-          .then((neueRoute) => setVorschlag({ route: neueRoute, werte: neueWerte, anlass: ereignis }))
-          .catch(() => setVorschlag(null))
+          .then((neueRoute) =>
+            setMeldungen((liste) =>
+              // Die Meldung wird ueber ihr Ereignis wiedergefunden - in der
+              // Zwischenzeit koennen weitere dazugekommen sein.
+              setzeVorschlag(liste, liste.find((m) => m.ereignis === ereignis)?.nr ?? -1, {
+                route: neueRoute,
+                werte: neueWerte,
+                anlass: ereignis,
+              }),
+            ),
+          )
+          .catch(() => undefined)
       },
     })
   }, [bildschirm, werte, berechne])
@@ -294,7 +350,7 @@ function App() {
         ereignis={liveEreignis}
         onAnsehen={() => {
           setLiveEreignis(null)
-          setBildschirm('stoerung')
+          setBildschirm('meldungen')
         }}
         onSchliessen={() => setLiveEreignis(null)}
       />
@@ -305,6 +361,10 @@ function App() {
     // weiter vorzuhalten hiesse, die naechste Reise mit der letzten zu
     // beginnen.
     leereEntwurf()
+    // Zaehler und Hervorhebung gehoerten zu diesem Umstieg. Sie in die
+    // naechste Reise mitzunehmen hiesse, eine erledigte Aenderung als offen
+    // auszugeben.
+    setMeldungen([])
     ankunft.current = { ...ankunft.current, bestaetigt: true }
     setAnkunftVorschlag(false)
     stoppeVerfolgung()
@@ -333,41 +393,42 @@ function App() {
         <Navileiste
           aktuell={bildschirm}
           hatRoute={route !== null}
-          hinweis={false}
+          ungelesen={ungelesen(meldungen)}
+          hervorgehoben={hervorgehoben(meldungen)}
           onWechsel={setBildschirm}
         />
       </main>
     )
   }
 
-  if (bildschirm === 'stoerung' && vorschlag && route && werte) {
-    const restSek = vorschlag.werte.abfahrtZeit
-      ? (heuteUm(vorschlag.werte.abfahrtZeit).getTime() - jetzt) / 1000
-      : undefined
+  if (bildschirm === 'meldungen' && route && werte) {
+    // Die Restzeit bezieht sich auf die NEUE Abfahrt - die ist der Grund,
+    // warum die Ampel nach dem Wechsel anders stehen kann.
+    const neueZeit = meldungen[0]?.vorschlag?.werte.abfahrtZeit
+    const restSek = neueZeit ? (heuteUm(neueZeit).getTime() - jetzt) / 1000 : undefined
     return (
       <main className="app">
         {meldung}
-        <Stoerung
-          vorschlag={vorschlag}
+        <Meldungen
+          meldungen={meldungen}
           alteRoute={route}
           alteWerte={werte}
+          stand={stand}
           restSek={restSek}
-          onUebernehmen={() => {
-            setWerte(vorschlag.werte)
-            setRoute(vorschlag.route)
+          onUebernehmen={(angenommen) => {
+            if (!angenommen.vorschlag) return
+            setWerte(angenommen.vorschlag.werte)
+            setRoute(angenommen.vorschlag.route)
             setVersatz(0)
-            setVorschlag(null)
-            setBildschirm('dashboard')
-          }}
-          onBehalten={() => {
-            setVorschlag(null)
+            setMeldungen((liste) => markiereUebernommen(liste, angenommen.nr))
             setBildschirm('dashboard')
           }}
         />
         <Navileiste
-          aktuell="dashboard"
+          aktuell={bildschirm}
           hatRoute={route !== null}
-          hinweis={false}
+          ungelesen={ungelesen(meldungen)}
+          hervorgehoben={hervorgehoben(meldungen)}
           onWechsel={setBildschirm}
         />
       </main>
@@ -388,15 +449,16 @@ function App() {
           restSek={restSek}
           abgefahren={abgefahren}
           varianten={varianten}
-          hinweis={vorschlag !== null}
+          hinweis={ungelesen(meldungen) > 0}
           onVariante={waehleVariante}
           onNavigation={() => setBildschirm('navigation')}
-          onStoerung={() => setBildschirm('stoerung')}
+          onMeldungen={() => setBildschirm('meldungen')}
         />
         <Navileiste
           aktuell={bildschirm}
           hatRoute={route !== null}
-          hinweis={vorschlag !== null}
+          ungelesen={ungelesen(meldungen)}
+          hervorgehoben={hervorgehoben(meldungen)}
           onWechsel={setBildschirm}
         />
       </main>
@@ -447,7 +509,8 @@ function App() {
         <Navileiste
           aktuell={bildschirm}
           hatRoute={route !== null}
-          hinweis={false}
+          ungelesen={ungelesen(meldungen)}
+          hervorgehoben={hervorgehoben(meldungen)}
           onWechsel={setBildschirm}
         />
       </main>
@@ -498,7 +561,8 @@ function App() {
         <Navileiste
           aktuell={bildschirm}
           hatRoute={route !== null}
-          hinweis={false}
+          ungelesen={ungelesen(meldungen)}
+          hervorgehoben={hervorgehoben(meldungen)}
           onWechsel={setBildschirm}
         />
     </main>

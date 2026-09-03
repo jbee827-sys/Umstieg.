@@ -16,22 +16,23 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 02.09.2026, abends)
+## Hier weitermachen (Stand 03.09.2026)
 
-> **Nächster Schritt: die Meldungsseite bauen.** Das Konzept ist abgestimmt und
-> freigegeben und steht vollständig im Abschnitt
-> [„Meldungsseite — freigegebenes Konzept"](#meldungsseite--freigegebenes-konzept-02092026-noch-nicht-gebaut).
-> Es ist so geschrieben, dass es ohne den Chat umsetzbar ist. **Noch keine Zeile
-> davon existiert.**
+> **Die Meldungsseite ist gebaut und im Browser gesehen** – Einzelheiten im
+> Abschnitt [„Meldungsseite"](#meldungsseite-gebaut-03092026). Dabei sind auch
+> **P4 und P5 gefallen**, die seit dem 01.09. auf ein Live-Ereignis warteten:
+> Statt weiter darauf zu hoffen, wurden die Ereignisse von aussen eingespeist
+> (siehe „Wie P4 und P5 doch noch sichtbar wurden").
 >
-> Der gesamte Stand vom 02.09.2026 liegt **unversioniert im Arbeitsverzeichnis**
-> (`git status` zeigt ~30 Dateien). Vor dem Weiterbauen committen.
-
+> **Nächster Schritt: die Mobilabnahme am echten Gerät** (P1 Task 12 / ToDo 3).
+> Das ist der letzte offene Punkt der Sichtprüfung und braucht Handarbeit an
+> einem Handy – Berechtigungsdialog, GPS in der Bahnhofshalle,
+> Ankunftserkennung am Gleis, Bedienbarkeit mit Gepäck.
 
 ```bash
 cd backend && npm test        # muss 221 von 221 grün sein
 cd backend && npm run lint    # oxlint + tsc --noEmit, muss sauber sein
-cd frontend && npm test       # muss 154 von 154 grün sein
+cd frontend && npm test       # muss 179 von 179 grün sein
 cd frontend && npm run lint   # oxlint + tsc --noEmit, muss sauber sein
 cd frontend && npm run build  # muss grün sein
 ```
@@ -57,17 +58,21 @@ Backend-Fix gegen doppelte Graphbauten (3c) und die vier Lint-Warnungen im
 Frontend (4). Letzteres brachte nebenbei die ersten Tests für `Zugauswahl`
 und `Eingabe` – beide waren bis dahin ungetestet.
 
+**Am 03.09.2026 ist die Meldungsseite gebaut** – der Bildschirm `stoerung`
+geht darin auf, die Leiste trägt einen Zähler, und der Verlauf einer Reise
+bleibt erhalten. Gegen eingespeiste Live-Ereignisse im Browser gesehen.
+
 **Was fehlt, ist keine Zeile Code, sondern der Blick darauf:** Die
-Sichtprüfung am Desktop ist am 29./30.08. erfolgt (Abschnitt „Abnahme im
-Browser"). Offen bleibt, was nur ein Handy zeigt – Berechtigungsdialog,
+Sichtprüfung am Desktop ist erfolgt (Abschnitte „Abnahme im Browser" und
+„Meldungsseite"). Offen bleibt, was nur ein Handy zeigt – Berechtigungsdialog,
 GPS-Genauigkeit in der Bahnhofshalle, Ankunftserkennung am Gleis. Nächster
 Schritt ist deshalb P1 Task 12 (Mobilabnahme, fünf Punkte im Plan). Das
 braucht Handarbeit an einem echten Gerät.
 
-## Offen: was NICHT geprüft ist (Stand 01.09.2026, abends)
+## Offen: was NICHT geprüft ist (Stand 03.09.2026)
 
 Der Frontend-Umbau und die sechs Feinschliffe sind **codeseitig fertig und
-maschinell grün** (Stand 02.09.2026: 138 Frontend-Tests, 221 Backend-Tests, Build und Lint
+maschinell grün** (Stand 03.09.2026: 179 Frontend-Tests, 221 Backend-Tests, Build und Lint
 sauber). Was fehlt, ist der Blick darauf. Dieser Abschnitt trennt bewusst,
 **was gesehen wurde und was nicht** – die schwersten Fehler dieses Projekts
 waren allesamt nur im Browser sichtbar.
@@ -85,13 +90,15 @@ waren allesamt nur im Browser sichtbar.
 
 ### NICHT geprüft – hier bitte weitermachen
 
+Von den sechs Punkten steht nur noch einer offen: **P6, die Mobilabnahme.**
+
 | # | Was | Stand |
 |---|---|---|
 | ~~P1~~ | ~~**Ampel-Layout nach der Korrektur**~~ | ✅ **gesehen 01.09.2026.** Statustext steht unter der Zeitleiste, kein „–:––“-Artefakt, Gehzeit rechts. Geprüft in beiden Zuständen: grün mit Countdown („Entspannt erreichbar“) und grau mit Begründung. Der Countdown lief zwischen zwei Aufnahmen weiter – der 10-Sekunden-Takt treibt die Anzeige auch nach dem Umbau auf `jetzt` als Zustand. |
 | ~~P2~~ | ~~**Weg-Seite**~~ | ✅ **gesehen 01.09.2026, Fehler gefunden und behoben.** Ebenenschema, Schritt-Sheet, „Alle Schritte“, der neue „Angekommen“-Knopf und „Echte Karte anzeigen“ stehen. Das Schema legte Gleis 4 anfangs auf Ebene 0 statt −2 – Ursache und Korrektur unter „Der Ebenensprung“. Nach der Korrektur erneut im Browser geprüft: Gleis 4 liegt auf EBENE −2. |
 | ~~P3~~ | ~~**Angekommen-Seite**~~ | ✅ **gesehen 01.09.2026.** Grüne Fläche mit weißem Haken, „Du bist da. / Gleis 4“, Kacheln Puffer und Abfahrt, „Neue Reise“. **Nicht** gesehen: der Wagenkasten – er verlangt `istFernverkehr(zugAbName) && (wagen \|\| abschnitt)`, und die Wagennummer war leer. Die Bedingung ist im Code geprüft, der Kasten selbst nicht. |
-| P4 | **Globale Störmeldung** | ❌ **weiterhin offen.** Der SSE-Strom steht nachweislich (Heartbeats alle 30 s, mit `curl -sN /api/live/8011160` mitgelesen), aber Ereignisse feuern nur bei einer Änderung zwischen zwei Abfragen. In rund 15 Minuten Beobachtung am 01.09. abends änderte sich an der Tafel nichts. **Nicht erzwingbar** – braucht Geduld oder einen Auslöser von Hand. |
-| P5 | **Störungsseite mit Verspätung** | ❌ **weiterhin offen**, aus demselben Grund wie P4. |
+| ~~P4~~ | ~~**Globale Störmeldung**~~ | ✅ **gesehen 03.09.2026.** Das rote Band fährt von oben ein, bedeckt etwa ein Drittel und trägt Titel, Klartext und Zeitstempel – über dem Dashboard, ohne Seitenwechsel. Wartete seit dem 01.09. auf ein Live-Ereignis; statt weiter zu warten, wurde eines eingespeist (siehe „Wie P4 und P5 doch noch sichtbar wurden"). **Was damit NICHT belegt ist:** dass das Backend eine echte Änderung erkennt. Geprüft ist der Weg ab dem SSE-Strom. |
+| ~~P5~~ | ~~**Störungsseite mit Verspätung**~~ | ✅ **gesehen 03.09.2026**, auf demselben Weg. Aus der Störungsseite ist inzwischen die Meldungsseite geworden; gesehen wurden beide Ereignistypen, der Zähler, der Verlauf und das Übernehmen. Einzelheiten unter „Meldungsseite". |
 | P6 | **Mobilabnahme am Gerät** | Unverändert offen: Berechtigungsdialog, GPS in der Halle, Ankunftserkennung, Bedienbarkeit mit Gepäck. |
 
 ### Nebenbefunde der Sichtprüfung (01.09.2026)
@@ -197,12 +204,13 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | ~~1b~~ | ~~**Graph-Cache vergiftet sich selbst**~~ ✅ **erledigt 31.08.2026** | Frist jetzt nach Qualität: Stufe 1/2 volle 24 h, Stufe 3 zehn Minuten (`graphTtlMs` in `cache/lru.ts`). |
 | ~~2~~ | ~~**FaSta-Adressierung schließen**~~ ✅ **erledigt 31.08.2026** | `stationID` wird durchgereicht. Der Fund dabei: Mit der EVA antwortete FaSta **nicht** mit einem Fehler, sondern mit HTTP 200 und `[ ]`. |
 | 3a | **Erkennungsradius von 1000 m prüfen** | Am 31.08. beobachtet: Von `52.84/13.81` aus liegt Eberswalde Hbf **1094 m** entfernt – 94 m zu weit, die Umkreissuche liefert nichts, und die Vorbelegung bleibt leer. Die Rohantwort enthält dort 17 Bushaltestellen, aber keine Eisenbahn-Verkehrsstelle; der Filter arbeitet also richtig. Zu entscheiden ist der Radius (`ERKENNUNG_RADIUS_M` in `routes/api.ts`) – gehört in die Mobilabnahme. |
-| 3b | **Sichtprüfung der neuen Bildschirme** – *größtenteils erledigt 01.09.2026* | Ampel (P1) und Angekommen-Seite (P3) sind gesehen und in Ordnung, die Weg-Seite (P2) steht, hat aber einen **echten Fehler** in der Ebenenzuordnung. Offen bleiben P4 und P5 – sie brauchen ein Live-Ereignis, das sich nicht erzwingen lässt. Einzelheiten oben. |
+| ~~3b~~ | ~~**Sichtprüfung der neuen Bildschirme**~~ ✅ **erledigt 03.09.2026** | Ampel (P1), Weg-Seite (P2) und Angekommen-Seite (P3) am 01.09.; P4 und P5 am 03.09. über eingespeiste Ereignisse. Offen bleibt allein die Mobilabnahme (ToDo 3). |
 | ~~3e~~ | ~~**Der Ebenensprung**~~ ✅ **erledigt 01.09.2026** | Strukturell, nicht Berliner Eigenart: eine geratene Ebene 0 plus zwei Bahnsteige, die sich eine Gleisnummer teilen. Einzelheiten und Auszählung unter „Der Ebenensprung“. Der volle Abgleich OSM ↔ DB-Gleisliste (§4.3, ToDo 7) bleibt davon unberührt offen. |
 | ~~3f~~ | ~~**Zugtafel kappen**~~ ✅ **erledigt 01.09.2026** | Zeitfenster −5/+45 Minuten und vier Kategorien statt einer Bandwurmliste. Aus 113 Einträgen wurden 51 in drei Blöcken. Siehe „Die Zugauswahl“. |
 | 3g | **„Schnellste“ ist langsamer als „barrierefrei“** | 6 min gegen 5 min im selben Dashboard. Die schnellste Route darf nie langsamer sein als eine andere Variante. |
 | ~~3c~~ | ~~**Gleichzeitige Graphbauten zusammenführen**~~ ✅ **erledigt 01.09.2026** | Zwei Karten laufender Versprechen in `routes/api.ts` – eine auf die EVA, eine auf den Bahnhofsschlüssel. Wer als Zweiter kommt, wartet auf den laufenden Bau, statt danebenher einen eigenen zu starten. Drei Tests in `test/cache.test.ts`. **Die Falle dabei:** Bei einem Bahnhof aus einer einzigen Verkehrsstelle sind EVA und Gruppenschlüssel dieselbe Zeichenkette – in **einer** Karte fand der innere Bau das noch offene äussere Versprechen und wartete auf sich selbst. Der Testlauf lief in den Timeout, nicht in eine Fehlermeldung. |
 | ~~3d~~ | ~~**Frontend deployen**~~ ✅ **erledigt 01.09.2026** | Frontend auf Vercel, Backend auf Fly.io. Einzelheiten unter „Deployment 01.09.2026“ – dort steht auch, was dabei **nicht** nachweisbar war. |
+| ~~3h~~ | ~~**Meldungsseite bauen**~~ ✅ **erledigt 03.09.2026** | Neues Modell `src/meldungen/`, neuer Bildschirm `src/screens/Meldungen.tsx`; `Stoerung.tsx` ist darin aufgegangen. 25 Tests dazu. Einzelheiten unter „Meldungsseite". |
 | 3 | **Mobilabnahme am echten Gerät** | Die Sichtprüfung am Desktop ist am 29./30.08. erfolgt (siehe „Abnahme im Browser"). Offen bleibt, was nur ein Handy zeigt: Berechtigungsdialog, Wiederkehrer ohne Dialog, Genauigkeit im Bahnhof, Ankunftserkennung am Gleis, und ob die automatische Ebenenwahl als Hilfe oder als Bevormundung ankommt. `mkcert`-Zertifikate in `frontend/.cert/` schalten den Dev-Server auf HTTPS. |
 | ~~4~~ | ~~**4 Lint-Warnungen im Frontend**~~ ✅ **erledigt 01.09.2026** | `npm run lint` ist jetzt ohne Ausgabe. Einzelheiten im Abschnitt „Lint-Warnungen aufgelöst“. Voraussetzung waren 11 neue Tests für `Zugauswahl` und `Eingabe` – beide Komponenten hatten vorher **keine**. |
 | 5 | **Vercel: Framework-Preset steht auf „Services"** | Rückstand der `experimentalServices`-Erkennung beim `vercel link`. Die `vercel.json` überschreibt es, der Build ist nachweislich korrekt – kosmetisch, aber irreführend. Settings → Build & Deployment. |
@@ -996,109 +1004,108 @@ Für den Reisenden ändert sich nichts: Beide Wege enden in derselben
 Bahnsteigmitte mit demselben Hinweis. Nur im Protokoll stehen sie jetzt
 auseinander.
 
-## Meldungsseite — freigegebenes Konzept (02.09.2026, NOCH NICHT GEBAUT)
+## Meldungsseite (gebaut 03.09.2026)
 
-Abgestimmt und freigegeben am 02.09.2026; **keine Zeile davon ist umgesetzt.**
-Dieser Abschnitt ist der Wiedereinstiegspunkt und absichtlich so ausführlich,
-dass er ohne den Gesprächsverlauf trägt.
+Das Konzept wurde am 02.09. abgestimmt und am 03.09. umgesetzt. Der Bildschirm
+`stoerung` ist darin **aufgegangen** – zwei fast gleiche Seiten für dasselbe
+Ereignis wären eine Seite zu viel gewesen.
 
-### Zuerst: die Vorlagenfrage, damit sie nicht zweimal gestellt wird
-
-Die Anforderung lautete „baue die Seite exakt nach
-`2026-08-24-umstiegs-navigator-design.md`". **Dort steht keine Vorlage für eine
-Meldungsseite.** Das Dokument ist das Umsetzungskonzept: Abschnitt 9
-beschreibt zwei Ansichten (Eingabe, Routenansicht) plus „LiveBanner",
-Abschnitt 7 die drei Ereignistypen. Kein Layout.
-
-Die visuelle Vorlage liegt in [`design/Umstieg.dc.html`](./design/Umstieg.dc.html)
-mit sechs Screens: Onboarding · Dashboard · Navigation · **Störung:
-Gleiswechsel** · Wagenreihung · Angekommen. Screen 4 ist das, was heute
-`src/screens/Stoerung.tsx` umsetzt — eine **Entscheidungsseite für ein
-einzelnes Ereignis**, keine Liste mit Zähler. „Exakt nach Vorlage" ist deshalb
-nicht wörtlich einlösbar. Die Auflösung: Screen 4 bleibt das Muster für die
-**Darstellung der jeweils neuesten Änderung**; Verlauf und Zähler kommen hinzu.
-
-### Was gebaut wird
-
-**Ein neuer Bildschirm `meldungen`, fest in der unteren Leiste.** Er ersetzt
-den bisherigen Bildschirm `stoerung`, der darin aufgeht — zwei fast gleiche
-Seiten für dasselbe Ereignis wären eine Seite zu viel. Damit entfällt die
-bisherige Begründung in `bildschirme.ts` („wäre sonst ein Knopf, der meistens
-ins Leere führt"): Der Eintrag führt jetzt nie ins Leere, weil er einen leeren
-Zustand hat.
-
-**Leerer Zustand.** „Aktuell keine Meldungen." und darunter der Zeitstempel des
-letzten Live-Kontakts — den gibt es bereits als `stand` in `App.tsx`. Er belegt,
-dass wir noch hinhören, statt nur nichts zu sagen; das ist Grundprinzip 3 des
-Konzepts (keine vorgetäuschte Aktualität) auf den leeren Fall angewandt.
-
-**Mit Änderungen.** Die neueste Änderung groß, im Stil von Screen 4:
-
-- Der neue Wert **groß und in Rot** (`--color-rot`, identisch mit
-  `--color-accent`), der alte Wert daneben **durchgestrichen**. Das Mittel gibt
-  es schon: `<s className="tafel-alt">` in `Zugauswahl.tsx` streicht dort alte
-  Zeiten genauso durch. Nicht neu erfinden.
-- Alt→Neu-Vergleich mit Gehzeit wie in `Stoerung.tsx` (`.stoerung-gegenueber`,
-  `.stoerung-seite`, `.stoerung-neu` stehen in `App.css` bereit).
-- Der Ampelsatz aus `Stoerung.tsx` bleibt unverändert übernommen.
-- **Genau ein Knopf: „Route übernehmen".** „Alte Route behalten" entfällt.
-
-**Zur Auslegung von „keine alte Route behalten":** Der Knopf verschwindet, die
-Entscheidung nicht. Ein Gleiswechsel wird weiterhin **nicht still übernommen** —
-das war eine ausdrückliche Festlegung (Kommentarkopf in `Stoerung.tsx`: „Bisher
-rechnete die App neu und der Nutzer erfuhr es hinterher aus einem Banner. Jetzt
-sieht er alt gegen neu und entscheidet selbst."). Wer nicht übernehmen will,
-verlässt die Seite; das ist dann das Behalten. Diese Lesart wurde ausdrücklich
-bestätigt.
-
-**Verlauf.** Ältere Meldungen darunter als knappe Zeilen: Uhrzeit · Zug ·
-alt→neu. Übernehmen lässt sich **nur die neueste** — eine ältere zu übernehmen
-hieße, auf überholte Daten zurückzugehen.
-
-### Der Zähler
-
-| Zustand | Leisteneintrag „Meldungen" |
+| Datei | Was |
 |---|---|
-| Keine Änderung in dieser Reise | normal |
-| Ungelesene Änderungen | rotes Abzeichen mit **Anzahl**, rechts oben |
-| Gesehen, aber es gab welche | **kein** Abzeichen, Eintrag bleibt hervorgehoben |
+| `src/meldungen/modell.ts` (neu) | Das Modell: `Meldung`, `Vorschlag`, Liste anlegen, ungelesen zählen, als gelesen markieren, Route nachtragen, Übernahme festhalten. Rein und ohne React – 12 Tests. |
+| `src/screens/Meldungen.tsx` (neu) | Leerer Zustand, neueste Änderung, Verlauf – 16 Tests, darunter die sechs umgezogenen aus `Stoerung.test.tsx`. |
+| `src/screens/Stoerung.tsx` | Entfallen. `verschiebung()`, `minutenText()` und der Ampelsatz sind mitgewandert. |
+| `src/navigation/bildschirme.ts` | `stoerung` → `meldungen`, als vierter Leisteneintrag. |
+| `src/components/Navileiste.tsx` | Abzeichen mit **Anzahl** statt des Punkts; das Kennzeichen sitzt jetzt dort, wohin es führt. |
+| `src/App.tsx` | `vorschlag` → `meldungen[]`; Ankunft leert die Liste. |
+| `src/screens/Dashboard.tsx` | `onStoerung` → `onMeldungen`, „Störung ansehen" → „Meldung ansehen". Nicht im Konzept vorgesehen, aber erzwungen: Der Zielbildschirm gab es nicht mehr. |
 
-Die Hervorhebung hält bis „Angekommen". Begründung für das Zurücksetzen beim
-Öffnen: Ein Punkt, der dauerhaft steht, verliert seine Warnwirkung — nach der
-zweiten Meldung schaut niemand mehr hin.
+**Stand:** 179 Frontend-Tests (vorher 154), Lint, Typprüfung und Build sauber.
 
-**Gezählt wird**, was ausdrücklich genannt wurde: Gleiswechsel **beider** Züge
-(Ankunft und Abfahrt) sowie Zeitänderungen.
+### Vier Entscheidungen, die das Konzept offenließ
 
-### Was das im Code bedeutet
+Sie sind hier festgehalten, weil sie beim Bauen entstanden und nicht im
+freigegebenen Text stehen.
 
-Heute hält `App.tsx` **eine einzige** Änderung: `const [vorschlag, setVorschlag]
-= useState<Vorschlag | null>(null)`. Jedes neue Ereignis überschreibt das
-vorige — deshalb gibt es bis jetzt nichts zu zählen. Beide Ereignistypen
-erzeugen bereits einen `vorschlag` (`gleiswechsel` rechnet die Route neu,
-`verspaetung` schreibt nur `abfahrtZeit` fort); das bleibt, wird aber zur Liste.
+1. **Die Meldung entsteht sofort, die Route wird nachgetragen.** Ein
+   Gleiswechsel wird gemeldet, bevor die neue Route steht. Entstünde die
+   Meldung erst mit der Route, zählte ein **fehlgeschlagener** Abruf gar nicht
+   mit – und der Reisende erführe vom Wechsel allein aus dem Banner, das er
+   wegwischen kann. Eine Meldung ohne Route sagt das auch: kein
+   Übernehmen-Knopf, kein Ampelsatz (der hinge an der neuen Gehzeit, und die
+   alte an seine Stelle zu setzen hieße, eine Vermutung als Tatsache
+   auszugeben).
 
-| Datei | Änderung |
-|---|---|
-| `src/meldungen/` (neu) | Modell: `Meldung`, Liste anlegen, ungelesen zählen, als gelesen markieren. Rein und ohne React — wie `navigation/fortschritt.ts`, damit es ohne Rendern prüfbar ist. |
-| `src/screens/Meldungen.tsx` (neu) | Der Bildschirm: leerer Zustand, neueste Änderung, Verlauf. |
-| `src/screens/Stoerung.tsx` | Geht in `Meldungen` auf. Der Ampelsatz, `verschiebung()` und `minutenText()` wandern mit — sie sind getestet und gut. |
-| `src/navigation/bildschirme.ts` | `stoerung` → `meldungen`, als Leisteneintrag. Kommentarkopf anpassen. |
-| `src/components/Navileiste.tsx` | Abzeichen mit Anzahl statt des Punkts; Kennzeichen wandert vom Dashboard auf „Meldungen". |
-| `src/App.tsx` | `vorschlag` → `meldungen[]`; `Stoermeldung` verweist auf `meldungen`; Ankunft leert die Liste. |
-| `src/App.css` | Abzeichen, Hervorhebung, Verlaufszeilen. |
+2. **Der Live-Strom läuft auf der Meldungsseite mit.** Er lief bis dahin nur
+   auf Dashboard und Weg. Der leere Zustand sagt zu, dass noch hingehört wird,
+   und der Zeitstempel daneben soll es belegen – wäre der Strom auf genau
+   dieser Seite geschlossen, wäre beides unwahr, sobald jemand sie offen
+   lässt. Im Browser nachgewiesen: Der Heartbeat traf **auf der offenen
+   Meldungsseite** ein und setzte den Stand auf 12:38 Uhr.
 
-### Tests, die dazugehören
+3. **Die neueste Meldung trägt alles Vorherige mit.** Eine Verspätung setzt
+   auf dem letzten Vorschlag auf, nicht daneben. Liegt ein noch nicht
+   übernommener Gleiswechsel vor, trägt die neueste Meldung **neues Gleis UND
+   neue Zeit** – sonst wäre nach einer Verspätung der Gleiswechsel nicht mehr
+   übernehmbar, denn übernehmen lässt sich nur die neueste. Im Browser
+   bestätigt: Nach einem Klick standen Gl. 12 und ab 12:57 gemeinsam im
+   Dashboard.
 
-Leerer Zustand nennt keine Änderungen und zeigt den Zeitstempel · Zähler steht
-auf der Zahl der ungelesenen Änderungen · Öffnen setzt den Zähler zurück, die
-Hervorhebung bleibt · „Angekommen" räumt beides ab · Gleiswechsel **beider**
-Züge und Zeitänderungen zählen mit · die alte Zeit wird durchgestrichen
-dargestellt · „Route übernehmen" rechnet um, und es gibt **keinen**
-Behalten-Knopf mehr · nur die neueste Meldung ist übernehmbar.
+4. **Eine übernommene Meldung zeigt keinen Knopf mehr.** Die Seite ist
+   dauerhaft erreichbar, anders als ihr Vorgänger. Nach dem Übernehmen wäre
+   „Route übernehmen" ein Knopf, der nichts mehr tut – schlimmer als keiner.
+   `markiereUebernommen` hält den Zustand fest, die Seite stellt ihn fest.
 
-Die sechs Tests aus `Stoerung.test.tsx` ziehen mit um, statt gelöscht zu
-werden — sie prüfen Verhalten, das erhalten bleibt.
+### Was so blieb, wie es freigegeben war
+
+Zähler und Hervorhebung nach der Tabelle des Konzepts (rotes Abzeichen mit
+Anzahl bei Ungelesenem; nach dem Öffnen kein Abzeichen mehr, aber der Eintrag
+bleibt hervorgehoben bis „Angekommen"). Gezählt werden Gleiswechsel **beider**
+Züge und Zeitänderungen. Der neue Wert groß und in Rot, der alte daneben
+durchgestrichen – mit `<s className="tafel-alt">`, demselben Mittel wie in der
+Zugtafel. **Genau ein Knopf: „Route übernehmen".** „Alte Route behalten" ist
+entfallen: Der Knopf verschwindet, die Entscheidung nicht – wer nicht
+übernehmen will, verlässt die Seite.
+
+**Das Lesen ist ein Ereignis, kein Zustandsabgleich.** Zurückgesetzt wird der
+Zähler beim Öffnen der Seite und beim Eintreffen einer Meldung, während sie
+offen ist. Ein erster Versuch legte das in einen `useEffect`, der auf die
+Liste hörte, die er selbst setzte – der Linter meldete beides (`set-state-in-effect`,
+`exhaustive-effect-dependencies`) und hatte recht.
+
+### Wie P4 und P5 doch noch sichtbar wurden
+
+Beide standen seit dem 01.09. auf „nicht erzwingbar": Ereignisse feuern nur bei
+einer Änderung zwischen zwei Abfragen, und in einer Viertelstunde Beobachtung
+änderte sich an der Tafel nichts. Statt weiter zu warten, wurde das Ereignis
+**von aussen eingespeist**: eine Wegwerf-Attrappe (rund 45 Zeilen Node, im
+Scratchpad, **nicht** im Repo) beantwortet `/api/stations`, `/api/route` und
+`/api/board` mit aufgezeichneten echten Antworten und liefert unter
+`/api/live/:eva` einen echten SSE-Strom – Heartbeat, nach 4 s ein
+`gleiswechsel`, nach 16 s eine `verspaetung`. Ein zweiter Dev-Server mit
+`VITE_API_BASE=http://localhost:3002` zeigt darauf; **am Anwendungscode wurde
+dafür nichts geändert.**
+
+Gesehen wurden damit: das rote Störband über dem Dashboard (P4), das Abzeichen
+mit der **1** und dann der **2** an der Leiste, die Meldungsseite mit
+durchgestrichener alter und roter neuer Zeit, Gehzeit-Gegenüberstellung,
+Ampelsatz und Verlaufszeilen (P5), das Übernehmen mit beiden Änderungen
+zugleich, und das Abzeichen, das nach dem Lesen verschwindet, während die
+Hervorhebung bleibt.
+
+**Was das nicht belegt:** dass das **Backend** eine echte Änderung erkennt.
+Geprüft ist der Weg ab dem SSE-Strom – SSE-Client, `App`, Modell, Bildschirm,
+Leiste. Die Erkennung selbst (`core/ueberwachung.ts`, Vergleich zweier
+Timetables-Abfragen) hängt weiterhin allein an ihren eigenen Tests und ist nie
+an einer echten Fahrplanänderung beobachtet worden. Das bleibt offen und ist
+nach wie vor nicht erzwingbar.
+
+### Bewusst nicht gebaut
+
+Die Liste ist **unbegrenzt**. Ein Umstieg dauert Minuten und Ereignisse sind
+selten; eine Obergrenze wäre ein geratener Schwellenwert mehr. Im Versuch
+standen fünf Einträge übereinander – das trägt. Wer je eine lange Liste sieht,
+weiß dann auch, wo zu kappen wäre.
 
 ## Rechtliches
 

@@ -767,6 +767,20 @@
   cursor: pointer;
   position: relative;
 }
+.navileiste-knopf.hervorgehoben {
+  color: var(--color-accent);
+}
+.navileiste-knopf.hervorgehoben::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 7px;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+}
 .navileiste-knopf.aktuell {
   background: var(--color-text);
   color: var(--color-bg);
@@ -775,14 +789,21 @@
   opacity: 0.35;
   cursor: default;
 }
-.navileiste-punkt {
+.navileiste-abzeichen {
   position: absolute;
-  top: 8px;
-  right: 10px;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--color-accent);
+  top: 5px;
+  right: 7px;
+  box-sizing: border-box;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--color-rot);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
 }
 
 /* Ebenenschema und Schritt-Sheet (Screen 3) */
@@ -990,6 +1011,67 @@
   font-size: 17px;
   font-weight: 700;
   cursor: pointer;
+}
+
+/* Meldungen (Nachfolger von Screen 4) - die Klassen .stoerung-* darunter
+   werden von der Meldungsseite mitbenutzt: dieselbe Darstellung, nur nicht
+   mehr fuer ein einzelnes Ereignis. */
+.meldung-neu {
+  color: var(--color-rot);
+}
+/* Der alte Wert nutzt dieselbe Durchstreichung wie die Zugtafel, muss hier
+   aber neben einem 26px-Wert bestehen - in 12px sieht das nach Fehler aus. */
+.stoerung-gleis .tafel-alt {
+  font-size: 22px;
+  font-weight: 700;
+}
+.meldung-ohne-route,
+.meldung-uebernommen {
+  margin: 18px 0 0;
+  padding: 14px;
+  border-radius: 12px;
+  border: 2px solid var(--color-divider);
+  font-size: 14px;
+  color: var(--color-neutral-700);
+}
+.meldungen-verlauf-titel {
+  font-size: 13px;
+  font-weight: 800;
+  margin: 26px 0 8px;
+}
+.meldungen-verlauf {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.meldungen-verlauf li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+  font-size: 14px;
+}
+.meldungen-zeit {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.meldungen-zug {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-neutral-700);
+}
+.meldungen-wechsel {
+  flex: none;
+  font-weight: 700;
 }
 
 /* Stoerung / Gleiswechsel (Screen 4) */
