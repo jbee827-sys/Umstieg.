@@ -9,3 +9,6 @@ backend/test/fixtures/spike/
 # Arbeitsbereich der Plan-Ausführung (Ledger, Briefs, Review-Pakete)
 .superpowers/
 .vercel
+# Echte Tickets und Rechnungen: enthalten Namen, Anschrift, Auftragsnummer
+# und Zahlungsmittel. Zum Entwickeln noetig, im Repo nie.
+Beispiel Ticket/
