@@ -1280,3 +1280,41 @@
   font-weight: 700;
   opacity: 0.85;
 }
+
+
+/* — Weniger Bewegung, wenn das Betriebssystem danach fragt — */
+
+/*
+ * Wer `prefers-reduced-motion` gesetzt hat, hat meist einen Grund: Schwindel,
+ * Migraene, Uebelkeit bei bewegten Flaechen. Diese App trifft damit Leute,
+ * die ohnehin unter Zeitdruck stehen.
+ *
+ * Bewusst KEINE pauschale `*`-Regel. Zwei Bewegungen in dieser App tragen
+ * Information statt Schmuck, und beide bleiben:
+ *
+ * 1. Der KREISEL. Er ist das einzige Zeichen, dass gerade geladen wird. Ein
+ *    stehender Kreisel sieht aus wie ein haengender - und ein haengender
+ *    Ladezustand ist laut eigenem Befund vom 02.09.2026 "die unehrlichste
+ *    aller Anzeigen". Er dreht langsamer, aber er dreht.
+ * 2. Nichts sonst. Der Ampel-Puls ist Aufmerksamkeitsschmuck; Farbe und
+ *    Klartext daneben sagen dasselbe und bleiben.
+ */
+@media (prefers-reduced-motion: reduce) {
+  /* Der Puls der roten Lampe. Farbe und Klartext daneben sagen dasselbe. */
+  .ampel-lampe.an-rot {
+    animation: none;
+  }
+
+  /* Alle vier Uebergaenge der App: Knoepfe, Lampenfarbe, Zeitleiste. */
+  .wahl-knopf,
+  .knopf-primaer,
+  .ampel-lampe,
+  .ampel-zeitleiste-fuellung {
+    transition-duration: 0.01ms;
+  }
+
+  /* Bleibt in Bewegung - siehe Begruendung oben. */
+  .lade-kreisel {
+    animation-duration: 2.4s;
+  }
+}
