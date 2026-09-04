@@ -10,7 +10,8 @@ import type { LiveEreignis, RouteErgebnis } from '../api/typen'
 
 const alteWerte: EingabeWerte = {
   eva: '8011160', bahnhofName: 'Berlin Hbf', gleisAn: '6', gleisAb: '14',
-  wagen: '', profil: 'normal', variante: 'schnellste', abfahrtZeit: '14:36',
+  wagenAn: '',
+  wagenAb: '', profil: 'normal', variante: 'schnellste', abfahrtZeit: '14:36',
 }
 const alteRoute: RouteErgebnis = { stufe: 1, schritte: [], gehzeitSek: 300, hinweise: [] }
 

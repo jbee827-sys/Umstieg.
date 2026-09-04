@@ -116,7 +116,8 @@ const ENTWURF: EingabeEntwurf = {
   evaManuell: '',
   gleisAn: '14',
   gleisAb: '6',
-  wagen: '26',
+  wagenAn: '26',
+  wagenAb: '7',
   profil: 'langsam',
   zugAnkunft: { zug: 'ICE 1006', zeitSoll: '14:26', gleisSoll: '14', ziel: 'Hamburg' },
   zugAbfahrt: null,
@@ -134,7 +135,10 @@ describe('Eingabe: gespeicherter Entwurf', () => {
     expect(feld().value).toBe('Berlin Hbf')
     expect((screen.getByLabelText('Ankunft: Gleis') as HTMLInputElement).value).toBe('14')
     expect((screen.getByLabelText('Anschluss: Gleis') as HTMLInputElement).value).toBe('6')
-    expect((screen.getByLabelText('Wagennummer (optional)') as HTMLInputElement).value).toBe('26')
+    expect((screen.getByLabelText('Ankunft: Wagen (optional)') as HTMLInputElement).value).toBe('26')
+    expect((screen.getByLabelText('Anschluss: Wagen (optional)') as HTMLInputElement).value).toBe(
+      '7',
+    )
   })
 
   it('uebernimmt den gewaehlten Bahnhof, nicht nur seinen Namen', () => {
@@ -224,6 +228,29 @@ describe('Eingabe: Reise importieren', () => {
     expect(feld().value).toBe('Berlin Hbf')
     expect((screen.getByLabelText('Ankunft: Gleis') as HTMLInputElement).value).toBe('8')
     expect((screen.getByLabelText('Anschluss: Gleis') as HTMLInputElement).value).toBe('7')
+  })
+
+  /**
+   * Wagennummern stehen in keinem geteilten Reisetext - weder der DB-Export
+   * noch die Rechnung fuehren sie. Eine vorher getippte gehoert damit zur
+   * ERSETZTEN Reise: Bliebe sie stehen, haftete sie an einem fremden Zug.
+   * Dieselbe Fehlerklasse, fuer die dort schon `zeitIst`/`gleisIst` bewusst
+   * leer bleiben.
+   */
+  it('leert vorher getippte Wagennummern, statt sie an den neuen Zug zu heften', async () => {
+    zeige(undefined, ENTWURF) // ENTWURF traegt Wagen 26 / 7
+    expect((screen.getByLabelText('Ankunft: Wagen (optional)') as HTMLInputElement).value).toBe('26')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Reise importieren' }))
+    await userEvent.click(screen.getByRole('textbox', { name: /Text der Verbindung/i }))
+    await userEvent.paste(REISE)
+    await userEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: /Berlin Hbf/ }),
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Übernehmen' }))
+
+    expect((screen.getByLabelText('Ankunft: Wagen (optional)') as HTMLInputElement).value).toBe('')
+    expect((screen.getByLabelText('Anschluss: Wagen (optional)') as HTMLInputElement).value).toBe('')
   })
 
   /**

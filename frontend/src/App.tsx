@@ -214,7 +214,7 @@ function App() {
       gleisAb: eingabe.gleisAb,
       profil: eingabe.profil,
       zugAn: eingabe.zugAn,
-      wagen: eingabe.wagen || undefined,
+      wagen: eingabe.wagenAn || undefined,
     }
     const gewaehlt: RoutenVariante =
       eingabe.variante === 'barrierefrei' ? 'barrierefrei' : 'schnellste'
@@ -334,7 +334,7 @@ function App() {
           profil: neueWerte.profil,
           variante: neueWerte.variante,
           zugAn: neueWerte.zugAn,
-          wagen: neueWerte.wagen || undefined,
+          wagen: neueWerte.wagenAn || undefined,
         })
           .then((neueRoute) =>
             setMeldungen((liste) =>
@@ -399,7 +399,11 @@ function App() {
         <Angekommen
           gleis={werte.gleisAb}
           abfahrt={werte.abfahrtZeit}
-          wagen={werte.wagen || undefined}
+          // Der Wagenkasten gehoert zum ANSCHLUSSzug: Der Bildschirm sagt,
+          // wo du einsteigst, nicht wo du ausgestiegen bist. Bis zum
+          // 04.09.2026 stand hier der Ankunftswagen - `zeigtWagen` prueft
+          // seit jeher `istFernverkehr(zugAbName)`, also den Abfahrtszug.
+          wagen={werte.wagenAb || undefined}
           zugAbName={werte.zugAbName}
           restSek={
             werte.abfahrtZeit

@@ -10,7 +10,8 @@ const werte: EingabeWerte = {
   bahnhofName: 'Berlin Hbf',
   gleisAn: '6',
   gleisAb: '14',
-  wagen: '',
+  wagenAn: '',
+  wagenAb: '',
   profil: 'normal',
   variante: 'schnellste',
 }

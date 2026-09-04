@@ -11,7 +11,10 @@ export interface EingabeWerte {
   bahnhofName: string
   gleisAn: string
   gleisAb: string
-  wagen: string
+  /** Wagen im Ankunftszug - Startpunkt auf dem Bahnsteig. */
+  wagenAn: string
+  /** Wagen im Anschlusszug - fuer die Wagenreihung am Zielgleis. */
+  wagenAb: string
   profil: Gehprofil
   variante: RoutenVariante
   /** Zugnummer des Ankunftszugs (für die Wagenreihung), z. B. "3" aus "RE 3" */
@@ -76,7 +79,8 @@ export function Eingabe({ laden, fehler, erkannt, entwurf, onBerechnen }: Eingab
   const [evaManuell, setEvaManuell] = useState(entwurf?.evaManuell ?? '')
   const [gleisAn, setGleisAn] = useState(entwurf?.gleisAn ?? '')
   const [gleisAb, setGleisAb] = useState(entwurf?.gleisAb ?? '')
-  const [wagen, setWagen] = useState(entwurf?.wagen ?? '')
+  const [wagenAn, setWagenAn] = useState(entwurf?.wagenAn ?? '')
+  const [wagenAb, setWagenAb] = useState(entwurf?.wagenAb ?? '')
   const [profil, setProfil] = useState<Gehprofil>(entwurf?.profil ?? 'normal')
   const [zugAnkunft, setZugAnkunft] = useState<TafelEintrag | null>(entwurf?.zugAnkunft ?? null)
   const [zugAbfahrt, setZugAbfahrt] = useState<TafelEintrag | null>(entwurf?.zugAbfahrt ?? null)
@@ -100,6 +104,17 @@ export function Eingabe({ laden, fehler, erkannt, entwurf, onBerechnen }: Eingab
     setSuchtext(u.bahnhof)
     setGleisAn(u.anGleis ?? '')
     setGleisAb(u.abGleis ?? '')
+
+    /*
+     * Wagennummern stehen in KEINEM geteilten Reisetext - weder der
+     * DB-Export noch die Rechnung fuehren sie. Eine vorher getippte gehoert
+     * damit zur ersetzten Reise. Bliebe sie stehen, haftete sie an einem
+     * fremden Zug, und der Weg startete an einem Bahnsteigabschnitt, mit dem
+     * dieser Zug nichts zu tun hat. Dieselbe Ueberlegung wie unten bei
+     * `zeitIst`/`gleisIst`: lieber leer als falsch belegt.
+     */
+    setWagenAn('')
+    setWagenAb('')
 
     /*
      * Die beiden Zuege werden mit uebernommen - wie bei der Auswahl aus der
@@ -189,7 +204,8 @@ export function Eingabe({ laden, fehler, erkannt, entwurf, onBerechnen }: Eingab
       evaManuell,
       gleisAn,
       gleisAb,
-      wagen,
+      wagenAn,
+      wagenAb,
       profil,
       zugAnkunft,
       zugAbfahrt,
@@ -200,7 +216,8 @@ export function Eingabe({ laden, fehler, erkannt, entwurf, onBerechnen }: Eingab
         bahnhofName: gewaehlt?.name ?? suchtext.trim(),
         gleisAn: gleisAn.trim(),
         gleisAb: gleisAb.trim(),
-        wagen: wagen.trim(),
+        wagenAn: wagenAn.trim(),
+        wagenAb: wagenAb.trim(),
         profil,
         variante: 'schnellste',
         zugAn: zugAnkunft ? zugnummer(zugAnkunft.zug) : undefined,
@@ -306,73 +323,96 @@ export function Eingabe({ laden, fehler, erkannt, entwurf, onBerechnen }: Eingab
         )}
       </div>
 
-      {eva !== '' && (
-        <div className="feld">
-          <label>Züge aus der Live-Tafel übernehmen (optional)</label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <Zugauswahl
-              eva={eva}
-              typ="arr"
-              label="Ankunftszug wählen"
-              auswahl={zugAnkunft}
-              onAuswahl={(eintrag) => {
-                setZugAnkunft(eintrag)
-                if (eintrag) setGleisAn(eintrag.gleisIst ?? eintrag.gleisSoll)
-              }}
+      {/*
+        Zwei Bloecke statt einer flachen Maske (Konzept §9). Gruppiert wird
+        nach REISEABSCHNITT, nicht nach Feldart: Der Nutzer denkt "mein
+        ankommender Zug: Gleis 6, ICE 1006, Wagen 26" - nicht "alle Gleise,
+        dann alle Zuege". Vorher standen die beiden Zugauswahlen zusammen in
+        einer Gruppe und die beiden Gleise in einer zweiten.
+      */}
+      <fieldset className="reiseblock">
+        <legend>Ankunft</legend>
+        {eva !== '' && (
+          <Zugauswahl
+            eva={eva}
+            typ="arr"
+            label="Ankunftszug wählen"
+            auswahl={zugAnkunft}
+            onAuswahl={(eintrag) => {
+              setZugAnkunft(eintrag)
+              if (eintrag) setGleisAn(eintrag.gleisIst ?? eintrag.gleisSoll)
+            }}
+          />
+        )}
+        <div className="gleis-zeile">
+          <div className="feld">
+            <label htmlFor="gleisAn">Ankunft: Gleis</label>
+            <input
+              id="gleisAn"
+              className="eingabefeld"
+              type="text"
+              required
+              placeholder="z. B. 6"
+              value={gleisAn}
+              onChange={(e) => setGleisAn(e.target.value)}
             />
-            <Zugauswahl
-              eva={eva}
-              typ="dep"
-              label="Anschlusszug wählen"
-              auswahl={zugAbfahrt}
-              onAuswahl={(eintrag) => {
-                setZugAbfahrt(eintrag)
-                if (eintrag) setGleisAb(eintrag.gleisIst ?? eintrag.gleisSoll)
-              }}
+          </div>
+          <div className="feld">
+            <label htmlFor="wagenAn">Ankunft: Wagen (optional)</label>
+            <input
+              id="wagenAn"
+              className="eingabefeld"
+              type="text"
+              inputMode="numeric"
+              placeholder="z. B. 26 – genauer Startpunkt"
+              value={wagenAn}
+              onChange={(e) => setWagenAn(e.target.value)}
             />
           </div>
         </div>
-      )}
+      </fieldset>
 
-      <div className="gleis-zeile">
-        <div className="feld">
-          <label htmlFor="gleisAn">Ankunft: Gleis</label>
-          <input
-            id="gleisAn"
-            className="eingabefeld"
-            type="text"
-            required
-            placeholder="z. B. 6"
-            value={gleisAn}
-            onChange={(e) => setGleisAn(e.target.value)}
+      <fieldset className="reiseblock">
+        <legend>Abfahrt</legend>
+        {eva !== '' && (
+          <Zugauswahl
+            eva={eva}
+            typ="dep"
+            label="Anschlusszug wählen"
+            auswahl={zugAbfahrt}
+            onAuswahl={(eintrag) => {
+              setZugAbfahrt(eintrag)
+              if (eintrag) setGleisAb(eintrag.gleisIst ?? eintrag.gleisSoll)
+            }}
           />
+        )}
+        <div className="gleis-zeile">
+          <div className="feld">
+            <label htmlFor="gleisAb">Anschluss: Gleis</label>
+            <input
+              id="gleisAb"
+              className="eingabefeld"
+              type="text"
+              required
+              placeholder="z. B. 14"
+              value={gleisAb}
+              onChange={(e) => setGleisAb(e.target.value)}
+            />
+          </div>
+          <div className="feld">
+            <label htmlFor="wagenAb">Anschluss: Wagen (optional)</label>
+            <input
+              id="wagenAb"
+              className="eingabefeld"
+              type="text"
+              inputMode="numeric"
+              placeholder="z. B. 7 – wo du einsteigst"
+              value={wagenAb}
+              onChange={(e) => setWagenAb(e.target.value)}
+            />
+          </div>
         </div>
-        <div className="feld">
-          <label htmlFor="gleisAb">Anschluss: Gleis</label>
-          <input
-            id="gleisAb"
-            className="eingabefeld"
-            type="text"
-            required
-            placeholder="z. B. 14"
-            value={gleisAb}
-            onChange={(e) => setGleisAb(e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div className="feld">
-        <label htmlFor="wagen">Wagennummer (optional)</label>
-        <input
-          id="wagen"
-          className="eingabefeld"
-          type="text"
-          inputMode="numeric"
-          placeholder="z. B. 26 – für den genauen Startpunkt"
-          value={wagen}
-          onChange={(e) => setWagen(e.target.value)}
-        />
-      </div>
+      </fieldset>
 
       {/* Der schnelle Weg an denselben Feldern vorbei: Statt Bahnhof und zwei
           Gleise zu tippen, den Text aus „Verbindung teilen" einfuegen. */}
