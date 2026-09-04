@@ -46,7 +46,7 @@ export interface TafelEintrag {
 
 /** Spiegel von backend/src/core/ueberwachung.ts – SSE-Ereignisse. */
 export interface LiveEreignis {
-  typ: 'gleiswechsel' | 'verspaetung' | 'heartbeat';
+  typ: 'gleiswechsel' | 'verspaetung' | 'heartbeat' | 'quelle-weg' | 'quelle-da';
   zug?: string;
   alt?: string;
   neu?: string;

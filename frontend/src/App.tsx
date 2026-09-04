@@ -15,6 +15,7 @@ import { Meldungen } from './screens/Meldungen'
 import { Eingabe, type EingabeWerte } from './components/Eingabe'
 import { Stoermeldung } from './components/Stoermeldung'
 import { StandortStreifen } from './components/StandortStreifen'
+import { QuelleWeg } from './components/QuelleWeg'
 import { ANKUNFT_START, pruefeAnkunft, zielKoordinate } from './standort/ankunft'
 import { ABGEFAHREN_KULANZ_MS } from './standort/schwellen'
 import { schrittPosition } from './navigation/fortschritt'
@@ -112,6 +113,8 @@ function App() {
   const [laden, setLaden] = useState(false)
   const [fehler, setFehler] = useState<string | null>(null)
   const [liveEreignis, setLiveEreignis] = useState<LiveEreignis | null>(null)
+  /** Zeitstempel des Tafelausfalls, solange er anhaelt (null = Quelle antwortet). */
+  const [quelleWegSeit, setQuelleWegSeit] = useState<string | null>(null)
   const [stand, setStand] = useState<string | null>(null)
   const { status: standortStatus, standort, starteVerfolgung, stoppeVerfolgung } = useStandort()
   const [erkannt, setErkannt] = useState<BahnhofTreffer[]>([])
@@ -272,6 +275,17 @@ function App() {
           setStand(ereignis.zeitstempel)
           return
         }
+        // Der Quellenausfall ist ein Zustand, keine Meldung: kein Ruetteln,
+        // kein Eintrag im Verlauf, keine Stoermeldung ueber der Seite. Er
+        // steht, bis die Quelle wieder antwortet (Degradationstabelle Z. 2).
+        if (ereignis.typ === 'quelle-weg') {
+          setQuelleWegSeit(ereignis.zeitstempel)
+          return
+        }
+        if (ereignis.typ === 'quelle-da') {
+          setQuelleWegSeit(null)
+          return
+        }
         setLiveEreignis(ereignis)
         navigator.vibrate?.([200, 100, 200])
 
@@ -344,17 +358,24 @@ function App() {
   // Eine Aenderung an Gleis oder Abfahrtszeit ist zu wichtig, um sie erst
   // beim naechsten Seitenwechsel zu zeigen - die Meldung liegt deshalb ueber
   // JEDER Seite.
-  const meldung =
-    liveEreignis && liveEreignis.typ !== 'heartbeat' ? (
-      <Stoermeldung
-        ereignis={liveEreignis}
-        onAnsehen={() => {
-          setLiveEreignis(null)
-          setBildschirm('meldungen')
-        }}
-        onSchliessen={() => setLiveEreignis(null)}
-      />
-    ) : null
+  // Der Ausfall der Echtzeitquelle gehoert aus demselben Grund ueber jede
+  // Seite (Degradationstabelle Zeile 2) - deshalb steht er hier neben der
+  // Stoermeldung und nicht an den fuenf Einbaustellen einzeln.
+  const meldung = (
+    <>
+      {quelleWegSeit ? <QuelleWeg seit={quelleWegSeit} /> : null}
+      {liveEreignis && liveEreignis.typ !== 'heartbeat' ? (
+        <Stoermeldung
+          ereignis={liveEreignis}
+          onAnsehen={() => {
+            setLiveEreignis(null)
+            setBildschirm('meldungen')
+          }}
+          onSchliessen={() => setLiveEreignis(null)}
+        />
+      ) : null}
+    </>
+  )
 
   function bestaetigeAnkunft() {
     // Angekommen heisst: Dieser Umstieg ist erledigt. Die Eingabe dafuer

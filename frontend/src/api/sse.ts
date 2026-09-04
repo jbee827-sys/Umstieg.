@@ -48,6 +48,9 @@ export function verbindeLive({
   quelle.addEventListener('gleiswechsel', nimm('gleiswechsel'));
   quelle.addEventListener('verspaetung', nimm('verspaetung'));
   quelle.addEventListener('heartbeat', nimm('heartbeat'));
+  // Degradationstabelle Zeile 2: Ausfall der Tafel und ihre Rueckkehr.
+  quelle.addEventListener('quelle-weg', nimm('quelle-weg'));
+  quelle.addEventListener('quelle-da', nimm('quelle-da'));
 
   return () => quelle.close();
 }

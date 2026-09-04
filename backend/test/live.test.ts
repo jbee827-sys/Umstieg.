@@ -11,6 +11,70 @@ const basisEintrag: TafelEintrag = {
   ziel: 'Hamburg-Altona',
 };
 
+/**
+ * Degradationstabelle Zeile 2: Timetables faellt aus.
+ *
+ * Bis zum 04.09.2026 blieb der Strom bei einem Tafelausfall einfach stumm -
+ * und stumm ist vom Fall „es aendert sich gerade nichts“ nicht zu
+ * unterscheiden. Sichtbar war der Ausfall nur im Serverprotokoll. Das Konzept
+ * verlangt ein Banner; dafuer muss der Ausfall ueberhaupt erst beim Zuschauer
+ * ankommen.
+ */
+describe('Ueberwachung: Tafelausfall wird gemeldet', () => {
+  function machePruefstand(faelltAus: () => boolean) {
+    const ueberwachung = new Ueberwachung(async () => {
+      if (faelltAus()) throw new Error('Timetables nicht erreichbar (Test)');
+      return [basisEintrag];
+    });
+    const empfangen: LiveEreignis[] = [];
+    ueberwachung.abonniere('8011160', [], (e) => empfangen.push(e));
+    return { ueberwachung, empfangen };
+  }
+
+  it('meldet den Ausfall als eigenes Ereignis', async () => {
+    let aus = false;
+    const { ueberwachung, empfangen } = machePruefstand(() => aus);
+
+    await ueberwachung.pruefeJetzt('8011160');
+    aus = true;
+    await ueberwachung.pruefeJetzt('8011160');
+
+    expect(empfangen.some((e) => e.typ === 'quelle-weg')).toBe(true);
+  });
+
+  it('meldet den Ausfall nur beim Zustandswechsel, nicht bei jedem Durchlauf', async () => {
+    // Ein Banner, keine Flut: Der Poller laeuft alle paar Sekunden weiter.
+    let aus = true;
+    const { ueberwachung, empfangen } = machePruefstand(() => aus);
+
+    await ueberwachung.pruefeJetzt('8011160');
+    await ueberwachung.pruefeJetzt('8011160');
+    await ueberwachung.pruefeJetzt('8011160');
+
+    expect(empfangen.filter((e) => e.typ === 'quelle-weg')).toHaveLength(1);
+  });
+
+  it('meldet die Rueckkehr, wenn die Tafel wieder antwortet', async () => {
+    let aus = true;
+    const { ueberwachung, empfangen } = machePruefstand(() => aus);
+
+    await ueberwachung.pruefeJetzt('8011160');
+    aus = false;
+    await ueberwachung.pruefeJetzt('8011160');
+
+    expect(empfangen.some((e) => e.typ === 'quelle-da')).toBe(true);
+  });
+
+  it('meldet keine Rueckkehr, wenn nie etwas ausgefallen war', async () => {
+    const { ueberwachung, empfangen } = machePruefstand(() => false);
+
+    await ueberwachung.pruefeJetzt('8011160');
+    await ueberwachung.pruefeJetzt('8011160');
+
+    expect(empfangen.some((e) => e.typ === 'quelle-da')).toBe(false);
+  });
+});
+
 describe('Ueberwachung', () => {
   it('erkennt einen Gleiswechsel und verteilt das Ereignis', async () => {
     let tafel: TafelEintrag[] = [basisEintrag];
@@ -90,7 +154,12 @@ describe('Ueberwachung', () => {
     const empfangen: LiveEreignis[] = [];
     ueberwachung.abonniere('8011160', [], (e) => empfangen.push(e));
     await expect(ueberwachung.pruefeJetzt('8011160')).resolves.toBeUndefined();
-    expect(empfangen).toHaveLength(0); // kein Heartbeat mit veralteten Daten
+    // Kein Heartbeat mit veralteten Daten - das war und bleibt der Punkt.
+    // Seit dem 04.09.2026 geht stattdessen die Ausfallmeldung raus (Zeile 2
+    // der Degradationstabelle): stumm bleiben hiesse, den Ausfall zu
+    // verschweigen.
+    expect(empfangen.some((e) => e.typ === 'heartbeat')).toBe(false);
+    expect(empfangen.map((e) => e.typ)).toEqual(['quelle-weg']);
   });
 
   it('trennt Ankunft und Abfahrt desselben Zuges (keine Phantom-Verspätung)', async () => {
