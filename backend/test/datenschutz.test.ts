@@ -163,3 +163,35 @@ describe('Das Backend haelt seine Datenschutzzusage', () => {
     expect(alles).not.toContain('remoteAddress');
   });
 });
+
+/**
+ * Fastify 6 entfernt die Option `disableRequestLogging` ersatzlos - bis zum
+ * 04.09.2026 stand deshalb bei jedem Serverstart und jedem Testlauf die
+ * Warnung "disableRequestLogging option is deprecated. Use the
+ * logController option ..." im Protokoll.
+ *
+ * Der Umbau auf `logController` darf die Zusage weiter oben in dieser Datei
+ * NICHT aendern: Es soll weiterhin nachweislich kein Zugriffsprotokoll
+ * geschrieben werden. Dafuer buergen die Tests oben unveraendert - sie
+ * bauen dieselbe `buildApp()` und schreiben in denselben Sammel-Logger.
+ * Dieser Test prueft nur die Warnung selbst.
+ */
+describe('Kein Fastify-6-Deprecation-Hinweis mehr', () => {
+  it('baut die App, ohne die FSTDEP023-Warnung fuer disableRequestLogging auszuloesen', async () => {
+    const gesehen: string[] = [];
+    const aufWarnung = (w: { code?: string }) => {
+      if (w.code) gesehen.push(w.code);
+    };
+    process.on('warning', aufWarnung);
+    try {
+      buildApp(clients() as never);
+      // process.emitWarning liefert ueber process.nextTick aus - ohne diese
+      // kurze Wartezeit saehe der Test auch dann gruen aus, wenn die Warnung
+      // schlicht noch unterwegs waere.
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    } finally {
+      process.off('warning', aufWarnung);
+    }
+    expect(gesehen).not.toContain('FSTDEP023');
+  });
+});

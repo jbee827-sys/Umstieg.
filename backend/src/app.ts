@@ -1,6 +1,7 @@
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import Fastify, {
+  LogController,
   type FastifyError,
   type FastifyInstance,
   type FastifyServerOptions,
@@ -119,8 +120,15 @@ export function buildApp(
      * an einem Bahnhof, nicht an einem Menschen.
      *
      * Festgehalten in `test/datenschutz.test.ts`.
+     *
+     * Ueber `logController` statt der gleichnamigen Top-Level-Option: Die
+     * entfaellt in Fastify 6 ersatzlos und trug bis zum 04.09.2026 bei jedem
+     * Start und jedem Testlauf eine Deprecation-Warnung ein
+     * (`test/datenschutz.test.ts`, "Kein Fastify-6-Deprecation-Hinweis
+     * mehr"). Das Verhalten ist identisch: `LogController` liest dieselbe
+     * `disableRequestLogging`-Option, nur eine Ebene tiefer.
      */
-    disableRequestLogging: true,
+    logController: new LogController({ disableRequestLogging: true }),
   });
 
   // CORS nur, wenn ausdruecklich konfiguriert.
