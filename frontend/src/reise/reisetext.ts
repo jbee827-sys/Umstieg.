@@ -115,41 +115,17 @@ export const GLEISWORTE = ['Gleis', 'Gl.', 'Bahnsteig', 'Bstg.', 'Steig', 'Platf
 export const RICHTUNGSWORTE = ['Richtung', 'Ri.', 'nach']
 
 /**
- * Verkehrsmittel-Vorsilben vor Haltestellennamen – sie müssen weg.
+ * Vorsilben/Nachsilben von Haltestellennamen ("S+U Berlin Hauptbahnhof",
+ * "Hockenheim, Bahnhof") werden hier bewusst NICHT mehr abgeschnitten.
  *
- * Die Verbünde stellen sie ihren Namen voran: „S+U Berlin Hauptbahnhof".
- * Gemessen am 03.09.2026 gegen die echte RIS::Stations-Suche:
- *
- *   „Berlin Hauptbahnhof"      → Berlin Hbf          ✓
- *   „Eberswalde, Hauptbahnhof" → Eberswalde Hbf      ✓
- *   „S Potsdam Hauptbahnhof"   → Potsdam Hbf         ✓
- *   „S+U Berlin Hauptbahnhof"  → NICHTS
- *
- * Die Suche verkraftet also „Hauptbahnhof" statt „Hbf" und sogar ein
- * einzelnes „S", aber nicht die kombinierte Vorsilbe. Ohne diesen Schritt
- * standen nach einem VBB-Import zwar beide Gleise im Formular, der Bahnhof
- * liess sich aber nicht auflösen – und ohne EVA rechnet die App nicht.
+ * Bis zum 03.09.2026 führte dieser Parser dieselbe Vokabelliste wie
+ * `backend/src/core/bahnhofsname.ts` – zwei Stellen für denselben Zweck, die
+ * auseinanderlaufen konnten. Der Bahnhof geht seither unverändert als
+ * SUCHTEXT ins Formular; die Bahnhofssuche im Backend probiert die
+ * Schreibvarianten selbst durch (siehe dort, `namensvarianten()`). Dieser
+ * Parser klopft nur noch auf FELDER ab (Zeit, Rolle, Ort, Gleis, Zug,
+ * Richtung), nicht mehr auf das Vokabular einer bestimmten Suche.
  */
-export const VERKEHRSMITTEL_PRAEFIXE = ['S+U', 'U+S', 'S+Bus', 'Bhf', 'Bf', 'S', 'U']
-
-/**
- * Nachsilben, die die Bahnhofssuche ins Leere laufen lassen.
- *
- * Gemessen am 03.09.2026 gegen die echte RIS::Stations-Suche:
- *
- *   „Hockenheim"                → Hockenheim           ✓
- *   „Hockenheim, Bahnhof"       → NICHTS
- *   „Hockenheim Bhf"            → NICHTS
- *   „Berlin Gesundbrunnen"      → Berlin Gesundbrunnen ✓
- *   „Berlin Gesundbrunnen Bhf"  → NICHTS
- *   „Eberswalde, Hauptbahnhof"  → Eberswalde Hbf       ✓
- *
- * Die Tücke steckt im letzten Fall: „Hauptbahnhof" verkraftet die Suche,
- * ein angehängtes „Bahnhof" nicht. Deshalb muss vor der Nachsilbe ein Komma
- * oder Leerzeichen stehen – „Hauptbahnhof" bleibt damit unangetastet, weil
- * dort kein Trenner davorsteht.
- */
-export const ORTSNACHSILBEN = ['Bahnhof', 'Bhf', 'Bf']
 
 /**
  * Gattungskürzel, an denen eine Zugbezeichnung erkennbar ist.
@@ -206,8 +182,6 @@ const ROLLE_AN = new RegExp(`(?:^|[^\\p{L}])(?:${ausWorten(ROLLENWORTE.an)})(?![
 const GLEIS = new RegExp(`(?:${ausWorten(GLEISWORTE)})\\s*([\\p{L}\\d/-]+)`, 'iu')
 const RICHTUNG = new RegExp(`(?:^|[^\\p{L}])(?:${ausWorten(RICHTUNGSWORTE)})\\s+(.+)$`, 'iu')
 const ZUGBEZEICHNUNG = new RegExp(`^(?:${ausWorten(ZUGGATTUNGEN)})[\\s-]?\\d`, 'iu')
-const PRAEFIX = new RegExp(`^(?:${ausWorten(VERKEHRSMITTEL_PRAEFIXE)})\\s+`, 'iu')
-const NACHSILBE = new RegExp(`[,\\s]+(?:${ausWorten(ORTSNACHSILBEN)})\\.?$`, 'iu')
 
 /** Zeilen, die zum Rahmen gehören und nie ein Halt sind. */
 function istRahmen(zeile: string): boolean {
@@ -282,8 +256,6 @@ function analysiere(zeile: string): Fakten {
     .replace(/\s+/g, ' ')
     .replace(/^[\s,;:.()\-–—]+/, '')
     .replace(/[\s,;:.()\-–—]+$/, '')
-    .replace(PRAEFIX, '')
-    .replace(NACHSILBE, '')
     .trim()
 
   const { zug, richtung } = zugInfo(zeile)
