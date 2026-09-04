@@ -317,38 +317,38 @@ describe('parseReise: VBB-App', () => {
   })
 
   // „[Gleis 1-8]" ist ein Namenszusatz, kein Gleis. Bliebe er stehen, fände
-  // die Bahnhofssuche den Bahnhof nicht.
-  it('entfernt den Klammerzusatz aus dem Bahnhofsnamen', () => {
-    // „[Gleis 1-8]" ist weg, die Vorsilbe „S+U " ebenfalls - beides steht
-    // der Bahnhofssuche im Weg.
-    expect(parseReise(VBB_ECHT)!.abschnitte[0].anBahnhof).toBe('Berlin Hauptbahnhof')
+  // die Gleiserkennung „1-8" statt „4". Das ist Zeilenrauschen, kein
+  // Vokabular - dieser Schnitt bleibt deshalb hier im Parser.
+  it('entfernt weiterhin den Klammerzusatz aus dem Bahnhofsnamen', () => {
+    expect(parseReise(VBB_ECHT)!.abschnitte[0].anBahnhof).not.toMatch(/\[/)
   })
 
   /**
-   * Gemessen am 03.09.2026 gegen die echte RIS::Stations-Suche: „Berlin
-   * Hauptbahnhof" findet sie, „S+U Berlin Hauptbahnhof" nicht. Ohne diesen
-   * Schnitt standen nach einem VBB-Import beide Gleise im Formular, der
-   * Bahnhof liess sich aber nicht aufloesen - und ohne EVA rechnet die App
-   * nicht.
+   * Die Vorsilbe „S+U" bleibt dagegen absichtlich stehen: Sie aufzulösen ist
+   * seit dem 04.09.2026 allein Aufgabe der Bahnhofssuche im Backend
+   * (`backend/src/core/bahnhofsname.ts`), nicht mehr dieses Parsers - sonst
+   * pflegt man dieselbe Vokabelliste an zwei Stellen. Der Bahnhof landet
+   * deshalb als SUCHTEXT im Formular, nicht als aufgelöster Name; die
+   * Backend-Suche probiert die Schreibvarianten selbst durch (siehe dort,
+   * `namensvarianten()` und ihre eigenen Tests).
    */
-  it('entfernt die Verkehrsmittel-Vorsilbe, damit die Bahnhofssuche greift', () => {
-    const a = parseReise(VBB_ECHT)!.abschnitte[0]
-    expect(a.anBahnhof).toBe('Berlin Hauptbahnhof')
-    expect(a.anBahnhof).not.toMatch(/S\+U/)
+  it('laesst die Verkehrsmittel-Vorsilbe unangetastet - das loest jetzt die Backend-Suche', () => {
+    expect(parseReise(VBB_ECHT)!.abschnitte[0].anBahnhof).toBe('S+U Berlin Hauptbahnhof')
   })
 
   /**
-   * Gemessen gegen die echte RIS-Suche: „Hockenheim" findet sie,
-   * „Hockenheim, Bahnhof" nicht - aber „Eberswalde, Hauptbahnhof" schon.
-   * Die Nachsilbe darf also nur fallen, wenn ein Trenner davorsteht.
+   * Ebenso bei der Nachsilbe: „Bahnhof"/„Bhf" wird nicht mehr abgeschnitten,
+   * auch nicht in Kombination mit einer Vorsilbe. Die Gegenprobe zeigt, dass
+   * sich daran nichts geaendert hat: „Hauptbahnhof" trug ohnehin nie eine
+   * Vorsilbe und war von dieser Vokabelliste nie betroffen.
    */
-  it('entfernt eine angehaengte Bahnhofs-Nachsilbe, aber nicht Hauptbahnhof', () => {
+  it('laesst eine angehaengte Bahnhofs-Nachsilbe unangetastet, auch kombiniert mit einer Vorsilbe', () => {
     const r = parseReise(`12:00 - Abfahrt Hockenheim, Bahnhof, Gleis 1
       mit RE1 Richtung X
 12:30 - Ankunft S+U Berlin Gesundbrunnen Bhf, Gleis 4`)!
-    expect(r.abschnitte[0].abBahnhof).toBe('Hockenheim')
-    expect(r.abschnitte[0].anBahnhof).toBe('Berlin Gesundbrunnen')
-    // Gegenprobe: „Hauptbahnhof" bleibt stehen, die Suche kommt damit klar.
+    expect(r.abschnitte[0].abBahnhof).toBe('Hockenheim, Bahnhof')
+    expect(r.abschnitte[0].anBahnhof).toBe('S+U Berlin Gesundbrunnen Bhf')
+    // Gegenprobe unveraendert: „Hauptbahnhof" trug ohnehin nie eine Vorsilbe.
     expect(parseReise(VBB_ECHT)!.abschnitte[0].abBahnhof).toBe('Eberswalde, Hauptbahnhof')
   })
 
@@ -369,7 +369,7 @@ describe('parseReise: VBB-App', () => {
     expect(r.abschnitte).toHaveLength(2)
     expect(r.umstiege).toHaveLength(1)
     expect(r.umstiege[0]).toMatchObject({
-      bahnhof: 'Berlin Hauptbahnhof',
+      bahnhof: 'S+U Berlin Hauptbahnhof',
       anZug: 'RE3',
       anGleis: '4',
       abZug: 'ICE 1234',
