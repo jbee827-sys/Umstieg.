@@ -19,7 +19,10 @@ export interface EingabeEntwurf {
   evaManuell: string;
   gleisAn: string;
   gleisAb: string;
-  wagen: string;
+  /** Wagen im ANKUNFTSzug - bestimmt den Startpunkt auf dem Bahnsteig. */
+  wagenAn: string;
+  /** Wagen im ANSCHLUSSzug - fuer die Wagenreihung am Zielgleis. */
+  wagenAb: string;
   profil: Gehprofil;
   zugAnkunft: TafelEintrag | null;
   zugAbfahrt: TafelEintrag | null;
@@ -79,7 +82,8 @@ function istEntwurf(wert: unknown): wert is EingabeEntwurf {
     istZeichenkette(e.evaManuell) &&
     istZeichenkette(e.gleisAn) &&
     istZeichenkette(e.gleisAb) &&
-    istZeichenkette(e.wagen) &&
+    istZeichenkette(e.wagenAn) &&
+    istZeichenkette(e.wagenAb) &&
     (e.profil === 'zuegig' || e.profil === 'normal' || e.profil === 'langsam') &&
     (e.gewaehlt === null || typeof e.gewaehlt === 'object') &&
     (e.zugAnkunft === null || typeof e.zugAnkunft === 'object') &&

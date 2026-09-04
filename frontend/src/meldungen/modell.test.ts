@@ -8,7 +8,8 @@ import type { EingabeWerte } from '../components/Eingabe'
 
 const werte: EingabeWerte = {
   eva: '8011160', bahnhofName: 'Berlin Hbf', gleisAn: '6', gleisAb: '14',
-  wagen: '', profil: 'normal', variante: 'schnellste', abfahrtZeit: '14:36',
+  wagenAn: '',
+  wagenAb: '', profil: 'normal', variante: 'schnellste', abfahrtZeit: '14:36',
 }
 
 function ereignis(neu: string, zeit = '2026-09-02T12:32:10.000Z'): LiveEreignis {
