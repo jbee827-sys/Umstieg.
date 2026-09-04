@@ -415,7 +415,14 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
     }
 
     // Sonderfall: beide Gleise am selben physischen Bahnsteig
-    if (istGleicherBahnsteig(graph, gleisAn, gleisAb)) {
+    //
+    // Die DB-Gleisliste kommt nur als Trenner dazu, wenn sie vollstaendig ist
+    // (Konzeptluecke §4.3). Fehlt ein Bahnhofsteil, heisst das nicht „anderer
+    // Bahnsteig“ - dann wuerde ein falscher Weg nur gegen einen anderen
+    // getauscht. Unvollstaendig ist sie, wie ueberall sonst auch,
+    // ausschliesslich nach `gleislisteUnvollstaendig`.
+    const dbGleise = gleislisteUnvollstaendig(eintrag.info) ? undefined : eintrag.info.gleise;
+    if (istGleicherBahnsteig(graph, gleisAn, gleisAb, dbGleise)) {
       const ergebnis = gleicherBahnsteigErgebnis(gleisAb, graph.stufe);
       return { ...ergebnis, hinweise: [...hinweise, ...ergebnis.hinweise] };
     }
