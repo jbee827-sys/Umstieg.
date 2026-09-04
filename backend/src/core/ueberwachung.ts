@@ -4,7 +4,13 @@ import type { TafelEintrag } from './typen.js';
 // egal wie viele Clients zuschauen – die Ereignisse werden verteilt.
 
 export interface LiveEreignis {
-  typ: 'gleiswechsel' | 'verspaetung' | 'heartbeat';
+  /**
+   * `quelle-weg`/`quelle-da` melden den Ausfall der Tafel und ihre Rueckkehr
+   * (Degradationstabelle Zeile 2). Ohne sie blieb der Strom bei einem Ausfall
+   * einfach stumm - und stumm ist vom Fall „es aendert sich gerade nichts“
+   * nicht zu unterscheiden. Gesendet wird nur beim Zustandswechsel.
+   */
+  typ: 'gleiswechsel' | 'verspaetung' | 'heartbeat' | 'quelle-weg' | 'quelle-da';
   zug?: string;
   alt?: string;
   neu?: string;
@@ -32,6 +38,8 @@ interface EvaEintrag {
   abonnenten: Set<Abonnent>;
   letzterStand: Map<string, TafelEintrag>;
   timer?: NodeJS.Timeout;
+  /** Ob der letzte Durchlauf ohne Tafeldaten endete - Kante fuer `quelle-weg`. */
+  quelleWeg?: boolean;
 }
 
 export class Ueberwachung {
@@ -104,7 +112,17 @@ export class Ueberwachung {
         { degradation: 'tafel-unerreichbar', eva, grund: String(e) },
         'Live-Ueberwachung ohne Tafeldaten - dieser Durchlauf faellt aus',
       );
+      // Nur die Kante meldet, nicht jeder Durchlauf: Der Poller laeuft alle
+      // paar Sekunden weiter, das Banner soll einmal erscheinen.
+      if (!eintrag.quelleWeg) {
+        eintrag.quelleWeg = true;
+        this.anAlle(eintrag, eva, { typ: 'quelle-weg', zeitstempel: new Date().toISOString() });
+      }
       return;
+    }
+    if (eintrag.quelleWeg) {
+      eintrag.quelleWeg = false;
+      this.anAlle(eintrag, eva, { typ: 'quelle-da', zeitstempel: new Date().toISOString() });
     }
 
     const zeitstempel = new Date().toISOString();
@@ -133,12 +151,37 @@ export class Ueberwachung {
     }
 
     for (const abonnent of eintrag.abonnenten) {
-      abonnent.sende({ typ: 'heartbeat', zeitstempel });
+      this.zustellen(eva, abonnent, { typ: 'heartbeat', zeitstempel });
       for (const ereignis of ereignisse) {
         if (abonnent.zuege.size === 0 || (ereignis.zug && abonnent.zuege.has(ereignis.zug))) {
-          abonnent.sende(ereignis);
+          this.zustellen(eva, abonnent, ereignis);
         }
       }
+    }
+  }
+
+  /** Ein Ereignis an alle Zuschauer dieser EVA, ungefiltert. */
+  private anAlle(eintrag: EvaEintrag, eva: string, ereignis: LiveEreignis): void {
+    for (const abonnent of eintrag.abonnenten) this.zustellen(eva, abonnent, ereignis);
+  }
+
+  /**
+   * Ein abgerissener Zuschauer darf die uebrigen nicht mitnehmen.
+   *
+   * Nach einem Verbindungsabbruch schreibt `sende` in eine tote Verbindung.
+   * Ungefangen riss dieser Wurf den ganzen Durchlauf ab - und mit ihm die
+   * Aktualisierung fuer JEDEN anderen Zuschauer derselben EVA. Ein einziges
+   * totes Handy in der Bahnhofshalle haette gereicht (Degradationstabelle
+   * Zeile 6).
+   */
+  private zustellen(eva: string, abonnent: Abonnent, ereignis: LiveEreignis): void {
+    try {
+      abonnent.sende(ereignis);
+    } catch (e) {
+      this.log?.warn(
+        { degradation: 'abonnent-unerreichbar', eva, grund: String(e) },
+        'Ereignis konnte einem Zuschauer nicht zugestellt werden - die uebrigen laufen weiter',
+      );
     }
   }
 }

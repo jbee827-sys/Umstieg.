@@ -466,10 +466,17 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
       ziel = findeStartknoten(graph, gleisAb);
     } catch {
       if (graph.stufe !== 3) {
+        // Welches Gleis fehlt, gehört in den Hinweis: Der Nutzer hat ZWEI
+        // eingegeben und erfährt sonst nicht, welches von beiden die Route
+        // ungenau macht. Gefragt wird den OSM-Graphen VOR dem Austausch –
+        // danach kennt das Standardmodell beide.
+        const fehlend = [gleisAn, gleisAb].filter((g) => !graph.gleise.includes(g));
         // Anlagen weiterreichen, damit der Betriebsstatus auch im Rückfall gilt.
         graph = syntheseGraph(eintrag.info, fastaAnlagen);
         hinweise.push(
-          'Gleis nicht im Kartenmaterial gefunden – Standardmodell mit ungefähren Angaben.',
+          fehlend.length === 1
+            ? `Gleis ${fehlend[0]} ist nicht im Kartenmaterial – Standardmodell mit ungefähren Angaben.`
+            : 'Gleis nicht im Kartenmaterial gefunden – Standardmodell mit ungefähren Angaben.',
         );
         try {
           start = findeStartknoten(graph, gleisAn, abschnittEffektiv);
