@@ -85,6 +85,52 @@ describe('GET /api/route', () => {
     expect(ergebnis.schritte.some((s) => s.text.toLowerCase().includes('ca. '))).toBe(true);
   });
 
+  /**
+   * Konzeptluecke §4.3 an der Route, nicht nur an der Funktion.
+   *
+   * Muenchen Hbf, Gleis 5 -> 2 antwortete „Gleis 2 gegenueber, kein
+   * Ebenenwechsel“ in 30 Sekunden. Gleis 2 liegt im S-Bahn-Tiefbahnhof.
+   * Nachgebaut ueber das Synthesemodell: Zwei Gleise auf denselben
+   * Koordinaten gelten dort als ein Bahnsteig - genau die Behauptung, die
+   * die DB-Gleisliste widerlegt, weil sie die beiden unter verschiedenen
+   * Verkehrsstellen fuehrt.
+   */
+  function macheGetrennteGleise(ueberschreibung: Partial<StationsInfo> = {}) {
+    const clients = macheClients({ overpassWirft: true });
+    const getrennt: StationsInfo = {
+      ...ministadt,
+      evas: ['8000001', '8000002'],
+      gleisteileOhneAntwort: 0,
+      gleise: [
+        { gleis: '1', lat: 52.0, lon: 12.0, evas: ['8000001'] },
+        { gleis: '2', lat: 52.0, lon: 12.0, evas: ['8000002'] },
+      ],
+      ...ueberschreibung,
+    };
+    clients.stations.holeStationsInfo = vi.fn(async () => getrennt);
+    return clients;
+  }
+
+  it('DB fuehrt die Gleise getrennt → keine Ausgabe „gegenueber“, obwohl die Lage sie zusammenlegt', async () => {
+    const app = buildApp(macheGetrennteGleise());
+    const res = await app.inject({ method: 'GET', url: ROUTE_URL });
+
+    expect(res.statusCode).toBe(200);
+    const ergebnis = res.json() as RouteErgebnis;
+    expect(ergebnis.schritte.some((s) => s.text.includes('gegenüber'))).toBe(false);
+  });
+
+  it('lueckenhafte Gleisliste trennt nicht – aus fehlenden Daten wird nichts geschlossen', async () => {
+    // Ein ausgefallener Bahnhofsteil heisst nicht „anderer Bahnsteig“. Ohne
+    // vollstaendige Liste bleibt es beim Urteil der Geometrie.
+    const app = buildApp(macheGetrennteGleise({ gleisteileOhneAntwort: 1 }));
+    const res = await app.inject({ method: 'GET', url: ROUTE_URL });
+
+    expect(res.statusCode).toBe(200);
+    const ergebnis = res.json() as RouteErgebnis;
+    expect(ergebnis.schritte.some((s) => s.text.includes('gegenüber'))).toBe(true);
+  });
+
   it('zweiter Aufruf trifft den Graph-Cache (Clients nur 1× befragt)', async () => {
     const clients = macheClients();
     const app = buildApp(clients);

@@ -247,6 +247,45 @@ describe('istGleicherBahnsteig', () => {
   it('Gleise an verschiedenen Bahnsteigen → false', () => {
     expect(istGleicherBahnsteig(treppeVsAufzugGraph(), '1', '2')).toBe(false);
   });
+
+  /**
+   * Das Muster von München Hbf, Gleis 5 → 2 (Konzeptlücke §4.3).
+   *
+   * OSM führt beide Gleise an EINEM Bahnsteig – in `treppeVsAufzugGraph`
+   * tragen Gleis 2 und 3 denselben `bahnsteigId` 'bs2'. Die Antwort war
+   * deshalb „gegenüber, kein Ebenenwechsel“, während Gleis 2 in Wahrheit
+   * im Tiefbahnhof liegt. Die DB-Gleisliste weiß es besser: Sie führt die
+   * beiden unter verschiedenen Verkehrsstellen.
+   *
+   * Der Test darüber („zwei Gleise am selben physischen Bahnsteig → true“)
+   * ist die Gegenprobe: ohne DB-Liste bleibt es beim OSM-Urteil.
+   */
+  const dbGetrennt = [
+    { gleis: '2', evas: ['8098263'] }, // S-Bahn, tief
+    { gleis: '3', evas: ['8000261'] }, // Halle
+  ];
+
+  it('DB führt die Gleise an verschiedenen Verkehrsstellen → false trotz gleichem OSM-Bahnsteig', () => {
+    expect(istGleicherBahnsteig(treppeVsAufzugGraph(), '2', '3', dbGetrennt)).toBe(false);
+  });
+
+  it('DB führt ein Gleis an beiden Verkehrsstellen → OSM entscheidet weiter', () => {
+    const ueberlappend = [
+      { gleis: '2', evas: ['8098263'] },
+      { gleis: '3', evas: ['8000261', '8098263'] },
+    ];
+    expect(istGleicherBahnsteig(treppeVsAufzugGraph(), '2', '3', ueberlappend)).toBe(true);
+  });
+
+  it('ein Gleis fehlt in der DB-Liste → OSM entscheidet weiter', () => {
+    const lueckenhaft = [{ gleis: '2', evas: ['8098263'] }];
+    expect(istGleicherBahnsteig(treppeVsAufzugGraph(), '2', '3', lueckenhaft)).toBe(true);
+  });
+
+  it('dasselbe Gleis bleibt derselbe Bahnsteig, auch wenn die DB-Liste trennt', () => {
+    const kurios = [{ gleis: '2', evas: ['8098263'] }, { gleis: '2', evas: ['8000261'] }];
+    expect(istGleicherBahnsteig(treppeVsAufzugGraph(), '2', '2', kurios)).toBe(true);
+  });
 });
 
 /**

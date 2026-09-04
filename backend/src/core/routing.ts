@@ -46,17 +46,54 @@ export function findeStartknoten(
   };
 }
 
-/** Zwei Gleise liegen am selben physischen Bahnsteig (bahnsteigId der Bahnsteigpunkte). */
+/**
+ * Zwei Gleise liegen am selben physischen Bahnsteig (bahnsteigId der Bahnsteigpunkte).
+ *
+ * `dbGleise` ist die Gleisliste aus RIS::Stations, wenn sie tragfähig ist –
+ * sie dient als **Trenner**, nicht als Ersatz für die OSM-Geometrie
+ * (Konzeptlücke §4.3, eng gefasst). Zwei Gleise, die die DB unter
+ * verschiedenen Verkehrsstellen führt, können nie derselbe Bahnsteig sein,
+ * was OSM auch behauptet: München Hbf legt Gleis 2 (S-Bahn, tief) und
+ * Gleis 5 (Halle) auf einen `bahnsteigId` und antwortete deshalb
+ * „gegenüber, kein Ebenenwechsel“.
+ *
+ * Fehlt die Liste, oder kennt sie eines der Gleise nicht, oder führt sie ein
+ * Gleis an mehreren Verkehrsstellen, entscheidet OSM wie bisher. Aus einer
+ * lückenhaften Liste darf nichts geschlossen werden – ein falscher Weg wäre
+ * sonst nur gegen einen anderen getauscht.
+ */
 export function istGleicherBahnsteig(
   graph: StationGraph,
   gleisAn: string,
   gleisAb: string,
+  dbGleise?: { gleis: string; evas?: string[] }[],
 ): boolean {
   if (gleisAn === gleisAb) return true;
+  if (dbGleise) {
+    const evasAn = evasVonGleis(dbGleise, gleisAn);
+    const evasAb = evasVonGleis(dbGleise, gleisAb);
+    // Nur wenn die DB BEIDE Gleise kennt, ist ihr Schweigen keine Lücke.
+    if (evasAn.size > 0 && evasAb.size > 0) {
+      let gemeinsam = false;
+      for (const eva of evasAn) if (evasAb.has(eva)) gemeinsam = true;
+      if (!gemeinsam) return false;
+    }
+  }
   const idsVon = bahnsteigIds(graph, gleisAn);
   const idsNach = bahnsteigIds(graph, gleisAb);
   for (const id of idsVon) if (idsNach.has(id)) return true;
   return false;
+}
+
+function evasVonGleis(
+  dbGleise: { gleis: string; evas?: string[] }[],
+  gleis: string,
+): Set<string> {
+  const evas = new Set<string>();
+  for (const eintrag of dbGleise) {
+    if (eintrag.gleis === gleis) for (const eva of eintrag.evas ?? []) evas.add(eva);
+  }
+  return evas;
 }
 
 function bahnsteigIds(graph: StationGraph, gleis: string): Set<string> {

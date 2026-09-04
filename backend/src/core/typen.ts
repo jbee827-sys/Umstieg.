@@ -130,7 +130,23 @@ export interface StationsInfo {
    * Fehlt das Feld, war die Gruppe vollständig (oder es gibt keine).
    */
   gruppeUnvollstaendig?: boolean;
-  gleise: { gleis: string; lat?: number; lon?: number }[];
+  /**
+   * Die Gleise aller Verkehrsstellen, nach Namen vereinigt.
+   *
+   * `evas` nennt, welche Mitglieder das Gleis fuehren – der Trenner fuer
+   * Konzeptluecke §4.3. Zwei Gleise mit disjunkten `evas` koennen nie
+   * derselbe physische Bahnsteig sein, was OSM auch behauptet. Mehrere
+   * Eintraege sind ein echtes „beides“ und kein Grund zu trennen: Muenchen
+   * fuehrt Gleis 13 unter drei Mitgliedern, betrieblich unterteilt statt
+   * physisch getrennt.
+   *
+   * `evas` ist optional aus demselben Grund wie `gleisteileOhneAntwort`: Es
+   * gibt genau EINEN echten Erzeuger (`holeStationsInfo`), alles andere sind
+   * Fixtures. Fehlt es, ist die Herkunft unbekannt – und dann entscheidet
+   * OSM, wie vor dem 04.09.2026. Das ist der sichere Rueckfall, nicht der
+   * Ausnahmefall.
+   */
+  gleise: { gleis: string; evas?: string[]; lat?: number; lon?: number }[];
 }
 
 export interface FastaAnlage {

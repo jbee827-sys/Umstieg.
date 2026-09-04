@@ -99,6 +99,41 @@ describe('Verkehrsstellengruppe', () => {
     expect(namen).toHaveLength(20);
   });
 
+  /**
+   * Die Herkunft je Gleis ist der Trenner fuer Konzeptluecke §4.3.
+   *
+   * Bis zum 04.09.2026 wurde sie abgerufen und drei Zeilen spaeter verworfen:
+   * `gesehen.has(p.name)` warf jeden Folgetreffer weg, samt seiner
+   * Verkehrsstelle. Genau die Angabe fehlte dem Routing, um zu erkennen, dass
+   * zwei Gleise NICHT am selben Bahnsteig liegen koennen.
+   */
+  it('merkt sich, welche Verkehrsstelle ein Gleis fuehrt', async () => {
+    const info = await holeStationsInfo('8011160', gruppenMock().fetch);
+    const gleis14 = info.gleise.find((g) => g.gleis === '14');
+    const gleis6 = info.gleise.find((g) => g.gleis === '6');
+
+    // 14 liegt in der Halle (8011160), 6 im Tiefbahnhof (8098160).
+    expect(gleis14?.evas).toEqual(['8011160']);
+    expect(gleis6?.evas).toEqual(['8098160']);
+  });
+
+  it('sammelt alle Verkehrsstellen, die dasselbe Gleis fuehren', async () => {
+    // Fuehren mehrere Mitglieder denselben Gleisnamen, ist das ein echtes
+    // "beides" - und dann darf gerade NICHT auf verschiedene Bahnsteige
+    // geschlossen werden. Einen Gewinner zu kueren waere derselbe Fehler
+    // eine Ebene hoeher.
+    const info = await holeStationsInfo('8011160', gruppenMock().fetch);
+    for (const eintrag of info.gleise) {
+      // Das Feld ist im Typ optional (Fixtures), der echte Erzeuger fuellt es
+      // aber immer - sonst faellt das Routing stillschweigend auf OSM zurueck.
+      const evas = eintrag.evas;
+      expect(evas).toBeDefined();
+      expect(evas?.length).toBeGreaterThan(0);
+      expect(new Set(evas).size).toBe(evas?.length);
+      for (const eva of evas ?? []) expect(info.evas).toContain(eva);
+    }
+  });
+
   it('bleibt bei einer einzelnen Verkehrsstelle, wenn es keine Gruppe gibt', async () => {
     // Koeln Hbf: groupMembers enthaelt nur sich selbst.
     const fetchFn = vi.fn(async (eingabe: RequestInfo | URL) => {

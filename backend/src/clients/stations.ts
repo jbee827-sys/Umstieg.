@@ -209,15 +209,25 @@ export async function holeStationsInfo(
       }
     }),
   );
-  const gesehen = new Set<string>();
-  const gleise: { gleis: string }[] = [];
-  for (const liste of listen) {
+  // Vereinigt wird nach Gleisnamen - die Unterteilung mehrerer Mitglieder ist
+  // betrieblich, nicht physisch. Die Herkunft geht dabei aber NICHT verloren:
+  // Welche Verkehrsstelle ein Gleis fuehrt, ist der Trenner, mit dem das
+  // Routing den Tiefbahnhof von der Halle unterscheidet (Konzeptluecke §4.3).
+  // `listen` laeuft parallel zu `evas`, die Zuordnung ist also der Index.
+  const nachGleis = new Map<string, { gleis: string; evas: string[] }>();
+  for (const [i, liste] of listen.entries()) {
+    const mitglied = evas[i];
     for (const p of liste) {
-      if (!p.name || gesehen.has(p.name)) continue;
-      gesehen.add(p.name);
-      gleise.push({ gleis: p.name });
+      if (!p.name) continue;
+      const vorhanden = nachGleis.get(p.name);
+      if (vorhanden) {
+        if (!vorhanden.evas.includes(mitglied)) vorhanden.evas.push(mitglied);
+      } else {
+        nachGleis.set(p.name, { gleis: p.name, evas: [mitglied] });
+      }
     }
   }
+  const gleise = [...nachGleis.values()];
 
   return {
     eva,
