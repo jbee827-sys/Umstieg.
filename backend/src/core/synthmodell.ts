@@ -1,3 +1,4 @@
+import { bahnsteigSchluessel, verankerterBahnsteig } from './fasta-gleisbezug.js';
 import { haversineM } from './graph.js';
 import type {
   FastaAnlage,
@@ -13,7 +14,10 @@ import type {
 // Synthesemodell (Stufe 3): Standardmuster deutscher Bahnhöfe – parallele
 // Bahnsteige, eine Querung als Unterführung (level −1) auf halber Länge.
 // Alle Längen sind GROBE Schätzungen; die Textausgabe nutzt „ca."-Formulierungen.
-const BAHNSTEIG_ABSTAND_M = 15;
+// Gemessen, nicht geraten: Die FaSta-Sondierung vom 05.09.2026 ergab
+// Nachbarabstaende von 20-26 m (Hannover 20-26, Frankfurt 26, Berlin 10-22
+// innerhalb einer Ebene). Der vorherige Wert 15 war ein Startwert ohne Messung.
+const BAHNSTEIG_ABSTAND_M = 20;
 const TREPPE_LAENGE_M = 10;
 const AUFZUG_LAENGE_M = 5;
 const NACHBARGLEIS_LAENGE_M = 5;
@@ -28,12 +32,23 @@ interface SynthBahnsteig {
   gleise: { gleis: string; lat?: number; lon?: number }[];
   lat: number;
   lon: number;
+  /** Anlagen, die diesen Bahnsteig laut FaSta-Beschreibung bedienen. */
+  anlagen: FastaAnlage[];
 }
 
 /**
- * Gleise zu physischen Bahnsteigen gruppieren (gleiche/nahe Koordinaten).
+ * Gleise zu physischen Bahnsteigen gruppieren.
  *
- * Verankert wird an der ECHTEN Stationsposition. Die Gleisliste aus
+ * Drei Schritte, und der erste ist seit §5 neu: Wo FaSta einen Bahnsteig
+ * BENENNT ("zu Gleis 15/16"), bekommt er ECHTE Koordinaten. Nur der Rest wird
+ * geschaetzt.
+ *
+ * Warum die Zuordnung ueber die Beschreibung laeuft und nicht ueber die
+ * Geometrie, steht in `fasta-gleisbezug.ts`. Kurz: Berlins Anlagen streuen
+ * ueber 339 m, weil Parkhaeuser und Tram-Haltestellen mit darin stehen.
+ *
+ * Ohne FaSta bleibt es beim bisherigen Aufbau. Verankert wird dann an der
+ * ECHTEN Stationsposition. Die Gleisliste aus
  * RIS::Stations (`platforms/{eva}`) traegt nie Koordinaten – sie liefert nur
  * Namen. Ohne Verankerung landete deshalb jede Stufe-3-Route bei 51 N / 10 O,
  * und weil das Frontend die Karte zeigt, sobald `karte` vorhanden ist, sah der
@@ -41,11 +56,47 @@ interface SynthBahnsteig {
  * Anschein von Genauigkeit. Die relativen Abstaende bleiben unveraendert
  * geschaetzt („ca."-Angaben); richtig ist nur, WO der Bahnhof liegt.
  */
-function gruppiereBahnsteige(info: StationsInfo): SynthBahnsteig[] {
+function gruppiereBahnsteige(info: StationsInfo, anlagen: FastaAnlage[]): SynthBahnsteig[] {
+  // Schritt 1: Verankerungen aus den Beschreibungen sammeln.
+  const verankert = new Map<string, FastaAnlage[]>();
+  for (const anlage of anlagen) {
+    const gleise = verankerterBahnsteig(anlage.beschreibung);
+    if (!gleise) continue;
+    const schluessel = bahnsteigSchluessel(gleise);
+    const bisher = verankert.get(schluessel);
+    if (bisher) bisher.push(anlage);
+    else verankert.set(schluessel, [anlage]);
+  }
+
   const bahnsteige: SynthBahnsteig[] = [];
+  const vergeben = new Set<string>();
+
+  // Schritt 2: benannte Bahnsteige bilden - nur aus Gleisen, die die
+  // DB-Gleisliste kennt. FaSta nennt auch Tram- und U-Bahn-Gleise; die
+  // Gleisliste bleibt die Autoritaet darueber, was DIESER Bahnhof hat.
+  for (const [schluessel, ihre] of verankert) {
+    const genannte = schluessel.split('/');
+    const eintraege = info.gleise.filter(
+      (g) => genannte.includes(g.gleis) && !vergeben.has(g.gleis),
+    );
+    if (eintraege.length === 0) continue;
+    for (const e of eintraege) vergeben.add(e.gleis);
+    bahnsteige.push({
+      id: `bs${bahnsteige.length}`,
+      gleise: eintraege,
+      lat: ihre.reduce((s, a) => s + a.lat, 0) / ihre.length,
+      lon: ihre.reduce((s, a) => s + a.lon, 0) / ihre.length,
+      anlagen: ihre,
+    });
+  }
+
+  // Schritt 3: uebrige Gleise wie bisher gruppieren.
+  const echte = [...bahnsteige].sort((a, b) => a.lon - b.lon || a.lat - b.lat);
+  const ohneAnker: SynthBahnsteig[] = [];
   for (const eintrag of info.gleise) {
+    if (vergeben.has(eintrag.gleis)) continue;
     if (eintrag.lat !== undefined && eintrag.lon !== undefined) {
-      const passend = bahnsteige.find(
+      const passend = ohneAnker.find(
         (b) =>
           b.gleise[0].lat !== undefined &&
           haversineM(b.lat, b.lon, eintrag.lat!, eintrag.lon!) <= GRUPPIER_SCHWELLE_M,
@@ -55,25 +106,46 @@ function gruppiereBahnsteige(info: StationsInfo): SynthBahnsteig[] {
         continue;
       }
     }
-    bahnsteige.push({
-      id: `bs${bahnsteige.length}`,
+    ohneAnker.push({
+      id: `bs${bahnsteige.length + ohneAnker.length}`,
       gleise: [eintrag],
       lat: eintrag.lat ?? NaN,
       lon: eintrag.lon ?? NaN,
+      anlagen: [],
     });
   }
-  // Bahnsteige ohne Koordinaten bekommen synthetische Positionen im
-  // Standardabstand – ausgehend von der Stationsposition, sofern bekannt.
-  const ankerLat = info.lat ?? BASIS_LAT;
-  const ankerLon = info.lon ?? BASIS_LON;
+
+  // Achse: aus den echten Bahnsteigen abgeleitet, sonst wie bisher nach Osten.
+  const ankerLat = echte[0]?.lat ?? info.lat ?? BASIS_LAT;
+  const ankerLon = echte[0]?.lon ?? info.lon ?? BASIS_LON;
+  const mProGradLat = 111320;
   const mProGradLon = 111320 * Math.cos((ankerLat * Math.PI) / 180);
-  bahnsteige.forEach((b, i) => {
-    if (Number.isNaN(b.lat)) {
-      b.lat = ankerLat;
-      b.lon = ankerLon + (i * BAHNSTEIG_ABSTAND_M) / mProGradLon;
+  let richtungLat = 0;
+  let richtungLon = 1;
+  if (echte.length >= 2) {
+    const dLat = (echte[echte.length - 1].lat - echte[0].lat) * mProGradLat;
+    const dLon = (echte[echte.length - 1].lon - echte[0].lon) * mProGradLon;
+    const laenge = Math.hypot(dLat, dLon);
+    if (laenge > 0) {
+      richtungLat = dLat / laenge;
+      richtungLon = dLon / laenge;
     }
+  }
+
+  // Synthetische Bahnsteige entlang der Achse anhaengen. Gibt es echte,
+  // beginnen sie EINEN Abstand hinter dem letzten; gibt es keine, sitzt der
+  // erste auf der Stationsposition - genau wie bisher.
+  const letzte = echte[echte.length - 1];
+  const startLat = letzte?.lat ?? ankerLat;
+  const startLon = letzte?.lon ?? ankerLon;
+  ohneAnker.forEach((b, i) => {
+    if (!Number.isNaN(b.lat)) return;
+    const versatz = (echte.length > 0 ? i + 1 : i) * BAHNSTEIG_ABSTAND_M;
+    b.lat = startLat + (richtungLat * versatz) / mProGradLat;
+    b.lon = startLon + (richtungLon * versatz) / mProGradLon;
   });
-  return bahnsteige.sort((a, b) => a.lon - b.lon || a.lat - b.lat);
+
+  return [...bahnsteige, ...ohneAnker].sort((a, b) => a.lon - b.lon || a.lat - b.lat);
 }
 
 export function syntheseGraph(info: StationsInfo, anlagen: FastaAnlage[] = []): StationGraph {
@@ -86,7 +158,7 @@ export function syntheseGraph(info: StationsInfo, anlagen: FastaAnlage[] = []): 
     }
   };
 
-  const bahnsteige = gruppiereBahnsteige(info);
+  const bahnsteige = gruppiereBahnsteige(info, anlagen);
   const querIds: string[] = [];
 
   for (const bahnsteig of bahnsteige) {
@@ -143,10 +215,38 @@ export function syntheseGraph(info: StationsInfo, anlagen: FastaAnlage[] = []): 
     });
   }
 
-  // FaSta-Anlagen dem nächstgelegenen Gleis zuordnen → Kante Bahnsteig ↔ Querung.
+  // Verankerte Anlagen: der Weg ueber den Bahnsteig wird GERECHNET, nur der
+  // Abstieg bleibt geschaetzt. Der Status wird hier NICHT eingetragen - dieser
+  // Graph wird gecacht, und ein gerade defekter Aufzug bliebe darin stehen.
+  // Den Status legt `wendeFastaAn` pro Anfrage auf einer Kopie nach, ueber
+  // `anlageId`.
+  for (const bahnsteig of bahnsteige) {
+    for (const anlage of bahnsteig.anlagen) {
+      const wegM = Math.round(haversineM(bahnsteig.lat, bahnsteig.lon, anlage.lat, anlage.lon));
+      const abstieg = anlage.typ === 'AUFZUG' ? AUFZUG_LAENGE_M : TREPPE_LAENGE_M;
+      for (const eintrag of bahnsteig.gleise) {
+        fuegeKanteEin({
+          von: `gleis${eintrag.gleis}:mitte`,
+          nach: `quer:${bahnsteig.id}@-1`,
+          laengeM: wegM + abstieg,
+          deltaLevel: -1,
+          typ: anlage.typ === 'AUFZUG' ? 'aufzug' : 'rolltreppe',
+          barrierefrei: anlage.typ === 'AUFZUG',
+          anlageId: anlage.id,
+        });
+      }
+    }
+  }
+
+  // Anlagen OHNE Gleisbezug: nach der bisherigen Regel ans naechstgelegene
+  // Gleis. Sie praegen keine Lage - aber sie duerfen keine Auskunft kosten:
+  // Muenchen benennt nur 16 % seiner Anlagen mit einem Gleis. Fielen die
+  // uebrigen 84 % weg, wuerde aus "barrierefreie Route vorhanden" ein "keine
+  // Route", und eine bessere Geometrie haette eine Auskunft gekostet.
+  const bedient = new Set(bahnsteige.flatMap((b) => b.anlagen.map((a) => a.id)));
   const gleisKnoten = [...knoten.values()].filter((k) => k.gleis);
   for (const anlage of anlagen) {
-    if (gleisKnoten.length === 0) break;
+    if (bedient.has(anlage.id) || gleisKnoten.length === 0) continue;
     let nahester = gleisKnoten[0];
     let minAbstand = Infinity;
     for (const kandidat of gleisKnoten) {
@@ -163,7 +263,7 @@ export function syntheseGraph(info: StationsInfo, anlagen: FastaAnlage[] = []): 
       deltaLevel: -1,
       typ: anlage.typ === 'AUFZUG' ? 'aufzug' : 'rolltreppe',
       barrierefrei: anlage.typ === 'AUFZUG',
-      status: anlage.status,
+      anlageId: anlage.id,
     });
   }
 
