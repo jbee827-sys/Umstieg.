@@ -141,7 +141,11 @@ gleiseAusBeschreibung(text: string): string[]
 
 **Schritt 2 – Achse ableiten.** Bei ≥ 2 benannten Bahnsteigen ergibt die Richtung zwischen dem ersten und dem letzten die Bahnsteigachse; sortiert wird wie heute nach `lon`, bei Gleichstand nach `lat` (`synthmodell.ts:69`). Sonst wie heute nach Osten.
 
-**Schritt 3 – übrige Bahnsteige synthetisch anhängen.** Gleise, die FaSta nicht nennt, werden wie heute gruppiert und entlang der Achse verteilt – aber mit **20 m** statt 15 m (gemessen) und verankert an den echten Bahnsteigen statt an der blanken Stationsposition.
+**Schritt 3 – übrige Bahnsteige synthetisch anhängen.** Gleise, die FaSta nicht nennt, werden wie heute gruppiert und entlang der Achse verteilt – aber mit **20 m** statt 15 m (gemessen) und verankert an den echten Bahnsteigen statt an der blanken Stationsposition. Gibt es keinen echten Bahnsteig, bleibt es exakt beim heutigen Aufbau ab der Stationsposition; nur der Abstand wächst auf 20 m.
+
+**Verankerung prägt die Lage – Kanten trägt jede Anlage.** Die Trennung ist wichtig genug für einen eigenen Satz: Nur Anlagen **mit** Gleisbezug bestimmen, *wo* ein Bahnsteig liegt. Aber Anlagen **ohne** Gleisbezug erzeugen weiterhin ihre Kante nach der heutigen Regel (nächstgelegenes Gleis), sofern der betroffene Bahnsteig keine eigene verankerte Anlage hat.
+
+Ohne diese Trennung hätte der Umbau an schwach beschrifteten Bahnhöfen **barrierefreie Routen vernichtet**: München nennt nur 16 % seiner Anlagen mit Gleisbezug: Die übrigen 84 % verlören ihre Aufzugkante, und aus „Route vorhanden" würde „keine barrierefreie Route". Eine Verbesserung der Geometrie darf keine Auskunft kosten, die es heute gibt.
 
 **Die Kante Bahnsteig → Querung.** Heute pauschal `TREPPE_LAENGE_M = 10`. Neu, je Anlage des Bahnsteigs:
 
@@ -187,8 +191,9 @@ Vorgehen nach TDD; jede Zeile hier ist ein Test, der zuerst rot ist.
 - Benannter Bahnsteig sitzt auf dem Schwerpunkt seiner Anlagen, nicht auf dem Stationsanker
 - Kante Bahnsteig→Querung trägt den gerechneten Abstand, nicht mehr 10 m
 - Unbenannte Bahnsteige hängen mit 20 m an der Achse der echten
-- Anlagen ohne Gleisbezug bewegen **nichts** (Parkhaus-Fall)
-- Ohne Anlagen: Graph identisch zu heute (Regressionsschutz)
+- Anlagen ohne Gleisbezug **verschieben keinen Bahnsteig** (Parkhaus-Fall) …
+- … **erzeugen aber weiterhin ihre Kante** – der München-Fall darf keine barrierefreie Route verlieren
+- Ohne Anlagen: gleiche Knoten und Kanten wie heute, allein der Bahnsteigabstand ist 20 m statt 15 m (Regressionsschutz)
 
 **Echte Fixtures (`test/fixtures/db/`):** Das handgebaute `fasta-facilities.json` wird durch **echte Aufzeichnungen** ersetzt – Hannover (20 Anlagen, sauberster Fall) und Berlin (69 Anlagen, mit Parkhäusern und Tram als Störung). Damit prüfbar:
 - Hannover ergibt 6 benannte Bahnsteige
