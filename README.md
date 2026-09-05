@@ -239,7 +239,7 @@ Overpass-Abruf ansetzen, nicht am Cache.
 |---|---|---|
 | 7a | ~~**§4.3 Abgleich OSM ↔ DB-Gleisliste (eng)**~~ ✅ **erledigt 04.09.2026** | Die DB-Gleisliste trennt jetzt, was OSM zusammenlegt. Gegen die echte API gemessen. Siehe „Die DB-Gleisliste als Trenner“. |
 | **7a+** | **§4.3 in voller Fassung** | **Auf Datenmangel blockiert, nicht auf Aufwand.** Der `platforms`-Endpunkt führt nachweislich keine Koordinaten – ohne sie lässt sich die OSM-Geometrie nicht an der DB verankern. Einzelheiten unter „Was der `platforms`-Endpunkt liefert“. |
-| 7b | **§5 FaSta-Koordinaten im Synthesemodell** | **Durch den Spike aufgewertet:** FaSta ist die *einzige* verbliebene Quelle mit echten Koordinaten (`FastaAnlage` trägt `lat`/`lon`). Damit ist §5 nicht nur ein Feinschliff der Stufe 3, sondern der einzige Hebel, der die Geometrie überhaupt noch verbessern kann. |
+| ~~7b~~ | ~~**§5 FaSta-Koordinaten im Synthesemodell**~~ ✅ **erledigt 05.09.2026** | Die Zuordnung Anlage → Bahnsteig kommt aus `description` („zu Gleis 15/16" = Bahnsteig 15/16), **nicht** aus der Geometrie – geometrisches Clustern wäre nachweislich falsch gewesen. Siehe „Was FaSta wirklich liefert“. Der Befund, der dahin führte: **Durch den Spike aufgewertet:** FaSta ist die *einzige* verbliebene Quelle mit echten Koordinaten (`FastaAnlage` trägt `lat`/`lon`). Damit ist §5 nicht nur ein Feinschliff der Stufe 3, sondern der einzige Hebel, der die Geometrie überhaupt noch verbessern kann. |
 | ~~7c~~ | ~~**§9 getrennte Blöcke Ankunft/Abfahrt**~~ ✅ **erledigt 05.09.2026** | Zwei Blöcke mit je Zug, Gleis und Wagennummer. Deckte einen Fehler auf: Der Angekommen-Bildschirm zeigte den **Ankunfts**wagen. Siehe „Getrennte Blöcke – und der Wagen, der zum falschen Zug gehörte“. |
 | 8 | **MVP-Task 17 abschließen** | `Dockerfile` steht, **Schritt 1 ist erledigt** (`test/degradation.test.ts`, 13 Tests – siehe „Die Degradationstabelle als Test“). Offen bleibt der Mobile-Feinschliff, der ohnehin an der Mobilabnahme hängt. Die Aufgabenbeschreibung im Plan ist an einer Stelle überholt: Sie verlangt „Backend serviert `frontend/dist` via `@fastify/static`“ – das ist am 03.09. mit der Trennung Vercel/Fly.io entfallen. |
 | ~~9a~~ | ~~**Ticket-PDF-Import**~~ ⛔ **entschieden dagegen, 03.09.2026** | Die Spec fragte: „Verarbeitung im Browser prüfen, bevor ein Endpunkt gebaut wird.“ Der Reise-Import hat das beantwortet – Text im Browser, PDFs bewusst abgelehnt als Datenminimierung (Art. 5 Abs. 1 lit. c DSGVO). Ein Upload-Endpunkt würde diese Entscheidung widerrufen. **Nicht bauen.** |
@@ -255,6 +255,7 @@ die Ursachenanalyse in [`docs/2026-08-31-design-abgleich.md`](./docs/2026-08-31-
 
 | # | Aufgabe | |
 |---|---|---|
+| 10b | **FaSta-Verbindungsanlagen auswerten** | Anlagen, die **zwei** Bahnsteige nennen („Gleis 5/6 (C/D) - Gleis 11/12“), sind die Querung selbst – 6 von 69 in Berlin. Sie tragen aber nur *einen* Punkt, und eine Verbindung braucht zwei. Bewusst ausgelassen (§5-Spec, Abschnitt 9). |
 | 10 | **Spike-Nachlauf für 13 Bahnhöfe** | `npx tsx scripts/spike-datenrealitaet.ts` – gecacht, fragt nur die fehlenden ab, sobald Overpass stabil antwortet. |
 | ~~11~~ | ~~**DB-Antwortschema der Wagenreihung prüfen**~~ ⛔ **nicht mehr prüfbar, 05.09.2026** | Am 04.09. versucht, dabei den Grund gefunden: Der Endpunkt existiert nicht mehr. Das handgebaute Fixture lässt sich gegen nichts mehr verifizieren. Siehe „Die Wagenreihung ist tot“. RIS::Stations, Timetables und FaSta bleiben gegen echte Antworten verifiziert. |
 | 16 | **Ersatz für die Wagenreihung suchen** | Falls die Wagenposition zurückkommen soll: Der Marketplace müsste ein Formations-Produkt führen, das abonnierbar ist. Drei geratene Pfade antworteten am 04.09. mit 404 – zu klären wäre es im Marketplace-Katalog, nicht durch Raten. |
@@ -1839,6 +1840,126 @@ sofort beim Typcheck auf.
 pauschal. Zweiter Fall dieser Art, siehe „Was der Linter meldete und trotzdem
 falsch lag".
 
+## Was FaSta wirklich liefert (05.09.2026)
+
+Der Bau von §5 (ToDo 7b) begann mit einer Sondierung, und die hat den zuerst
+gewählten Weg **verworfen**. Das ist der eigentliche Ertrag des Tages.
+
+Der Anlass, nachzusehen: `test/fixtures/db/fasta-facilities.json` trug in der
+ersten Zeile seinen eigenen Vorbehalt – *„HANDGEBAUTES Fixture … Vor
+Live-Betrieb gegen echte Antworten verifizieren"*. Verifiziert war bisher nur
+die **Adressierung** (`stationnumber` statt EVA, ToDo 2), nicht die Nutzlast.
+
+Fünf Bahnhöfe, echte API (`scripts/spike-fasta.ts`, `scripts/spike-fasta-auswertung.ts`):
+
+| Bahnhof | Anlagen m. Koord. | Gleisbezug in `description` | benannte Bahnsteige | Nachbarabstand |
+|---|---|---|---|---|
+| Hannover Hbf | 20 | **90 %** | 6 | 20–26 m |
+| Berlin Hbf | 69 | 65 % | 7 | 10–22 m, **178 m** über Ebenen |
+| Eberswalde Hbf | 9 | 44 % | 1 | – |
+| Frankfurt Hbf | 53 | 36 % | 2 (**nur S-Bahn**) | 26 m |
+| München Hbf | 25 | 16 % | 2 (**nur S-Bahn**) | 15–20 m |
+
+### Warum geometrisches Clustern falsch gewesen wäre
+
+Der naheliegende Weg – Anlagen nach Nähe gruppieren, jedes Cluster ist ein
+Bahnsteig – scheitert an zwei Dingen, und beide sind gemessen:
+
+1. **Die Menge ist verunreinigt.** Berlins Anlagen streuen über **339 m**. Das
+   kommt nicht von langen Bahnsteigen, sondern von `„von Parkhaus A zum 1. UG"`,
+   `„1.UG – Tram Haltestelle 5"`, `„zu U-Bahn Gleis"`, `„Nicht Reisendenrelevant"`.
+2. **Die Schwelle ist nicht übertragbar.** 30 m ergibt in Berlin 6 Cluster, in
+   Hannover 2. Es gibt keinen Wert, der beides richtig macht.
+
+**Was stattdessen trägt, ist die Auskunft selbst.** `description` nennt fast
+immer ein **Gleispaar** – „zu Gleis 15/16", „zu Bstg Gl 11/12", „zu Bst 9/10".
+Ein Gleispaar *ist* ein Bahnsteig. Damit entfällt das Raten vollständig, und
+die Zuordnung passt genau auf das vorhandene `bahnsteigId`-Konzept.
+
+### Die Abdeckung spaltet sich nach Bahnhofstyp
+
+Durchgangsbahnhöfe werden gut beschriftet (Hannover 90 %), Kopfbahnhöfe
+schlecht (München 16 %, Frankfurt 36 %) – dort benennt FaSta nur den
+S-Bahn-Teil. Das passt zur Sache: An einem Kopfbahnhof gibt es keine
+Unterführung, alle Bahnsteige treffen sich am Querbahnsteig. Die
+Stufe-3-Annahme „genau eine Querung" ist dort ohnehin falsch, und §5 löst das
+nicht.
+
+Deshalb greift die Verankerung **je Bahnsteig**, nicht je Bahnhof: echt, wo es
+Belege gibt, synthetisch für den Rest.
+
+### Zwei Parserfallen, beide in den Rohdaten
+
+| Rohtext | Naive Lesart | Richtig |
+|---|---|---|
+| `"Gleis 22 - 1.UG - Kein Halt EG"` | Bereich „Gleis 1 bis 22" | Ein Gleis: **22**. Der Bindestrich trennt, `1.UG` ist eine Ebene |
+| `"von UG zu Gleis 1a (S-Bahn)"` | Gleis **1** | Gleis **1a**. Der Suffix trägt Bedeutung |
+
+Der erste Versuch ist in beide getreten. Ein Bereich gilt jetzt nur bei
+unmittelbar angrenzendem Bindestrich, und eine Zahl mit folgendem `.` plus
+Buchstabe ist eine Ebene, kein Gleis.
+
+### Der Fund, der im Bau zugeschlagen hätte
+
+Die Selbstprüfung der Spec fand einen Widerspruch, der ohne sie erst im
+Betrieb aufgefallen wäre – und dann still: **`wendeFastaAn` hätte den
+Aufzugstatus verworfen.** Es ordnet Anlagen der nächstgelegenen Kante zu,
+begrenzt auf 50 m. Im verankerten Modell sitzt der Kantenknoten aber auf dem
+Bahnsteigschwerpunkt und die Anlage an ihrem echten Ort – an Berlins 280 m
+langen Bahnsteigen bis zu **~140 m** auseinander.
+
+Die barrierefreie Route wäre also auf einem defekten Aufzug weitergelaufen.
+Kein Randfall, sondern der Regelfall an großen Bahnhöfen. Gelöst über
+Zuordnung per `equipmentnumber` statt per Entfernung; der OSM-Pfad benutzt
+weiterhin die Entfernung.
+
+### Was die Verankerung nicht kosten durfte
+
+Ein zweiter Widerspruch fiel erst beim Ausformulieren des Codes auf: Wären
+**nur noch** verankerte Anlagen kantenbildend, verlöre München 84 % seiner
+Aufzugkanten – und aus „barrierefreie Route vorhanden" würde „keine Route".
+Eine bessere Geometrie hätte eine Auskunft gekostet.
+
+Die Trennung heißt deshalb: **Verankerung prägt die Lage, Kanten trägt jede
+Anlage.** Eine Anlage ohne Gleisbezug verschiebt keinen Bahnsteig, erzeugt
+aber weiterhin ihre Kante nach der bisherigen Regel.
+
+### Nebenbefunde
+
+- **Das Fixture hatte die falsche Form.** FaSta liefert ein **blankes Array**,
+  das handgebaute Fixture lieferte `{facilities: […]}`. Der Client vertrug
+  beides – zufällig, nicht aus Absicht. Ersetzt durch echte Aufzeichnungen von
+  Hannover und Berlin.
+- **`state: UNKNOWN` kommt wirklich vor** (Frankfurt 1×, Eberswalde 2×). Die
+  konservative Abbildung auf `INACTIVE` in `clients/fasta.ts` ist damit
+  **belegt** richtig, nicht nur vorsichtig.
+- **Unbekannte Felder:** `stateExplanation`, `operationalResumeDate`,
+  `operatorname`, `stationnumber`. Ungenutzt. `operationalResumeDate` („Aufzug
+  wieder ab …") hätte eigenen Nutzen und verdient einen eigenen Entwurf.
+- **Rund eine Anlage je Bahnhof trägt keine Koordinaten** (Berlin 69 von 70).
+  Der Filter im Client bleibt.
+- **Der Bahnsteigabstand war geraten.** 15 m stand ohne Messung im Code;
+  gemessen sind 20–26 m. Jetzt 20 m.
+
+### Die Cache-Naht
+
+FaSta liefert zweierlei in einer Antwort, und die beiden dürfen nicht
+zusammen behandelt werden:
+
+- **Koordinaten sind stabil.** Ein Aufzug wandert nicht – sie gehen in den
+  Graphcache.
+- **`state` ist live.** Er geht es nicht, und tut es weiterhin nicht.
+
+`syntheseGraph` trägt deshalb **keinen** Status mehr beim Bau ein; er kommt
+pro Anfrage über `wendeFastaAn` auf einer Kopie dazu. Der Beweis steht in
+`test/cache.test.ts`: **Derselbe** gecachte Graph beantwortet zwei Anfragen
+verschieden, sobald der Aufzug ausfällt – während Overpass nachweislich nur
+einmal gefragt wurde.
+
+FaSta wird für die Geometrie **nur** gerufen, wenn ein Bahnhof wirklich auf
+Stufe 3 fällt – höchstens einmal je Graphbau (Frist 10 min), der
+5-Minuten-Clientcache liegt darunter.
+
 ## Deployment 05.09.2026
 
 Backend und Frontend ausgeliefert, `main` per Fast-Forward auf `feat/mvp`
@@ -1877,8 +1998,9 @@ Offene Punkte, nach Dringlichkeit (Stand 05.09.2026):
    Aufrufer, viele Aufrufer summieren sich weiterhin.
 4. ~~**Die Deprecation-Warnung** zu `disableRequestLogging`~~ ✅ erledigt
    04.09.2026 (`dcac4ca`), auf `logController` umgestellt.
-5. **§5 – FaSta-Koordinaten (ToDo 7b).** Seit dem 05.09. der wichtigste
-   offene Bau: die einzige verbliebene Quelle mit echten Koordinaten.
+5. ~~**§5 – FaSta-Koordinaten (ToDo 7b).**~~ ✅ **erledigt 05.09.2026.**
+   Die Bahnsteige holen ihre Lage jetzt aus FaSta, wo FaSta sie benennt.
+   Siehe „Was FaSta wirklich liefert“.
 6. **Ersatz für die Wagenreihung** oder die bewusste Entscheidung, die
    Wagenposition fallen zu lassen. Solange beides aussteht, führt die
    Eingabemaske zwei Wagenfelder, die nichts bewirken.
@@ -1920,9 +2042,11 @@ Drei Vorgaben aus dem [Umsetzungskonzept](./2026-08-24-umstiegs-navigator-design
 sind nie gebaut worden. Sie stehen hier getrennt, weil sie keine Fehler sind,
 sondern Entscheidungen, die noch anstehen.
 
-> **Stand 05.09.2026:** §9 ist geschlossen, §4.3 zur Hälfte, §5 ist offen und
-> hat an Gewicht gewonnen. Der Absatz zu §4.3 unten beschreibt den Zustand
-> **vor** dem 04.09.; was sich geändert hat, steht direkt darunter.
+> **Stand 05.09.2026 (abends):** §9 und §5 sind geschlossen, §4.3 zur Hälfte.
+> Von den drei nie gebauten Vorgaben bleibt allein die volle Fassung von §4.3 –
+> und die ist auf fehlende DB-Koordinaten blockiert, nicht auf Aufwand. Der
+> Absatz zu §4.3 unten beschreibt den Zustand **vor** dem 04.09.; was sich
+> geändert hat, steht direkt darunter.
 
 **§4.3 – Abgleich OSM ↔ DB-Gleisliste.** Das Konzept verlangt: „Gleisnummern
 aus OSM (`ref` an Bahnsteigen) gegen die DB-Gleisliste abgleichen; bei Konflikt
@@ -1955,16 +2079,17 @@ DB-Koordinaten zu verankern. Die gibt es nicht: Der `platforms`-Endpunkt führt
 keine (nachgemessen an zwei Münchener Verkehrsstellen, siehe „Was der
 `platforms`-Endpunkt liefert"). Das ist kein Aufwandsproblem.
 
-**§5 – FaSta-Koordinaten im Synthesemodell.** Stufe 3 soll die Lage von
-Aufzügen und Rolltreppen aus FaSta beziehen. Tatsächlich wird FaSta nur bei
-`variante=barrierefrei` abgefragt und fließt nicht in die Geometrie ein. Das
-Standardmodell setzt seine Querung deshalb auf halber Bahnsteiglänge an, statt
-sie dort zu vermuten, wo nachweislich ein Aufzug steht.
+**§5 – FaSta-Koordinaten im Synthesemodell.** ✅ **Erledigt am 05.09.2026.**
+Vorgesehen war, die Lage von Aufzügen und Rolltreppen aus FaSta zu beziehen;
+tatsächlich wurde FaSta nur bei `variante=barrierefrei` abgefragt und floss
+nicht in die Geometrie ein. Das Standardmodell setzte seine Querung deshalb auf
+halbe Bahnsteiglänge, statt sie dort zu vermuten, wo nachweislich ein Aufzug
+steht.
 
-**Seit dem 05.09. ist das der wichtigste offene Punkt.** Nachdem feststeht,
-dass die DB-Gleisliste keine Koordinaten trägt, ist FaSta die **einzige**
-verbliebene Quelle mit echten Ortsangaben. Was §4.3 nicht leisten kann, kann
-allenfalls §5.
+Jetzt holt jeder Bahnsteig, den FaSta **benennt**, seine Lage aus den echten
+Anlagenkoordinaten, und der Weg zur Querung wird gerechnet statt geraten. Der
+Weg dorthin war nicht der erwartete – Einzelheiten unter „Was FaSta wirklich
+liefert“.
 
 **§9 – getrennte Blöcke Ankunft und Abfahrt.** ✅ **Erledigt am 05.09.2026.**
 Vorgesehen waren zwei Blöcke mit **je** Gleis, Zug und Wagennummer; gebaut war
