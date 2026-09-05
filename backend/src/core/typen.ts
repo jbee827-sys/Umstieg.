@@ -44,6 +44,14 @@ export interface GraphKante {
   typ: KantenTyp;
   barrierefrei: boolean;
   status?: 'ACTIVE' | 'INACTIVE'; // FaSta, nur aufzug/rolltreppe
+  /**
+   * Welche FaSta-Anlage diese Kante erzeugt hat (Synthesemodell).
+   *
+   * STABIL, darf deshalb in den Graphcache - anders als `status`. Damit
+   * findet der Live-Status seine Kante ueber die Identitaet statt ueber die
+   * Entfernung, die im verankerten Modell nicht mehr traegt.
+   */
+  anlageId?: string;
 }
 
 export interface StationGraph {
