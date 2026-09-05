@@ -10,6 +10,7 @@ import { ampelFarbe } from '../navigation/ampel'
 export interface VariantenStand {
   schnellste?: number
   barrierefrei?: number
+  'mit-stopp'?: number
   gewaehlt: RoutenVariante
 }
 
@@ -32,6 +33,9 @@ interface DashboardProps {
 const KNOEPFE: { wert: RoutenVariante; label: string; feld: keyof VariantenStand }[] = [
   { wert: 'schnellste', label: 'Schnellste Route', feld: 'schnellste' },
   { wert: 'barrierefrei', label: 'Barrierefrei (Aufzug)', feld: 'barrierefrei' },
+  // Der Entwurf nennt beide Ziele in EINEM Knopf - welches es wird,
+  // entscheidet die kuerzere Gehzeit, nicht der Nutzer.
+  { wert: 'mit-stopp', label: 'Mit Stopp: WC & Kiosk', feld: 'mit-stopp' },
 ]
 
 function minuten(sek?: number): string {

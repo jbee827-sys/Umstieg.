@@ -3,7 +3,7 @@
 
 export type KantenTyp = 'eben' | 'treppe' | 'rolltreppe' | 'aufzug' | 'rampe';
 export type Gehprofil = 'zuegig' | 'normal' | 'langsam';
-export type RoutenVariante = 'schnellste' | 'einfachste' | 'barrierefrei';
+export type RoutenVariante = 'schnellste' | 'einfachste' | 'barrierefrei' | 'mit-stopp';
 export type Stufe = 1 | 2 | 3;
 export type Ampelfarbe = 'gruen' | 'gelb' | 'rot';
 

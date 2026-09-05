@@ -36,18 +36,25 @@ describe('ladeVarianten', () => {
       'fertig:schnellste',
       'start:barrierefrei',
       'fertig:barrierefrei',
+      'start:mit-stopp',
+      'fertig:mit-stopp',
     ])
     expect(beiHaupt).toHaveBeenCalledWith(route(300))
   })
 
-  it('meldet die Hauptroute, bevor die zweite Variante laeuft', async () => {
+  it('meldet die Hauptroute, bevor die weiteren Varianten laufen', async () => {
     const zustand: string[] = []
     const hole = vi.fn(async (p: RouteParameter) => {
       zustand.push(`anfrage:${p.variante}`)
       return route(300)
     })
     await ladeVarianten(basis, 'schnellste', hole, () => zustand.push('dashboard'), vi.fn())
-    expect(zustand).toEqual(['anfrage:schnellste', 'dashboard', 'anfrage:barrierefrei'])
+    expect(zustand).toEqual([
+      'anfrage:schnellste',
+      'dashboard',
+      'anfrage:barrierefrei',
+      'anfrage:mit-stopp',
+    ])
   })
 
   it('meldet die Gehzeit der zweiten Variante nach', async () => {
@@ -66,7 +73,9 @@ describe('ladeVarianten', () => {
     await expect(ladeVarianten(basis, 'schnellste', hole, vi.fn(), vi.fn())).rejects.toThrow()
   })
 
-  it('ein Fehlschlag der ZWEITEN Variante bleibt folgenlos', async () => {
+  it('ein Fehlschlag einer Nebenvariante bleibt folgenlos', async () => {
+    // Und er nimmt die uebrigen nicht mit: 'barrierefrei' faellt aus,
+    // 'mit-stopp' wird trotzdem noch geholt.
     const beiHaupt = vi.fn()
     const beiZweit = vi.fn()
     const hole = vi.fn(async (p: RouteParameter) => {
@@ -75,7 +84,8 @@ describe('ladeVarianten', () => {
     })
     await ladeVarianten(basis, 'schnellste', hole, beiHaupt, beiZweit)
     expect(beiHaupt).toHaveBeenCalled()
-    expect(beiZweit).not.toHaveBeenCalled()
+    expect(beiZweit).not.toHaveBeenCalledWith('barrierefrei', expect.anything())
+    expect(beiZweit).toHaveBeenCalledWith('mit-stopp', 300)
   })
 
   it('kehrt die Reihenfolge um, wenn barrierefrei gewaehlt ist', async () => {
@@ -85,6 +95,6 @@ describe('ladeVarianten', () => {
       return route(300)
     })
     await ladeVarianten(basis, 'barrierefrei', hole, vi.fn(), vi.fn())
-    expect(reihenfolge).toEqual(['barrierefrei', 'schnellste'])
+    expect(reihenfolge).toEqual(['barrierefrei', 'schnellste', 'mit-stopp'])
   })
 })

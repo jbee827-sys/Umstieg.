@@ -40,11 +40,28 @@ describe('Dashboard', () => {
     expect(screen.getByText("Gehzeit 5 min")).toBeDefined()
   })
 
-  it('bietet nur Schnellste und Barrierefrei an', () => {
+  it('bietet Schnellste, Barrierefrei und Mit Stopp an - aber nicht Einfachste', () => {
     zeige({ varianten: { schnellste: 300, barrierefrei: 540, gewaehlt: 'schnellste' } })
     expect(screen.getByRole('button', { name: /Schnellste/ })).toBeDefined()
     expect(screen.getByRole('button', { name: /Barrierefrei/ })).toBeDefined()
+    expect(screen.getByRole('button', { name: /Mit Stopp/ })).toBeDefined()
     expect(screen.queryByRole('button', { name: /Einfachste/ })).toBeNull()
+  })
+
+  it('nennt WC und Kiosk in EINEM Knopf', () => {
+    // Der Entwurf laesst den Nutzer nicht zwischen beiden waehlen - welches
+    // Zwischenziel es wird, entscheidet die kuerzere Gehzeit.
+    zeige({ varianten: { schnellste: 300, gewaehlt: 'schnellste' } })
+    const knopf = screen.getByRole('button', { name: /Mit Stopp/ })
+    expect(knopf.textContent).toMatch(/WC/)
+    expect(knopf.textContent).toMatch(/Kiosk/)
+  })
+
+  it('laesst den Stopp-Knopf ohne Minuten, wenn der Bahnhof keine kartiert hat', () => {
+    // 'mit-stopp' antwortet 404, wenn weder WC noch Kiosk erreichbar ist -
+    // dann steht am Knopf keine Zahl statt einer geratenen.
+    zeige({ varianten: { schnellste: 300, gewaehlt: 'schnellste' } })
+    expect(screen.getByRole('button', { name: /Mit Stopp/ }).textContent).not.toMatch(/min/)
   })
 
   it('nennt die Minuten am Knopf, wenn sie bekannt sind', () => {
