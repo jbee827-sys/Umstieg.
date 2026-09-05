@@ -1,0 +1,220 @@
+[
+  {
+    "equipmentnumber": 10976316,
+    "type": "ESCALATOR",
+    "description": "zu Bstg Gl 11/12",
+    "geocoordX": 9.7419464,
+    "geocoordY": 52.37750905,
+    "state": "ACTIVE",
+    "stateExplanation": "available",
+    "stationnumber": 2545,
+    "operatorname": "DB InfraGO"
+  },
+  {
+    "equipmentnumber": 10441681,
+    "type": "ELEVATOR",
+    "description": "zu Gleis 13/14 (S-Bahn)",
+    "geocoordX": 9.7423743,
+    "geocoordY": 52.377501,
+    "state": "INACTIVE",
+    "stateExplanation": "not available",
+    "stationnumber": 2545,
+    "operatorname": "DB InfraGO"
+  },
+  {
+    "equipmentnumber": 10440134,
+    "type": "ELEVATOR",
+    "description": "zu Gleis 7/8",
+    "geocoordX": 9.7417356,
+    "geocoordY": 52.3770185,
+    "state": "ACTIVE",
+    "stateExplanation": "available",
+    "stationnumber": 2545,
+    "operatorname": "DB InfraGO"
+  },
+  {
+    "equipmentnumber": 10441680,
+    "type": "ELEVATOR",
+    "description": "zu Gleis 11/12",
+    "geocoordX": 9.7421768,
+    "geocoordY": 52.3773814,
+    "state": "ACTIVE",
+    "stateExplanation": "available",
+    "stationnumber": 2545,
+    "operatorname": "DB InfraGO"
+  },
+  {
+    "equipmentnumber": 10441679,
+    "type": "ELEVATOR",
+    "description": "zu Gleis 9/10",
+    "geocoordX": 9.7419962,
+    "geocoordY": 52.3772322,
+    "state": "ACTIVE",
+    "stateExplanation": "available",
+    "stationnumber": 2545,
+    "operatorname": "DB InfraGO"
+  },
+  {
+    "equipmentnumber": 10441678,
+    "type": "ELEVATOR",
+    "description": "zu Gleis 3/4",
+    "geocoordX": 9.7415293,
+    "geocoordY": 52.3768518,
+    "state": "ACTIVE",
+    "stateExplanation": "available",
+    "stationnumber": 2545,
+    "operatorname": "DB InfraGO"
+  },
+  {
+    "equipmentnumber": 10878298,
+    "type": "ESCALATOR",
+    "description": "zu Bstg Gl 11/12 Ostseite",
+    "geocoordX": 9.74237295,
+    "geocoordY": 52.3772664,
+    "state": "ACTIVE",
+    "stateExplanation": "available",
+    "stationnumber": 2545,
+    "operatorname": "DB InfraGO"
+  },
+  {
+    "equipmentnumber": 10878124,
+    "type": "ESCALATOR",
+    "description": "zu Bstg Gl 7/8 Ostseite",
+    "geocoordX": 9.7419519,
+    "geocoordY": 52.3769275,
+    "state": "ACTIVE",
+    "stateExplanation": "available",
+    "stationnumber": 2545,
+    "operatorname": "DB InfraGO"
+  },
+  {
+    "equipmentnumber": 10878123,
+    "type": "ESCALATOR",
+    "description": "zu Bstg Gl 9/10 Ostseite",
+    "geocoordX": 9.7421917,
+    "geocoordY": 52.37711805,
+    "state": "ACTIVE",
+    "stateExplanation": "available",
+    "stationnumber": 2545,
+    "operatorname": "DB InfraGO"
+  },
+  {
+    "equipmentnumber": 10878126,
+    "type": "ESCALATOR",
+    "description": "zu Bstg Gl 3/4 Ostseite",
+    "geocoordX": 9.7417088,
+    "geocoordY": 52.37673225,
+    "state": "ACTIVE",
+    "stateExplanation": "available",
+    "stationnumber": 2545,
+    "operatorname": "DB InfraGO"
+  },
+  {
+    "equipmentnumber": 10441677,
+    "type": "ELEVATOR",
+    "description": "zu Gleis 1/2 (S-Bahn)",
+    "geocoordX": 9.7413504,
+    "geocoordY": 52.3767027,
+    "state": "ACTIVE",
+    "stateExplanation": "available",
+    "stationnumber": 2545,
+    "operatorname": "DB InfraGO"
+  },
+  {
+    "equipmentnumber": 10876224,
+    "type": "ESCALATOR",
+    "description": "zu Bstg Gl 13/14 Ostseite",
+    "geocoordX": 9.74255025,
+    "geocoordY": 52.3774103,
+    "state": "ACTIVE",
+    "stateExplanation": "available",
+    "stationnumber": 2545,
+    "operatorname": "DB InfraGO"
+  },
+  {
+    "equipmentnumber": 10888723,
+    "type": "ESCALATOR",
+    "description": "zu Bstg Gl 3/4",
+    "geocoordX": 9.74130825,
+    "geocoordY": 52.3769609,
+    "state": "ACTIVE",
+    "stateExplanation": "available",
+    "stationnumber": 2545,
+    "operatorname": "DB InfraGO"
+  },
+  {
+    "equipmentnumber": 10888727,
+    "type": "ESCALATOR",
+    "description": "zu Bstg Gl 13/14",
+    "geocoordX": 9.74204805,
+    "geocoordY": 52.3776872,
+    "state": "ACTIVE",
+    "stateExplanation": "available",
+    "stationnumber": 2545,
+    "operatorname": "DB InfraGO"
+  },
+  {
+    "equipmentnumber": 10888725,
+    "type": "ESCALATOR",
+    "description": "zu Bstg Gl 9/10",
+    "geocoordX": 9.74178765,
+    "geocoordY": 52.37734905,
+    "state": "ACTIVE",
+    "stateExplanation": "available",
+    "stationnumber": 2545,
+    "operatorname": "DB InfraGO"
+  },
+  {
+    "equipmentnumber": 10888724,
+    "type": "ESCALATOR",
+    "description": "zu Bstg Gl 7/8",
+    "geocoordX": 9.7415493,
+    "geocoordY": 52.3771561,
+    "state": "ACTIVE",
+    "stateExplanation": "available",
+    "stationnumber": 2545,
+    "operatorname": "DB InfraGO"
+  },
+  {
+    "equipmentnumber": 10936811,
+    "type": "ESCALATOR",
+    "description": "zu Bstg Gl 1/2 Ostseite",
+    "geocoordX": 9.74149,
+    "geocoordY": 52.37662,
+    "state": "ACTIVE",
+    "stateExplanation": "available",
+    "stationnumber": 2545,
+    "operatorname": "DB InfraGO"
+  },
+  {
+    "equipmentnumber": 10929113,
+    "type": "ELEVATOR",
+    "geocoordX": 9.74036,
+    "geocoordY": 52.37692,
+    "state": "ACTIVE",
+    "stateExplanation": "available",
+    "stationnumber": 2545,
+    "operatorname": "DB InfraGO"
+  },
+  {
+    "equipmentnumber": 10866405,
+    "type": "ELEVATOR",
+    "geocoordX": 9.740892,
+    "geocoordY": 52.3766447,
+    "state": "ACTIVE",
+    "stateExplanation": "available",
+    "stationnumber": 2545,
+    "operatorname": "DB InfraGO"
+  },
+  {
+    "equipmentnumber": 10942292,
+    "type": "ESCALATOR",
+    "description": "zu Bstg Gl 1/2 Westseite",
+    "geocoordX": 9.74112135,
+    "geocoordY": 52.3768094,
+    "state": "ACTIVE",
+    "stateExplanation": "available",
+    "stationnumber": 2545,
+    "operatorname": "DB InfraGO"
+  }
+]

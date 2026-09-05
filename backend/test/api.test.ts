@@ -224,7 +224,7 @@ describe('GET /api/board/:eva', () => {
 describe('GET /api/route – FaSta (barrierefrei)', () => {
   const aufzugOsm = ladeFixture('synthetisch/mini-bahnhof-aufzug');
   // Koordinate des Aufzugs nahe Bahnsteig 1 (Knoten 131 im Fixture).
-  const AUFZUG: Omit<FastaAnlage, 'status'> = { typ: 'AUFZUG', lat: 52.00015, lon: 12.001 };
+  const AUFZUG: Omit<FastaAnlage, 'status'> = { id: 'aufzug-1', typ: 'AUFZUG', lat: 52.00015, lon: 12.001 };
   const BF_URL = '/api/route?eva=8000001&gleisAn=1&gleisAb=2&profil=normal&variante=barrierefrei';
 
   function aufzugClients(fasta: () => Promise<FastaAnlage[]>) {

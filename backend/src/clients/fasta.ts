@@ -3,6 +3,7 @@ import { dbAuthHeader } from './stations.js';
 import type { FastaAnlage } from '../core/typen.js';
 
 interface FastaFacility {
+  equipmentnumber?: number;
   type?: string; // ELEVATOR | ESCALATOR
   state?: string; // ACTIVE | INACTIVE | UNKNOWN
   description?: string;
@@ -35,6 +36,13 @@ export async function holeAnlagen(
         f.geocoordX !== undefined,
     )
     .map((f) => ({
+      // Ohne equipmentnumber aus den Koordinaten gebildet: Eine Anlage darf
+      // NIE verworfen werden, nur weil ihre Nummer fehlt - eine verschwiegene
+      // INACTIVE-Anlage liesse die barrierefreie Route passierbar aussehen.
+      id:
+        f.equipmentnumber !== undefined
+          ? String(f.equipmentnumber)
+          : `geo:${f.geocoordY}:${f.geocoordX}`,
       typ: f.type === 'ELEVATOR' ? ('AUFZUG' as const) : ('ROLLTREPPE' as const),
       lat: f.geocoordY!,
       lon: f.geocoordX!,

@@ -45,8 +45,8 @@ describe('syntheseGraph', () => {
       gleise: [{ gleis: '1', lat: 51, lon: 10 }, { gleis: '2', lat: 51, lon: 10 + M15_LON }],
     };
     const anlagen: FastaAnlage[] = [
-      { typ: 'AUFZUG', lat: 51, lon: 10, status: 'ACTIVE' },
-      { typ: 'AUFZUG', lat: 51, lon: 10 + M15_LON, status: 'ACTIVE' },
+      { id: 'a1', typ: 'AUFZUG', lat: 51, lon: 10, status: 'ACTIVE' },
+      { id: 'a2', typ: 'AUFZUG', lat: 51, lon: 10 + M15_LON, status: 'ACTIVE' },
     ];
     const pfad = berechneRoute(syntheseGraph(info, anlagen), 'gleis1:mitte', 'gleis2:mitte', 'barrierefrei');
     expect(pfad).not.toBeNull();
@@ -59,8 +59,8 @@ describe('syntheseGraph', () => {
       gleise: [{ gleis: '1', lat: 51, lon: 10 }, { gleis: '2', lat: 51, lon: 10 + M15_LON }],
     };
     const anlagen: FastaAnlage[] = [
-      { typ: 'AUFZUG', lat: 51, lon: 10, status: 'INACTIVE' },
-      { typ: 'AUFZUG', lat: 51, lon: 10 + M15_LON, status: 'INACTIVE' },
+      { id: 'a1', typ: 'AUFZUG', lat: 51, lon: 10, status: 'INACTIVE' },
+      { id: 'a2', typ: 'AUFZUG', lat: 51, lon: 10 + M15_LON, status: 'INACTIVE' },
     ];
     expect(
       berechneRoute(syntheseGraph(info, anlagen), 'gleis1:mitte', 'gleis2:mitte', 'barrierefrei'),
