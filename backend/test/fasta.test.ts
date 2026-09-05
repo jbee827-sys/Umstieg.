@@ -100,3 +100,65 @@ describe('wendeFastaAn (OSM-Graph)', () => {
     expect(berechneRoute(graph, 'a@0', 'b@-1', 'barrierefrei')).not.toBeNull();
   });
 });
+
+describe('wendeFastaAn: Zuordnung ueber Identitaet', () => {
+  function graphMitIdKante(): StationGraph {
+    const knoten: GraphKnoten[] = [
+      { id: 'gleis1:mitte', lat: 52.525, lon: 13.369, level: 0, gleis: '1' },
+      { id: 'quer:bs0@-1', lat: 52.525, lon: 13.369, level: -1 },
+    ];
+    const kante: GraphKante = {
+      von: 'gleis1:mitte',
+      nach: 'quer:bs0@-1',
+      laengeM: 45,
+      deltaLevel: -1,
+      typ: 'aufzug',
+      barrierefrei: true,
+      anlageId: '10499908',
+    };
+    return {
+      knoten: new Map(knoten.map((k) => [k.id, k])),
+      adjazenz: new Map([
+        ['gleis1:mitte', [kante]],
+        ['quer:bs0@-1', [kante]],
+      ]),
+      stufe: 3,
+      gleise: ['1'],
+    };
+  }
+
+  // Der Berliner Regelfall: 280 m langer Bahnsteig, Anlage ~145 m vom
+  // Schwerpunkt. Die alte 50-m-Schranke haette den Status verworfen und die
+  // barrierefreie Route auf einem defekten Aufzug weiterlaufen lassen.
+  it('greift auch bei ~145 m Abstand, wenn die anlageId passt', () => {
+    const graph = graphMitIdKante();
+    wendeFastaAn(graph, [
+      { id: '10499908', typ: 'AUFZUG', lat: 52.5263, lon: 13.369, status: 'INACTIVE' },
+    ]);
+    expect(berechneRoute(graph, 'gleis1:mitte', 'quer:bs0@-1', 'barrierefrei')).toBeNull();
+  });
+
+  it('eine fremde anlageId laesst die Kante unberuehrt', () => {
+    const graph = graphMitIdKante();
+    wendeFastaAn(graph, [
+      { id: 'ganz-andere', typ: 'AUFZUG', lat: 52.525, lon: 13.369, status: 'INACTIVE' },
+    ]);
+    expect(berechneRoute(graph, 'gleis1:mitte', 'quer:bs0@-1', 'barrierefrei')).not.toBeNull();
+  });
+
+  // Der OSM-Pfad bleibt, wie er war: ohne anlageId zaehlt die Entfernung,
+  // und die 50-m-Schranke wirkt weiter.
+  it('ohne anlageId gilt weiterhin die Entfernung mit 50-m-Schranke', () => {
+    const graph = graphMitIdKante();
+    for (const liste of graph.adjazenz.values()) {
+      for (const k of liste) delete k.anlageId;
+    }
+    wendeFastaAn(graph, [
+      { id: 'x', typ: 'AUFZUG', lat: 52.5263, lon: 13.369, status: 'INACTIVE' },
+    ]);
+    expect(
+      berechneRoute(graph, 'gleis1:mitte', 'quer:bs0@-1', 'barrierefrei'),
+      '145 m entfernt - ausserhalb der Schranke, Status darf nicht greifen',
+    ).not.toBeNull();
+  });
+});

@@ -189,17 +189,22 @@ function abstandZuKante(graph: StationGraph, kante: GraphKante, anlage: FastaAnl
 }
 
 /**
- * Überträgt den FaSta-Betriebsstatus auf einen OSM-Graphen (Stufe 1/2). Jede
- * Anlage wirkt auf die nächstgelegene Kante gleichen Typs, aber nur innerhalb
- * von FASTA_MAX_ABSTAND_M – eine weit entfernte Anlage lässt den Graphen
- * unverändert.
+ * Überträgt den FaSta-Betriebsstatus auf einen Graphen. Zwei Wege, und der
+ * erste ist der genaue:
+ *
+ * 1. Trägt die Kante eine `anlageId` (Synthesemodell), gilt der Status der
+ *    Anlage mit dieser Nummer – ohne Entfernungsprüfung. Nötig, weil der
+ *    Kantenknoten auf dem Bahnsteigschwerpunkt sitzt und die Anlage an ihrem
+ *    echten Ort: an Berlins 280 m langen Bahnsteigen bis zu ~140 m
+ *    auseinander. Über die Entfernung wäre der Status still verworfen worden
+ *    – auf der barrierefreien Route, wo das am meisten wiegt.
+ * 2. Sonst (OSM-Graph, Stufe 1/2) wie bisher über die nächstgelegene Kante
+ *    gleichen Typs, begrenzt auf FASTA_MAX_ABSTAND_M.
  *
  * `INACTIVE` sperrt die Kante ausschließlich in der Variante `barrierefrei`
  * (das erledigt `kanteErlaubt` in routing.ts); `schnellste` bleibt unberührt.
- * Der Graph wird an Ort und Stelle geändert.
- *
- * Für Stufe 3 ist das nicht nötig – dort trägt `syntheseGraph` den Status
- * bereits beim Bau ein.
+ * Der Graph wird an Ort und Stelle geändert – Aufrufer arbeiten deshalb auf
+ * einer Kopie, sonst stünde der Live-Status im 24-Stunden-Cache.
  */
 export function wendeFastaAn(graph: StationGraph, anlagen: FastaAnlage[]): void {
   // Kanten stehen in beiden Adjazenzlisten als dieselbe Referenz – ein Set
@@ -209,11 +214,27 @@ export function wendeFastaAn(graph: StationGraph, anlagen: FastaAnlage[]): void 
     for (const kante of liste) kanten.add(kante);
   }
 
+  // Weg 1: über die Identität.
+  const nachId = new Map(anlagen.map((a) => [a.id, a]));
+  const offen = new Set<GraphKante>();
+  for (const kante of kanten) {
+    if (kante.anlageId === undefined) {
+      offen.add(kante);
+      continue;
+    }
+    const anlage = nachId.get(kante.anlageId);
+    // Eine Kante, deren Anlage in dieser Antwort fehlt, bleibt ohne Status –
+    // sie wird NICHT ersatzweise über die Entfernung bedient. Ein geratener
+    // Status ist auf der barrierefreien Route schlimmer als keiner.
+    if (anlage) kante.status = anlage.status;
+  }
+
+  // Weg 2: über die Entfernung, für Kanten ohne Identität (OSM).
   for (const anlage of anlagen) {
     const gesucht: KantenTyp = anlage.typ === 'AUFZUG' ? 'aufzug' : 'rolltreppe';
     let beste: GraphKante | null = null;
     let besterAbstand = Infinity;
-    for (const kante of kanten) {
+    for (const kante of offen) {
       if (kante.typ !== gesucht) continue;
       const abstand = abstandZuKante(graph, kante, anlage);
       if (abstand < besterAbstand) {
