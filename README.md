@@ -16,13 +16,18 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 03.09.2026)
+## Hier weitermachen (Stand 05.09.2026)
 
-> **Die Meldungsseite ist gebaut und im Browser gesehen** – Einzelheiten im
-> Abschnitt [„Meldungsseite"](#meldungsseite-gebaut-03092026). Dabei sind auch
-> **P4 und P5 gefallen**, die seit dem 01.09. auf ein Live-Ereignis warteten:
-> Statt weiter darauf zu hoffen, wurden die Ereignisse von aussen eingespeist
-> (siehe „Wie P4 und P5 doch noch sichtbar wurden").
+> **Am 04./05.09. sind vier Vorhaben gefallen** – die enge Fassung von
+> Konzeptlücke §4.3, die Degradationstabelle (MVP-Task 17), die getrennten
+> Blöcke §9 und die Routenvariante „Mit Stopp". Alles ist ausgeliefert,
+> `main` und `feat/mvp` stehen gleich.
+>
+> **Drei Funde dabei wiegen schwerer als die Vorhaben selbst** und stehen
+> weiter unten ausführlich: Die **Wagenreihung ist tot** (der Endpunkt
+> existiert nicht mehr), der **volle §4.3 ist auf Datenmangel blockiert**
+> (die DB liefert keine Bahnsteigkoordinaten), und die Degradationstests
+> haben zwei Lücken aufgedeckt, von denen eine ein echter Fehler war.
 >
 > **Nächster Schritt: die Mobilabnahme am echten Gerät** (P1 Task 12 / ToDo 3).
 > Das ist der letzte offene Punkt der Sichtprüfung und braucht Handarbeit an
@@ -30,9 +35,9 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > Ankunftserkennung am Gleis, Bedienbarkeit mit Gepäck.
 
 ```bash
-cd backend && npm test        # muss 224 von 224 grün sein
+cd backend && npm test        # muss 303 von 303 grün sein
 cd backend && npm run lint    # oxlint + tsc --noEmit, muss sauber sein
-cd frontend && npm test       # muss 190 von 190 grün sein
+cd frontend && npm test       # muss 260 von 260 grün sein
 cd frontend && npm run lint   # oxlint + tsc --noEmit, muss sauber sein
 cd frontend && npm run build  # muss grün sein
 ```
@@ -62,6 +67,15 @@ und `Eingabe` – beide waren bis dahin ungetestet.
 geht darin auf, die Leiste trägt einen Zähler, und der Verlauf einer Reise
 bleibt erhalten. Gegen eingespeiste Live-Ereignisse im Browser gesehen.
 
+**Am 04./05.09.2026 sind vier Vorhaben gefallen**, alle ausgeliefert:
+Konzeptlücke §4.3 in enger Fassung (die DB-Gleisliste trennt jetzt, was OSM
+zusammenlegt – gegen die echte API gemessen), die Degradationstabelle als
+Test (MVP-Task 17, Schritt 1), Konzeptlücke §9 (getrennte Blöcke Ankunft und
+Abfahrt) und die Routenvariante „Mit Stopp: WC & Kiosk". Dazu vom Subagenten:
+das doppelte Bahnhofsnamen-Vokabular aufgelöst, der CSP-Header ergänzt und
+`disableRequestLogging` auf `logController` umgestellt. Einzelheiten in den
+Abschnitten weiter unten.
+
 **Was fehlt, ist keine Zeile Code, sondern der Blick darauf:** Die
 Sichtprüfung am Desktop ist erfolgt (Abschnitte „Abnahme im Browser" und
 „Meldungsseite"). Offen bleibt, was nur ein Handy zeigt – Berechtigungsdialog,
@@ -72,7 +86,7 @@ braucht Handarbeit an einem echten Gerät.
 ## Offen: was NICHT geprüft ist (Stand 03.09.2026)
 
 Der Frontend-Umbau und die sechs Feinschliffe sind **codeseitig fertig und
-maschinell grün** (Stand 03.09.2026: 179 Frontend-Tests, 221 Backend-Tests, Build und Lint
+maschinell grün** (Stand 05.09.2026: 260 Frontend-Tests, 303 Backend-Tests, Build und Lint
 sauber). Was fehlt, ist der Blick darauf. Dieser Abschnitt trennt bewusst,
 **was gesehen wurde und was nicht** – die schwersten Fehler dieses Projekts
 waren allesamt nur im Browser sichtbar.
@@ -207,12 +221,15 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | ~~3b~~ | ~~**Sichtprüfung der neuen Bildschirme**~~ ✅ **erledigt 03.09.2026** | Ampel (P1), Weg-Seite (P2) und Angekommen-Seite (P3) am 01.09.; P4 und P5 am 03.09. über eingespeiste Ereignisse. Offen bleibt allein die Mobilabnahme (ToDo 3). |
 | ~~3e~~ | ~~**Der Ebenensprung**~~ ✅ **erledigt 01.09.2026** | Strukturell, nicht Berliner Eigenart: eine geratene Ebene 0 plus zwei Bahnsteige, die sich eine Gleisnummer teilen. Einzelheiten und Auszählung unter „Der Ebenensprung“. Der volle Abgleich OSM ↔ DB-Gleisliste (§4.3, ToDo 7) bleibt davon unberührt offen. |
 | ~~3f~~ | ~~**Zugtafel kappen**~~ ✅ **erledigt 01.09.2026** | Zeitfenster −5/+45 Minuten und vier Kategorien statt einer Bandwurmliste. Aus 113 Einträgen wurden 51 in drei Blöcken. Siehe „Die Zugauswahl“. |
-| 3g | **„Schnellste“ ist langsamer als „barrierefrei“** | 6 min gegen 5 min im selben Dashboard. Die schnellste Route darf nie langsamer sein als eine andere Variante. |
+| ~~3g~~ | ~~**„Schnellste“ ist langsamer als „barrierefrei“**~~ ✅ **war bereits am 02.09.2026 erledigt** | `d532ec7` „die schnellste Route ist jetzt die schnellste“. Router und Anzeige benutzten zwei verschiedene Kostenmodelle (Rolltreppe −10 s beim Routen, +10 s in der Anzeige); seither ist `kantenZeitSekunden` für beide die einzige Quelle. Der Eintrag stand hier zwei Tage lang zu Unrecht als offen – nachgeprüft am 04.09. an der Historie und am grünen Invariantentest in `test/routing.test.ts`. |
 | ~~3c~~ | ~~**Gleichzeitige Graphbauten zusammenführen**~~ ✅ **erledigt 01.09.2026** | Zwei Karten laufender Versprechen in `routes/api.ts` – eine auf die EVA, eine auf den Bahnhofsschlüssel. Wer als Zweiter kommt, wartet auf den laufenden Bau, statt danebenher einen eigenen zu starten. Drei Tests in `test/cache.test.ts`. **Die Falle dabei:** Bei einem Bahnhof aus einer einzigen Verkehrsstelle sind EVA und Gruppenschlüssel dieselbe Zeichenkette – in **einer** Karte fand der innere Bau das noch offene äussere Versprechen und wartete auf sich selbst. Der Testlauf lief in den Timeout, nicht in eine Fehlermeldung. |
 | ~~3d~~ | ~~**Frontend deployen**~~ ✅ **erledigt 01.09.2026** | Frontend auf Vercel, Backend auf Fly.io. Einzelheiten unter „Deployment 01.09.2026“ – dort steht auch, was dabei **nicht** nachweisbar war. |
 | ~~3h~~ | ~~**Meldungsseite bauen**~~ ✅ **erledigt 03.09.2026** | Neues Modell `src/meldungen/`, neuer Bildschirm `src/screens/Meldungen.tsx`; `Stoerung.tsx` ist darin aufgegangen. 25 Tests dazu. Einzelheiten unter „Meldungsseite". |
 | 3 | **Mobilabnahme am echten Gerät** | Die Sichtprüfung am Desktop ist am 29./30.08. erfolgt (siehe „Abnahme im Browser"). Offen bleibt, was nur ein Handy zeigt: Berechtigungsdialog, Wiederkehrer ohne Dialog, Genauigkeit im Bahnhof, Ankunftserkennung am Gleis, und ob die automatische Ebenenwahl als Hilfe oder als Bevormundung ankommt. `mkcert`-Zertifikate in `frontend/.cert/` schalten den Dev-Server auf HTTPS. |
 | ~~4~~ | ~~**4 Lint-Warnungen im Frontend**~~ ✅ **erledigt 01.09.2026** | `npm run lint` ist jetzt ohne Ausgabe. Einzelheiten im Abschnitt „Lint-Warnungen aufgelöst“. Voraussetzung waren 11 neue Tests für `Zugauswahl` und `Eingabe` – beide Komponenten hatten vorher **keine**. |
+| ~~4b~~ | ~~**Doppeltes Bahnhofsnamen-Vokabular**~~ ✅ **erledigt 04.09.2026** | Die Vorsilben-/Nachsilbenliste stand im Frontend-Parser *und* in `core/bahnhofsname.ts`. Die Frontend-Normalisierung ist gefallen, die Auflösung liegt ganz im Backend (`d6150d9`). Der Bahnhof wandert weiterhin als **Suchtext** ins Formular, nicht als getroffene Wahl. |
+| ~~4c~~ | ~~**CSP-Header fehlt**~~ ✅ **erledigt 04.09.2026** | `3d8a842`. Die Quellen sind aus dem Code belegt statt geraten: Kartenkacheln, der SSE-Strom auf Fly.io, MapLibres Worker (`blob:`), lokale Schriften. Vercel Web Analytics lädt same-origin, braucht also keine Fremddomain. 7 Tests prüfen die `vercel.json` direkt. |
+| ~~4d~~ | ~~**Deprecation-Warnung `disableRequestLogging`**~~ ✅ **erledigt 04.09.2026** | `dcac4ca`, auf `logController` umgestellt (Fastify 6 entfernt die alte Option). Die sechs Datenschutztests liefen unverändert weiter – **kein** Zugriffsprotokoll, wie die Datenschutzerklärung zusagt. |
 | 5 | **Vercel: Framework-Preset steht auf „Services"** | Rückstand der `experimentalServices`-Erkennung beim `vercel link`. Die `vercel.json` überschreibt es, der Build ist nachweislich korrekt – kosmetisch, aber irreführend. Settings → Build & Deployment. |
 | 6 | **Vercel-Preview-Variable nur für `feat/mvp`** | `VITE_API_BASE` konnte nicht „für alle Preview-Zweige" gesetzt werden (CLI-Fehler in v53.1.0: der vorgeschlagene Befehl ist derselbe, der scheitert). Neue Zweige brauchen einen eigenen Eintrag oder das Dashboard. |
 
@@ -220,16 +237,27 @@ Overpass-Abruf ansetzen, nicht am Cache.
 
 | # | Aufgabe | Umfang |
 |---|---|---|
-| 7 | **Drei Konzeptvorgaben, die nie gebaut wurden** | Siehe eigener Abschnitt „Konzeptlücken" weiter unten: der Abgleich OSM ↔ DB-Gleisliste (§4.3), FaSta-Koordinaten im Synthesemodell (§5) und die getrennten Blöcke Ankunft/Abfahrt (§9). Der erste ist seit dem 31.08. der wichtigste offene Punkt – er erklärt den München-Fehlschluss weiter unten. |
-| 8 | **MVP-Task 17 abschließen** | `Dockerfile` steht. Offen: Degradationstests (jede Zeile der Konzept-Tabelle Abschnitt 8 als eigener Test) und Mobile-Feinschliff. |
-| 9 | **Restliche Design-Screens** | Der Umbau nach dem Entwurf ist am 31.08. erfolgt (Spec und Plan unter `docs/superpowers/`). Offen bleiben allein die drei Punkte, die das Backend brauchen: Ticket-Import, Wagenreihungsseite und die Variante *Mit Stopp: WC & Kiosk* – vollständig spezifiziert in [Abschnitt 8 der Spec](./docs/superpowers/specs/2026-08-31-frontend-nach-design-design.md). Ursachenanalyse: [`docs/2026-08-31-design-abgleich.md`](./docs/2026-08-31-design-abgleich.md). |
+| 7a | ~~**§4.3 Abgleich OSM ↔ DB-Gleisliste (eng)**~~ ✅ **erledigt 04.09.2026** | Die DB-Gleisliste trennt jetzt, was OSM zusammenlegt. Gegen die echte API gemessen. Siehe „Die DB-Gleisliste als Trenner“. |
+| **7a+** | **§4.3 in voller Fassung** | **Auf Datenmangel blockiert, nicht auf Aufwand.** Der `platforms`-Endpunkt führt nachweislich keine Koordinaten – ohne sie lässt sich die OSM-Geometrie nicht an der DB verankern. Einzelheiten unter „Was der `platforms`-Endpunkt liefert“. |
+| 7b | **§5 FaSta-Koordinaten im Synthesemodell** | **Durch den Spike aufgewertet:** FaSta ist die *einzige* verbliebene Quelle mit echten Koordinaten (`FastaAnlage` trägt `lat`/`lon`). Damit ist §5 nicht nur ein Feinschliff der Stufe 3, sondern der einzige Hebel, der die Geometrie überhaupt noch verbessern kann. |
+| ~~7c~~ | ~~**§9 getrennte Blöcke Ankunft/Abfahrt**~~ ✅ **erledigt 05.09.2026** | Zwei Blöcke mit je Zug, Gleis und Wagennummer. Deckte einen Fehler auf: Der Angekommen-Bildschirm zeigte den **Ankunfts**wagen. Siehe „Getrennte Blöcke – und der Wagen, der zum falschen Zug gehörte“. |
+| 8 | **MVP-Task 17 abschließen** | `Dockerfile` steht, **Schritt 1 ist erledigt** (`test/degradation.test.ts`, 13 Tests – siehe „Die Degradationstabelle als Test“). Offen bleibt der Mobile-Feinschliff, der ohnehin an der Mobilabnahme hängt. Die Aufgabenbeschreibung im Plan ist an einer Stelle überholt: Sie verlangt „Backend serviert `frontend/dist` via `@fastify/static`“ – das ist am 03.09. mit der Trennung Vercel/Fly.io entfallen. |
+| ~~9a~~ | ~~**Ticket-PDF-Import**~~ ⛔ **entschieden dagegen, 03.09.2026** | Die Spec fragte: „Verarbeitung im Browser prüfen, bevor ein Endpunkt gebaut wird.“ Der Reise-Import hat das beantwortet – Text im Browser, PDFs bewusst abgelehnt als Datenminimierung (Art. 5 Abs. 1 lit. c DSGVO). Ein Upload-Endpunkt würde diese Entscheidung widerrufen. **Nicht bauen.** |
+| 9b | **Wagenreihungsseite** | ⛔ **Blockiert – es gibt keine Datenquelle mehr.** Siehe „Die Wagenreihung ist tot“. |
+| ~~9c~~ | ~~**Variante „Mit Stopp: WC & Kiosk“**~~ ✅ **erledigt 05.09.2026** | Gebaut und ausgeliefert. Die Spec-Annahme „die Daten sind bereits da“ stimmte nicht – die Overpass-Abfrage holte WC und Kiosk nie. Siehe „Mit Stopp: WC & Kiosk“. |
+
+Der Umbau nach dem Entwurf ist am 31.08. erfolgt (Spec und Plan unter
+`docs/superpowers/`); Spec-Abschnitt 8 ist
+[hier](./docs/superpowers/specs/2026-08-31-frontend-nach-design-design.md),
+die Ursachenanalyse in [`docs/2026-08-31-design-abgleich.md`](./docs/2026-08-31-design-abgleich.md).
 
 ### Später / bei Gelegenheit
 
 | # | Aufgabe | |
 |---|---|---|
 | 10 | **Spike-Nachlauf für 13 Bahnhöfe** | `npx tsx scripts/spike-datenrealitaet.ts` – gecacht, fragt nur die fehlenden ab, sobald Overpass stabil antwortet. |
-| 11 | **DB-Antwortschema der Wagenreihung prüfen** | RIS::Stations, Timetables und FaSta sind gegen echte Antworten verifiziert – RIS::Stations am 31.08. mit aufgezeichneten Fixtures (`test/fixtures/db/gruppe-*.json`). **Nicht geprüft:** allein die Wagenreihung, deren Fixture weiterhin handgebaut ist. |
+| ~~11~~ | ~~**DB-Antwortschema der Wagenreihung prüfen**~~ ⛔ **nicht mehr prüfbar, 05.09.2026** | Am 04.09. versucht, dabei den Grund gefunden: Der Endpunkt existiert nicht mehr. Das handgebaute Fixture lässt sich gegen nichts mehr verifizieren. Siehe „Die Wagenreihung ist tot“. RIS::Stations, Timetables und FaSta bleiben gegen echte Antworten verifiziert. |
+| 16 | **Ersatz für die Wagenreihung suchen** | Falls die Wagenposition zurückkommen soll: Der Marketplace müsste ein Formations-Produkt führen, das abonnierbar ist. Drei geratene Pfade antworteten am 04.09. mit 404 – zu klären wäre es im Marketplace-Katalog, nicht durch Raten. |
 | 12 | **Ticket-PDF-Import** | Im Prototyp als UI-Flow vorhanden, laut Konzept Stufe 2. Backend fehlt. |
 | 13 | **Repo-Sichtbarkeit** | Repo ist öffentlich. Inhaltlich unbedenklich (Historie mehrfach auf Secrets geprüft, zuletzt 28.08.2026 über alle Blobs – 0 Treffer), aber bewusst zu entscheiden. |
 | ~~14~~ | ~~**Frontend kann keine Komponenten testen**~~ ✅ **erledigt 31.08.2026** | jsdom und Testing Library sind eingerichtet (`vitest.config.ts`, `src/test-setup.ts`). Die Komponententests waren die Voraussetzung für den Frontend-Umbau. |
@@ -1551,28 +1579,309 @@ Der Bahnhof landet als **Suchtext**, nicht als getroffene Wahl: Berlin Hbf
 führt drei EVA-Nummern, von denen eine gar keinen Fahrplan hat. Welche gemeint
 ist, entscheidet die Bahnhofssuche, nicht der Text.
 
-## Was morgen drankommt (Stand 03.09.2026, abends)
+## Die DB-Gleisliste als Trenner (04.09.2026)
+
+Konzeptlücke §4.3, in enger Fassung geschlossen. Der Anlass war der Münchener
+Fehlschluss: Gleis 5 → 2 antwortete „Gleis 2 gegenüber, kein Ebenenwechsel" in
+30 Sekunden, obwohl Gleis 2 im S-Bahn-Tiefbahnhof liegt.
+
+**Die Angabe, die das widerlegt, wurde abgerufen und drei Zeilen später
+weggeworfen.** `clients/stations.ts` fragt die Gleisliste **je Verkehrsstelle**
+ab – `listen` läuft parallel zu `evas`, die Herkunft ist also bekannt. Dann:
+
+```ts
+if (!p.name || gesehen.has(p.name)) continue;   // erster EVA gewinnt, Herkunft verfällt
+gleise.push({ gleis: p.name });
+```
+
+Jedes Gleis behält jetzt seine Verkehrsstellen (`evas` je Eintrag), und
+`istGleicherBahnsteig` schließt daraus: **Zwei Gleise mit disjunkten
+Verkehrsstellen können nie derselbe Bahnsteig sein**, was OSM auch behauptet.
+
+Gegen die echte API gemessen (04.09.2026):
+
+```
+Gruppe München:  8098263, 8098262, 8000261, 8098261
+Gleis 2:   8098263                       <- S-Bahn tief, allein
+Gleis 5:   8098262, 8000261, 8098261     <- disjunkt zu Gleis 2
+Gleis 11:  8098262, 8000261
+Liste vollständig (gleisteileOhneAntwort: 0)
+```
+
+### Zwei Fälle schließen bewusst nichts
+
+**Ein Gleis an mehreren Verkehrsstellen ist ein echtes „beides".** München
+führt Gleis 13 unter drei Mitgliedern – betrieblich unterteilt, nicht physisch
+getrennt. Einen Gewinner zu küren wäre derselbe Fehler eine Ebene höher.
+Deshalb `evas: string[]`, keine einzelne EVA.
+
+**Eine unvollständige Gleisliste trennt gar nicht.** Ist
+`gleislisteUnvollstaendig` wahr, wird die Liste erst gar nicht durchgereicht.
+Ein ausgefallener Bahnhofsteil heißt nicht „anderer Bahnsteig"; sonst wäre ein
+falscher Weg nur gegen einen anderen getauscht.
+
+### Was damit NICHT gelöst ist
+
+Die falsche Behauptung ist weg, **die Route ist weiterhin falsch**: Gleis 5 → 2
+liefert jetzt 2 Schritte, 41 s, komplett auf `level 0`. Die DB-Liste trennt,
+sie korrigiert keine Geometrie. Dafür bräuchte es den vollen §4.3 – und der ist
+blockiert, siehe den nächsten Abschnitt.
+
+`evas` ist optional, aus demselben Grund wie `gleisteileOhneAntwort`: Es gibt
+genau einen echten Erzeuger, alles andere sind Fixtures. Fehlt es, entscheidet
+OSM wie vorher – der sichere Rückfall.
+
+## Was der `platforms`-Endpunkt liefert (04.09.2026)
+
+Gemessen, bevor der volle §4.3 spezifiziert wurde – und die Messung hat ihn
+gestoppt:
+
+```
+8098263 (S-Bahn tief):  name, heights, end, headPlatform, ifopt, length, linkedPlatforms, sectors, start
+8000261 (Haupthalle):   name, heights, end, linkedPlatforms, sectors, start
+```
+
+**Keine Koordinaten, an keinem der beiden Bahnhofsteile.** Die
+`lat`/`lon`-Felder in `StationsInfo.gleise` sind aus dieser Quelle nicht
+füllbar. Der Code wusste das an einer Stelle bereits – `synthmodell.ts`
+vermerkt: „Die Gleisliste aus RIS::Stations trägt **nie** Koordinaten – sie
+liefert nur Namen."
+
+Damit ist „OSM-Geometrie an DB-Koordinaten verankern" mit diesem Endpunkt
+unmöglich. **Das ist kein Aufwandsproblem, sondern ein Datenproblem.**
+
+Zwei Nebenfunde, die etwas taugen könnten:
+
+- **`linkedPlatforms`** nennt ausdrücklich, welche Bahnsteige physisch
+  zusammengehören – für den Tiefbahnhof `1 ↔ 2`. Das ist die Aussage, die
+  `istGleicherBahnsteig` heute aus Geometrie *errät*, hier autoritativ. Aber:
+  in der Haupthalle ist das Feld durchweg **leer**. Als positiver Beleg
+  brauchbar, als alleinige Quelle nicht.
+- **`ifopt`** (`de:09162:6:40:81`) wäre der Ankerpunkt zu OSMs `ref:IFOPT` –
+  fehlt aber lückenhaft; in der Haupthalle haben Gleis 5 und 6 keinen.
+
+## Die Wagenreihung ist tot (04.09.2026)
+
+Der Versuch, ToDo 11 zu erledigen (das handgebaute Fixture gegen echte
+Antworten prüfen), endete mit einem größeren Fund:
+
+```
+ist-wr.noncd.db.de       -> NXDOMAIN (gegengeprüft über 8.8.8.8)
+apis.deutschebahn.com    -> 46.18.57.2  ok
+Marketplace: ris-formation / ris-formations / fahrzeugreihung -> 3x HTTP 404
+```
+
+`clients/wagenreihung.ts` ruft `ist-wr.noncd.db.de` auf – einen freien Endpunkt
+ohne Authentifizierung, den es **nicht mehr gibt**. Und Wagenreihung steht nicht
+auf der Abonnementliste (RIS::Stations, Timetables, FaSta, StaDa). Es gibt
+derzeit **keine** Quelle für Wagenreihungsdaten.
+
+**Der Nebenbefund wiegt schwerer als die blockierte Seite.** Die Wagenposition
+ist in Produktion seit jeher wirkungslos: Jeder Aufruf mit Wagennummer läuft in
+den DNS-Fehler, wird gefangen und degradiert auf „Route startet an der
+Bahnsteigmitte". Der Degradationspfad arbeitet **korrekt** – er verdeckt nur,
+dass die Funktion nie etwas anderes tut. Genau deshalb ist es niemandem
+aufgefallen; und es erklärt, warum der Wagenkasten auf der Angekommen-Seite am
+01.09. nie zu sehen war (dort stand als Ursache „die Wagennummer war leer").
+
+Ein Degradationspfad, der einen Totalausfall ununterscheidbar von einem
+Normalfall macht, ist dasselbe Muster wie bei Zeile 2 der Degradationstabelle.
+
+## Die Degradationstabelle als Test (04.09.2026)
+
+MVP-Task 17, Schritt 1: jede Zeile der Konzepttabelle Abschnitt 8 als eigener
+Test (`backend/test/degradation.test.ts`, 13 Tests). Geprüft wird nicht nur,
+**dass** die App bei einem Ausfall antwortet, sondern dass sie **sagt, was ihr
+fehlt**.
+
+Die Tests haben zwei Lücken aufgedeckt.
+
+### Zeile 2 war nie gebaut
+
+Fiel Timetables aus, wurde der Live-Strom einfach stumm. Der Kommentar im Code
+benannte das Problem selbst: „Der Strom bleibt offen und wird einfach stumm –
+vom Fall ‚es ändert sich gerade nichts' ist das für den Zuschauer nicht zu
+unterscheiden." Sichtbar war der Ausfall **nur im Serverprotokoll**. Das
+Konzept verlangt ein Banner; es existierte nirgends, die Zeichenkette
+„Echtzeitdaten" kam im ganzen Projekt nicht vor.
+
+Jetzt melden `quelle-weg` und `quelle-da` die **Zustandskante** – nur beim
+Wechsel, nicht bei jedem Durchlauf; ein Banner, keine Flut. Das Frontend zeigt
+„Echtzeitdaten derzeit nicht verfügbar", bis die Quelle wieder antwortet.
+
+Bewusst **kein** `LiveBanner` und **kein** Wegklick-Knopf: Der Ausfall ist ein
+*Zustand*, kein Ereignis. Ihn wegklickbar zu machen hieße, eine Aussage zu
+verbergen, die noch gilt.
+
+### Zeile 6 deckte einen echten Fehler auf
+
+Warf `sende` bei einem abgerissenen Zuschauer, riss der Wurf ungefangen den
+**ganzen Durchlauf** ab – und mit ihm die Aktualisierung für **jeden anderen
+Zuschauer derselben EVA**. Ein einziges totes Handy in der Bahnhofshalle hätte
+gereicht, um allen übrigen die Live-Daten abzudrehen. Weder Test noch Protokoll
+zeigten das je.
+
+### Zeile 4 nennt jetzt das fehlende Gleis
+
+„Gleis nicht im Kartenmaterial gefunden" ließ offen, **welches** der beiden
+eingegebenen die Route ungenau macht.
+
+### Was am Konzept-Wortlaut nicht gebaut wurde
+
+Zeile 4 verlangt den Rückfall „auf das Synthesemodell **nur für dieses Gleis**";
+der Code ersetzt den ganzen Graphen. Das ist bewusst so geblieben. Ein
+Teilrückfall müsste dem fehlenden Gleis eine **Position erfinden** und sie
+mitten in sonst präzise Geometrie setzen, ausgeliefert als Stufe 1 oder 2 –
+genau die Fehlerklasse, die den Münchener Fehlschluss erzeugt hat. Nach dem
+Befund des `platforms`-Endpunkts steht zudem fest, dass es dafür keine
+Koordinate gäbe. Das heutige Verhalten ist ehrlicher: Es wertet die *ganze*
+Route auf „ca." ab, sobald ein Teil geraten ist.
+
+## Getrennte Blöcke – und der Wagen, der zum falschen Zug gehörte (05.09.2026)
+
+Konzeptlücke §9. Die Maske war nach **Feldart** gruppiert – beide Züge in einer
+Gruppe, beide Gleise in einer zweiten, darunter eine einzelne Wagennummer. Der
+Nutzer denkt aber nach Reiseabschnitt: „mein ankommender Zug: Gleis 6,
+ICE 1006, Wagen 26." Jetzt zwei `fieldset`-Blöcke, „Ankunft" und „Abfahrt", je
+mit Zug, Gleis und Wagennummer.
+
+`fieldset`/`legend` statt `div`/`label`, damit Screenreader „Ankunft – Gleis"
+vorlesen statt zweimal nur „Gleis".
+
+### Der Fehler, der dabei herausfiel
+
+`wagen` heißt jetzt `wagenAn`, `wagenAb` ist neu. Asymmetrische Namen in einer
+symmetrischen Maske sind eine Fehlerquelle – und eine lag bereits im Code:
+
+Der **Angekommen-Bildschirm zeigte den Ankunftswagen**. Er handelt aber
+durchweg vom Anschluss – Abfahrtsgleis, Abfahrtszeit, Anschlusszug – und
+`zeigtWagen` prüft seit jeher `istFernverkehr(zugAbName)`, also den
+Abfahrtszug. Angezeigt wurde damit der Wagen, aus dem man **ausgestiegen** ist,
+statt der, in den man einsteigen soll. Aufgefallen war es nie, weil das Feld in
+der Praxis leer blieb – siehe „Die Wagenreihung ist tot".
+
+### Verträglich mit dem Reise-Import
+
+Der Import übernimmt keine Wagennummern – sie stehen in keinem geteilten Text –
+und **leert jetzt beide Felder**. Eine vorher getippte gehört zur *ersetzten*
+Reise; stehen geblieben haftete sie an einem fremden Zug. Dieselbe Überlegung,
+aus der dort schon `zeitIst` und `gleisIst` bewusst leer bleiben.
+
+`wagenAb` geht bewusst **nicht** ans Routing: Der verfeinerte Zielpunkt über die
+Abfahrts-Wagenposition steht laut Konzept unter Stufe 2. Der Backend-Parameter
+bleibt `wagen` (Ankunft), die API ändert sich nicht.
+
+Ein vor dem Umbau gespeicherter Entwurf fällt einmal durch die Prüfung und wird
+verworfen – leeres Formular statt kaputter Maske. Er liegt in `sessionStorage`
+und überlebt ohnehin nur die Sitzung.
+
+## Mit Stopp: WC & Kiosk (05.09.2026)
+
+Spec 8.3, die letzte der drei offenen Design-Varianten.
+
+**Die Spec-Annahme stimmte nicht.** Sie sagte, die Daten seien schon da:
+„Overpass liefert `amenity=toilets` und `shop=kiosk` im 400-m-Umkreis mit." Die
+Abfrage in `clients/overpass.ts` holte nur Bahnsteige, Fußwege, Treppen,
+Aufzüge und Rolltreppen. Sie holt jetzt beides, in **beiden** OSM-Formen:
+größere Anlagen sind als Fläche erfasst, kleinere als Punkt.
+
+Das kostet **jede** Abfrage etwas, auch die der Mehrheit, die die Variante nie
+wählt – der Graph wird je Bahnhof zwischengespeichert, nicht je Variante. Vier
+Zeilen mehr gegen zwei parallele Cachevarianten war die günstigere Seite des
+Tauschs; die Cache-Schlüssellogik ist die Stelle, an der am 01.09. schon einmal
+ein Graphbau auf sich selbst gewartet hat.
+
+### POIs hängen am Graphen, sie sind nicht sein Gerüst
+
+Ein Zwischenziel bekommt **genau eine** ebene Kante zum nächsten begehbaren
+Knoten, höchstens 30 m. Ohne diese Grenze liefe irgendwann eine „schnellste"
+Route als Abkürzung durch eine Toilette.
+
+Die Ebene kommt aus dem `level`-Tag, sonst vom Anschlussknoten. Ein WC im
+Untergeschoss ans Erdgeschoss zu hängen wäre schlimmer als es wegzulassen – der
+Weg dorthin führte durch keine Treppe.
+
+### Gewählt wird nach Gehzeit, nicht nach Luftlinie
+
+Geprüft werden die fünf nächstgelegenen Zwischenziele (Vorauswahl per
+Luftlinie, Entscheidung per echter Gehzeit beider Teilwege). Ein WC zehn Meter
+entfernt, aber nur über zwei Treppen erreichbar, ist der schlechtere Stopp.
+
+Der Entwurf nennt WC und Kiosk in **einem** Knopf – also wählt das System das
+günstigere, statt den Nutzer zu fragen.
+
+Findet sich kein erreichbares Zwischenziel, ist die Antwort `null` und die API
+404. Still auf den direkten Weg auszuweichen hieße, einen Stopp zu versprechen,
+den es nicht gibt.
+
+### Gemessen in Produktion (05.09.2026)
+
+| Berlin Hbf, Gleis 6 → 14 | Schritte | Gehzeit |
+|---|---|---|
+| `variante=schnellste` | 32 | 575 s |
+| `variante=mit-stopp` | 34 | 670 s |
+
+Der Umweg kostet 95 Sekunden – die Stopp-Route ist damit nachweislich länger
+als die direkte, genau die Invariante aus `test/routing.test.ts`, hier gegen
+die echte Produktion belegt.
+
+### Zwei Fallen unterwegs
+
+**Ein Kommentar im Template-Literal ist kein Kommentar.** Die Overpass-Abfrage
+ist eine Template-Zeichenkette; ein dort eingefügtes `//` landet als
+Abfragetext in der Anfrage, und Backticks darin beenden die Zeichenkette. Fiel
+sofort beim Typcheck auf.
+
+**Der Linter lag falsch.** `no-await-in-loop` schlägt in `varianten.ts`
+`Promise.all()` vor – also genau den Fehler, den der Kommentar dort seit dem
+01.09. beschreibt: Zwei gleichzeitige Anfragen fanden den Graph-Cache leer,
+24 s und 61 s statt 2 s. Unterdrückt mit Begründung an der Zeile, nicht
+pauschal. Zweiter Fall dieser Art, siehe „Was der Linter meldete und trotzdem
+falsch lag".
+
+## Deployment 05.09.2026
+
+Backend und Frontend ausgeliefert, `main` per Fast-Forward auf `feat/mvp`
+nachgezogen (12 Commits). Beide Zweige und beide Fernzweige stehen auf
+demselben Commit.
+
+```
+Backend   Fly.io   /api/health -> {"status":"ok"}, genau EINE Maschine, Checks 1/1
+Frontend  Vercel   Produktion ausgeliefert, umstieg.vercel.app antwortet
+```
+
+**Dabei gelernt: der Push auf `main` deployt selbst.** Die
+Vercel-Git-Integration hängt an `main` und hat nach dem Fast-Forward von sich
+aus ein zweites Produktions-Deployment gestartet. Das vorherige
+`vercel deploy --prod` von Hand war überflüssig – beide bauten denselben
+Commit, es ist nichts auseinandergelaufen. **Für künftige Auslieferungen reicht
+der Push auf `main`.** Das Backend folgt keinem Zweig; es wird weiterhin mit
+`flyctl deploy <pfad>\backend --ha=false` aus dem Arbeitsverzeichnis deployt.
+
+## Was als Nächstes drankommt (Stand 05.09.2026)
 
 **Zuerst: Browsertest auf einem echten Gerät.** Alles Bisherige ist gegen
 Chrome am Rechner geprüft. Was ein Handy im Bahnhof zeigt – Teilen-Menü des
 Betriebssystems, Einfügen ins Textfeld, Trefferflächen mit Gepäck in der Hand
 – ist ungeprüft.
 
-Offene Punkte, nach Dringlichkeit:
+Offene Punkte, nach Dringlichkeit (Stand 05.09.2026):
 
-1. **Vokabular liegt doppelt.** Die Vorsilben- und Nachsilbenliste steht im
-   Frontend-Parser (macht den angezeigten Namen sauber) und im Backend (löst
-   die Suche auf). Zwei Zwecke, dieselben Wörter – das läuft auseinander. Die
-   Frontend-Variante sollte fallen, die Auflösung ganz ans Backend.
+1. ~~**Vokabular liegt doppelt.**~~ ✅ erledigt 04.09.2026 (`d6150d9`).
 2. **Weitere echte Texte durchprobieren.** Bisher belegt: DB Navigator und
    VBB. Was scheitert, ist nach dem Umbau fast immer eine fehlende Vokabel –
-   und die ist eine Zeile.
-3. **P2 der Härtung ist offen:** CSP-Header in `vercel.json` (der einzige
-   fehlende) und ein hartes Oberlimit auf Upstream-Aufrufe je Stunde mit
-   degradierter Auslieferung. Die Ratenbegrenzung bremst je Aufrufer; viele
-   Aufrufer summieren sich weiterhin.
-4. **Die Deprecation-Warnung** zu `disableRequestLogging` (Fastify 6 entfernt
-   die Option) steht bei jedem Start im Protokoll.
+   und die ist eine Zeile. **Unverändert offen.**
+3. **P2 der Härtung, zweite Hälfte:** Der CSP-Header ist am 04.09. ergänzt
+   (`3d8a842`). Offen bleibt das harte Oberlimit auf Upstream-Aufrufe je
+   Stunde mit degradierter Auslieferung – die Ratenbegrenzung bremst je
+   Aufrufer, viele Aufrufer summieren sich weiterhin.
+4. ~~**Die Deprecation-Warnung** zu `disableRequestLogging`~~ ✅ erledigt
+   04.09.2026 (`dcac4ca`), auf `logController` umgestellt.
+5. **§5 – FaSta-Koordinaten (ToDo 7b).** Seit dem 05.09. der wichtigste
+   offene Bau: die einzige verbliebene Quelle mit echten Koordinaten.
+6. **Ersatz für die Wagenreihung** oder die bewusste Entscheidung, die
+   Wagenposition fallen zu lassen. Solange beides aussteht, führt die
+   Eingabemaske zwei Wagenfelder, die nichts bewirken.
 
 Nicht geplant, bewusst: **keine KI für die Texterkennung.** Der Text müsste
 das Gerät verlassen, was die gesamte Datenschutzarchitektur kippt; die App
@@ -1611,9 +1920,13 @@ Drei Vorgaben aus dem [Umsetzungskonzept](./2026-08-24-umstiegs-navigator-design
 sind nie gebaut worden. Sie stehen hier getrennt, weil sie keine Fehler sind,
 sondern Entscheidungen, die noch anstehen.
 
+> **Stand 05.09.2026:** §9 ist geschlossen, §4.3 zur Hälfte, §5 ist offen und
+> hat an Gewicht gewonnen. Der Absatz zu §4.3 unten beschreibt den Zustand
+> **vor** dem 04.09.; was sich geändert hat, steht direkt darunter.
+
 **§4.3 – Abgleich OSM ↔ DB-Gleisliste.** Das Konzept verlangt: „Gleisnummern
 aus OSM (`ref` an Bahnsteigen) gegen die DB-Gleisliste abgleichen; bei Konflikt
-gewinnt die DB-Liste." Beide Quellen laufen bis heute unabgeglichen
+gewinnt die DB-Liste." Beide Quellen liefen bis zum 04.09. unabgeglichen
 nebeneinander: Stufe 1 routet **geografisch** über OSM und kennt keine
 EVA-Grenzen, das Synthesemodell dagegen ist **EVA-gebunden**.
 
@@ -1630,17 +1943,36 @@ Der Fehler ist **älter als die Gruppenauflösung** und von ihr unberührt:
 `istGleicherBahnsteig` arbeitet allein auf dem OSM-Graphen, dessen Aufbau
 (Stationsposition, Radius 400 m) unverändert ist.
 
+**Erledigt am 04.09.2026 – in enger Fassung.** Die DB-Gleisliste dient jetzt
+als **Trenner**, nicht als Ersatz für die OSM-Geometrie: Zwei Gleise, die die
+DB unter verschiedenen Verkehrsstellen führt, können nie derselbe Bahnsteig
+sein. Das nimmt der Münchener Fehlauskunft die falsche Behauptung. Einzelheiten
+und die Messung unter „Die DB-Gleisliste als Trenner“.
+
+**Offen bleibt die volle Fassung – und sie ist blockiert.** „Bei Konflikt
+gewinnt die DB-Liste" wörtlich zu nehmen hieße, die OSM-Geometrie an
+DB-Koordinaten zu verankern. Die gibt es nicht: Der `platforms`-Endpunkt führt
+keine (nachgemessen an zwei Münchener Verkehrsstellen, siehe „Was der
+`platforms`-Endpunkt liefert"). Das ist kein Aufwandsproblem.
+
 **§5 – FaSta-Koordinaten im Synthesemodell.** Stufe 3 soll die Lage von
 Aufzügen und Rolltreppen aus FaSta beziehen. Tatsächlich wird FaSta nur bei
 `variante=barrierefrei` abgefragt und fließt nicht in die Geometrie ein. Das
 Standardmodell setzt seine Querung deshalb auf halber Bahnsteiglänge an, statt
 sie dort zu vermuten, wo nachweislich ein Aufzug steht.
 
-**§9 – getrennte Blöcke Ankunft und Abfahrt.** Vorgesehen sind zwei Blöcke mit
-**je** Gleis, Zug und Wagennummer. Gebaut ist eine flache Maske mit *einer*
-Wagennummer, die des Ankunftszugs. Für den Abfahrtszug fehlt das Feld – womit
-der im Konzept genannte „verfeinerte Zielpunkt über die Abfahrts-Wagenposition"
-keine Eingabe hätte. Der steht allerdings ohnehin unter Stufe 2.
+**Seit dem 05.09. ist das der wichtigste offene Punkt.** Nachdem feststeht,
+dass die DB-Gleisliste keine Koordinaten trägt, ist FaSta die **einzige**
+verbliebene Quelle mit echten Ortsangaben. Was §4.3 nicht leisten kann, kann
+allenfalls §5.
+
+**§9 – getrennte Blöcke Ankunft und Abfahrt.** ✅ **Erledigt am 05.09.2026.**
+Vorgesehen waren zwei Blöcke mit **je** Gleis, Zug und Wagennummer; gebaut war
+eine flache Maske mit *einer* Wagennummer. Jetzt stehen beide Blöcke, `wagen`
+heißt `wagenAn`, `wagenAb` ist dazugekommen. Der im Konzept genannte
+„verfeinerte Zielpunkt über die Abfahrts-Wagenposition" bleibt Stufe 2 – und
+wäre ohnehin nicht baubar, solange die Wagenreihung tot ist. Einzelheiten unter
+„Getrennte Blöcke – und der Wagen, der zum falschen Zug gehörte“.
 
 ## Bekannte Einschränkungen
 
@@ -1658,9 +1990,12 @@ was dauerhaft gilt oder bewusst so ist:
   rollierendes Fenster von unter 24 Stunden (gemessen: 15 h voraus liefert
   Daten, 23 h voraus 404). Eine früher importierte Reise füllt die Felder,
   wird aber erst am Reisetag verfolgt.
-- **Die Vorsilben-/Nachsilbenliste für Bahnhofsnamen liegt doppelt** – im
-  Frontend-Parser und in `backend/src/core/bahnhofsname.ts`. Zwei Zwecke,
-  dieselben Wörter; das kann auseinanderlaufen. Auflösung steht an.
+- ~~**Die Vorsilben-/Nachsilbenliste für Bahnhofsnamen liegt doppelt**~~ –
+  am 04.09.2026 aufgelöst (`d6150d9`): Die Frontend-Normalisierung ist
+  gefallen, die Auflösung liegt allein in `backend/src/core/bahnhofsname.ts`.
+  Der Bahnhof wandert weiterhin als **Suchtext** ins Formular, nicht als
+  getroffene Wahl – Berlin Hbf führt drei EVA-Nummern, von denen eine keinen
+  Fahrplan hat.
 - **Nur am Desktop gesehen, nie auf einem Handy.** Die Sichtprüfung am
   30.08. hat Layout, WebGL-Karte, Bahnhofssuche und den Standortpfad
   bestätigt. Was ein echtes Gerät zeigt – Berechtigungsdialog, GPS-Genauigkeit
@@ -1669,19 +2004,30 @@ was dauerhaft gilt oder bewusst so ist:
   `standort/useStandort.ts` sind nur über TypeScript und Build abgesichert –
   bewusst, sie enthalten keine Entscheidungslogik. Der SSE-**Endpunkt** wird
   dagegen in `test/live.test.ts` gegen einen echten HTTP-Server geprüft.
-- **Das Wagenreihungs-Fixture ist weiterhin handgebaut**
-  (`backend/test/fixtures/db/wagenreihung-ice1006.json`, mit Hinweis im Kopf).
-  RIS::Stations, Timetables und FaSta sind gegen echte Antworten verifiziert;
-  die Gruppen-Fixtures (`gruppe-*.json`) sind am 31.08.2026 von der echten API
-  aufgezeichnet. Allein der Wagenreihungs-Parser kann noch auf
-  Feldnamen-Abweichungen laufen.
+- **Die Wagenposition ist in Produktion wirkungslos** – der Endpunkt existiert
+  nicht mehr (siehe „Die Wagenreihung ist tot"). Jeder Aufruf mit Wagennummer
+  degradiert auf „Route startet an der Bahnsteigmitte". Das Fixture
+  (`backend/test/fixtures/db/wagenreihung-ice1006.json`) bleibt handgebaut und
+  ist gegen nichts mehr zu verifizieren. RIS::Stations, Timetables und FaSta
+  sind gegen echte Antworten verifiziert; die Gruppen-Fixtures
+  (`gruppe-*.json`) sind am 31.08.2026 von der echten API aufgezeichnet.
+
+- **Die Overpass-Abfrage holt WC und Kiosk für jeden Bahnhof mit**, auch für
+  Nutzer, die die Variante „Mit Stopp" nie wählen. Der Graph wird je Bahnhof
+  zwischengespeichert, nicht je Variante – die Alternative wären zwei parallele
+  Cachevarianten gewesen. Bewusste Wahl, siehe „Mit Stopp: WC & Kiosk".
 - **Spike-Rohdaten** (`backend/test/fixtures/spike/`) sind gitignored – über
   `scripts/spike-datenrealitaet.ts` reproduzierbar.
-- **München Hbf, Gleis 5 → 2 antwortet falsch** („gegenüber, kein
-  Ebenenwechsel", 30 s). Gleis 2 liegt im S-Bahn-Tiefbahnhof. Ursache ist
-  `istGleicherBahnsteig` auf OSM-Daten – siehe Konzeptlücke §4.3. Betrifft nur
-  Bahnhöfe, an denen OSM eine Gleisnummer doppelt führt; Gleis 11 → 2 rechnet
-  am selben Bahnhof korrekt.
+- **München Hbf, Gleis 5 → 2 antwortet nicht mehr falsch – aber noch nicht
+  richtig.** Bis zum 04.09. lautete die Auskunft „Gleis 2 gegenüber, kein
+  Ebenenwechsel", 30 s; Gleis 2 liegt im S-Bahn-Tiefbahnhof. Die falsche
+  Kurzweg-Behauptung ist weg (gemessen gegen die echte API: 0 Treffer für
+  „gegenüber"). **Die Route bleibt trotzdem falsch:** 2 Schritte, 41 s,
+  komplett auf `level 0`. Der Grund ist nicht mehr `istGleicherBahnsteig`,
+  sondern die OSM-Geometrie selbst – München trägt für den Tiefbahnhof keine
+  Ebeneninformation, und die Knoten für Gleis 2 liegen am falschen Ort. Das zu
+  beheben verlangt den vollen §4.3, und der ist auf fehlende DB-Koordinaten
+  blockiert. Die Gegenprobe Gleis 11 → 2 rechnet weiter (18 Schritte, 551 s).
 - **Vercel-Vorschau-Deployments erreichen die API nicht.** Ihre URLs stehen
   nicht in `CORS_ORIGIN`; für einen Vorschautest die konkrete URL vorübergehend
   aufnehmen. Absicht – eine Wildcard würde jede fremde Vercel-App an die API
