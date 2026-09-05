@@ -3,7 +3,7 @@
 
 export type KantenTyp = 'eben' | 'treppe' | 'rolltreppe' | 'aufzug' | 'rampe';
 export type Gehprofil = 'zuegig' | 'normal' | 'langsam';
-export type RoutenVariante = 'schnellste' | 'einfachste' | 'barrierefrei';
+export type RoutenVariante = 'schnellste' | 'einfachste' | 'barrierefrei' | 'mit-stopp';
 export type Stufe = 1 | 2 | 3;
 
 // --- OSM / Overpass ---
@@ -32,6 +32,8 @@ export interface GraphKnoten {
   gleis?: string; // an Bahnsteigpunkten: "7", "7a"
   abschnitt?: string; // "A".."F" | "anfang" | "mitte" | "ende"
   bahnsteigId?: string; // gleicher Wert = gleicher physischer Bahnsteig
+  /** Zwischenziel der Variante `mit-stopp` (Konzept: WC & Kiosk). */
+  poi?: 'wc' | 'kiosk';
 }
 
 export interface GraphKante {

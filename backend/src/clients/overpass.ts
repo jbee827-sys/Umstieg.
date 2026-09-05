@@ -13,6 +13,13 @@ export function baueOverpassQL(lat: number, lon: number, radiusM: number): strin
   // Tags (level, wheelchair, tunnel, bridge kommen als way-Tags automatisch mit).
   // Große Bahnhöfe mappen Bahnsteige oft als Multipolygon-RELATION – deshalb
   // relation[railway=platform] plus >> (rekursiv bis zu den Member-Nodes).
+  //
+  // Toiletten und Kioske sind die Zwischenziele der Variante "mit-stopp".
+  // Sie kosten JEDE Abfrage etwas, auch die der Mehrheit, die die Variante
+  // nie wählt: Der Graph wird je Bahnhof zwischengespeichert, nicht je
+  // Variante. Vier Zeilen mehr gegen zwei parallele Cachevarianten war die
+  // günstigere Seite des Tauschs. Beide Formen, weil grössere Anlagen als
+  // Fläche erfasst sind und kleinere als Punkt.
   return `[out:json][timeout:25];
 (
   way["railway"="platform"](${um});
@@ -21,6 +28,10 @@ export function baueOverpassQL(lat: number, lon: number, radiusM: number): strin
   node["highway"="elevator"](${um});
   way["highway"="elevator"](${um});
   way["conveying"](${um});
+  node["amenity"="toilets"](${um});
+  way["amenity"="toilets"](${um});
+  node["shop"="kiosk"](${um});
+  way["shop"="kiosk"](${um});
 );
 (._;>>;);
 out body;`;

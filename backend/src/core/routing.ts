@@ -7,7 +7,8 @@ import type {
   RoutenVariante,
   StationGraph,
 } from './typen.js';
-import { kantenZeitSekunden } from './gehzeit.js';
+import { gehzeitSekunden, kantenZeitSekunden } from './gehzeit.js';
+import { haversineM } from './graph.js';
 
 /**
  * Zuschlaege, die eine VORLIEBE ausdruecken, keine Zeit.
@@ -148,6 +149,69 @@ interface SuchZustand {
  * Variante „einfachste" korrekt je Richtungswechsel gezählt werden kann.
  * Graphen sind klein (wenige hundert Knoten) – einfache Prioritätsliste genügt.
  */
+/**
+ * Wie viele Zwischenziele geprüft werden.
+ *
+ * Jedes kostet zwei Wegsuchen. Ein grosser Bahnhof führt schnell ein Dutzend
+ * Toiletten; alle zu prüfen wäre Rechenzeit für einen Unterschied von wenigen
+ * Metern. Vorausgewählt wird nach Luftlinie ab Start – das ist grob, aber die
+ * teure Rechnung entscheidet danach ohnehin nach echter Gehzeit.
+ */
+const MAX_STOPPS = 5;
+
+/**
+ * Der Weg über ein Zwischenziel: Start → POI → Ziel (Spec 8.3).
+ *
+ * Der Entwurf nennt WC und Kiosk in EINEM Knopf, also wählt das System das
+ * günstigste von beiden statt den Nutzer zu fragen. Gemessen wird an der
+ * Gehzeit der beiden Teilwege, nicht an der Luftlinie: Ein WC zehn Meter
+ * entfernt, aber nur über zwei Treppen erreichbar, ist der schlechtere Stopp.
+ *
+ * `null`, wenn kein POI erreichbar ist. Still auf den direkten Weg
+ * auszuweichen wäre die schlechtere Antwort – wer „mit Stopp“ wählt, glaubte
+ * sonst, unterwegs komme eine Toilette.
+ */
+function routeMitStopp(
+  graph: StationGraph,
+  startId: string,
+  zielId: string,
+  profil: Gehprofil,
+): RoutenPfad | null {
+  const start = graph.knoten.get(startId)!;
+  const pois = [...graph.knoten.values()]
+    .filter((kn) => kn.poi)
+    .sort(
+      (a, b) =>
+        haversineLuftlinie(start, a) - haversineLuftlinie(start, b),
+    )
+    .slice(0, MAX_STOPPS);
+
+  let bester: RoutenPfad | null = null;
+  let besteZeit = Number.POSITIVE_INFINITY;
+  for (const poi of pois) {
+    const hin = berechneRoute(graph, startId, poi.id, 'schnellste', profil);
+    if (!hin) continue;
+    const weiter = berechneRoute(graph, poi.id, zielId, 'schnellste', profil);
+    if (!weiter) continue;
+    const zeit = gehzeitSekunden(hin, profil) + gehzeitSekunden(weiter, profil);
+    if (zeit < besteZeit) {
+      besteZeit = zeit;
+      bester = {
+        // Der POI steht in beiden Teilwegen – einmal reicht.
+        knoten: [...hin.knoten, ...weiter.knoten.slice(1)],
+        kanten: [...hin.kanten, ...weiter.kanten],
+        laengeM: hin.laengeM + weiter.laengeM,
+      };
+    }
+  }
+  return bester;
+}
+
+/** Luftlinie zwischen zwei Knoten – nur für die Vorauswahl der Zwischenziele. */
+function haversineLuftlinie(a: GraphKnoten, b: GraphKnoten): number {
+  return haversineM(a.lat, a.lon, b.lat, b.lon);
+}
+
 export function berechneRoute(
   graph: StationGraph,
   startId: string,
@@ -162,6 +226,7 @@ export function berechneRoute(
   profil: Gehprofil = 'normal',
 ): RoutenPfad | null {
   if (!graph.knoten.has(startId) || !graph.knoten.has(zielId)) return null;
+  if (variante === 'mit-stopp') return routeMitStopp(graph, startId, zielId, profil);
 
   // Alle Kanten einmalig indizieren (Adjazenz führt jede Kante doppelt).
   const kantenListe: GraphKante[] = [];

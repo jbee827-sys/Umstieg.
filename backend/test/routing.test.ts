@@ -356,3 +356,59 @@ describe('Die schnellste Route ist die schnellste', () => {
     }
   });
 });
+
+/**
+ * Variante `mit-stopp` (Spec 8.3): der Weg ueber WC oder Kiosk.
+ *
+ * Der Entwurf nennt beide in EINEM Knopf - also sucht das System den
+ * guenstigsten Umweg ueber eines von beiden, statt den Nutzer waehlen zu
+ * lassen.
+ */
+describe('berechneRoute mit-stopp', () => {
+  /** Gerader Bahnsteig; ein WC nahe der Mitte, ein Kiosk weit am Rand. */
+  function graphMitPois(): StationGraph {
+    const knoten = [
+      k('gleis1:mitte', 52.0, 12.0, 0, { gleis: '1', abschnitt: 'mitte', bahnsteigId: 'bs1' }),
+      k('m1@0', 52.0, 12.0005),
+      k('m2@0', 52.0, 12.001),
+      k('gleis2:mitte', 52.0, 12.0015, 0, { gleis: '2', abschnitt: 'mitte', bahnsteigId: 'bs2' }),
+      { ...k('poi9@0', 52.00002, 12.0005), poi: 'wc' as const },
+      { ...k('poi8@0', 52.00002, 12.02), poi: 'kiosk' as const },
+    ];
+    const kanten = [
+      eben('gleis1:mitte', 'm1@0', 35),
+      eben('m1@0', 'm2@0', 35),
+      eben('m2@0', 'gleis2:mitte', 35),
+      eben('m1@0', 'poi9@0', 3),
+      eben('m2@0', 'poi8@0', 900),
+    ];
+    return macheGraph(knoten, kanten, ['1', '2']);
+  }
+
+  it('fuehrt ueber ein Zwischenziel', () => {
+    const pfad = berechneRoute(graphMitPois(), 'gleis1:mitte', 'gleis2:mitte', 'mit-stopp');
+    expect(pfad).not.toBeNull();
+    expect(pfad!.knoten.some((kn) => kn.poi)).toBe(true);
+  });
+
+  it('waehlt das guenstigste, nicht das erstbeste', () => {
+    // Der Kiosk liegt 900 m abseits, das WC 3 m. Beide sind erlaubt.
+    const pfad = berechneRoute(graphMitPois(), 'gleis1:mitte', 'gleis2:mitte', 'mit-stopp');
+    expect(pfad!.knoten.find((kn) => kn.poi)?.poi).toBe('wc');
+  });
+
+  it('ist nie kuerzer als die schnellste Route', () => {
+    // Ein Umweg, der kuerzer waere als der direkte Weg, waere ein Rechenfehler.
+    const graph = graphMitPois();
+    const direkt = berechneRoute(graph, 'gleis1:mitte', 'gleis2:mitte', 'schnellste');
+    const stopp = berechneRoute(graph, 'gleis1:mitte', 'gleis2:mitte', 'mit-stopp');
+    expect(stopp!.laengeM).toBeGreaterThanOrEqual(direkt!.laengeM);
+  });
+
+  it('ohne POI im Graphen gibt es keine Route mit Stopp', () => {
+    // Lieber nichts als still den direkten Weg ausgeben: Wer „mit Stopp"
+    // waehlt, wuerde sonst glauben, unterwegs komme ein WC.
+    const ohne = treppeVsAufzugGraph();
+    expect(berechneRoute(ohne, 'gleis1:mitte', 'gleis2:mitte', 'mit-stopp')).toBeNull();
+  });
+});

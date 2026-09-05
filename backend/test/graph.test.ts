@@ -179,3 +179,66 @@ describe('Bahnsteigebenen - keine geratenen Stockwerke', () => {
     expect(erreichbar(berlin, 'gleis15:mitte', 'gleis4:mitte')).toBe(true);
   });
 });
+
+/**
+ * Zwischenziele der Variante `mit-stopp` (Spec 8.3).
+ *
+ * Die Spec ging davon aus, die Daten seien schon da - Overpass fragte WC und
+ * Kiosk aber gar nicht ab. Seit dem 05.09.2026 tut sie es; hier steht, was
+ * `baueGraph` daraus machen muss.
+ */
+describe('POI-Knoten fuer die Variante mit-stopp', () => {
+  /** Zwei Bahnsteigpunkte auf einem Weg, daneben ein WC und ein Kiosk. */
+  const mitPois: OverpassAntwort = {
+    elements: [
+      { type: 'node', id: 1, lat: 52.0, lon: 12.0 },
+      { type: 'node', id: 2, lat: 52.0, lon: 12.002 },
+      {
+        type: 'way',
+        id: 10,
+        nodes: [1, 2],
+        tags: { railway: 'platform', ref: '1', level: '0' },
+      },
+      // Dicht an den Bahnsteigknoten - die Anbindung greift bis 30 m, und
+      // echte Bahnsteige sind eng besetzt. Mittig zwischen zwei Endknoten
+      // laege beides ausserhalb, zu Recht.
+      { type: 'node', id: 3, lat: 52.00005, lon: 12.0001, tags: { amenity: 'toilets' } },
+      { type: 'node', id: 4, lat: 52.00006, lon: 12.0019, tags: { shop: 'kiosk' } },
+    ],
+  };
+
+  it('nimmt WC und Kiosk als Knoten auf', () => {
+    const graph = baueGraph(mitPois);
+    const pois = [...graph.knoten.values()].filter((k) => k.poi);
+    expect(pois.map((k) => k.poi).sort()).toEqual(['kiosk', 'wc']);
+  });
+
+  it('haengt sie an den begehbaren Graphen an', () => {
+    // Ein POI, den kein Weg erreicht, ist als Zwischenziel wertlos.
+    const graph = baueGraph(mitPois);
+    const wc = [...graph.knoten.values()].find((k) => k.poi === 'wc')!;
+    expect(erreichbar(graph, 'n1@0', wc.id)).toBe(true);
+  });
+
+  it('verbindet sie eben, nicht ueber einen Ebenenwechsel', () => {
+    const graph = baueGraph(mitPois);
+    const wc = [...graph.knoten.values()].find((k) => k.poi === 'wc')!;
+    for (const kante of graph.adjazenz.get(wc.id) ?? []) {
+      expect(kante.typ).toBe('eben');
+      expect(kante.deltaLevel).toBe(0);
+    }
+  });
+
+  it('macht aus einem POI kein Gleis', () => {
+    // `gleise` speist die Gleisliste der Klassifikation - ein WC darf dort
+    // nicht als waehlbares Gleis auftauchen.
+    const graph = baueGraph(mitPois);
+    expect(graph.gleise).toEqual(['1']);
+  });
+
+  it('kommt ohne POIs unveraendert zurecht', () => {
+    const ohne: OverpassAntwort = { elements: mitPois.elements.slice(0, 3) };
+    const graph = baueGraph(ohne);
+    expect([...graph.knoten.values()].filter((k) => k.poi)).toHaveLength(0);
+  });
+});

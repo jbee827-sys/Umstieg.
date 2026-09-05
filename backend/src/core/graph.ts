@@ -78,6 +78,36 @@ function istBarrierefrei(typ: KantenTyp, tags: Record<string, string>): boolean 
   return tags.wheelchair !== 'no';
 }
 
+/** WC oder Kiosk – die beiden Zwischenziele, die der Entwurf in einem Knopf nennt. */
+function poiArt(tags: Record<string, string> | undefined): 'wc' | 'kiosk' | undefined {
+  if (!tags) return undefined;
+  if (tags.amenity === 'toilets') return 'wc';
+  if (tags.shop === 'kiosk') return 'kiosk';
+  return undefined;
+}
+
+/**
+ * Ein Punkt für den POI: die Node selbst, oder die Mitte der Umrisspunkte.
+ *
+ * Grössere Anlagen sind in OSM als Fläche erfasst, nicht als Punkt. Ohne die
+ * Mittelung fiele jede zweite Toilette weg, weil ein Way keine eigene
+ * Koordinate trägt.
+ */
+function poiPunkt(
+  el: OsmElement,
+  osmKnoten: Map<number, OsmElement>,
+): { lat: number; lon: number } | null {
+  if (el.lat !== undefined && el.lon !== undefined) return { lat: el.lat, lon: el.lon };
+  const punkte = (el.nodes ?? [])
+    .map((id) => osmKnoten.get(id))
+    .filter((n): n is OsmElement => n?.lat !== undefined && n.lon !== undefined);
+  if (punkte.length === 0) return null;
+  return {
+    lat: punkte.reduce((s, n) => s + n.lat!, 0) / punkte.length,
+    lon: punkte.reduce((s, n) => s + n.lon!, 0) / punkte.length,
+  };
+}
+
 function knotenId(osmId: number, level: number): string {
   return `n${osmId}@${level}`;
 }
@@ -414,6 +444,50 @@ export function baueGraph(osm: OverpassAntwort): StationGraph {
         }
       }
     }
+  }
+
+  // --- Pass POI: Zwischenziele der Variante `mit-stopp` ---
+  //
+  // Sie hängen nur AM Graphen, sie sind nicht Teil seines Gerüsts: Ein POI
+  // bekommt genau eine ebene Kante zum nächsten begehbaren Knoten und wird
+  // dadurch nie zur Abkürzung zwischen zwei Bahnsteigen. Ohne diese Grenze
+  // liefe irgendwann eine „schnellste" Route durch eine Toilette.
+  for (const el of osm.elements) {
+    const art = poiArt(el.tags);
+    if (!art) continue;
+    const punkt = poiPunkt(el, osmKnoten);
+    if (!punkt) continue;
+
+    // Ebene aus dem Tag, sonst die des nächsten begehbaren Knotens: Ein WC
+    // im Untergeschoss an das Erdgeschoss zu hängen wäre schlimmer als es
+    // wegzulassen – der Weg dorthin führte durch keine Treppe.
+    const ebeneBelegt = el.tags?.level !== undefined;
+    const eigeneEbene = ebeneBelegt ? wayEbene(el.tags ?? {}) : undefined;
+
+    let nahester: GraphKnoten | null = null;
+    let nahesteDist = Number.POSITIVE_INFINITY;
+    for (const kandidat of knoten.values()) {
+      if (!kandidat.id.startsWith('n')) continue; // nur physische Knoten
+      if (eigeneEbene !== undefined && kandidat.level !== eigeneEbene) continue;
+      const d = haversineM(punkt.lat, punkt.lon, kandidat.lat, kandidat.lon);
+      if (d < nahesteDist) {
+        nahesteDist = d;
+        nahester = kandidat;
+      }
+    }
+    if (!nahester || nahesteDist > ANBINDUNG_MAX_M) continue;
+
+    const id = `poi${el.id}@${nahester.level}`;
+    if (knoten.has(id)) continue;
+    knoten.set(id, { id, lat: punkt.lat, lon: punkt.lon, level: nahester.level, poi: art });
+    fuegeKanteHinzu({
+      von: id,
+      nach: nahester.id,
+      laengeM: nahesteDist,
+      deltaLevel: 0,
+      typ: 'eben',
+      barrierefrei: true,
+    });
   }
 
   const gleise = [...gleisSet].sort((a, b) =>

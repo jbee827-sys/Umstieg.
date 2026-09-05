@@ -64,7 +64,7 @@ export interface ApiClients {
 
 const OVERPASS_RADIUS_M = 400;
 const GEHPROFILE: Gehprofil[] = ['zuegig', 'normal', 'langsam'];
-const VARIANTEN: RoutenVariante[] = ['schnellste', 'einfachste', 'barrierefrei'];
+const VARIANTEN: RoutenVariante[] = ['schnellste', 'einfachste', 'barrierefrei', 'mit-stopp'];
 
 interface GraphEintrag {
   graph: StationGraph;
@@ -499,7 +499,9 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
         detail:
           variante === 'barrierefrei'
             ? 'Keine barrierefreie Route gefunden (Treppen gesperrt, kein nutzbarer Aufzug).'
-            : 'Keine Route zwischen den Gleisen gefunden.',
+            : variante === 'mit-stopp'
+              ? 'Kein WC und kein Kiosk auf dem Weg gefunden.'
+              : 'Keine Route zwischen den Gleisen gefunden.',
         hinweise,
       });
     }

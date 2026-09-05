@@ -1,7 +1,7 @@
 import type { RouteErgebnis, RouteParameter, RoutenVariante } from './typen'
 
 /** Angebotene Varianten in der Reihenfolge des Entwurfs. */
-export const ANGEBOTENE: RoutenVariante[] = ['schnellste', 'barrierefrei']
+export const ANGEBOTENE: RoutenVariante[] = ['schnellste', 'barrierefrei', 'mit-stopp']
 
 type Basis = Omit<RouteParameter, 'variante'>
 type HoleFn = (p: RouteParameter) => Promise<RouteErgebnis>
@@ -31,14 +31,18 @@ export async function ladeVarianten(
   const haupt = await hole({ ...basis, variante: gewaehlt })
   beiHaupt(haupt)
 
-  const zweite = ANGEBOTENE.find((v) => v !== gewaehlt)
-  if (!zweite) return
-  try {
-    const andere = await hole({ ...basis, variante: zweite })
-    beiZweit(zweite, andere.gehzeitSek)
-  } catch {
-    // Kein Fehler fuer den Nutzer: Der Knopf zeigt dann keine Minuten.
-    // 'barrierefrei' antwortet regelmaessig mit 404, wenn es keinen
-    // nutzbaren Aufzug gibt.
+  // Die uebrigen der Reihe nach, aus demselben Grund wie oben: Jede weitere
+  // gleichzeitige Anfrage waere eine, die auf denselben Bahnhof wartet.
+  for (const weitere of ANGEBOTENE.filter((v) => v !== gewaehlt)) {
+    try {
+      // eslint-disable-next-line no-await-in-loop -- Nacheinander ist hier der ZWECK, nicht das Versehen: Promise.all waere genau der Fehler, den der Kommentar oben beschreibt.
+      const andere = await hole({ ...basis, variante: weitere })
+      beiZweit(weitere, andere.gehzeitSek)
+    } catch {
+      // Kein Fehler fuer den Nutzer: Der Knopf zeigt dann keine Minuten.
+      // 'barrierefrei' antwortet regelmaessig mit 404, wenn es keinen
+      // nutzbaren Aufzug gibt - und 'mit-stopp', wenn der Bahnhof weder WC
+      // noch Kiosk kartiert hat.
+    }
   }
 }
