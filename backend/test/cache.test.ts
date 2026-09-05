@@ -214,3 +214,62 @@ describe('Gleichzeitige Graphbauten werden zusammengefuehrt', () => {
     expect(zweite.json().stufe).toBe(1);
   });
 });
+
+/**
+ * Die Naht, in die dieses Repo schon einmal getreten ist: Der Graph wird
+ * gecacht, der Aufzugstatus ist live. Seit §5 stehen FaSta-KOORDINATEN im
+ * gecachten Graphen - der Status darf trotzdem nicht mit hinein, sonst
+ * bliebe ein gerade defekter Aufzug fuer die volle Frist gesperrt (oder,
+ * schlimmer, ein reparierter fuer die volle Frist als defekt gemeldet).
+ *
+ * Der Beweis ist nicht, dass der Status irgendwo steht, sondern dass
+ * DERSELBE gecachte Graph zwei Anfragen VERSCHIEDEN beantwortet.
+ */
+describe('FaSta: Koordinaten gecacht, Status nicht', () => {
+  const BF_URL = '/api/route?eva=8000001&gleisAn=1&gleisAb=2&profil=normal&variante=barrierefrei';
+
+  it('derselbe Graph beantwortet zwei Anfragen mit unterschiedlichem Status verschieden', async () => {
+    const overpass = vi.fn(async () => {
+      throw new Error('Overpass nicht erreichbar (Test)');
+    });
+    let status: 'ACTIVE' | 'INACTIVE' = 'ACTIVE';
+    // Zwei Bahnsteige mit je einem Aufzug - sonst laege Gleis 2 gegenueber
+    // und es gaebe gar keine Route zu berechnen.
+    const fasta = vi.fn(async () => [
+      { id: 'a1', typ: 'AUFZUG' as const, lat: 52.0, lon: 12.0, status, beschreibung: 'zu Gleis 1' },
+      { id: 'a2', typ: 'AUFZUG' as const, lat: 52.0, lon: 12.0006, status, beschreibung: 'zu Gleis 2' },
+    ]);
+    const app = buildApp({
+      overpass,
+      stations: {
+        holeStationsInfo: vi.fn(async (eva: string) => ({
+          eva,
+          evas: [eva],
+          name: 'Ministadt',
+          stationID: '4711',
+          lat: 52.0,
+          lon: 12.0,
+          gleise: [{ gleis: '1' }, { gleis: '2' }],
+        })),
+        sucheBahnhoefe: vi.fn(async () => []),
+        sucheBahnhoefeNahebei: vi.fn(async () => []),
+        ermittleGruppe: vi.fn(async (eva: string) => [eva]),
+      },
+      tafel: vi.fn(async () => []),
+      wagenposition: vi.fn(async () => null),
+      fasta,
+    });
+
+    const erste = await app.inject({ method: 'GET', url: BF_URL });
+    expect(erste.statusCode, 'aktiver Aufzug -> barrierefreie Route').toBe(200);
+
+    // Aufzug faellt aus. Der Graph bleibt im Cache, die Sperrung muss trotzdem
+    // durchschlagen.
+    status = 'INACTIVE';
+    const zweite = await app.inject({ method: 'GET', url: BF_URL });
+
+    expect(overpass, 'der Graph kam beim zweiten Mal aus dem Cache').toHaveBeenCalledTimes(1);
+    expect(zweite.statusCode, 'gesperrter Aufzug -> keine barrierefreie Route').toBe(404);
+    expect((zweite.json() as { fehler: string }).fehler).toBe('keine-route');
+  });
+});
