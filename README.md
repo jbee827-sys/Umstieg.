@@ -18,10 +18,12 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 
 ## Hier weitermachen (Stand 05.09.2026)
 
-> **Am 04./05.09. sind vier Vorhaben gefallen** – die enge Fassung von
+> **Am 04./05.09. sind fünf Vorhaben gefallen** – die enge Fassung von
 > Konzeptlücke §4.3, die Degradationstabelle (MVP-Task 17), die getrennten
-> Blöcke §9 und die Routenvariante „Mit Stopp". Alles ist ausgeliefert,
-> `main` und `feat/mvp` stehen gleich.
+> Blöcke §9, die Routenvariante „Mit Stopp" und zuletzt **Konzeptlücke §5
+> (FaSta-Koordinaten, ToDo 7b)**. Die ersten vier sind ausgeliefert; **§5
+> liegt auf `feat/mvp` und ist noch nicht deployt** – `main` steht 9 Commits
+> zurück.
 >
 > **Drei Funde dabei wiegen schwerer als die Vorhaben selbst** und stehen
 > weiter unten ausführlich: Die **Wagenreihung ist tot** (der Endpunkt
@@ -32,10 +34,16 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > **Nächster Schritt: die Mobilabnahme am echten Gerät** (P1 Task 12 / ToDo 3).
 > Das ist der letzte offene Punkt der Sichtprüfung und braucht Handarbeit an
 > einem Handy – Berechtigungsdialog, GPS in der Bahnhofshalle,
-> Ankunftserkennung am Gleis, Bedienbarkeit mit Gepäck.
+> Ankunftserkennung am Gleis, Bedienbarkeit mit Gepäck. **Sie ist seit dem
+> 05.09. der einzige Punkt, der Code blockiert:** Zwei geratene Schwellenwerte
+> (ToDo 15) und der Erkennungsradius (ToDo 3a) warten auf ihre Messung.
+>
+> **Danach offen, in dieser Reihenfolge:** §5 ausliefern und im echten Bahnhof
+> gegenlesen (siehe „Was an §5 noch nicht geprüft ist“), das Oberlimit auf
+> Upstream-Aufrufe (P2 der Härtung), die Entscheidung zur Wagenposition.
 
 ```bash
-cd backend && npm test        # muss 303 von 303 grün sein
+cd backend && npm test        # muss 331 von 331 grün sein
 cd backend && npm run lint    # oxlint + tsc --noEmit, muss sauber sein
 cd frontend && npm test       # muss 260 von 260 grün sein
 cd frontend && npm run lint   # oxlint + tsc --noEmit, muss sauber sein
@@ -67,7 +75,14 @@ und `Eingabe` – beide waren bis dahin ungetestet.
 geht darin auf, die Leiste trägt einen Zähler, und der Verlauf einer Reise
 bleibt erhalten. Gegen eingespeiste Live-Ereignisse im Browser gesehen.
 
-**Am 04./05.09.2026 sind vier Vorhaben gefallen**, alle ausgeliefert:
+**Am 05.09.2026 ist Konzeptlücke §5 geschlossen** (ToDo 7b): Bahnsteige im
+Synthesemodell holen ihre Lage aus FaSta, wo FaSta sie benennt, und der Weg
+zur Querung wird gerechnet statt geraten. Gemessen an Hannover Hbf: aus 12
+geratenen Bahnsteigen werden 6 echte, aus 0 barrierefreien Kanten werden 14.
+Der Weg dorthin verwarf den zuerst gewählten Ansatz – siehe „Was FaSta
+wirklich liefert“. **Noch nicht deployt.**
+
+**Am 04./05.09.2026 sind vier weitere Vorhaben gefallen**, alle ausgeliefert:
 Konzeptlücke §4.3 in enger Fassung (die DB-Gleisliste trennt jetzt, was OSM
 zusammenlegt – gegen die echte API gemessen), die Degradationstabelle als
 Test (MVP-Task 17, Schritt 1), Konzeptlücke §9 (getrennte Blöcke Ankunft und
@@ -83,11 +98,12 @@ GPS-Genauigkeit in der Bahnhofshalle, Ankunftserkennung am Gleis. Nächster
 Schritt ist deshalb P1 Task 12 (Mobilabnahme, fünf Punkte im Plan). Das
 braucht Handarbeit an einem echten Gerät.
 
-## Offen: was NICHT geprüft ist (Stand 03.09.2026)
+## Offen: was NICHT geprüft ist (Stand 05.09.2026)
 
 Der Frontend-Umbau und die sechs Feinschliffe sind **codeseitig fertig und
-maschinell grün** (Stand 05.09.2026: 260 Frontend-Tests, 303 Backend-Tests, Build und Lint
-sauber). Was fehlt, ist der Blick darauf. Dieser Abschnitt trennt bewusst,
+maschinell grün** (Stand 05.09.2026: 260 Frontend-Tests, **331** Backend-Tests,
+Build und Lint sauber – die 28 neuen kommen aus §5, siehe „Was FaSta wirklich
+liefert“). Was fehlt, ist der Blick darauf. Dieser Abschnitt trennt bewusst,
 **was gesehen wurde und was nicht** – die schwersten Fehler dieses Projekts
 waren allesamt nur im Browser sichtbar.
 
@@ -113,7 +129,58 @@ Von den sechs Punkten steht nur noch einer offen: **P6, die Mobilabnahme.**
 | ~~P3~~ | ~~**Angekommen-Seite**~~ | ✅ **gesehen 01.09.2026.** Grüne Fläche mit weißem Haken, „Du bist da. / Gleis 4“, Kacheln Puffer und Abfahrt, „Neue Reise“. **Nicht** gesehen: der Wagenkasten – er verlangt `istFernverkehr(zugAbName) && (wagen \|\| abschnitt)`, und die Wagennummer war leer. Die Bedingung ist im Code geprüft, der Kasten selbst nicht. |
 | ~~P4~~ | ~~**Globale Störmeldung**~~ | ✅ **gesehen 03.09.2026.** Das rote Band fährt von oben ein, bedeckt etwa ein Drittel und trägt Titel, Klartext und Zeitstempel – über dem Dashboard, ohne Seitenwechsel. Wartete seit dem 01.09. auf ein Live-Ereignis; statt weiter zu warten, wurde eines eingespeist (siehe „Wie P4 und P5 doch noch sichtbar wurden"). **Was damit NICHT belegt ist:** dass das Backend eine echte Änderung erkennt. Geprüft ist der Weg ab dem SSE-Strom. Der Test lief lokal – in Produktion war der Strom zu dem Zeitpunkt gar nicht erreichbar, siehe „Der Live-Strom war in Produktion nie erreichbar". |
 | ~~P5~~ | ~~**Störungsseite mit Verspätung**~~ | ✅ **gesehen 03.09.2026**, auf demselben Weg. Aus der Störungsseite ist inzwischen die Meldungsseite geworden; gesehen wurden beide Ereignistypen, der Zähler, der Verlauf und das Übernehmen. Einzelheiten unter „Meldungsseite". |
-| P6 | **Mobilabnahme am Gerät** | Unverändert offen: Berechtigungsdialog, GPS in der Halle, Ankunftserkennung, Bedienbarkeit mit Gepäck. |
+| P6 | **Mobilabnahme am Gerät** | Unverändert offen. Acht Punkte als Prüfliste direkt unter dieser Tabelle – **sie blockiert drei geratene Zahlen im Code**. |
+
+### Was an §5 (FaSta-Koordinaten) noch nicht geprüft ist (05.09.2026)
+
+Die Verankerung ist gegen **echte FaSta-Antworten** getestet (Hannover und
+Berlin als Fixtures im Repo), aber nie gegen einen **echten Routenabruf**. Der
+Unterschied ist derselbe wie überall in diesem Projekt: Maschinell grün heisst,
+dass die Bausteine stimmen – nicht, dass ein Reisender die richtige Auskunft
+liest.
+
+| # | Was offen ist | Warum es zählt |
+|---|---|---|
+| §5-A | **Kein echter Routenabruf.** Alle Tests speisen die Anlagen selbst ein. Niemand hat einen Stufe-3-Bahnhof über die laufende App abgefragt und den Text gelesen. | Die Kette Stationsdaten → `stationID` → FaSta → Verankerung → Textausgabe ist nur in Stücken belegt, nicht am Stück. |
+| §5-B | **Die Achsenableitung ist nicht abgesichert.** Ab zwei verankerten Bahnsteigen bestimmt deren Richtung, wo die *unverankerten* liegen. Kein Test prüft das Ergebnis – in den Fixtures sind entweder alle Bahnsteige verankert (Hannover, Berlin) oder nur einer (Unit-Tests). | Genau der gemischte Fall ist der Regelfall an mittelgrossen Bahnhöfen. **Zu schreiben:** ein Test mit zwei verankerten und zwei unverankerten Bahnsteigen, der die Lage der unverankerten gegen die Achse prüft. |
+| §5-C | **Der Kopfbahnhof bleibt falsch modelliert.** München (16 % Gleisbezug) und Frankfurt (36 %) benennen nur ihren S-Bahn-Teil. Stufe 3 nimmt weiter „genau eine Unterführung" an – dort treffen sich alle Bahnsteige am Querbahnsteig. | §5 löst das **nicht** und war nie dafür gedacht. Die Auskunft ist dort nicht schlechter als vorher, aber auch nicht richtig. Eigenes Thema. |
+| §5-D | **Die Textausgabe ist ungesehen.** Aus „ca. 10 m" werden jetzt Werte zwischen 5 und 35 m. Ob die Sätze damit noch plausibel klingen, hat niemand gelesen. | Eine Route, die „ca. 6 m" sagt, wo 30 m zu gehen sind, wäre schlechter als die alte Pauschale. |
+| §5-E | **`operationalResumeDate` liegt ungenutzt.** FaSta liefert bei defekten Anlagen ein Datum („wieder ab …"). | Eigener Nutzen für die barrierefreie Route, eigener Entwurf. Nicht Teil von §5. |
+| §5-F | **Verbindungsanlagen ausgelassen** (ToDo 10b). Anlagen, die zwei Bahnsteige nennen, sind die Querung selbst – 6 von 69 in Berlin. | Bewusst ausgelassen: Sie tragen nur *einen* Punkt, eine Verbindung braucht zwei. |
+
+**Was dagegen belegt ist:** Der Parser gegen alle fünf sondierten Vokabulare
+und beide Rohdaten-Fallen; die Verankerung gegen die echten Antworten von
+Hannover (6 Bahnsteige) und Berlin (Parkhäuser und Tram ziehen nichts); die
+Cache-Naht (derselbe gecachte Graph beantwortet zwei Anfragen verschieden,
+sobald der Aufzug ausfällt); und alle fünf Zeilen der Degradation.
+
+### Mobilabnahme: die Prüfliste (P6 / ToDo 3 / P1 Task 12)
+
+Der letzte offene Punkt der Sichtprüfung – und der einzige, der **Code
+blockiert**: Drei Zahlen im Repo sind begründete Schätzungen ohne Messung
+dahinter und warten auf dieses Gerät.
+
+**Vorbereitung:** `mkcert`-Zertifikate liegen in `frontend/.cert/` und schalten
+den Dev-Server auf HTTPS – ohne das gibt der Browser den Standort nicht heraus.
+
+| # | Was prüfen | Woran es scheitern kann | Was notieren |
+|---|---|---|---|
+| M1 | **Berechtigungsdialog beim ersten Aufruf** | Der Dialog erscheint auf iOS nur nach einer Nutzergeste; kommt er nicht, bleibt die Vorbelegung stumm leer statt zu erklären. | Erscheint er? Was steht drin? Was passiert bei „Ablehnen"? |
+| M2 | **Wiederkehrer ohne Dialog** | Beim zweiten Besuch darf nichts erneut fragen – tut es das doch, ist der Zustand nicht gespeichert (und *soll* er das? Die App hält bewusst nichts). | Verhalten beim zweiten Aufruf |
+| M3 | **GPS-Genauigkeit in der Bahnhofshalle** | Am 29.08. am Fenster gemessen: **±118 m**. In der Halle ist mehr zu erwarten. Ab ±2000 m verlangt die App Handeingabe. | Der tatsächliche Wert, drinnen **und** am Bahnsteig |
+| M4 | **Erkennungsradius** (`ERKENNUNG_RADIUS_M = 1000` in `routes/api.ts`) | Belegt am 31.08.: Von `52.84/13.81` liegt Eberswalde Hbf **1094 m** entfernt – 94 m zu weit, die Umkreissuche liefert nichts, die Vorbelegung bleibt leer. | Ab welcher Entfernung der richtige Bahnhof noch gefunden wird → **ToDo 3a entscheiden** |
+| M5 | **Ankunftserkennung am Gleis** | Sie schlägt vor, der Mensch bestätigt. Schlägt sie zu früh oder gar nicht vor, ist die Zeitschätzung daneben. | Wann der Vorschlag kommt, gemessen am tatsächlichen Ankommen |
+| M6 | **Automatische Ebenenwahl: Hilfe oder Bevormundung?** | Die Karte springt auf die Ebene des aktiven Schritts. Das kann entlasten – oder den Nutzer die Orientierung kosten, wenn er selbst blättern wollte. | Der subjektive Eindruck. Diese Frage hat keine maschinelle Antwort. |
+| M7 | **Bedienbarkeit mit Gepäck** | Trefferflächen, Daumenreichweite, Lesbarkeit in der Halle bei Gegenlicht. | Welche Elemente man nicht trifft |
+| M8 | **Teilen-Menü und Einfügen** (Reise-Import) | Belegt sind bisher nur DB Navigator und VBB, beide am Rechner eingefügt. Über das Teilen-Menü des Betriebssystems ist der Weg ungeprüft. | Welche App welchen Text liefert, und was der Parser daraus macht |
+
+**Die drei Zahlen, die auf diese Abnahme warten** (ToDo 15 und 3a):
+
+| Konstante | Wert | Wo | Was die Abnahme entscheidet |
+|---|---|---|---|
+| `ERKENNUNG_RADIUS_M` | 1000 m | `routes/api.ts` | M4 – reicht der Radius, oder braucht Eberswalde 1200 m? |
+| `ERKENNUNG_MAX_M` | 1000 m | Genauigkeitsbudget | M3 – ab welcher Ungenauigkeit die Vorbelegung schadet statt hilft |
+| `NOTBEHELF_TTL_MS` | 600000 (10 min) | `cache/lru.ts`, über `GRAPH_NOTBEHELF_TTL_MS` verstellbar | Wie schnell sich ein Bahnhof nach einer Overpass-Erholung erfängt |
 
 ### Nebenbefunde der Sichtprüfung (01.09.2026)
 
@@ -230,6 +297,7 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | ~~4b~~ | ~~**Doppeltes Bahnhofsnamen-Vokabular**~~ ✅ **erledigt 04.09.2026** | Die Vorsilben-/Nachsilbenliste stand im Frontend-Parser *und* in `core/bahnhofsname.ts`. Die Frontend-Normalisierung ist gefallen, die Auflösung liegt ganz im Backend (`d6150d9`). Der Bahnhof wandert weiterhin als **Suchtext** ins Formular, nicht als getroffene Wahl. |
 | ~~4c~~ | ~~**CSP-Header fehlt**~~ ✅ **erledigt 04.09.2026** | `3d8a842`. Die Quellen sind aus dem Code belegt statt geraten: Kartenkacheln, der SSE-Strom auf Fly.io, MapLibres Worker (`blob:`), lokale Schriften. Vercel Web Analytics lädt same-origin, braucht also keine Fremddomain. 7 Tests prüfen die `vercel.json` direkt. |
 | ~~4d~~ | ~~**Deprecation-Warnung `disableRequestLogging`**~~ ✅ **erledigt 04.09.2026** | `dcac4ca`, auf `logController` umgestellt (Fastify 6 entfernt die alte Option). Die sechs Datenschutztests liefen unverändert weiter – **kein** Zugriffsprotokoll, wie die Datenschutzerklärung zusagt. |
+| 4e | **Test für die Achsenableitung (§5-B)** | Ab zwei verankerten Bahnsteigen bestimmt deren Richtung, wo die *unverankerten* liegen. Kein Test prüft das Ergebnis: In den Fixtures sind entweder alle Bahnsteige verankert (Hannover, Berlin) oder nur einer (Unit-Tests). Gebraucht wird ein Fall mit zwei verankerten **und** zwei unverankerten – der Regelfall an mittelgrossen Bahnhöfen. Eine Stunde Arbeit. |
 | 5 | **Vercel: Framework-Preset steht auf „Services"** | Rückstand der `experimentalServices`-Erkennung beim `vercel link`. Die `vercel.json` überschreibt es, der Build ist nachweislich korrekt – kosmetisch, aber irreführend. Settings → Build & Deployment. |
 | 6 | **Vercel-Preview-Variable nur für `feat/mvp`** | `VITE_API_BASE` konnte nicht „für alle Preview-Zweige" gesetzt werden (CLI-Fehler in v53.1.0: der vorgeschlagene Befehl ist derselbe, der scheitert). Neue Zweige brauchen einen eigenen Eintrag oder das Dashboard. |
 
@@ -1984,7 +2052,9 @@ der Push auf `main`.** Das Backend folgt keinem Zweig; es wird weiterhin mit
 **Zuerst: Browsertest auf einem echten Gerät.** Alles Bisherige ist gegen
 Chrome am Rechner geprüft. Was ein Handy im Bahnhof zeigt – Teilen-Menü des
 Betriebssystems, Einfügen ins Textfeld, Trefferflächen mit Gepäck in der Hand
-– ist ungeprüft.
+– ist ungeprüft. Die acht Punkte stehen als Prüfliste unter „Mobilabnahme:
+die Prüfliste“; **drei geratene Zahlen im Code hängen daran** und lassen sich
+ohne diese Messung nicht entscheiden.
 
 Offene Punkte, nach Dringlichkeit (Stand 05.09.2026):
 
@@ -1998,9 +2068,12 @@ Offene Punkte, nach Dringlichkeit (Stand 05.09.2026):
    Aufrufer, viele Aufrufer summieren sich weiterhin.
 4. ~~**Die Deprecation-Warnung** zu `disableRequestLogging`~~ ✅ erledigt
    04.09.2026 (`dcac4ca`), auf `logController` umgestellt.
-5. ~~**§5 – FaSta-Koordinaten (ToDo 7b).**~~ ✅ **erledigt 05.09.2026.**
+5. ~~**§5 – FaSta-Koordinaten (ToDo 7b).**~~ ✅ **erledigt 05.09.2026, aber
+   noch nicht ausgeliefert und nie an einem echten Routenabruf gesehen.**
    Die Bahnsteige holen ihre Lage jetzt aus FaSta, wo FaSta sie benennt.
-   Siehe „Was FaSta wirklich liefert“.
+   Was noch aussteht, steht als Prüfliste unter „Was an §5 noch nicht geprüft
+   ist“ – vor allem: deployen, einen Stufe-3-Bahnhof abfragen und den Text
+   lesen. Ein Test fehlt benennbar (ToDo 4e).
 6. **Ersatz für die Wagenreihung** oder die bewusste Entscheidung, die
    Wagenposition fallen zu lassen. Solange beides aussteht, führt die
    Eingabemaske zwei Wagenfelder, die nichts bewirken.
