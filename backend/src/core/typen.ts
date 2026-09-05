@@ -152,6 +152,16 @@ export interface StationsInfo {
 }
 
 export interface FastaAnlage {
+  /**
+   * Stabile Identitaet der Anlage (FaSta `equipmentnumber`).
+   *
+   * Wird gebraucht, um den LIVE-Status einer Kante zuzuordnen, die im
+   * GECACHTEN Graphen steht. Ueber die Entfernung ginge das nicht: Im
+   * verankerten Synthesemodell sitzt der Kantenknoten auf dem
+   * Bahnsteigschwerpunkt, die Anlage an ihrem echten Ort - an Berlins 280 m
+   * langen Bahnsteigen bis zu ~140 m auseinander.
+   */
+  id: string;
   typ: 'AUFZUG' | 'ROLLTREPPE';
   lat: number;
   lon: number;
