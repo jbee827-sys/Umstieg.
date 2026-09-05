@@ -327,7 +327,7 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
             return ausGruppe;
           }
           const gebaut = await buendle(laufendeGraphbauten, bahnhofSchluessel, () =>
-            baueGraphEintrag(info, clients.overpass, req.log),
+            baueGraphEintrag(info, clients.overpass, clients.fasta, req.log),
           );
           // Frist nach Qualität: Ein Stufe-3-Notbehelf darf den Bahnhof nicht
           // einen Tag lang degradiert halten, nachdem Overpass sich erholt hat.
@@ -471,7 +471,8 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
         // ungenau macht. Gefragt wird den OSM-Graphen VOR dem Austausch –
         // danach kennt das Standardmodell beide.
         const fehlend = [gleisAn, gleisAb].filter((g) => !graph.gleise.includes(g));
-        // Anlagen weiterreichen, damit der Betriebsstatus auch im Rückfall gilt.
+        // Anlagen weiterreichen, damit auch der Rueckfallgraph verankert ist.
+        // Den Status legt wendeFastaAn oben schon auf der Kopie nach.
         graph = syntheseGraph(eintrag.info, fastaAnlagen);
         hinweise.push(
           fehlend.length === 1
@@ -528,6 +529,7 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
 async function baueGraphEintrag(
   info: StationsInfo,
   overpass: OverpassFn,
+  fasta: FastaFn,
   log: FastifyBaseLogger,
 ): Promise<GraphEintrag> {
   let grund = 'keine Koordinaten zum Bahnhof';
@@ -548,8 +550,40 @@ async function baueGraphEintrag(
     { degradation: 'kartendaten-fehlen', eva: info.eva, bahnhof: info.name, grund },
     'Rueckfall auf das Standardmodell',
   );
+  // §5: FaSta ist die einzige verbliebene Quelle mit echten Koordinaten – der
+  // `platforms`-Endpunkt fuehrt keine (ToDo 7a+). Gerufen wird NUR hier, im
+  // Stufe-3-Fall, und damit hoechstens einmal je Graphbau (Frist 10 min); der
+  // 5-Minuten-Clientcache liegt darunter.
+  //
+  // Was hier in den Cache geht, sind KOORDINATEN – die sind stabil, ein Aufzug
+  // wandert nicht. Der Betriebsstatus geht es nicht; den legt `wendeFastaAn`
+  // pro Anfrage auf einer Kopie nach.
+  let anlagen: FastaAnlage[] = [];
+  if (!info.stationID) {
+    // Ohne Bahnhofsnummer gar nicht erst fragen: Die EVA quittiert FaSta mit
+    // HTTP 200 und leerer Liste – nicht von „keine Aufzuege" zu unterscheiden.
+    log.warn(
+      { degradation: 'fasta-geometrie-fehlt', eva: info.eva, grund: 'keine stationID' },
+      'Standardmodell ohne FaSta-Koordinaten',
+    );
+  } else {
+    try {
+      anlagen = await fasta(info.stationID);
+    } catch (e) {
+      log.warn(
+        {
+          degradation: 'fasta-geometrie-fehlt',
+          eva: info.eva,
+          stationsnummer: info.stationID,
+          grund: String(e),
+        },
+        'Standardmodell ohne FaSta-Koordinaten',
+      );
+    }
+  }
+
   return {
-    graph: syntheseGraph(info),
+    graph: syntheseGraph(info, anlagen),
     info,
     hinweise: ['Kartendaten nicht verfügbar – Standardmodell mit ungefähren Angaben.'],
   };

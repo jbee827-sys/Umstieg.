@@ -263,3 +263,75 @@ describe('Zeile 6: SSE-Verbindung bricht ab', () => {
     expect(lebende.length).toBeGreaterThan(0);
   });
 });
+
+/**
+ * §5: FaSta liefert die einzigen echten Koordinaten, die diesem Modell noch
+ * bleiben - der `platforms`-Endpunkt fuehrt keine. Gerufen wird die Quelle
+ * NUR im Stufe-3-Fall und dort hoechstens einmal je Graphbau.
+ *
+ * Jede Zeile hier prueft dieselbe Linie wie die Tabelle oben: Ein Ausfall
+ * darf Genauigkeit kosten, aber niemals die Auskunft.
+ */
+describe('FaSta-Geometrie im Graphbau (§5)', () => {
+  const ohneOsm = vi.fn(async () => {
+    throw new Error('Overpass nicht erreichbar (Test)');
+  });
+
+  it('wird bei Stufe 3 gerufen - mit der Bahnhofsnummer, nicht der EVA', async () => {
+    const fasta = vi.fn(async () => [
+      {
+        id: 'a1', typ: 'AUFZUG' as const, lat: 52.0018, lon: 12.0,
+        status: 'ACTIVE' as const, beschreibung: 'zu Gleis 1/2',
+      },
+    ]);
+    const app = buildApp(macheClients({ overpass: ohneOsm, fasta }));
+    const res = await app.inject({ method: 'GET', url: ROUTE_URL });
+
+    expect(res.statusCode).toBe(200);
+    expect(fasta).toHaveBeenCalledWith('4711');
+  });
+
+  it('ohne Bahnhofsnummer wird gar nicht erst gefragt', async () => {
+    // Die EVA quittiert FaSta mit HTTP 200 und leerer Liste - das waere von
+    // "dieser Bahnhof hat keine Aufzuege" nicht zu unterscheiden.
+    const fasta = vi.fn(async () => []);
+    const app = buildApp(
+      macheClients({
+        overpass: ohneOsm,
+        fasta,
+        stations: {
+          holeStationsInfo: vi.fn(async () => ({ ...ministadt, stationID: undefined })),
+          sucheBahnhoefe: vi.fn(async () => []),
+          sucheBahnhoefeNahebei: vi.fn(async () => []),
+          ermittleGruppe: vi.fn(async (eva: string) => [eva]),
+        },
+      }),
+    );
+    const res = await app.inject({ method: 'GET', url: ROUTE_URL });
+
+    expect(res.statusCode, 'Degradieren statt ausfallen').toBe(200);
+    expect(fasta).not.toHaveBeenCalled();
+  });
+
+  it('ein FaSta-Ausfall kostet keine Route', async () => {
+    const fasta = vi.fn(async () => {
+      throw new Error('FaSta: HTTP 503');
+    });
+    const app = buildApp(macheClients({ overpass: ohneOsm, fasta }));
+    const res = await app.inject({ method: 'GET', url: ROUTE_URL });
+
+    expect(res.statusCode).toBe(200);
+    const ergebnis = res.json() as RouteErgebnis;
+    expect(ergebnis.stufe).toBe(3);
+    expect(ergebnis.schritte.length).toBeGreaterThan(0);
+  });
+
+  it('bei brauchbaren OSM-Daten wird FaSta fuer die Geometrie NICHT gerufen', async () => {
+    // Kostet sonst Quote fuer nichts: Stufe 1/2 hat ihre eigene Geometrie.
+    const fasta = vi.fn(async () => []);
+    const app = buildApp(macheClients({ fasta }));
+    await app.inject({ method: 'GET', url: ROUTE_URL });
+
+    expect(fasta).not.toHaveBeenCalled();
+  });
+});
