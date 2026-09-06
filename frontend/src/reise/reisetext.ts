@@ -254,8 +254,14 @@ function analysiere(zeile: string): Fakten {
     // stehen. Ohne diesen Schritt hiesse der Bahnhof „Berlin Hbf ( )".
     .replace(/\(\s*\)/g, ' ')
     .replace(/\s+/g, ' ')
-    .replace(/^[\s,;:.()\-–—]+/, '')
-    .replace(/[\s,;:.()\-–—]+$/, '')
+    // Runde Klammern gehoeren NICHT in die Schlussbereinigung: Die VBB haengt
+    // die Stadt als „… (Berlin)" an und laesst das Gleis folgen. Nach dem
+    // Herausnehmen der Gleisangabe endet die Zeile auf „…(Berlin),", und eine
+    // Klasse mit „)" darin schnitt „)," als Ganzes ab - der Name kam
+    // unbalanciert heraus und die Bahnhofssuche fand nichts mehr. Das leere
+    // Klammerpaar aus „(Gleis 12)" ist eine Zeile darueber schon weg.
+    .replace(/^[\s,;:.\-–—]+/, '')
+    .replace(/[\s,;:.\-–—]+$/, '')
     .trim()
 
   const { zug, richtung } = zugInfo(zeile)

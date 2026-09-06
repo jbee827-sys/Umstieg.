@@ -45,7 +45,23 @@ function maskiere(wort: string): string {
 }
 
 const PRAEFIX = new RegExp(`^(?:${PRAEFIXE.map(maskiere).join('|')})\\s+`, 'i');
-const NACHSILBE = new RegExp(`[,\\s]+(?:${NACHSILBEN.map(maskiere).join('|')})\\.?$`, 'i');
+/**
+ * Nachsilbe am Ende - oder VOR einem Klammerzusatz.
+ *
+ * Die VBB schreibt die Stadt in runde Klammern dahinter: "S+U Gesundbrunnen
+ * Bhf (Berlin)". Nur auf `$` verankert lief die Regel daran vorbei, und das
+ * "Bhf" blieb stehen. Gemessen am 06.09.2026 gegen die echte Suche ist genau
+ * das der Unterschied: "Gesundbrunnen Bhf (Berlin)" -> NICHTS,
+ * "Gesundbrunnen (Berlin)" -> Berlin Gesundbrunnen.
+ *
+ * Der Zusatz wird dabei BEHALTEN (Gruppe 1) und nicht weggeworfen: Er
+ * unterscheidet die Staedte. "Hauptbahnhof (Berlin)" trifft Berlin Hbf,
+ * "Hauptbahnhof" allein liefert 24 Treffer, angefuehrt von Muenchen.
+ */
+const NACHSILBE = new RegExp(
+  `[,\\s]+(?:${NACHSILBEN.map(maskiere).join('|')})\\.?(\\s*\\([^)]*\\))?$`,
+  'i',
+);
 /** Klammerzusatz der Verbuende: "… [Gleis 1-8]" - kein Gleis, sondern Name. */
 const KLAMMERZUSATZ = /\s*\[[^\]]*\]/g;
 
@@ -63,8 +79,8 @@ export function namensvarianten(roh: string): string[] {
   const ohneKlammer = start.replace(KLAMMERZUSATZ, '');
   hinzu(ohneKlammer);
   hinzu(ohneKlammer.replace(PRAEFIX, ''));
-  hinzu(ohneKlammer.replace(NACHSILBE, ''));
-  hinzu(ohneKlammer.replace(PRAEFIX, '').replace(NACHSILBE, ''));
+  hinzu(ohneKlammer.replace(NACHSILBE, '$1'));
+  hinzu(ohneKlammer.replace(PRAEFIX, '').replace(NACHSILBE, '$1'));
 
   return varianten;
 }

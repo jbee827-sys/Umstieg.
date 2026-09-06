@@ -58,6 +58,34 @@ describe('namensvarianten', () => {
     );
   });
 
+  /**
+   * Die VBB haengt die Stadt in RUNDEN Klammern an: "S+U Gesundbrunnen Bhf
+   * (Berlin)". Gemessen am 06.09.2026 gegen die echte Suche:
+   *
+   *   "S+U Gesundbrunnen Bhf (Berlin)" -> NICHTS
+   *   "Gesundbrunnen Bhf (Berlin)"     -> NICHTS
+   *   "Gesundbrunnen (Berlin)"         -> Berlin Gesundbrunnen (8011102)
+   *
+   * Es ist also allein das "Bhf" VOR der Klammer, das die Suche abwuergt -
+   * die Klammer selbst vertraegt sie. Die Nachsilbenregel war aber auf das
+   * Zeilenende verankert und lief deshalb an einem Klammerzusatz vorbei.
+   */
+  it('schneidet die Nachsilbe auch dann ab, wenn ein Klammerzusatz folgt', () => {
+    expect(namensvarianten('S+U Gesundbrunnen Bhf (Berlin)')).toContain('Gesundbrunnen (Berlin)');
+  });
+
+  /**
+   * Die Stadt MUSS dabei stehenbleiben. Gemessen am 06.09.2026:
+   * "Hauptbahnhof (Berlin)" -> Berlin Hbf, "Hauptbahnhof" allein -> 24
+   * Treffer, angefuehrt von Muenchen Hbf. Den Zusatz wegzuwerfen waere also
+   * nicht bloss unnoetig, sondern eine falsche Auskunft.
+   */
+  it('wirft den Klammerzusatz nicht weg - er unterscheidet die Staedte', () => {
+    for (const v of namensvarianten('S+U Gesundbrunnen Bhf (Berlin)')) {
+      expect(v).toMatch(/\(Berlin\)/);
+    }
+  });
+
   it('liefert keine Dubletten und nichts Leeres', () => {
     const v = namensvarianten('Berlin Hbf');
     expect(new Set(v).size).toBe(v.length);
