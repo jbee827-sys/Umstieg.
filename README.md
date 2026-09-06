@@ -330,6 +330,9 @@ die Ursachenanalyse in [`docs/2026-08-31-design-abgleich.md`](./docs/2026-08-31-
 | 12 | **Ticket-PDF-Import** | Im Prototyp als UI-Flow vorhanden, laut Konzept Stufe 2. Backend fehlt. |
 | 13 | **Repo-Sichtbarkeit** | Repo ist öffentlich. Inhaltlich unbedenklich (Historie mehrfach auf Secrets geprüft, zuletzt 28.08.2026 über alle Blobs – 0 Treffer), aber bewusst zu entscheiden. |
 | ~~14~~ | ~~**Frontend kann keine Komponenten testen**~~ ✅ **erledigt 31.08.2026** | jsdom und Testing Library sind eingerichtet (`vitest.config.ts`, `src/test-setup.ts`). Die Komponententests waren die Voraussetzung für den Frontend-Umbau. |
+| 17 | **RIS::Stations hat keinen Rückfallweg** | Die einzige Quelle ohne Zeile in der Degradationstabelle. Fällt sie aus, ist die App tot – und über `stationID` hängt FaSta und damit §5 daran. Kleinste wirksame Maßnahme: StaDa ist bereits abonniert und ungenutzt und führt dieselbe Bahnhofsnummer. Siehe „ISR verworfen", Abschnitt „Was das über RIS::Stations sagt". |
+| 18 | **OpenStation auswerten** | Offener NeTEx-Datensatz der DB InfraGO, kein Schlüssel: `Level` gegen den Ebenensprung, Aufzüge + SIRI FM als FaSta-Gegenstück, 65.007 Wegekanten als Gegenprobe zu OSM. **Löst §4.3 nicht** – nur 10 % der Bahnsteige tragen Koordinaten, die Kanten keine Länge. Zahlen und Grenzen im Abschnitt „ISR verworfen". |
+| ~~19~~ | ~~**ISR Data Service beziehen**~~ ⛔ **entschieden dagegen, 06.09.2026** | Zu teuer (1.846 €/Jahr) – und ohnehin nur für Zugangsberechtigte nach ERegG § 1 Abs. 12. Der vorhandene Schlüssel deckt es nachweislich nicht ab. **Nicht erneut aufmachen.** |
 | 15 | **Zwei geratene Schwellenwerte** | `ERKENNUNG_MAX_M = 1000` (Genauigkeitsbudget der Bahnhofserkennung) und `NOTBEHELF_TTL_MS = 600000` (Cache-Frist für Stufe 3; über `GRAPH_NOTBEHELF_TTL_MS` ohne Neubau verstellbar) sind begründete Startwerte ohne Messung dahinter. Erst die Mobilabnahme zeigt die Richtung. *Der dritte Wert, `MINDEST_SCHRITT_MS = 8000` (Anzeigedauer je Schritt), ist am 02.09.2026 entfallen: Die Schrittanzeige rückt nicht mehr nach Zeit vor, damit gibt es keine Anzeigedauer mehr zu raten.* |
 
 ### P1 – Standort & Live-Navigation
@@ -2085,6 +2088,87 @@ falsch herum. Ein Parser scheitert laut („nicht erkannt"), ein Sprachmodell
 leise und plausibel – es schreibt bereitwillig ein Gleis, das im Text nie
 stand. Mit Gepäck und zwölf Minuten Umsteigezeit ist ein selbstbewusst
 falsches Gleis schlimmer als gar keins.
+
+## ISR verworfen – und was die Suche stattdessen fand (06.09.2026)
+
+**Entscheidung: ISR Data Service wird nicht bezogen. Zu teuer.** Der Eintrag
+steht hier, damit die Frage nicht in einem halben Jahr erneut aufgemacht wird.
+
+**Was ISR ist:** Das Infrastrukturregister der DB InfraGO – Bahnsteige,
+Betriebsstellen, Streckenabschnitte und Tunnel des Schienennetzes. Es
+beschreibt das Netz aus Betreibersicht, für Unternehmen, die Trassen planen.
+Nicht den Fußweg eines Reisenden durch eine Halle.
+
+**Der Schlüssel deckt es nicht ab.** Das ist geprüft, nicht vermutet: Gegen
+`db-api-marketplace/apis/isr/v5` antworten genau die vier dokumentierten
+Ressourcen mit **401 „Cannot find valid subscription"**, jeder erfundene Pfad
+mit **404 „No resources match requested URI"**. Die beiden Antwortarten
+trennen sauber „existiert, nicht abonniert" von „gibt es nicht" – und
+widerlegen die Annahme, ein Schlüsselpaar decke alle Marketplace-Produkte ab.
+Für RIS::Stations, Timetables und FaSta gilt sie, für ISR nicht.
+
+| Bedingung | Wert |
+|---|---|
+| Preis | 1.846 € pro Jahr je Zugangsberechtigtem |
+| Bezugsberechtigt | **nur „Zugangsberechtigte nach ERegG § 1 Abs. 12"** – Verkehrsunternehmen und Zugangsnachfrager |
+| Ratenlimit | 1.000 Abfragen/Tag, 10/s |
+| Koordinaten in `/bahnsteige` | **undokumentiert**, ohne Subscription nicht prüfbar |
+
+Die Berechtigung wiegt schwerer als der Preis: Eine Wegeführungs-App ist kein
+Zugangsberechtigter. Inhaltlich wäre ohnehin nur `/bahnsteige` in der Nähe –
+`/betriebsstellen` doppelt RIS::Stations, die anderen beiden betreffen die
+freie Strecke. **Nichts im Repo referenziert ISR; es fehlt der App nichts.**
+
+### OpenStation – dieselbe Suche, ein besserer Fund
+
+DB InfraGO veröffentlicht die Infrastrukturdaten der Personenbahnhöfe **offen
+und ohne Schlüssel** nach NeTEx/SIRI (TSI-PRM-Pflichtdatensatz):
+
+```
+https://bahnhof.de/daten/netex     # HTTP 200, 291 MB XML, täglich neu
+```
+
+Am 06.09.2026 heruntergeladen und ausgezählt – nicht der Produktseite geglaubt:
+
+| Element | Anzahl |
+|---|---|
+| `SitePathLink` (Wegekanten mit `From`/`To`) | **65.007** |
+| `Quay` (Bahnsteige, z. B. „Bahnsteig Gleis 1") | 21.794 |
+| `Level` | 19.989 |
+| `AccessibilityAssessment` / `WheelchairAccess` / `TactileGuidance` | je 19.985 |
+| `LiftEquipment` / `RampEquipment` / `EscalatorEquipment` | 7.598 / 6.991 / 1.749 |
+| `AccessSpace` / `Entrance` | 10.692 / 4.938 |
+
+**Der Haken ist derselbe wie bei §4.3, und er steht hier vor dem Nutzen:** Die
+Geometrie ist dünn. Nur **2.245 von 21.794 Bahnsteigen** tragen einen
+`Centroid` (10 %), bei `StopPlace` sind es 1.263 von 5.393. `SitePathLink`
+führt **weder `Distance` noch `LineString` noch `TransferDuration`** – reine
+Topologie, was mit was verbunden ist, ohne Länge und ohne Lage.
+
+**OpenStation entsperrt §4.3 also nicht.** Drei Stoßrichtungen bleiben, in
+denen es trotzdem trägt:
+
+1. **`Level` als zweite Quelle gegen den Ebenensprung** – genau der Fehler vom
+   01.09., wo eine geratene Ebene 0 auf −2 traf. Hier stehen 19.989 belegte
+   Ebenenangaben.
+2. **Aufzüge und Rolltreppen als Bestandsliste**, dazu **SIRI FM** für den
+   Echtzeitstatus – ein FaSta-Gegenstück ohne Schlüssel und **ohne die
+   `stationID`-Abhängigkeit**, die derzeit der einzige Weg zu FaSta ist.
+3. **Die Wegetopologie als Gegenprobe zu OSM** – 65.007 Kanten, an denen sich
+   prüfen ließe, ob der gebaute Graph Verbindungen erfindet oder übersieht.
+
+Dokumentation: <https://github.com/dbinfrago/openstation-docs>
+
+### Was das über RIS::Stations sagt
+
+Bei der Analyse fiel nebenbei auf, was die Degradationstabelle des Konzepts
+(Abschnitt 8) **nicht** enthält: eine Zeile für RIS::Stations. Sechs Ausfälle
+sind dort geregelt – Overpass, Timetables, FaSta, fehlendes Gleis,
+Wagenreihung, SSE. RIS::Stations steht in keiner. Der Code bestätigt es: Ein
+Fehler aus `holeStationsInfo` wird in `routes/api.ts` durchgereicht, nur
+fehlende Zugangsdaten geben ein sauberes 503. **Es ist die einzige Quelle ohne
+Rückfallweg** – und über `stationID` hängt auch FaSta und damit §5 daran.
+Aufgenommen als ToDo 17.
 
 ## Rechtliches
 
