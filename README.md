@@ -16,7 +16,38 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 05.09.2026)
+## Hier weitermachen (Stand 06.09.2026)
+
+> **Am 06.09. sind der Reise-Import für DB Navigator und VBB durchgezogen und
+> ISR verworfen worden.** Alles ausgeliefert, `main` und `feat/mvp` stehen
+> gleich, Fly.io und Vercel sind auf dem Stand. Drei Fixes:
+>
+> 1. **Bahnhofsnamen mit Klammerzusatz** (`7d9d352`) – der gemeldete Fehler.
+>    Zwei Fehler übereinander: Der Parser fraß die schließende Klammer
+>    („S+U Gesundbrunnen Bhf (Berlin" – unbalanciert), und die Nachsilbenregel
+>    war auf `$` verankert und lief am Klammerzusatz vorbei. Ohne beides keine
+>    Navigation.
+> 2. **Störwörter an beiden Enden** (`99570b1`) – der generische Ersatz für
+>    zwei einseitig gebundene Listen, deren Asymmetrie laufend neue
+>    Einzelfälle erzeugte. Sechs belegte Lücken zu, gegen die Produktion
+>    geprüft.
+> 3. **ISR Data Service verworfen** (`440392b`) – zu teuer und ohnehin nur für
+>    Zugangsberechtigte. Dabei OpenStation gefunden: offen, ohne Schlüssel,
+>    65.007 Wegekanten – löst §4.3 aber **nicht** (nur 10 % der Bahnsteige
+>    tragen Koordinaten). ToDo 17/18.
+>
+> **Nächster Schritt: ToDo 20, das VMV-Format.** Der Parser erkennt es gar
+> nicht; die drei Blocker sind isoliert und stehen dort. Der Zuschnitt ist
+> entschieden – **Bus-Etappen bleiben draußen, der Anspruch endet am letzten
+> Bahnhalt** –, damit schrumpft die Aufgabe auf diese drei Punkte.
+>
+> **Unverändert offen und weiterhin der einzige Blocker für Code:** die
+> Mobilabnahme am Gerät (P6 / ToDo 3). Sie hält drei geratene Zahlen fest –
+> `ERKENNUNG_RADIUS_M`, `ERKENNUNG_MAX_M`, `NOTBEHELF_TTL_MS`.
+
+<details>
+<summary>Vorheriger Stand (05.09.2026)</summary>
+
 
 > **Am 04./05.09. sind fünf Vorhaben gefallen** – die enge Fassung von
 > Konzeptlücke §4.3, die Degradationstabelle (MVP-Task 17), die getrennten
@@ -97,6 +128,8 @@ Sichtprüfung am Desktop ist erfolgt (Abschnitte „Abnahme im Browser" und
 GPS-Genauigkeit in der Bahnhofshalle, Ankunftserkennung am Gleis. Nächster
 Schritt ist deshalb P1 Task 12 (Mobilabnahme, fünf Punkte im Plan). Das
 braucht Handarbeit an einem echten Gerät.
+
+</details>
 
 ## Offen: was NICHT geprüft ist (Stand 05.09.2026)
 
@@ -297,6 +330,7 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | ~~4b~~ | ~~**Doppeltes Bahnhofsnamen-Vokabular**~~ ✅ **erledigt 04.09.2026** | Die Vorsilben-/Nachsilbenliste stand im Frontend-Parser *und* in `core/bahnhofsname.ts`. Die Frontend-Normalisierung ist gefallen, die Auflösung liegt ganz im Backend (`d6150d9`). Der Bahnhof wandert weiterhin als **Suchtext** ins Formular, nicht als getroffene Wahl. |
 | ~~4c~~ | ~~**CSP-Header fehlt**~~ ✅ **erledigt 04.09.2026** | `3d8a842`. Die Quellen sind aus dem Code belegt statt geraten: Kartenkacheln, der SSE-Strom auf Fly.io, MapLibres Worker (`blob:`), lokale Schriften. Vercel Web Analytics lädt same-origin, braucht also keine Fremddomain. 7 Tests prüfen die `vercel.json` direkt. |
 | ~~4d~~ | ~~**Deprecation-Warnung `disableRequestLogging`**~~ ✅ **erledigt 04.09.2026** | `dcac4ca`, auf `logController` umgestellt (Fastify 6 entfernt die alte Option). Die sechs Datenschutztests liefen unverändert weiter – **kein** Zugriffsprotokoll, wie die Datenschutzerklärung zusagt. |
+| 21 | **Leerzeichen vor dem Komma nach der eckigen Klammer** | `analysiere()` in `frontend/src/reise/reisetext.ts` ersetzt den Klammerzusatz durch `' '`, das Backend (`KLAMMERZUSATZ` in `core/bahnhofsname.ts`) durch `''`. Aus „S+U Hauptbahnhof [Gleis 1-8], Berlin" wird deshalb **„S+U Hauptbahnhof , Berlin"** – mit Leerzeichen vor dem Komma. Am 06.09.2026 nebenbei aufgefallen, als das VMV-Format zerlegt wurde. Schadet der Suche derzeit **nicht** (die Störwort-Schälung räumt es mit weg), landet aber sichtbar als Suchtext im Formular. Kosmetisch, eine Zeile. |
 | 4e | **Test für die Achsenableitung (§5-B)** | Ab zwei verankerten Bahnsteigen bestimmt deren Richtung, wo die *unverankerten* liegen. Kein Test prüft das Ergebnis: In den Fixtures sind entweder alle Bahnsteige verankert (Hannover, Berlin) oder nur einer (Unit-Tests). Gebraucht wird ein Fall mit zwei verankerten **und** zwei unverankerten – der Regelfall an mittelgrossen Bahnhöfen. Eine Stunde Arbeit. |
 | 5 | **Vercel: Framework-Preset steht auf „Services"** | Rückstand der `experimentalServices`-Erkennung beim `vercel link`. Die `vercel.json` überschreibt es, der Build ist nachweislich korrekt – kosmetisch, aber irreführend. Settings → Build & Deployment. |
 | 6 | **Vercel-Preview-Variable nur für `feat/mvp`** | `VITE_API_BASE` konnte nicht „für alle Preview-Zweige" gesetzt werden (CLI-Fehler in v53.1.0: der vorgeschlagene Befehl ist derselbe, der scheitert). Neue Zweige brauchen einen eigenen Eintrag oder das Dashboard. |
