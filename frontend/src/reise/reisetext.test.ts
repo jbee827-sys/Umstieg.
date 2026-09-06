@@ -356,6 +356,35 @@ describe('parseReise: VBB-App', () => {
     expect(parseReise(VBB_ECHT)!.abschnitte).toHaveLength(1)
   })
 
+  /**
+   * Die VBB haengt die Stadt in RUNDEN Klammern an und laesst das Gleis
+   * dahinter folgen: „… (Berlin), Gleis 6". Nach dem Herausnehmen der
+   * Gleisangabe endet die Zeile auf „…(Berlin)," - und die Schlussbereinigung
+   * schnitt `),` als Ganzes ab, weil die runde Klammer in ihrer Zeichenklasse
+   * stand. Herausgekommen ist ein unbalancierter Name, mit dem die
+   * Bahnhofssuche nichts anfangen kann und die Navigation nicht startet.
+   *
+   * Runde Klammern gehoeren zum Namen („Frankfurt(Main)Hbf"), eckige nicht -
+   * dieser Unterschied stand schon im Parser und wurde hier verletzt.
+   */
+  it('behaelt die schliessende Klammer eines Namenszusatzes', () => {
+    const r = parseReise(`16:53 - Abfahrt Eberswalde, Hauptbahnhof, Gleis 4
+      mit RE3 Richtung Luckenwalde, Bahnhof
+17:21 - Ankunft S+U Gesundbrunnen Bhf (Berlin), Gleis 6`)!
+    expect(r.abschnitte[0].anBahnhof).toBe('S+U Gesundbrunnen Bhf (Berlin)')
+  })
+
+  // Die Gegenprobe: Das Gleis darf trotzdem sauber herausfallen - der Zusatz
+  // ist Name, die Angabe dahinter ist das Gleis.
+  it('liest das Gleis hinter einem Klammerzusatz weiterhin richtig', () => {
+    const r = parseReise(`17:35 - Abfahrt S+U Gesundbrunnen Bhf (Berlin), Gleis 3
+      mit S41 Richtung S Königs Wusterhausen Bhf
+17:55 - Ankunft S Treptower Park (Berlin), Gleis 4`)!
+    expect(r.abschnitte[0].abGleis).toBe('3')
+    expect(r.abschnitte[0].anGleis).toBe('4')
+    expect(r.abschnitte[0].anBahnhof).toBe('S Treptower Park (Berlin)')
+  })
+
   it('leitet aus zwei Abschnitten den Umstieg ab', () => {
     const r = parseReise(`Ich habe diese Verbindung in VBB gefunden:
 
