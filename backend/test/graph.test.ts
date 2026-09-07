@@ -242,3 +242,71 @@ describe('POI-Knoten fuer die Variante mit-stopp', () => {
     expect([...graph.knoten.values()].filter((k) => k.poi)).toHaveLength(0);
   });
 });
+
+/**
+ * Regression (gemeldet 07.09.2026): Braunschweig Hbf fand keine barrierefreie
+ * Route, obwohl vier Aufzuege kartiert und laut FaSta alle ACTIVE sind.
+ *
+ * Die Aufzuege waren nie das Problem - alle vier stehen als barrierefreie
+ * Kanten im Graphen. Der Bahnsteig 1/2 kam nur nicht an seinen heran: In OSM
+ * haengt dessen Aufzugausstieg auf Ebene 1 an KEINEM Wegenetz, er bildet mit
+ * zwei Stummelknoten eine eigene Insel. Die Anbindung der Bahnsteigpunkte
+ * waehlt genau EINEN naechsten Wegknoten (`ANBINDUNG_MAX_M`), und das war
+ * mit 2 m ein anderer - der Aufzug in 8 m fiel heraus.
+ *
+ * Die drei uebrigen Bahnsteige funktionierten nur, weil OSM ihre Aufzuege
+ * zufaellig mit dem Bahnsteigweg verbindet. Auf dieses Glueck darf sich eine
+ * barrierefreie Auskunft nicht verlassen.
+ */
+describe('Verwaiste Aufzugausstiege (Braunschweig Hbf)', () => {
+  const bs = baueGraph(ladeFixture('overpass/braunschweig-hbf'));
+
+  /** Knotenmengen, die ueber barrierefreie Kanten zusammenhaengen. */
+  function bfKomponente(graph: StationGraph, start: string): Set<string> {
+    const gesehen = new Set<string>([start]);
+    const stapel = [start];
+    while (stapel.length > 0) {
+      const id = stapel.pop()!;
+      for (const kante of graph.adjazenz.get(id) ?? []) {
+        if (!kante.barrierefrei) continue;
+        const nachbar = kante.von === id ? kante.nach : kante.von;
+        if (!gesehen.has(nachbar)) {
+          gesehen.add(nachbar);
+          stapel.push(nachbar);
+        }
+      }
+    }
+    return gesehen;
+  }
+
+  it('bindet den Aufzug an Bahnsteig 1/2 an', () => {
+    // n4061917638 ist der Aufzug 8 m neben der Mitte von Gleis 1
+    // (FaSta-Anlage 10453807, ACTIVE). Ohne Anbindung ist er unerreichbar.
+    const vonGleis1 = bfKomponente(bs, 'gleis1:mitte');
+    expect(vonGleis1.has('n4061917638@1')).toBe(true);
+  });
+
+  it('findet eine barrierefreie Route von Gleis 1 nach Gleis 5', () => {
+    const pfad = berechneRoute(bs, 'gleis1:mitte', 'gleis5:mitte', 'barrierefrei', 'normal');
+    expect(pfad).not.toBeNull();
+  });
+
+  it('laesst keinen Bahnsteig ohne Aufzug zurueck', () => {
+    // Die Richtung ist entscheidend. Vom verwaisten Aufzug AUS kommt man
+    // sehr wohl an Bahnsteige - ueber Ebene 0 zu den Gleisen 3 bis 8. Die
+    // Sperre wirkt nur andersherum: Bahnsteig 1/2 erreicht keinen Aufzug.
+    // Ein Bahnsteig auf Ebene 1, von dem aus barrierefrei kein Aufzug zu
+    // erreichen ist, ist eine Sackgasse - dorthin kommt niemand im Rollstuhl.
+    const ohneAufzug: string[] = [];
+    for (const gleis of bs.gleise) {
+      const id = `gleis${gleis}:mitte`;
+      if (!bs.knoten.has(id)) continue;
+      const komp = bfKomponente(bs, id);
+      const hatAufzug = [...komp].some((k) =>
+        (bs.adjazenz.get(k) ?? []).some((kante) => kante.typ === 'aufzug'),
+      );
+      if (!hatAufzug) ohneAufzug.push(id);
+    }
+    expect(ohneAufzug).toEqual([]);
+  });
+});

@@ -13,6 +13,22 @@ const ERDRADIUS_M = 6_371_000;
 // angebunden – aber nur, wenn er nah genug ist (sonst Datenlücke).
 const ANBINDUNG_MAX_M = 30;
 
+/**
+ * Umkreis, in dem ein verwaister Aufzugausstieg an einen Bahnsteig
+ * angeschlossen wird (siehe `verbindeVerwaisteAufzuege`).
+ *
+ * Bewusst VIEL enger als `ANBINDUNG_MAX_M`. Die normale Anbindung verbindet
+ * einen Bahnsteigpunkt mit dem Wegenetz, das ohnehin zu ihm gehoert; hier
+ * wird eine Luecke in Fremddaten ueberbrueckt, und ein falsch verbundener
+ * Aufzug ist auf der barrierefreien Route der teuerste denkbare Fehler: Er
+ * schickt jemanden im Rollstuhl zu einem Lift, den er nicht erreicht. Das
+ * ist schlechter als die ehrliche Absage "keine barrierefreie Route".
+ *
+ * 10 m ist die Entscheidung vom 07.09.2026, getroffen an Braunschweig Hbf
+ * (Abstand dort: 8 m). Kein gemessener Wert - eine bewusst knappe Grenze.
+ */
+const VERWAIST_MAX_M = 10;
+
 export function haversineM(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const rad = Math.PI / 180;
   const dLat = (lat2 - lat1) * rad;
@@ -494,8 +510,116 @@ export function baueGraph(osm: OverpassAntwort): StationGraph {
     a.localeCompare(b, 'de', { numeric: true, sensitivity: 'base' }),
   );
 
+  // --- Pass F: verwaiste Aufzugausstiege an ihren Bahnsteig anschliessen ---
+  verbindeVerwaisteAufzuege(knoten, adjazenz, fuegeKanteHinzu);
+
   // Stufe wird erst durch die Klassifikation (Task 5) gesetzt – Start: 3.
   return { knoten, adjazenz, stufe: 3, gleise };
+}
+
+/**
+ * Schliesst Aufzugausstiege an, die in OSM an keinem Wegenetz haengen.
+ *
+ * Der Fall, an dem es auffiel (Braunschweig Hbf, gemeldet 07.09.2026): Vier
+ * Aufzuege kartiert, laut FaSta alle ACTIVE, und trotzdem keine
+ * barrierefreie Route. Drei davon verbindet OSM mit dem Bahnsteigweg, den
+ * vierten nicht - dessen Ausstieg auf Ebene 1 bildet mit zwei Stummelknoten
+ * eine eigene Insel, 8 m neben der Mitte von Gleis 1. Die normale Anbindung
+ * konnte ihn nicht auffangen: Sie waehlt je Bahnsteigpunkt genau EINEN
+ * naechsten Wegknoten, und das war mit 2 m ein anderer.
+ *
+ * Dass die anderen drei funktionierten, war Glueck in Fremddaten. Darauf
+ * darf sich eine barrierefreie Auskunft nicht verlassen.
+ *
+ * **Die Regel ist bewusst schmal**, wie die gegen den Ebenensprung. Sie
+ * greift nur, wenn alle drei Bedingungen zutreffen:
+ *
+ * 1. Die barrierefreie Insel enthaelt einen Aufzug und KEINEN Bahnsteig.
+ *    Ein Aufzugausstieg, von dem aus zu Fuss nichts zu erreichen ist, ist
+ *    beweisbar kaputte Datenlage - er fuehrt nirgendwohin.
+ * 2. Ein Bahnsteigpunkt derselben Ebene liegt naeher als `VERWAIST_MAX_M`.
+ * 3. **Alle** Bahnsteigpunkte in diesem Umkreis gehoeren zu EINER Insel.
+ *    Liegen zwei verschiedene in Reichweite, ist nicht entscheidbar, welchem
+ *    der Aufzug dient - dann bleibt es bei der ehrlichen Absage.
+ *
+ * Punkt 3 zaehlt Inseln, nicht Gleisnummern: Ein Bahnsteig traegt oft zwei
+ * Gleise (Braunschweig: "1;2"), und die sind derselbe begehbare Ort.
+ */
+function verbindeVerwaisteAufzuege(
+  knoten: Map<string, GraphKnoten>,
+  adjazenz: Map<string, GraphKante[]>,
+  fuegeKanteHinzu: (kante: GraphKante) => void,
+): void {
+  // Inseln ueber barrierefreie Kanten - aber OHNE die Aufzuege selbst.
+  //
+  // Das ist der Kern: Wer den Aufzug mitzaehlt, faehrt vom verwaisten
+  // Ausstieg hinunter auf Ebene 0, findet dort Bahnsteige und haelt die
+  // Insel faelschlich fuer versorgt. Gefragt ist aber, was der Ausstieg auf
+  // SEINER Ebene zu Fuss erreicht - und das ist bei Braunschweig nichts.
+  //
+  // `status` bleibt aussen vor: Der ist zur Bauzeit unbekannt und kommt erst
+  // je Anfrage aus FaSta dazu.
+  const insel = new Map<string, number>();
+  let naechsteInsel = 0;
+  for (const id of knoten.keys()) {
+    if (insel.has(id)) continue;
+    const nummer = naechsteInsel++;
+    const stapel = [id];
+    insel.set(id, nummer);
+    while (stapel.length > 0) {
+      const aktuell = stapel.pop()!;
+      for (const kante of adjazenz.get(aktuell) ?? []) {
+        if (!kante.barrierefrei || kante.typ === 'aufzug') continue;
+        const nachbar = kante.von === aktuell ? kante.nach : kante.von;
+        if (insel.has(nachbar)) continue;
+        insel.set(nachbar, nummer);
+        stapel.push(nachbar);
+      }
+    }
+  }
+
+  const hatAufzug = new Set<number>();
+  const hatBahnsteig = new Set<number>();
+  for (const [id, nummer] of insel) {
+    if (id.startsWith('gleis')) hatBahnsteig.add(nummer);
+    if ((adjazenz.get(id) ?? []).some((k) => k.typ === 'aufzug')) hatAufzug.add(nummer);
+  }
+
+  // Erst sammeln, dann verbinden: Eine Kante waehrend des Laufs zu ziehen
+  // wuerde die Inselnummern verfaelschen, auf denen die naechste Entscheidung
+  // beruht.
+  const neu: GraphKante[] = [];
+  for (const [id, nummer] of insel) {
+    if (!hatAufzug.has(nummer) || hatBahnsteig.has(nummer)) continue;
+    const ausstieg = knoten.get(id);
+    if (!ausstieg) continue;
+
+    let naechster: GraphKnoten | null = null;
+    let naechsteDist = Number.POSITIVE_INFINITY;
+    const inseln = new Set<number>();
+    for (const kandidat of knoten.values()) {
+      if (!kandidat.id.startsWith('gleis')) continue;
+      if (kandidat.level !== ausstieg.level) continue;
+      const d = haversineM(ausstieg.lat, ausstieg.lon, kandidat.lat, kandidat.lon);
+      if (d > VERWAIST_MAX_M) continue;
+      inseln.add(insel.get(kandidat.id) ?? -1);
+      if (d < naechsteDist) {
+        naechsteDist = d;
+        naechster = kandidat;
+      }
+    }
+    // Bedingung 3: genau eine Insel in Reichweite, sonst gar nichts.
+    if (!naechster || inseln.size !== 1) continue;
+    neu.push({
+      von: id,
+      nach: naechster.id,
+      laengeM: naechsteDist,
+      deltaLevel: 0,
+      typ: 'eben',
+      barrierefrei: true,
+    });
+  }
+  for (const kante of neu) fuegeKanteHinzu(kante);
 }
 
 // --- GeoJSON-Export fuer das Kartenfeld (Task 12) ---
