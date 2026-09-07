@@ -35,10 +35,15 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > mockte `onVariante` weg, `varianten.test.ts` prüfte den Lader – dazwischen
 > lag ungeprüfter Code, und genau dort sassen alle vier Fehler.
 >
-> **Nächster Schritt: die Mobilabnahme zu Ende führen.** Von acht Punkten
-> sind M4 (Erkennungsradius) angetestet und M6/M7 durch den defekten
-> Knopf blockiert gewesen. Offen bleiben M1, M2, M3, M5, M6, M7, M8 – und
-> damit weiter `ERKENNUNG_MAX_M` und `NOTBEHELF_TTL_MS`.
+> **Die Mobilabnahme ist danach durchgelaufen: M1–M8 sind beantwortet.**
+> M1, M3, M6, M7 sauber, M4 ohne bestimmbaren Grenzwert. Zwei Funde:
+> **M5** – die Ankunftserkennung ist in der Halle strukturell unerreichbar
+> (ToDo 23) – und **M8**: der Reise-Parser ist zu formatnah, nicht nur die
+> VMV fällt durch (ToDo 20). `ERKENNUNG_MAX_M` ist damit vom Tisch, es war
+> nie geraten; **offen bleibt allein `NOTBEHELF_TTL_MS`.**
+>
+> **Nächster Schritt: M9** – der Nachtest der reparierten Routenwahl am
+> Gerät, prüfbar erst nach dem Deployment. Danach ToDo 20.
 >
 > **Nicht vergessen: ToDo 20, das VMV-Format.** Unverändert offen, die drei
 > Blocker stehen isoliert in der ToDo-Tabelle.
@@ -356,12 +361,13 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | ~~3c~~ | ~~**Gleichzeitige Graphbauten zusammenführen**~~ ✅ **erledigt 01.09.2026** | Zwei Karten laufender Versprechen in `routes/api.ts` – eine auf die EVA, eine auf den Bahnhofsschlüssel. Wer als Zweiter kommt, wartet auf den laufenden Bau, statt danebenher einen eigenen zu starten. Drei Tests in `test/cache.test.ts`. **Die Falle dabei:** Bei einem Bahnhof aus einer einzigen Verkehrsstelle sind EVA und Gruppenschlüssel dieselbe Zeichenkette – in **einer** Karte fand der innere Bau das noch offene äussere Versprechen und wartete auf sich selbst. Der Testlauf lief in den Timeout, nicht in eine Fehlermeldung. |
 | ~~3d~~ | ~~**Frontend deployen**~~ ✅ **erledigt 01.09.2026** | Frontend auf Vercel, Backend auf Fly.io. Einzelheiten unter „Deployment 01.09.2026“ – dort steht auch, was dabei **nicht** nachweisbar war. |
 | ~~3h~~ | ~~**Meldungsseite bauen**~~ ✅ **erledigt 03.09.2026** | Neues Modell `src/meldungen/`, neuer Bildschirm `src/screens/Meldungen.tsx`; `Stoerung.tsx` ist darin aufgegangen. 25 Tests dazu. Einzelheiten unter „Meldungsseite". |
-| 3 | **Mobilabnahme am echten Gerät** | 🔶 **am 07.09.2026 begonnen.** Ergebnis bisher: Bahnhofserkennung trägt (M4 angetestet), die Routenwahl war unbedienbar und ist behoben (siehe „Die Routenwahl war auf dem Handy nicht bedienbar"). Offen bleiben M1, M2, M3, M5, M6, M7, M8. Die Sichtprüfung am Desktop ist am 29./30.08. erfolgt (siehe „Abnahme im Browser"). Offen bleibt, was nur ein Handy zeigt: Berechtigungsdialog, Wiederkehrer ohne Dialog, Genauigkeit im Bahnhof, Ankunftserkennung am Gleis, und ob die automatische Ebenenwahl als Hilfe oder als Bevormundung ankommt. `mkcert`-Zertifikate in `frontend/.cert/` schalten den Dev-Server auf HTTPS. |
+| 3 | **Mobilabnahme am echten Gerät** | 🔶 **am 07.09.2026 gelaufen, M1–M8 beantwortet** (Tabelle unter „Die Mobilabnahme"). M1, M3, M6, M7 sauber; M4 ohne Grenzwert; **M5 und M8 sind Funde** (ToDo 23 bzw. 20). Offen bleibt allein **M9** – der Nachtest der reparierten Routenwahl, prüfbar erst nach dem Deployment. Die Sichtprüfung am Desktop ist am 29./30.08. erfolgt (siehe „Abnahme im Browser"). Offen bleibt, was nur ein Handy zeigt: Berechtigungsdialog, Wiederkehrer ohne Dialog, Genauigkeit im Bahnhof, Ankunftserkennung am Gleis, und ob die automatische Ebenenwahl als Hilfe oder als Bevormundung ankommt. `mkcert`-Zertifikate in `frontend/.cert/` schalten den Dev-Server auf HTTPS. |
 | ~~4~~ | ~~**4 Lint-Warnungen im Frontend**~~ ✅ **erledigt 01.09.2026** | `npm run lint` ist jetzt ohne Ausgabe. Einzelheiten im Abschnitt „Lint-Warnungen aufgelöst“. Voraussetzung waren 11 neue Tests für `Zugauswahl` und `Eingabe` – beide Komponenten hatten vorher **keine**. |
 | ~~4b~~ | ~~**Doppeltes Bahnhofsnamen-Vokabular**~~ ✅ **erledigt 04.09.2026** | Die Vorsilben-/Nachsilbenliste stand im Frontend-Parser *und* in `core/bahnhofsname.ts`. Die Frontend-Normalisierung ist gefallen, die Auflösung liegt ganz im Backend (`d6150d9`). Der Bahnhof wandert weiterhin als **Suchtext** ins Formular, nicht als getroffene Wahl. |
 | ~~4c~~ | ~~**CSP-Header fehlt**~~ ✅ **erledigt 04.09.2026** | `3d8a842`. Die Quellen sind aus dem Code belegt statt geraten: Kartenkacheln, der SSE-Strom auf Fly.io, MapLibres Worker (`blob:`), lokale Schriften. Vercel Web Analytics lädt same-origin, braucht also keine Fremddomain. 7 Tests prüfen die `vercel.json` direkt. |
 | ~~4d~~ | ~~**Deprecation-Warnung `disableRequestLogging`**~~ ✅ **erledigt 04.09.2026** | `dcac4ca`, auf `logController` umgestellt (Fastify 6 entfernt die alte Option). Die sechs Datenschutztests liefen unverändert weiter – **kein** Zugriffsprotokoll, wie die Datenschutzerklärung zusagt. |
 | 21 | **Leerzeichen vor dem Komma nach der eckigen Klammer** | `analysiere()` in `frontend/src/reise/reisetext.ts` ersetzt den Klammerzusatz durch `' '`, das Backend (`KLAMMERZUSATZ` in `core/bahnhofsname.ts`) durch `''`. Aus „S+U Hauptbahnhof [Gleis 1-8], Berlin" wird deshalb **„S+U Hauptbahnhof , Berlin"** – mit Leerzeichen vor dem Komma. Am 06.09.2026 nebenbei aufgefallen, als das VMV-Format zerlegt wurde. Schadet der Suche derzeit **nicht** (die Störwort-Schälung räumt es mit weg), landet aber sichtbar als Suchtext im Formular. Kosmetisch, eine Zeile. |
+| 23 | **Die Ankunftserkennung ist in der Halle unerreichbar** | M5 der Mobilabnahme: `pruefeAnkunft()` sperrt bei `genauigkeitM > GENAUIGKEIT_MAX_M` (100 m), gemessen wurden ±118 m **am Fenster**. Der Zähler startet in der Halle nie, Radius und Verweildauer kommen nicht zum Tragen. Die 100 m sind für den Kartenpunkt richtig und für die Ankunft zu streng – **zwei Fragen an einer Zahl**. Zu entscheiden ist eine eigene, lockerere Ankunftsschwelle, nicht ein neuer Wert für beide. Nach der Abnahme nicht dringend: Selberklicken funktioniert. Einzelheiten unter „Die Mobilabnahme". |
 | 22 | **Die Naht Knopf → Wirkung bleibt ungetestet** | Die vier Fehler vom 07.09. sassen alle zwischen zwei grünen Testdateien: `Dashboard.test.tsx` mockt `onVariante` weg, `varianten.test.ts` speist die Hole-Funktion ein. Behoben sind die Fehler, die Lücke nicht – es gibt weiterhin **keinen** Test, der `App.tsx` mit einem echten Klick durchläuft. Ein `App.test.tsx` mit gemocktem `holeRoute` würde die ganze Gattung schliessen, nicht nur diesen Fall. |
 | 4e | **Test für die Achsenableitung (§5-B)** | Ab zwei verankerten Bahnsteigen bestimmt deren Richtung, wo die *unverankerten* liegen. Kein Test prüft das Ergebnis: In den Fixtures sind entweder alle Bahnsteige verankert (Hannover, Berlin) oder nur einer (Unit-Tests). Gebraucht wird ein Fall mit zwei verankerten **und** zwei unverankerten – der Regelfall an mittelgrossen Bahnhöfen. Eine Stunde Arbeit. |
 | 5 | **Vercel: Framework-Preset steht auf „Services"** | Rückstand der `experimentalServices`-Erkennung beim `vercel link`. Die `vercel.json` überschreibt es, der Build ist nachweislich korrekt – kosmetisch, aber irreführend. Settings → Build & Deployment. |
@@ -400,7 +406,7 @@ die Ursachenanalyse in [`docs/2026-08-31-design-abgleich.md`](./docs/2026-08-31-
 | 17 | **RIS::Stations hat keinen Rückfallweg** | Die einzige Quelle ohne Zeile in der Degradationstabelle. Fällt sie aus, ist die App tot – und über `stationID` hängt FaSta und damit §5 daran. Kleinste wirksame Maßnahme: StaDa ist bereits abonniert und ungenutzt und führt dieselbe Bahnhofsnummer. Siehe „ISR verworfen", Abschnitt „Was das über RIS::Stations sagt". |
 | 18 | **OpenStation auswerten** | Offener NeTEx-Datensatz der DB InfraGO, kein Schlüssel: `Level` gegen den Ebenensprung, Aufzüge + SIRI FM als FaSta-Gegenstück, 65.007 Wegekanten als Gegenprobe zu OSM. **Löst §4.3 nicht** – nur 10 % der Bahnsteige tragen Koordinaten, die Kanten keine Länge. Zahlen und Grenzen im Abschnitt „ISR verworfen". |
 | ~~19~~ | ~~**ISR Data Service beziehen**~~ ⛔ **entschieden dagegen, 06.09.2026** | Zu teuer (1.846 €/Jahr) – und ohnehin nur für Zugangsberechtigte nach ERegG § 1 Abs. 12. Der vorhandene Schlüssel deckt es nachweislich nicht ab. **Nicht erneut aufmachen.** |
-| 15 | **Zwei geratene Schwellenwerte** | `ERKENNUNG_MAX_M = 1000` (Genauigkeitsbudget der Bahnhofserkennung) und `NOTBEHELF_TTL_MS = 600000` (Cache-Frist für Stufe 3; über `GRAPH_NOTBEHELF_TTL_MS` ohne Neubau verstellbar) sind begründete Startwerte ohne Messung dahinter. Erst die Mobilabnahme zeigt die Richtung. *Der dritte Wert, `MINDEST_SCHRITT_MS = 8000` (Anzeigedauer je Schritt), ist am 02.09.2026 entfallen: Die Schrittanzeige rückt nicht mehr nach Zeit vor, damit gibt es keine Anzeigedauer mehr zu raten.* |
+| 15 | 🔶 **Noch EIN geratener Schwellenwert** | `ERKENNUNG_MAX_M` ist seit dem 07.09.2026 erledigt: Die Zahl ist an den Suchradius des Servers gebunden (1000 m) und damit begründet, nicht geraten – siehe „M3: die 2000 m waren nie eine Schwelle". Offen bleibt `NOTBEHELF_TTL_MS`. Ursprünglicher Eintrag: `ERKENNUNG_MAX_M = 1000` (Genauigkeitsbudget der Bahnhofserkennung) und `NOTBEHELF_TTL_MS = 600000` (Cache-Frist für Stufe 3; über `GRAPH_NOTBEHELF_TTL_MS` ohne Neubau verstellbar) sind begründete Startwerte ohne Messung dahinter. Erst die Mobilabnahme zeigt die Richtung. *Der dritte Wert, `MINDEST_SCHRITT_MS = 8000` (Anzeigedauer je Schritt), ist am 02.09.2026 entfallen: Die Schrittanzeige rückt nicht mehr nach Zeit vor, damit gibt es keine Anzeigedauer mehr zu raten.* |
 
 ### P1 – Standort & Live-Navigation
 
@@ -2155,6 +2161,90 @@ falsch herum. Ein Parser scheitert laut („nicht erkannt"), ein Sprachmodell
 leise und plausibel – es schreibt bereitwillig ein Gleis, das im Text nie
 stand. Mit Gepäck und zwölf Minuten Umsteigezeit ist ein selbstbewusst
 falsches Gleis schlimmer als gar keins.
+
+## Die Mobilabnahme (07.09.2026, M1–M8 durch)
+
+Nach neun Tagen als „einziger Blocker für Code" ist die Abnahme am Gerät
+gelaufen. **Acht von neun Punkten sind beantwortet**, M9 (der Nachtest der
+reparierten Routenwahl) steht noch aus, weil er erst nach dem Deployment
+prüfbar ist.
+
+| # | Ergebnis |
+|---|---|
+| M1 | ✅ **Der Dialog kommt.** Bei Ablehnung bleibt die Vorbelegung aus – wie vorgesehen. |
+| M2 | ✅ **Die Erteilung bleibt gespeichert.** Nicht von der App: Sie hält dazu nichts. Der Speicher ist der Browser. |
+| M3 | ✅ **Am Bahnhof erkannt.** Die Handeingabe-Aufforderung greift bei zu grobem Fix wie vorgesehen. Ein konkreter ±-Wert in der Halle wurde nicht notiert. |
+| M4 | 🔶 **Funktioniert sehr gut**, aber kein Grenzwert bestimmbar. Der Radius bleibt bei 1000 m. |
+| M5 | ⛔ **Die Ankunft wird nicht erkannt.** Nur Selberklicken. Ursache gefunden, siehe unten. |
+| M6 | ✅ **Der Ebenensprung mit dem nächsten Schritt ist gut** – Hilfe, nicht Bevormundung. *Die Ebene hat andere Probleme; deren Anforderung steht aus.* |
+| M7 | ✅ **Alles gut bedienbar.** |
+| M8 | ⛔ **Viele Texte werden nicht gut erkannt**, z. B. die der VMV. Die Formate sind noch zu unterschiedlich. |
+
+### M2: Wie lange die Freigabe gilt – die App weiß es nicht
+
+Die Frage kam bei der Abnahme auf, und die Antwort ist unbequem: **Die App
+kann es nicht beeinflussen und nicht auslesen.** Sie speichert zur Freigabe
+nichts; `useStandort.ts` *fragt* nur über `navigator.permissions.query` nach
+dem aktuellen Stand. Wie lange eine erteilte Freigabe hält, entscheidet
+allein der Browser, und die Praxis geht auseinander: Chrome behält sie bis
+zum Widerruf (setzt ungenutzte Berechtigungen aber selbsttätig zurück),
+Safari behandelt sie deutlich kurzlebiger. **Verlassen darf sich die App auf
+keines von beidem** – deshalb ist der Weg ohne Freigabe (Handeingabe) kein
+Notbehelf, sondern der gleichberechtigte Pfad. Das war schon die Absicht;
+M2 belegt sie.
+
+### M3: die 2000 m waren nie eine Schwelle
+
+Bei der Abnahme fiel „ab 2000 m Handeingabe" – so steht es sinngemäss auch
+weiter oben unter „Nebenbefunde der Sichtprüfung". **Die Zahl ist keine
+Schwelle, sondern war ein gemessener Wert.** Die Schwelle ist
+`ERKENNUNG_MAX_M = 1000` in `standort/schwellen.ts`; der Rechner meldete
+damals zufällig ±2000 m und löste sie deshalb aus. Beobachtet ist also: Die
+Regel greift. **Nicht** beobachtet: wo sie greift.
+
+Der Kommentar an der Konstante begründet die 1000 m sauber – der Server sucht
+im Umkreis von 1000 m, und ist die Unsicherheit grösser als der Suchradius,
+wäre das Ergebnis geraten. Die Zahl ist damit keine freie Schätzung mehr,
+sondern an eine andere Zahl gebunden. **ToDo 15 schrumpft entsprechend:**
+`ERKENNUNG_MAX_M` ist begründet, offen bleibt nur noch `NOTBEHELF_TTL_MS`.
+
+### M5: die Ankunftserkennung ist in der Halle unerreichbar
+
+Der schwerste Fund der Abnahme, und er ist kein Zahlendreher, sondern ein
+Widerspruch zwischen zwei Konstanten.
+
+`pruefeAnkunft()` in `standort/ankunft.ts` hat drei Tore, und das **erste**
+sperrt:
+
+```ts
+if (standort.genauigkeitM > GENAUIGKEIT_MAX_M) return { zustand, vorschlagen: false }
+```
+
+`GENAUIGKEIT_MAX_M` ist **100 m**. Gemessen wurde am 29.08. **±118 m** – und
+zwar *am Fenster*. In der Bahnhofshalle ist es schlechter. Der Zähler startet
+also nie; `ANKUNFT_RADIUS_M` (40 m) und `ANKUNFT_VERWEIL_MS` (15 s) kommen
+gar nicht erst zum Tragen. **Die Ankunftserkennung ist genau dort
+unerreichbar, wo sie gebraucht wird.**
+
+Die 100 m sind für ihren eigentlichen Zweck richtig: Ein Kartenpunkt, der auf
+den Bahnsteig zeigen soll, darf nicht 118 m danebenliegen. Falsch ist, dass
+**dieselbe** Schwelle die Ankunftserkennung sperrt – die braucht keine
+Bahnsteiggenauigkeit, sie braucht „ungefähr am Zielgleis". Zwei verschiedene
+Fragen an einer Zahl.
+
+**Bewusst nicht sofort behoben.** Nach der Abnahme wiegt der Punkt leicht:
+Das Selberklicken funktioniert, der Vorschlag war ohnehin nur eine Abkürzung,
+und die Alternative – eine eigene, lockerere Schwelle für die Ankunft – ist
+eine Entscheidung, keine Korrektur. Aufgenommen als ToDo 23.
+
+### M8: der Parser ist zu formatnah
+
+M8 bestätigt ToDo 20 und weitet es: Nicht nur die VMV fällt durch, sondern
+„viele Texte". Die Formate sind untereinander zu verschieden, als dass die
+bisherige Herangehensweise – ein Halt je Zeile, Rollenwörter als Marker –
+sie alle trägt. Das ist mehr als die drei isolierten Blocker, die am 06.09.
+notiert wurden. **ToDo 20 bleibt der nächste Hauptstrang**, aber der
+Zuschnitt gehört vor dem Bauen noch einmal auf den Tisch.
 
 ## Die Routenwahl war auf dem Handy nicht bedienbar (07.09.2026)
 
