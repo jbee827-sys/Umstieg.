@@ -16,7 +16,36 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 06.09.2026)
+## Hier weitermachen (Stand 07.09.2026)
+
+> **Am 07.09. lief die Mobilabnahme (P6 / ToDo 3) – erstmals am echten
+> Gerät.** Zwei Ergebnisse:
+>
+> 1. **Die Bahnhofserkennung trägt.** Bahnhöfe werden am Gerät sehr gut
+>    erkannt. Damit steht `ERKENNUNG_RADIUS_M = 1000` erstmals unter echter
+>    Beobachtung statt nur als Schätzung – ToDo 3a bleibt formal offen, weil
+>    kein Grenzwert gemessen wurde, aber der Verdacht von Eberswalde
+>    (1094 m) hat sich im Alltag nicht bestätigt.
+> 2. **Die Routenwahl war tot.** Keine der drei Zeilen liess sich antippen.
+>    Vier Fehler übereinander, alle behoben – Einzelheiten unter
+>    „Die Routenwahl war auf dem Handy nicht bedienbar".
+>
+> **Der Fund dahinter wiegt schwerer als der Fehler:** Die Naht zwischen
+> Knopf und Wirkung war an **keiner** Stelle getestet. `Dashboard.test.tsx`
+> mockte `onVariante` weg, `varianten.test.ts` prüfte den Lader – dazwischen
+> lag ungeprüfter Code, und genau dort sassen alle vier Fehler.
+>
+> **Nächster Schritt: die Mobilabnahme zu Ende führen.** Von acht Punkten
+> sind M4 (Erkennungsradius) angetestet und M6/M7 durch den defekten
+> Knopf blockiert gewesen. Offen bleiben M1, M2, M3, M5, M6, M7, M8 – und
+> damit weiter `ERKENNUNG_MAX_M` und `NOTBEHELF_TTL_MS`.
+>
+> **Nicht vergessen: ToDo 20, das VMV-Format.** Unverändert offen, die drei
+> Blocker stehen isoliert in der ToDo-Tabelle.
+
+<details>
+<summary>Vorheriger Stand (06.09.2026)</summary>
+
 
 > **Am 06.09. sind der Reise-Import für DB Navigator und VBB durchgezogen und
 > ISR verworfen worden.** Alles ausgeliefert, `main` und `feat/mvp` stehen
@@ -44,6 +73,8 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > **Unverändert offen und weiterhin der einzige Blocker für Code:** die
 > Mobilabnahme am Gerät (P6 / ToDo 3). Sie hält drei geratene Zahlen fest –
 > `ERKENNUNG_RADIUS_M`, `ERKENNUNG_MAX_M`, `NOTBEHELF_TTL_MS`.
+
+</details>
 
 <details>
 <summary>Vorheriger Stand (05.09.2026)</summary>
@@ -74,9 +105,9 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > Upstream-Aufrufe (P2 der Härtung), die Entscheidung zur Wagenposition.
 
 ```bash
-cd backend && npm test        # muss 331 von 331 grün sein
+cd backend && npm test        # muss 344 von 344 grün sein
 cd backend && npm run lint    # oxlint + tsc --noEmit, muss sauber sein
-cd frontend && npm test       # muss 260 von 260 grün sein
+cd frontend && npm test       # muss 268 von 268 grün sein
 cd frontend && npm run lint   # oxlint + tsc --noEmit, muss sauber sein
 cd frontend && npm run build  # muss grün sein
 ```
@@ -317,7 +348,7 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | ~~1~~ | ~~**EVA-Split bei grossen Bahnhöfen**~~ ✅ **erledigt 31.08.2026** | Gelöst über `groupMembers` aus RIS::Stations. Einzelheiten im Abschnitt „Verkehrsstellengruppen". |
 | ~~1b~~ | ~~**Graph-Cache vergiftet sich selbst**~~ ✅ **erledigt 31.08.2026** | Frist jetzt nach Qualität: Stufe 1/2 volle 24 h, Stufe 3 zehn Minuten (`graphTtlMs` in `cache/lru.ts`). |
 | ~~2~~ | ~~**FaSta-Adressierung schließen**~~ ✅ **erledigt 31.08.2026** | `stationID` wird durchgereicht. Der Fund dabei: Mit der EVA antwortete FaSta **nicht** mit einem Fehler, sondern mit HTTP 200 und `[ ]`. |
-| 3a | **Erkennungsradius von 1000 m prüfen** | Am 31.08. beobachtet: Von `52.84/13.81` aus liegt Eberswalde Hbf **1094 m** entfernt – 94 m zu weit, die Umkreissuche liefert nichts, und die Vorbelegung bleibt leer. Die Rohantwort enthält dort 17 Bushaltestellen, aber keine Eisenbahn-Verkehrsstelle; der Filter arbeitet also richtig. Zu entscheiden ist der Radius (`ERKENNUNG_RADIUS_M` in `routes/api.ts`) – gehört in die Mobilabnahme. |
+| 3a | **Erkennungsradius von 1000 m prüfen** | 🔶 **Am 07.09.2026 am Gerät: Bahnhöfe werden sehr gut erkannt.** Der Verdacht von Eberswalde hat sich im Alltag nicht bestätigt; ein Grenzwert ist trotzdem nicht gemessen, deshalb bleibt der Eintrag offen. Am 31.08. beobachtet: Von `52.84/13.81` aus liegt Eberswalde Hbf **1094 m** entfernt – 94 m zu weit, die Umkreissuche liefert nichts, und die Vorbelegung bleibt leer. Die Rohantwort enthält dort 17 Bushaltestellen, aber keine Eisenbahn-Verkehrsstelle; der Filter arbeitet also richtig. Zu entscheiden ist der Radius (`ERKENNUNG_RADIUS_M` in `routes/api.ts`) – gehört in die Mobilabnahme. |
 | ~~3b~~ | ~~**Sichtprüfung der neuen Bildschirme**~~ ✅ **erledigt 03.09.2026** | Ampel (P1), Weg-Seite (P2) und Angekommen-Seite (P3) am 01.09.; P4 und P5 am 03.09. über eingespeiste Ereignisse. Offen bleibt allein die Mobilabnahme (ToDo 3). |
 | ~~3e~~ | ~~**Der Ebenensprung**~~ ✅ **erledigt 01.09.2026** | Strukturell, nicht Berliner Eigenart: eine geratene Ebene 0 plus zwei Bahnsteige, die sich eine Gleisnummer teilen. Einzelheiten und Auszählung unter „Der Ebenensprung“. Der volle Abgleich OSM ↔ DB-Gleisliste (§4.3, ToDo 7) bleibt davon unberührt offen. |
 | ~~3f~~ | ~~**Zugtafel kappen**~~ ✅ **erledigt 01.09.2026** | Zeitfenster −5/+45 Minuten und vier Kategorien statt einer Bandwurmliste. Aus 113 Einträgen wurden 51 in drei Blöcken. Siehe „Die Zugauswahl“. |
@@ -325,12 +356,13 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | ~~3c~~ | ~~**Gleichzeitige Graphbauten zusammenführen**~~ ✅ **erledigt 01.09.2026** | Zwei Karten laufender Versprechen in `routes/api.ts` – eine auf die EVA, eine auf den Bahnhofsschlüssel. Wer als Zweiter kommt, wartet auf den laufenden Bau, statt danebenher einen eigenen zu starten. Drei Tests in `test/cache.test.ts`. **Die Falle dabei:** Bei einem Bahnhof aus einer einzigen Verkehrsstelle sind EVA und Gruppenschlüssel dieselbe Zeichenkette – in **einer** Karte fand der innere Bau das noch offene äussere Versprechen und wartete auf sich selbst. Der Testlauf lief in den Timeout, nicht in eine Fehlermeldung. |
 | ~~3d~~ | ~~**Frontend deployen**~~ ✅ **erledigt 01.09.2026** | Frontend auf Vercel, Backend auf Fly.io. Einzelheiten unter „Deployment 01.09.2026“ – dort steht auch, was dabei **nicht** nachweisbar war. |
 | ~~3h~~ | ~~**Meldungsseite bauen**~~ ✅ **erledigt 03.09.2026** | Neues Modell `src/meldungen/`, neuer Bildschirm `src/screens/Meldungen.tsx`; `Stoerung.tsx` ist darin aufgegangen. 25 Tests dazu. Einzelheiten unter „Meldungsseite". |
-| 3 | **Mobilabnahme am echten Gerät** | Die Sichtprüfung am Desktop ist am 29./30.08. erfolgt (siehe „Abnahme im Browser"). Offen bleibt, was nur ein Handy zeigt: Berechtigungsdialog, Wiederkehrer ohne Dialog, Genauigkeit im Bahnhof, Ankunftserkennung am Gleis, und ob die automatische Ebenenwahl als Hilfe oder als Bevormundung ankommt. `mkcert`-Zertifikate in `frontend/.cert/` schalten den Dev-Server auf HTTPS. |
+| 3 | **Mobilabnahme am echten Gerät** | 🔶 **am 07.09.2026 begonnen.** Ergebnis bisher: Bahnhofserkennung trägt (M4 angetestet), die Routenwahl war unbedienbar und ist behoben (siehe „Die Routenwahl war auf dem Handy nicht bedienbar"). Offen bleiben M1, M2, M3, M5, M6, M7, M8. Die Sichtprüfung am Desktop ist am 29./30.08. erfolgt (siehe „Abnahme im Browser"). Offen bleibt, was nur ein Handy zeigt: Berechtigungsdialog, Wiederkehrer ohne Dialog, Genauigkeit im Bahnhof, Ankunftserkennung am Gleis, und ob die automatische Ebenenwahl als Hilfe oder als Bevormundung ankommt. `mkcert`-Zertifikate in `frontend/.cert/` schalten den Dev-Server auf HTTPS. |
 | ~~4~~ | ~~**4 Lint-Warnungen im Frontend**~~ ✅ **erledigt 01.09.2026** | `npm run lint` ist jetzt ohne Ausgabe. Einzelheiten im Abschnitt „Lint-Warnungen aufgelöst“. Voraussetzung waren 11 neue Tests für `Zugauswahl` und `Eingabe` – beide Komponenten hatten vorher **keine**. |
 | ~~4b~~ | ~~**Doppeltes Bahnhofsnamen-Vokabular**~~ ✅ **erledigt 04.09.2026** | Die Vorsilben-/Nachsilbenliste stand im Frontend-Parser *und* in `core/bahnhofsname.ts`. Die Frontend-Normalisierung ist gefallen, die Auflösung liegt ganz im Backend (`d6150d9`). Der Bahnhof wandert weiterhin als **Suchtext** ins Formular, nicht als getroffene Wahl. |
 | ~~4c~~ | ~~**CSP-Header fehlt**~~ ✅ **erledigt 04.09.2026** | `3d8a842`. Die Quellen sind aus dem Code belegt statt geraten: Kartenkacheln, der SSE-Strom auf Fly.io, MapLibres Worker (`blob:`), lokale Schriften. Vercel Web Analytics lädt same-origin, braucht also keine Fremddomain. 7 Tests prüfen die `vercel.json` direkt. |
 | ~~4d~~ | ~~**Deprecation-Warnung `disableRequestLogging`**~~ ✅ **erledigt 04.09.2026** | `dcac4ca`, auf `logController` umgestellt (Fastify 6 entfernt die alte Option). Die sechs Datenschutztests liefen unverändert weiter – **kein** Zugriffsprotokoll, wie die Datenschutzerklärung zusagt. |
 | 21 | **Leerzeichen vor dem Komma nach der eckigen Klammer** | `analysiere()` in `frontend/src/reise/reisetext.ts` ersetzt den Klammerzusatz durch `' '`, das Backend (`KLAMMERZUSATZ` in `core/bahnhofsname.ts`) durch `''`. Aus „S+U Hauptbahnhof [Gleis 1-8], Berlin" wird deshalb **„S+U Hauptbahnhof , Berlin"** – mit Leerzeichen vor dem Komma. Am 06.09.2026 nebenbei aufgefallen, als das VMV-Format zerlegt wurde. Schadet der Suche derzeit **nicht** (die Störwort-Schälung räumt es mit weg), landet aber sichtbar als Suchtext im Formular. Kosmetisch, eine Zeile. |
+| 22 | **Die Naht Knopf → Wirkung bleibt ungetestet** | Die vier Fehler vom 07.09. sassen alle zwischen zwei grünen Testdateien: `Dashboard.test.tsx` mockt `onVariante` weg, `varianten.test.ts` speist die Hole-Funktion ein. Behoben sind die Fehler, die Lücke nicht – es gibt weiterhin **keinen** Test, der `App.tsx` mit einem echten Klick durchläuft. Ein `App.test.tsx` mit gemocktem `holeRoute` würde die ganze Gattung schliessen, nicht nur diesen Fall. |
 | 4e | **Test für die Achsenableitung (§5-B)** | Ab zwei verankerten Bahnsteigen bestimmt deren Richtung, wo die *unverankerten* liegen. Kein Test prüft das Ergebnis: In den Fixtures sind entweder alle Bahnsteige verankert (Hannover, Berlin) oder nur einer (Unit-Tests). Gebraucht wird ein Fall mit zwei verankerten **und** zwei unverankerten – der Regelfall an mittelgrossen Bahnhöfen. Eine Stunde Arbeit. |
 | 5 | **Vercel: Framework-Preset steht auf „Services"** | Rückstand der `experimentalServices`-Erkennung beim `vercel link`. Die `vercel.json` überschreibt es, der Build ist nachweislich korrekt – kosmetisch, aber irreführend. Settings → Build & Deployment. |
 | 6 | **Vercel-Preview-Variable nur für `feat/mvp`** | `VITE_API_BASE` konnte nicht „für alle Preview-Zweige" gesetzt werden (CLI-Fehler in v53.1.0: der vorgeschlagene Befehl ist derselbe, der scheitert). Neue Zweige brauchen einen eigenen Eintrag oder das Dashboard. |
@@ -2123,6 +2155,85 @@ falsch herum. Ein Parser scheitert laut („nicht erkannt"), ein Sprachmodell
 leise und plausibel – es schreibt bereitwillig ein Gleis, das im Text nie
 stand. Mit Gepäck und zwölf Minuten Umsteigezeit ist ein selbstbewusst
 falsches Gleis schlimmer als gar keins.
+
+## Die Routenwahl war auf dem Handy nicht bedienbar (07.09.2026)
+
+Der erste Befund der Mobilabnahme, und der teuerste: **Keine der drei
+Routenzeilen liess sich antippen.** Am Rechner war das nie aufgefallen – die
+Sichtprüfung vom 31.08. hat die Knöpfe *gesehen* („Routenknöpfe als Zeilen mit
+Radio-Punkt und Minuten ✅"), aber nie einen gedrückt.
+
+**Es waren vier Fehler übereinander, und keiner davon lag im Knopf.** Der Tipp
+feuerte die ganze Zeit. Nur war jeder Ausgang unsichtbar:
+
+| # | Fehler | Wo | Wirkung |
+|---|---|---|---|
+| 1 | **Die Wahl wurde verworfen** | `App.tsx`, `eingabe.variante === 'barrierefrei' ? 'barrierefrei' : 'schnellste'` | „Mit Stopp" fiel still auf „Schnellste" zurück – **strukturell nie auswählbar** |
+| 2 | **Kein Druckfeedback** | `.routenwahl-zeile` in `App.css` | Das einzige Bedienelement der App ohne `:active` – auf dem Touchscreen keinerlei Reaktion auf die Berührung |
+| 3 | **Ladezustand unsichtbar** | `laden` wird nur an `Eingabe` gereicht | Nach dem Tippen sekundenlang nichts, bei kaltem Bahnhof bis zu 24 s |
+| 4 | **Fehler unsichtbar** | `fehler` ebenso nur an `Eingabe` | Der 404 des Backends verpuffte folgenlos – bei einem Bahnhof ohne Aufzug **für immer** |
+
+**Fehler 1 ist der lehrreiche.** Die Zeile stammt vom 31.08.2026, als es genau
+zwei Varianten gab; `git blame` weist sie auf `8d8a02dc` aus. Am 05.09. kam
+`mit-stopp` dazu (ToDo 9c) – und trat der **Liste** `ANGEBOTENE` bei, nicht
+der Aufzählung daneben. Zwei Orte, die dasselbe wissen mussten, und einer
+wurde vergessen. Genau das Muster, das am 04.09. schon einmal aufschlug
+(ToDo 4b, doppeltes Bahnhofsnamen-Vokabular).
+
+Die Korrektur zieht die Entscheidung an die Liste heran:
+
+```ts
+export function ersteVariante(gewuenscht: RoutenVariante): RoutenVariante {
+  return ANGEBOTENE.includes(gewuenscht) ? gewuenscht : 'schnellste'
+}
+```
+
+Eine neue Variante einzutragen reicht damit aus. Es gibt keine zweite Stelle
+mehr, die vergessen werden kann.
+
+### Warum es niemand gesehen hat
+
+**Die Naht war an keiner Stelle getestet.** `Dashboard.test.tsx` reicht ein
+`vi.fn()` als `onVariante` herein und prüft, dass es gerufen wird.
+`varianten.test.ts` prüft den Lader mit einer eingespeisten Hole-Funktion.
+Beide Seiten grün – und dazwischen der Code, in dem alle vier Fehler sassen.
+Zwei Tests, die sich an den Rändern treffen, decken die Mitte nicht ab.
+
+Am Rechner verdeckte zudem `cursor: pointer`, dass die Zeile kein
+Druckfeedback hat: Der Zeigefinger-Cursor sagt „klickbar", und der Klick
+*funktionierte* für „Barrierefrei" ja meistens. Auf dem Touchscreen gibt es
+weder Cursor noch Hover – dort blieb nichts übrig, das den Tipp bestätigt
+hätte.
+
+### Nebenbefund: ein Tipp kostete drei Anfragen
+
+`waehleVariante` rief `berechne` – dieselbe Funktion, die der
+Eingabe-Bildschirm benutzt. Die holt über `ladeVarianten` **alle drei**
+Varianten und ersetzte dabei den Variantenstand vollständig
+(`setVarianten({ gewaehlt, [gewaehlt]: … })`), sodass die Minutenangaben der
+anderen zwei Knöpfe erst verschwanden und dann einzeln wieder eintrudelten.
+Der Kommentar darüber versprach seit dem 31.08. das Gegenteil: „Variante
+wechseln, ohne neu zu rechnen wenn moeglich."
+
+Jetzt holt der Wechsel genau die eine Variante, die getippt wurde, und
+spreizt den Stand statt ihn zu ersetzen. Währenddessen nimmt keine Zeile
+einen zweiten Tipp entgegen – sonst stapeln sich auf einer langsamen
+Mobilverbindung drei Anfragen, und die zuletzt beantwortete gewinnt, was
+nicht die zuletzt getippte sein muss.
+
+### Was der Nutzer jetzt sieht
+
+Die getippte Zeile trägt `aria-busy` und „lädt …" an der Stelle der Minuten,
+die übrigen treten zurück und sind gesperrt. Schlägt die Variante fehl, steht
+der **Text des Backends** unter der Gruppe – „Keine barrierefreie Route
+gefunden (Treppen gesperrt, kein nutzbarer Aufzug)." oder „Kein WC und kein
+Kiosk auf dem Weg gefunden." –, nicht die Gattungsmeldung aus `FEHLER_TEXTE`.
+Der Grund ist konkreter als die Gattung, und bei diesen zwei Varianten ist
+das Fehlschlagen der Normalfall, nicht die Ausnahme.
+
+**Belegt durch 8 neue Tests** (4 in `varianten.test.ts`, 4 in
+`Dashboard.test.tsx`); Frontend steht bei 268. **Nicht belegt:** dass sich die
+Zeile am Gerät jetzt richtig anfühlt – das braucht dasselbe Handy noch einmal.
 
 ## ISR verworfen – und was die Suche stattdessen fand (06.09.2026)
 
