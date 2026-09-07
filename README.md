@@ -46,9 +46,17 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > Route** – nicht weil Aufzüge fehlten (vier kartiert, laut FaSta alle
 > ACTIVE), sondern weil der Aufzug von Bahnsteig 1/2 in OSM an keinem
 > Wegenetz hängt und die Bahnsteiganbindung je Punkt nur **einen** Wegknoten
-> wählt. Siehe „Braunschweig fand keine barrierefreie Route". Dabei fiel auf:
-> **§5 verlässt sich auf FaStas `description`, und die ist in Braunschweig
-> bei allen fünf Anlagen leer** (ToDo 24).
+> wählt. Siehe „Braunschweig fand keine barrierefreie Route". Die Regel dagegen
+> ist bewusst schmal (≤ 10 m, nur bei eindeutigem Kandidaten) und gegen die
+> Produktion geprüft: aus der Absage werden 191 s ohne eine Treppe.
+>
+> **Dabei ein Eigentor, das festgehalten gehört:** Ein Prüfskript las
+> `anlage.description` statt `beschreibung` und liess FaStas Beschreibungen
+> leer aussehen. Auf dieser Falschmessung stand kurzzeitig die Behauptung,
+> §5 trage in Braunschweig nichts bei. Sie ist zurückgenommen – die
+> Beschreibungen sind vollständig da, und der verwaiste Aufzug nennt seinen
+> Bahnsteig selbst (`"zu Gleis 1/2"`). **Die ausgelieferte 10-m-Regel ist
+> damit schwächer als nötig**, siehe ToDo 24.
 >
 > **Nächster Schritt: M9** – der Nachtest der reparierten Routenwahl am
 > Gerät. Danach ToDo 20.
@@ -375,7 +383,7 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | ~~4c~~ | ~~**CSP-Header fehlt**~~ ✅ **erledigt 04.09.2026** | `3d8a842`. Die Quellen sind aus dem Code belegt statt geraten: Kartenkacheln, der SSE-Strom auf Fly.io, MapLibres Worker (`blob:`), lokale Schriften. Vercel Web Analytics lädt same-origin, braucht also keine Fremddomain. 7 Tests prüfen die `vercel.json` direkt. |
 | ~~4d~~ | ~~**Deprecation-Warnung `disableRequestLogging`**~~ ✅ **erledigt 04.09.2026** | `dcac4ca`, auf `logController` umgestellt (Fastify 6 entfernt die alte Option). Die sechs Datenschutztests liefen unverändert weiter – **kein** Zugriffsprotokoll, wie die Datenschutzerklärung zusagt. |
 | 21 | **Leerzeichen vor dem Komma nach der eckigen Klammer** | `analysiere()` in `frontend/src/reise/reisetext.ts` ersetzt den Klammerzusatz durch `' '`, das Backend (`KLAMMERZUSATZ` in `core/bahnhofsname.ts`) durch `''`. Aus „S+U Hauptbahnhof [Gleis 1-8], Berlin" wird deshalb **„S+U Hauptbahnhof , Berlin"** – mit Leerzeichen vor dem Komma. Am 06.09.2026 nebenbei aufgefallen, als das VMV-Format zerlegt wurde. Schadet der Suche derzeit **nicht** (die Störwort-Schälung räumt es mit weg), landet aber sichtbar als Suchtext im Formular. Kosmetisch, eine Zeile. |
-| 24 | **§5 hängt an einem Feld, das nicht überall gefüllt ist** | Die Zuordnung Anlage → Bahnsteig kommt aus FaStas `description` („zu Gleis 15/16"). In **Braunschweig sind alle fünf Beschreibungen leer** – dort trägt §5 nichts bei. Am 07.09.2026 nebenbei belegt. Wie verbreitet das ist, ist ungezählt: Sondiert wurden seinerzeit fünf Vokabulare, aber nicht, wie viele Bahnhöfe **gar keines** haben. Zu messen, bevor §5 als tragfähig gilt. |
+| 24 | **Verwaiste Aufzüge über FaSta zuordnen statt über 10 m** | Die ausgelieferte Regel (`VERWAIST_MAX_M = 10`) rät den Bahnsteig über die Entfernung. FaSta **benennt** ihn: Der verwaiste Aufzug in Braunschweig trägt `"zu Gleis 1/2"`, und `verankerterBahnsteig()` aus §5 löst das bereits auf. Der Verbindungsschlüssel ist OSMs `ref:operator_inventory` = FaSta-Anlagennummer, in beiden Datensätzen vorhanden. Damit fiele eine geratene Zahl weg. **Zu klären:** Der Graph wird ohne FaSta gebaut (FaSta kommt je Anfrage auf einer Kopie dazu) – die Anbindung müsste also in `wendeFastaAn` wandern oder der Graphbau FaSta kennen. Die 10-m-Regel bliebe als Rückfall für Anlagen ohne Beschreibung (Hannover: 2 von 20). |
 | 23 | **Die Ankunftserkennung ist in der Halle unerreichbar** | M5 der Mobilabnahme: `pruefeAnkunft()` sperrt bei `genauigkeitM > GENAUIGKEIT_MAX_M` (100 m), gemessen wurden ±118 m **am Fenster**. Der Zähler startet in der Halle nie, Radius und Verweildauer kommen nicht zum Tragen. Die 100 m sind für den Kartenpunkt richtig und für die Ankunft zu streng – **zwei Fragen an einer Zahl**. Zu entscheiden ist eine eigene, lockerere Ankunftsschwelle, nicht ein neuer Wert für beide. Nach der Abnahme nicht dringend: Selberklicken funktioniert. Einzelheiten unter „Die Mobilabnahme". |
 | 22 | **Die Naht Knopf → Wirkung bleibt ungetestet** | Die vier Fehler vom 07.09. sassen alle zwischen zwei grünen Testdateien: `Dashboard.test.tsx` mockt `onVariante` weg, `varianten.test.ts` speist die Hole-Funktion ein. Behoben sind die Fehler, die Lücke nicht – es gibt weiterhin **keinen** Test, der `App.tsx` mit einem echten Klick durchläuft. Ein `App.test.tsx` mit gemocktem `holeRoute` würde die ganze Gattung schliessen, nicht nur diesen Fall. |
 | 4e | **Test für die Achsenableitung (§5-B)** | Ab zwei verankerten Bahnsteigen bestimmt deren Richtung, wo die *unverankerten* liegen. Kein Test prüft das Ergebnis: In den Fixtures sind entweder alle Bahnsteige verankert (Hannover, Berlin) oder nur einer (Unit-Tests). Gebraucht wird ein Fall mit zwei verankerten **und** zwei unverankerten – der Regelfall an mittelgrossen Bahnhöfen. Eine Stunde Arbeit. |
@@ -2217,10 +2225,23 @@ Bahnsteig-Relationen enthalten ihren Aufzug auch geometrisch, `1;2` nicht.
 
 - **Punkt-in-Fläche**, schwellenwertfrei im Stil von §5: Der verwaiste Aufzug
   liegt *ausserhalb* der Bahnsteigfläche `1;2`. Löst diesen Fall nicht.
-- **FaSta-`description`**, der §5-Weg von der Anlage zum Bahnsteig: In
-  Braunschweig sind **alle fünf Beschreibungen leer**. Kein Bahnsteigbezug
-  ableitbar. Das ist ein eigener Befund – §5 verlässt sich auf ein Feld, das
-  nicht überall gefüllt ist.
+- ~~**FaSta-`description`**, der §5-Weg von der Anlage zum Bahnsteig: In
+  Braunschweig sind alle fünf Beschreibungen leer.~~ **Falsch – zurückgenommen
+  am 07.09.2026.** Das Prüfskript las `anlage.description`; der Client mappt
+  das Feld auf **`beschreibung`** (`clients/fasta.ts:50`), also war jede
+  Antwort `undefined`. Nachgemessen sind die Beschreibungen **vollständig
+  da**: Braunschweig 5/5, Berlin 69/69, Hannover 18/20. Der verwaiste Aufzug
+  sagt sogar selbst, wohin er gehört: **`"zu Gleis 1/2"`**.
+
+**Damit ist die gebaute Regel schwächer als nötig.** `verankerterBahnsteig()`
+aus §5 löst `"zu Gleis 1/2"` nach `['1','2']` auf, und OSMs
+`ref:operator_inventory` trägt genau die FaSta-Anlagennummer
+(`n4061917638` → `10453807`) – der Verbindungsschlüssel liegt also in beiden
+Datensätzen. Eine Anbindung über diesen Weg bräuchte **keinen Umkreis und
+keine Eindeutigkeitsprüfung**, weil die Quelle den Bahnsteig benennt statt
+ihn zu raten. Aufgenommen als ToDo 24. Die 10-m-Regel bleibt bis dahin
+stehen: Sie ist geprüft, ausgeliefert und wirkt auch dort, wo eine Anlage
+keine Beschreibung trägt (Hannover: 2 von 20).
 
 ### Die Regel, die daraus wurde
 
