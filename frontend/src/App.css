@@ -1294,6 +1294,17 @@
   font-weight: 600;
   color: var(--color-text);
   cursor: pointer;
+  /*
+   * Druckfeedback wie bei jedem anderen Knopf der App (`.wahl-knopf`,
+   * `.knopf-primaer`). Es fehlte hier als einzigem - am Rechner verdeckt
+   * `cursor: pointer` das, auf dem Touchscreen gibt es weder Cursor noch
+   * Hover. In der Mobilabnahme am 07.09.2026 war das der Grund, warum die
+   * Zeile sich tot anfuehlte: Der Tipp feuerte, nur sagte nichts es.
+   */
+  transition: background 0.18s ease, color 0.18s ease, transform 0.12s ease;
+}
+.routenwahl-zeile:active {
+  transform: scale(0.985);
 }
 .routenwahl-zeile.gewaehlt {
   border-color: var(--color-text);
@@ -1321,6 +1332,28 @@
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   opacity: 0.85;
+}
+/*
+ * Die ladende Zeile bleibt voll lesbar, die uebrigen treten zurueck. Nicht
+ * umgekehrt: Wer getippt hat, schaut auf die Zeile, die er getippt hat.
+ */
+.routenwahl-zeile:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.routenwahl-zeile.laedt {
+  opacity: 1;
+  border-color: var(--color-text);
+}
+.routenwahl-fehler {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--color-neutral-100);
+  border-left: 3px solid var(--color-accent);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--color-text);
 }
 
 

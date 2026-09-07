@@ -3,6 +3,22 @@ import type { RouteErgebnis, RouteParameter, RoutenVariante } from './typen'
 /** Angebotene Varianten in der Reihenfolge des Entwurfs. */
 export const ANGEBOTENE: RoutenVariante[] = ['schnellste', 'barrierefrei', 'mit-stopp']
 
+/**
+ * Welche Variante zuerst geladen wird.
+ *
+ * Bis zum 07.09.2026 stand diese Entscheidung als Aufzaehlung in `App.tsx`
+ * neben der Liste oben - und war seit dem 05.09. falsch, weil 'mit-stopp'
+ * nur der Liste beitrat, nicht der Aufzaehlung. Die Wahl des Nutzers fiel
+ * still auf 'schnellste' zurueck.
+ *
+ * Jetzt entscheidet die angebotene Liste selbst. Eine neue Variante
+ * einzutragen reicht damit aus; es gibt keine zweite Stelle mehr, die
+ * vergessen werden kann.
+ */
+export function ersteVariante(gewuenscht: RoutenVariante): RoutenVariante {
+  return ANGEBOTENE.includes(gewuenscht) ? gewuenscht : 'schnellste'
+}
+
 type Basis = Omit<RouteParameter, 'variante'>
 type HoleFn = (p: RouteParameter) => Promise<RouteErgebnis>
 

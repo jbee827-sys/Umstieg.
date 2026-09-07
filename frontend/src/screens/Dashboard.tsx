@@ -25,6 +25,16 @@ interface DashboardProps {
   varianten: VariantenStand
   /** Ungelesene Meldungen liegen vor. */
   hinweis: boolean
+  /**
+   * Variante, die gerade geholt wird - `undefined`, solange nichts laeuft.
+   *
+   * Ohne diese Angabe war der Wechsel auf dem Dashboard unsichtbar: `laden`
+   * liegt in `App.tsx` und wird nur an `Eingabe` gereicht. Auf dem Handy
+   * hiess das, dass ein Tipp sekundenlang folgenlos aussah.
+   */
+  laedt?: RoutenVariante
+  /** Warum die zuletzt getippte Variante nicht kam. `null` = alles gut. */
+  variantenFehler?: string | null
   onVariante: (v: RoutenVariante) => void
   onNavigation: () => void
   onMeldungen: () => void
@@ -62,6 +72,8 @@ export function Dashboard({
   abgefahren,
   varianten,
   hinweis,
+  laedt,
+  variantenFehler,
   onVariante,
   onNavigation,
   onMeldungen,
@@ -104,12 +116,21 @@ export function Dashboard({
         <div className="routenwahl" role="group" aria-label="Routenvariante">
           {KNOEPFE.map((k) => {
             const gewaehlt = varianten.gewaehlt === k.wert
+            const laedtDiese = laedt === k.wert
             return (
               <button
                 key={k.wert}
                 type="button"
-                className={`routenwahl-zeile${gewaehlt ? ' gewaehlt' : ''}`}
+                className={`routenwahl-zeile${gewaehlt ? ' gewaehlt' : ''}${
+                  laedtDiese ? ' laedt' : ''
+                }`}
                 aria-pressed={gewaehlt}
+                aria-busy={laedtDiese || undefined}
+                // Waehrend ein Wechsel laeuft, nimmt keine Zeile einen
+                // zweiten entgegen. Sonst stapeln sich auf dem Handy drei
+                // Anfragen, von denen die zuletzt beantwortete gewinnt - und
+                // das muss nicht die zuletzt getippte sein.
+                disabled={laedt !== undefined}
                 onClick={() => onVariante(k.wert)}
               >
                 <span className="routenwahl-punkt" aria-hidden="true">
@@ -117,12 +138,17 @@ export function Dashboard({
                 </span>
                 <span className="routenwahl-label">{k.label}</span>
                 <span className="routenwahl-min">
-                  {minuten(varianten[k.feld] as number | undefined)}
+                  {laedtDiese ? 'lädt …' : minuten(varianten[k.feld] as number | undefined)}
                 </span>
               </button>
             )
           })}
         </div>
+        {variantenFehler && (
+          <p className="routenwahl-fehler" role="alert">
+            {variantenFehler}
+          </p>
+        )}
       </fieldset>
 
       {route.hinweise.length > 0 && (
