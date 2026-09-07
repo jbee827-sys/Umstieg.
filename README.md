@@ -42,8 +42,16 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > VMV fällt durch (ToDo 20). `ERKENNUNG_MAX_M` ist damit vom Tisch, es war
 > nie geraten; **offen bleibt allein `NOTBEHELF_TTL_MS`.**
 >
+> **Danach gemeldet und behoben: Braunschweig Hbf fand keine barrierefreie
+> Route** – nicht weil Aufzüge fehlten (vier kartiert, laut FaSta alle
+> ACTIVE), sondern weil der Aufzug von Bahnsteig 1/2 in OSM an keinem
+> Wegenetz hängt und die Bahnsteiganbindung je Punkt nur **einen** Wegknoten
+> wählt. Siehe „Braunschweig fand keine barrierefreie Route". Dabei fiel auf:
+> **§5 verlässt sich auf FaStas `description`, und die ist in Braunschweig
+> bei allen fünf Anlagen leer** (ToDo 24).
+>
 > **Nächster Schritt: M9** – der Nachtest der reparierten Routenwahl am
-> Gerät, prüfbar erst nach dem Deployment. Danach ToDo 20.
+> Gerät. Danach ToDo 20.
 >
 > **Nicht vergessen: ToDo 20, das VMV-Format.** Unverändert offen, die drei
 > Blocker stehen isoliert in der ToDo-Tabelle.
@@ -110,7 +118,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > Upstream-Aufrufe (P2 der Härtung), die Entscheidung zur Wagenposition.
 
 ```bash
-cd backend && npm test        # muss 344 von 344 grün sein
+cd backend && npm test        # muss 347 von 347 grün sein
 cd backend && npm run lint    # oxlint + tsc --noEmit, muss sauber sein
 cd frontend && npm test       # muss 268 von 268 grün sein
 cd frontend && npm run lint   # oxlint + tsc --noEmit, muss sauber sein
@@ -367,6 +375,7 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | ~~4c~~ | ~~**CSP-Header fehlt**~~ ✅ **erledigt 04.09.2026** | `3d8a842`. Die Quellen sind aus dem Code belegt statt geraten: Kartenkacheln, der SSE-Strom auf Fly.io, MapLibres Worker (`blob:`), lokale Schriften. Vercel Web Analytics lädt same-origin, braucht also keine Fremddomain. 7 Tests prüfen die `vercel.json` direkt. |
 | ~~4d~~ | ~~**Deprecation-Warnung `disableRequestLogging`**~~ ✅ **erledigt 04.09.2026** | `dcac4ca`, auf `logController` umgestellt (Fastify 6 entfernt die alte Option). Die sechs Datenschutztests liefen unverändert weiter – **kein** Zugriffsprotokoll, wie die Datenschutzerklärung zusagt. |
 | 21 | **Leerzeichen vor dem Komma nach der eckigen Klammer** | `analysiere()` in `frontend/src/reise/reisetext.ts` ersetzt den Klammerzusatz durch `' '`, das Backend (`KLAMMERZUSATZ` in `core/bahnhofsname.ts`) durch `''`. Aus „S+U Hauptbahnhof [Gleis 1-8], Berlin" wird deshalb **„S+U Hauptbahnhof , Berlin"** – mit Leerzeichen vor dem Komma. Am 06.09.2026 nebenbei aufgefallen, als das VMV-Format zerlegt wurde. Schadet der Suche derzeit **nicht** (die Störwort-Schälung räumt es mit weg), landet aber sichtbar als Suchtext im Formular. Kosmetisch, eine Zeile. |
+| 24 | **§5 hängt an einem Feld, das nicht überall gefüllt ist** | Die Zuordnung Anlage → Bahnsteig kommt aus FaStas `description` („zu Gleis 15/16"). In **Braunschweig sind alle fünf Beschreibungen leer** – dort trägt §5 nichts bei. Am 07.09.2026 nebenbei belegt. Wie verbreitet das ist, ist ungezählt: Sondiert wurden seinerzeit fünf Vokabulare, aber nicht, wie viele Bahnhöfe **gar keines** haben. Zu messen, bevor §5 als tragfähig gilt. |
 | 23 | **Die Ankunftserkennung ist in der Halle unerreichbar** | M5 der Mobilabnahme: `pruefeAnkunft()` sperrt bei `genauigkeitM > GENAUIGKEIT_MAX_M` (100 m), gemessen wurden ±118 m **am Fenster**. Der Zähler startet in der Halle nie, Radius und Verweildauer kommen nicht zum Tragen. Die 100 m sind für den Kartenpunkt richtig und für die Ankunft zu streng – **zwei Fragen an einer Zahl**. Zu entscheiden ist eine eigene, lockerere Ankunftsschwelle, nicht ein neuer Wert für beide. Nach der Abnahme nicht dringend: Selberklicken funktioniert. Einzelheiten unter „Die Mobilabnahme". |
 | 22 | **Die Naht Knopf → Wirkung bleibt ungetestet** | Die vier Fehler vom 07.09. sassen alle zwischen zwei grünen Testdateien: `Dashboard.test.tsx` mockt `onVariante` weg, `varianten.test.ts` speist die Hole-Funktion ein. Behoben sind die Fehler, die Lücke nicht – es gibt weiterhin **keinen** Test, der `App.tsx` mit einem echten Klick durchläuft. Ein `App.test.tsx` mit gemocktem `holeRoute` würde die ganze Gattung schliessen, nicht nur diesen Fall. |
 | 4e | **Test für die Achsenableitung (§5-B)** | Ab zwei verankerten Bahnsteigen bestimmt deren Richtung, wo die *unverankerten* liegen. Kein Test prüft das Ergebnis: In den Fixtures sind entweder alle Bahnsteige verankert (Hannover, Berlin) oder nur einer (Unit-Tests). Gebraucht wird ein Fall mit zwei verankerten **und** zwei unverankerten – der Regelfall an mittelgrossen Bahnhöfen. Eine Stunde Arbeit. |
@@ -2161,6 +2170,99 @@ falsch herum. Ein Parser scheitert laut („nicht erkannt"), ein Sprachmodell
 leise und plausibel – es schreibt bereitwillig ein Gleis, das im Text nie
 stand. Mit Gepäck und zwölf Minuten Umsteigezeit ist ein selbstbewusst
 falsches Gleis schlimmer als gar keins.
+
+## Braunschweig fand keine barrierefreie Route (07.09.2026)
+
+Gemeldet nach dem Deployment: Braunschweig Hbf antwortet auf „Barrierefrei"
+mit „Keine barrierefreie Route gefunden", obwohl der Bahnhof Aufzüge hat.
+
+**Vier Verdächtige waren binnen einer Stunde ausgeschlossen** – und keiner
+davon war es:
+
+| Verdacht | Befund |
+|---|---|
+| Aufzüge fehlen in OSM | ❌ Vier kartiert, alle `wheelchair=yes`, `level="0;1"`, Betreiber DB InfraGO |
+| Der Graph baut keine Aufzugkanten | ❌ Alle vier vorhanden, alle `barrierefrei=true` |
+| FaSta sperrt sie als defekt | ❌ FaSta meldet **fünf** Anlagen, alle `ACTIVE`; die IDs decken sich mit OSMs `ref:operator_inventory` |
+| Die Filterregel ist zu streng | ❌ Ebene Wege gelten als barrierefrei, sofern nicht `wheelchair=no` |
+
+**Die Ursache liegt in der Anbindung.** Braunschweig hat auf Bahnsteigebene
+fünf getrennte barrierefreie Inseln – eine je Bahnsteig, weil die Bahnsteige
+nur über Ebene 0 verbunden sind:
+
+| Insel | Gleise | Aufzug |
+|---|---|---|
+| 49 Knoten | **1, 2** | **keiner** |
+| 29 | 7, 8 | ✅ |
+| 29 | 3, 3b, 4 | ✅ |
+| 28 | 5, 6 | ✅ |
+| **3** | – | **verwaister vierter Aufzug** |
+
+Der vierte Aufzug (OSM `n4061917638`, FaSta `10453807`, ACTIVE) steht **8 m**
+von der Mitte des Gleises 1 – und hat auf Ebene 1 genau zwei Nachbarn: einen
+2-Meter-Stummel und sich selbst eine Etage tiefer. Aus der Insel von Gleis 1
+führen überhaupt nur **zwei Kanten heraus, beide Treppen**.
+
+Der Mechanismus steht in `core/graph.ts`: Jeder Bahnsteigpunkt wird an
+**genau einen** – den nächstgelegenen – Wegknoten derselben Ebene gehängt
+(`ANBINDUNG_MAX_M = 30`). `gleis1:mitte` fand einen in 2 m; der Aufzug in
+8 m war für keinen der sechs Punkte von Gleis 1 und 2 der Nächste und fiel
+heraus.
+
+**Dass die anderen drei funktionierten, war Glück in Fremddaten.** Bei ihnen
+verbindet OSM den Aufzug selbst mit dem Bahnsteigweg. Gegengeprüft: Die drei
+Bahnsteig-Relationen enthalten ihren Aufzug auch geometrisch, `1;2` nicht.
+
+### Zwei naheliegende Wege waren versperrt
+
+- **Punkt-in-Fläche**, schwellenwertfrei im Stil von §5: Der verwaiste Aufzug
+  liegt *ausserhalb* der Bahnsteigfläche `1;2`. Löst diesen Fall nicht.
+- **FaSta-`description`**, der §5-Weg von der Anlage zum Bahnsteig: In
+  Braunschweig sind **alle fünf Beschreibungen leer**. Kein Bahnsteigbezug
+  ableitbar. Das ist ein eigener Befund – §5 verlässt sich auf ein Feld, das
+  nicht überall gefüllt ist.
+
+### Die Regel, die daraus wurde
+
+Bewusst schmal, wie die gegen den Ebenensprung. `verbindeVerwaisteAufzuege()`
+greift nur, wenn **alle drei** Bedingungen zutreffen:
+
+1. Die barrierefreie Insel enthält einen Aufzug und **keinen** Bahnsteig.
+2. Ein Bahnsteigpunkt derselben Ebene liegt näher als `VERWAIST_MAX_M`.
+3. **Alle** Bahnsteigpunkte in diesem Umkreis gehören zu **einer** Insel.
+
+`VERWAIST_MAX_M = 10` – entschieden am 07.09.2026, gemessen ist die Zahl
+nicht. Sie ist bewusst viel enger als die 30 m der normalen Anbindung:
+Dort wird ein Bahnsteig mit dem Wegenetz verbunden, das ohnehin zu ihm
+gehört; hier wird eine Lücke in Fremddaten überbrückt. **Ein falsch
+verbundener Aufzug ist auf der barrierefreien Route der teuerste denkbare
+Fehler** – er schickt jemanden im Rollstuhl zu einem Lift, den er nicht
+erreicht. Das ist schlechter als die ehrliche Absage. Bedingung 3 zählt
+deshalb Inseln, nicht Gleisnummern: Ein Bahnsteig trägt oft zwei Gleise
+(Braunschweig: „1;2"), und die sind derselbe begehbare Ort.
+
+**Die Falle beim Bauen:** Der erste Entwurf rechnete die Inseln über *alle*
+barrierefreien Kanten – also auch über die Aufzüge. Damit fuhr die Suche vom
+verwaisten Ausstieg hinunter auf Ebene 0, fand dort Bahnsteige und hielt die
+Insel für versorgt. Bedingung 1 traf nie zu, die Regel feuerte kein einziges
+Mal. Gefragt ist, was der Ausstieg auf **seiner** Ebene zu Fuss erreicht.
+Derselbe Denkfehler steckte zuerst auch im Test – die Richtung zählt: Vom
+Aufzug aus *kommt* man an Bahnsteige (über Ebene 0 zu den Gleisen 3–8), nur
+nicht umgekehrt.
+
+### Gemessen über alle vier Fixtures
+
+| Fixture | Aufzugkanten | Reparaturen |
+|---|---|---|
+| Braunschweig Hbf | 4 | **1** |
+| Berlin Hbf | 30 | 0 |
+| Gütersloh | 0 | 0 |
+| Zernitz | 0 | 0 |
+
+Drei Tests halten es fest, alle gegen die **echten** Overpass-Daten von
+Braunschweig (neues Fixture): die Anbindung selbst, die Route Gleis 1 → 5,
+und die Invariante **kein Bahnsteig ohne erreichbaren Aufzug**. Backend
+steht bei 347.
 
 ## Die Mobilabnahme (07.09.2026, M1–M8 durch)
 
