@@ -98,3 +98,44 @@ describe('Dashboard', () => {
     expect(screen.getByText(/Gl\. 14/)).toBeDefined()
   })
 })
+
+/**
+ * Regression (Mobilabnahme 07.09.2026): Die Routenzeilen fuehlten sich tot an.
+ *
+ * Der Tipp feuerte - nur war JEDER Ausgang unsichtbar. `laden` und `fehler`
+ * lagen in `App.tsx` und wurden ausschliesslich an `Eingabe` durchgereicht;
+ * auf dem Dashboard zeichnete sie niemand. Wer auf "Barrierefrei" tippte,
+ * bekam bei einem kalten Bahnhof sekundenlang nichts zu sehen - und bei
+ * einem Bahnhof ohne nutzbaren Aufzug (HTTP 404, im Backend ein eigener
+ * Text) fuer immer nichts.
+ *
+ * Das Dashboard muss beides selbst zeigen.
+ */
+describe('Dashboard: Rueckmeldung beim Variantenwechsel', () => {
+  it('zeigt an der getippten Zeile, dass sie laedt', () => {
+    zeige({ varianten: { schnellste: 300, gewaehlt: 'schnellste' }, laedt: 'barrierefrei' })
+    const bf = screen.getByRole('button', { name: /Barrierefrei/ })
+    expect(bf.getAttribute('aria-busy')).toBe('true')
+    expect(bf.textContent).toMatch(/lädt/i)
+  })
+
+  it('markiert nur die getippte Zeile als ladend', () => {
+    zeige({ varianten: { schnellste: 300, gewaehlt: 'schnellste' }, laedt: 'barrierefrei' })
+    expect(
+      screen.getByRole('button', { name: /Schnellste/ }).getAttribute('aria-busy'),
+    ).not.toBe('true')
+  })
+
+  it('zeigt den Fehler, wenn die Variante nicht berechnet werden konnte', () => {
+    zeige({
+      varianten: { schnellste: 300, gewaehlt: 'schnellste' },
+      variantenFehler: 'Kein WC und kein Kiosk auf dem Weg gefunden.',
+    })
+    expect(screen.getByText(/Kein WC und kein Kiosk/)).toBeDefined()
+  })
+
+  it('schweigt ohne Fehler', () => {
+    zeige({ varianten: { schnellste: 300, gewaehlt: 'schnellste' } })
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+})

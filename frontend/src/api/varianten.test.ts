@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { ladeVarianten } from './varianten'
+import { ANGEBOTENE, ersteVariante, ladeVarianten } from './varianten'
 import type { RouteErgebnis, RouteParameter } from './typen'
 
 const basis = {
@@ -96,5 +96,31 @@ describe('ladeVarianten', () => {
     })
     await ladeVarianten(basis, 'barrierefrei', hole, vi.fn(), vi.fn())
     expect(reihenfolge).toEqual(['barrierefrei', 'schnellste', 'mit-stopp'])
+  })
+})
+
+/**
+ * Regression (Mobilabnahme 07.09.2026): "Mit Stopp: WC & Kiosk" liess sich
+ * nicht auswaehlen. In `App.tsx` stand die Wahl als Aufzaehlung neben der
+ * angebotenen Liste:
+ *
+ *     eingabe.variante === 'barrierefrei' ? 'barrierefrei' : 'schnellste'
+ *
+ * Geschrieben am 31.08.2026, als es genau diese zwei Varianten gab. Am
+ * 05.09. kam 'mit-stopp' dazu (ToDo 9c) - die Zeile wurde nie nachgezogen
+ * und verwarf die Wahl still: getippt wurde 'mit-stopp', geladen wurde
+ * 'schnellste', der Punkt sprang zurueck. Nichts sagte etwas.
+ *
+ * Die Liste der angebotenen Varianten steht seither an EINER Stelle.
+ */
+describe('ersteVariante', () => {
+  it('laesst jede angebotene Variante durch - auch mit-stopp', () => {
+    for (const v of ANGEBOTENE) expect(ersteVariante(v)).toBe(v)
+  })
+
+  it('faengt ab, was die Oberflaeche gar nicht anbietet', () => {
+    // 'einfachste' steht im Typ, hat aber keinen Knopf. Ohne Rueckfall ginge
+    // eine Anfrage raus, die kein Bildschirm je ausloesen kann.
+    expect(ersteVariante('einfachste')).toBe('schnellste')
   })
 })

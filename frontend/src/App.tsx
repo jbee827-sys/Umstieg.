@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import './App.css'
 import { holeRoute, RouteFehler } from './api/client'
-import { ladeVarianten } from './api/varianten'
+import { ersteVariante, ladeVarianten } from './api/varianten'
 import { verbindeLive } from './api/sse'
 import type { BahnhofTreffer, LiveEreignis, RouteErgebnis, RoutenVariante } from './api/typen'
 import { Datenschutz } from './components/Datenschutz'
@@ -112,6 +112,9 @@ function App() {
   const [werte, setWerte] = useState<EingabeWerte | null>(null)
   const [laden, setLaden] = useState(false)
   const [fehler, setFehler] = useState<string | null>(null)
+  /** Variante, die gerade geholt wird - `undefined`, solange nichts laeuft. */
+  const [variantenLaden, setVariantenLaden] = useState<RoutenVariante | undefined>(undefined)
+  const [variantenFehler, setVariantenFehler] = useState<string | null>(null)
   const [liveEreignis, setLiveEreignis] = useState<LiveEreignis | null>(null)
   /** Zeitstempel des Tafelausfalls, solange er anhaelt (null = Quelle antwortet). */
   const [quelleWegSeit, setQuelleWegSeit] = useState<string | null>(null)
@@ -208,6 +211,9 @@ function App() {
   const berechne = useCallback(async (eingabe: EingabeWerte) => {
     setLaden(true)
     setFehler(null)
+    // Eine neue Rechnung raeumt den Variantenfehler mit weg - er gehoert zur
+    // vorigen Reise und stuende sonst noch am neuen Dashboard.
+    setVariantenFehler(null)
     const basis = {
       eva: eingabe.eva,
       gleisAn: eingabe.gleisAn,
@@ -216,8 +222,7 @@ function App() {
       zugAn: eingabe.zugAn,
       wagen: eingabe.wagenAn || undefined,
     }
-    const gewaehlt: RoutenVariante =
-      eingabe.variante === 'barrierefrei' ? 'barrierefrei' : 'schnellste'
+    const gewaehlt = ersteVariante(eingabe.variante)
     try {
       await ladeVarianten(
         basis,
@@ -244,13 +249,59 @@ function App() {
     // nicht sehen und will ihn genannt haben.
   }, [setBildschirm])
 
-  /** Variante wechseln, ohne neu zu rechnen wenn moeglich. */
+  /**
+   * Variante wechseln.
+   *
+   * Bis zum 07.09.2026 lief das ueber `berechne` - und damit ueber
+   * `ladeVarianten`, das ALLE drei Varianten holt. Ein Tipp kostete drei
+   * Anfragen statt einer, und `setVarianten` ersetzte dabei den ganzen Stand:
+   * Die Minuten der uebrigen Knoepfe verschwanden und trudelten einzeln
+   * wieder ein.
+   *
+   * Schwerer wog, was dabei unsichtbar blieb. `berechne` meldet Fortschritt
+   * ueber `laden` und `fehler` - beide werden ausschliesslich an `Eingabe`
+   * gezeichnet. Auf dem Dashboard passierte nach dem Tippen also nichts:
+   * kein Ladehinweis waehrend der Anfrage, keine Meldung, wenn sie mit 404
+   * zurueckkam ("Keine barrierefreie Route gefunden", "Kein WC und kein
+   * Kiosk auf dem Weg gefunden"). In der Mobilabnahme fuehlte sich die Zeile
+   * deshalb tot an.
+   *
+   * Jetzt holt der Wechsel genau die eine Variante und fuehrt seinen
+   * Fortschritt selbst - sichtbar am Knopf, der getippt wurde.
+   */
   const waehleVariante = useCallback(
     (v: RoutenVariante) => {
-      if (!werte) return
-      void berechne({ ...werte, variante: v })
+      if (!werte || v === varianten.gewaehlt || variantenLaden !== undefined) return
+      setVariantenLaden(v)
+      setVariantenFehler(null)
+      void holeRoute({
+        eva: werte.eva,
+        gleisAn: werte.gleisAn,
+        gleisAb: werte.gleisAb,
+        profil: werte.profil,
+        zugAn: werte.zugAn,
+        wagen: werte.wagenAn || undefined,
+        variante: v,
+      })
+        .then((neu) => {
+          setRoute(neu)
+          setWerte({ ...werte, variante: v })
+          // Spreizen, nicht ersetzen: Die Minuten der anderen Knoepfe sind
+          // bereits geholt und aendern sich durch einen Wechsel nicht.
+          setVarianten((s) => ({ ...s, gewaehlt: v, [v]: neu.gehzeitSek }))
+          setVersatz(0)
+        })
+        .catch((e: unknown) => {
+          // Der Fehlertext des Backends ist hier der bessere: Er nennt den
+          // Grund ("kein nutzbarer Aufzug", "kein WC und kein Kiosk"),
+          // waehrend FEHLER_TEXTE nur die Gattung kennt.
+          const detail = e instanceof RouteFehler ? e.message : undefined
+          const code = e instanceof RouteFehler ? e.code : 'netz'
+          setVariantenFehler(detail || FEHLER_TEXTE[code] || 'Diese Route liess sich nicht berechnen.')
+        })
+        .finally(() => setVariantenLaden(undefined))
     },
-    [werte, berechne],
+    [werte, varianten.gewaehlt, variantenLaden],
   )
 
   // Live-Überwachung, solange eine Route offen ist.
@@ -475,6 +526,8 @@ function App() {
           abgefahren={abgefahren}
           varianten={varianten}
           hinweis={ungelesen(meldungen) > 0}
+          laedt={variantenLaden}
+          variantenFehler={variantenFehler}
           onVariante={waehleVariante}
           onNavigation={() => setBildschirm('navigation')}
           onMeldungen={() => setBildschirm('meldungen')}
