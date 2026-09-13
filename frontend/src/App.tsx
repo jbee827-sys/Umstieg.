@@ -521,6 +521,11 @@ function App() {
           gleisAb: neueWerte.gleisAb,
           profil: neueWerte.profil,
           variante: neueWerte.variante,
+          // Der gewaehlte Standort gehoert mitgerechnet. Ohne ihn faellt der
+          // Vorschlag still auf die Bahnsteigmitte zurueck - und zeigt, am
+          // Kopfbahnhof, einen anderen Weg als den, der gerade auf dem Schirm
+          // steht, ohne dass irgendetwas das sagt.
+          abschnitt: neueWerte.abschnitt,
           zugAn: neueWerte.zugAn,
           wagen: neueWerte.wagenAn || undefined,
         })
@@ -630,8 +635,22 @@ function App() {
           restSek={restSek}
           onUebernehmen={(angenommen) => {
             if (!angenommen.vorschlag) return
-            setWerte(angenommen.vorschlag.werte)
-            setRoute(angenommen.vorschlag.route)
+            const uebernommen = angenommen.vorschlag
+            setWerte(uebernommen.werte)
+            setRoute(uebernommen.route)
+            // Der Gehzeit-Speicher gehoerte zum ALTEN Gleis. Ihn stehen zu
+            // lassen hiesse, an Standort- und Variantenknoepfen Minuten zu
+            // zeigen, die fuer eine Route gerechnet wurden, die es nicht mehr
+            // gibt. Neu anfangen, mit der einen Zahl, die belegt ist.
+            gehzeitenRef.current = {}
+            setGehzeiten({})
+            merkeGehzeit(
+              uebernommen.werte.variante,
+              uebernommen.werte.abschnitt,
+              uebernommen.route.gehzeitSek,
+            )
+            setGewaehlteVariante(uebernommen.werte.variante)
+            setGewaehlterStandort(uebernommen.werte.abschnitt)
             setVersatz(0)
             setMeldungen((liste) => markiereUebernommen(liste, angenommen.nr))
             setBildschirm('dashboard')

@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import { holeRoute, sucheStationen } from './api/client'
-import type { RouteErgebnis, RouteParameter } from './api/typen'
+import type { LiveEreignis, RouteErgebnis, RouteParameter } from './api/typen'
 
 /**
  * DIE NAHT ZWISCHEN KNOPF UND WIRKUNG.
@@ -29,8 +29,19 @@ vi.mock('./api/client', async () => {
     holeTafel: vi.fn(async () => ({ ok: true, eintraege: [] })),
   }
 })
-// Kein EventSource in jsdom, und der Live-Strom gehoert nicht zu dieser Naht.
-vi.mock('./api/sse', () => ({ verbindeLive: () => () => undefined }))
+/**
+ * Kein EventSource in jsdom. Der Strom wird hier nicht nachgebaut, sondern
+ * aufgezeichnet: Der Test haelt den Rueckkanal in der Hand und kann ein
+ * Ereignis einspeisen - so wie es am 03.09.2026 fuer P4/P5 im Browser gemacht
+ * wurde, statt auf einen echten Gleiswechsel zu warten.
+ */
+const strom: { sende?: (e: LiveEreignis) => void } = {}
+vi.mock('./api/sse', () => ({
+  verbindeLive: (o: { onEreignis: (e: LiveEreignis) => void }) => {
+    strom.sende = o.onEreignis
+    return () => undefined
+  },
+}))
 
 const sucheMock = vi.mocked(sucheStationen)
 const routeMock = vi.mocked(holeRoute)
@@ -194,5 +205,62 @@ describe('App: Standortwahl am Ankunftsgleis', () => {
     // Nur die Route fuer die Mitte selbst - Anfang und Ende liegen schon vor.
     expect(abrufe().filter((p) => p.abschnitt === 'anfang')).toHaveLength(0)
     expect(abrufe().filter((p) => p.abschnitt === 'ende')).toHaveLength(0)
+  })
+})
+
+/**
+ * Der Gleiswechsel ist die zweite Stelle, an der eine Route neu gerechnet
+ * wird - und die einzige, an der es niemand angetippt hat. Genau deshalb
+ * faellt dort ein vergessener Parameter nicht auf.
+ */
+describe('App: Standort ueberlebt einen Gleiswechsel', () => {
+  async function gleiswechselAufGleis(neu: string): Promise<void> {
+    await bisZumDashboard()
+    await userEvent.click(screen.getByRole('button', { name: /^Anfang/ }))
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /^Anfang/ }).getAttribute('aria-pressed')).toBe(
+        'true',
+      ),
+    )
+    routeMock.mockClear()
+    act(() =>
+      strom.sende!({
+        typ: 'gleiswechsel',
+        zug: 'ICE 1006',
+        alt: '16',
+        neu,
+        zeitstempel: '2026-09-13T20:00:00.000Z',
+      }),
+    )
+  }
+
+  it('rechnet den Vorschlag mit dem gewaehlten Standort, nicht ab der Mitte', async () => {
+    await gleiswechselAufGleis('14')
+    await waitFor(() => expect(routeMock).toHaveBeenCalled())
+    expect(abrufe()[0].abschnitt).toBe('anfang')
+    expect(abrufe()[0].gleisAb).toBe('14')
+  })
+
+  /**
+   * Und nach dem Uebernehmen duerfen an den Knoepfen keine Minuten vom ALTEN
+   * Gleis stehenbleiben: Der Speicher gehoerte zu einer Route, die es nicht
+   * mehr gibt.
+   */
+  it('raeumt die Gehzeiten des alten Gleises weg, wenn der Vorschlag uebernommen wird', async () => {
+    await gleiswechselAufGleis('14')
+    await waitFor(() => expect(routeMock).toHaveBeenCalled())
+
+    await userEvent.click(screen.getByRole('button', { name: 'Meldung ansehen' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Route übernehmen' }))
+
+    // Die Minuten der beiden anderen Standorte sind weg, bis sie neu gerechnet
+    // sind - und der Anfang bleibt gewaehlt.
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /^Anfang/ }).getAttribute('aria-pressed')).toBe(
+        'true',
+      ),
+    )
+    expect(screen.getByRole('button', { name: /^Mitte/ }).textContent).toBe('Mitte')
+    expect(screen.getByRole('button', { name: /^Ende/ }).textContent).toBe('Ende')
   })
 })
