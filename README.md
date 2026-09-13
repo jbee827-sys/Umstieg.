@@ -18,12 +18,36 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 
 ## Hier weitermachen (Stand 13.09.2026)
 
-> **Zuletzt (13.09.):** Das Bahnhofsschema liefert jetzt echte Geometrie je
-> Ebene – siehe „Schematische Navigation: Geometrie statt Schrittliste".
-> Zwei Fehler kamen dabei heraus, die nur die Geometrie sichtbar machen
-> konnte; Berlin 14 → 6 braucht seitdem 305 s statt 575 s. **Der nächste
-> Schritt ist die Umsetzung im Frontend** – `Ebenenschema.tsx` leitet sein
-> Bild weiter aus den Schritttexten ab und kennt nichts von alldem.
+> **Zuletzt (13.09., abends):** Die **Standortwahl am Ankunftsgleis** steht
+> jetzt auch in der App – drei Knöpfe auf dem Dashboard, je mit der Gehzeit
+> von dort. Zwei Simulationen liefen dazu: das Schema über 60 Metropol- und
+> Großbahnhöfe (35 ausgewertet, **null Befunde**) und die Standortwahl über
+> 62 Bahnhöfe (**null Befunde**, 62 von 62 kennen alle drei Startpunkte).
+>
+> **Die Simulation hat drei Fehler in der Gleisliste aufgedeckt**, und der
+> schwerste betrifft die Metropolknoten: München Hbf führte vier „Gleise"
+> 1–4, die Straßenbahnhaltestellen auf dem Vorplatz sind, und Leipzig Hbf
+> kannte sein Gleis 19 nicht. Siehe „Die Gleisliste enthielt
+> Straßenbahnsteige".
+>
+> **Der Standort entscheidet messbar:** an 62 von 62 Bahnhöfen die Gehzeit,
+> an 10 den Weg selbst – und die Richtung dreht sich (München: Anfang
+> gewinnt, Hamburg-Altona: Ende, Dresden: Mitte).
+>
+> **Der nächste Schritt ist unverändert die Umsetzung im Frontend** –
+> `Ebenenschema.tsx` leitet sein Bild weiter aus den Schritttexten ab und
+> kennt weder Bahnsteige noch Zugänge noch Netz. Der Endpunkt liefert alles,
+> was sie braucht.
+>
+> **Nicht deployt:** `main` steht 13 Commits zurück; alles seit dem 07.09.
+> liegt nur auf `feat/mvp`.
+
+### Davor: Bahnhofsschema mit Geometrie (13.09.2026, vormittags)
+
+> Das Bahnhofsschema liefert echte Geometrie je Ebene – siehe „Schematische
+> Navigation: Geometrie statt Schrittliste". Zwei Fehler kamen dabei heraus,
+> die nur die Geometrie sichtbar machen konnte; Berlin 14 → 6 braucht seitdem
+> 305 s statt 575 s.
 
 ### Davor: Mobilabnahme (Stand 07.09.2026)
 
@@ -320,10 +344,13 @@ Nach Gewicht:
 1. **Das Frontend zeichnet noch das alte Bild.** `Ebenenschema.tsx` leitet
    sein Schema weiter aus den Schritttexten ab und kennt weder Bahnsteige noch
    Zugänge noch Netz. Die Umsetzung von D4 steht aus – der Endpunkt liefert
-   alles, was sie braucht.
-2. **Standortwahl als Bedienelement.** Im Artboard sind es drei Knöpfe; in der
-   App gibt es sie nicht. Wo sie hingehört (Eingabemaske oder
-   Navigationsseite) ist ungeklärt.
+   alles, was sie braucht. **Der wichtigste offene Punkt.**
+2. ~~**Standortwahl als Bedienelement.**~~ ✅ **gebaut am 13.09.2026** – drei
+   Knöpfe auf dem **Dashboard**, über der Routenwahl. Die Frage „Eingabemaske
+   oder Navigationsseite" ist damit zugunsten des Dashboards entschieden: Erst
+   dort ist sichtbar, was die Wahl am Weg ändert, und die Eingabemaske ist
+   nach der Mobilabnahme ohnehin lang genug. Siehe „Die Standortwahl am
+   Ankunftsgleis".
 3. **Parallel oder gedreht bei kreuzenden Ebenen.** Betrifft rund jeden
    zehnten Umstieg. Artboard „Gekreuzt" zeigt die Gegenposition; entschieden
    ist nichts.
@@ -344,13 +371,183 @@ Nach Gewicht:
 
 ### Offen am Rande
 
-- **Die Gleisliste des Graphen enthält Nicht-Gleise** – „M", „G", „B",
-  „Eilgutbühne", aus `ref`-Tags an Bahnsteigen ohne Gleisnummer. Für das
-  Schema harmlos, für die Gleiseingabe und die Prüfung „gibt es dieses
-  Gleis?" nicht.
+- ~~**Die Gleisliste des Graphen enthält Nicht-Gleise**~~ – **behoben am
+  13.09.2026**, und sie war nicht harmlos: siehe „Die Gleisliste enthielt
+  Straßenbahnsteige". Was **offen bleibt**, ist der Rest, den nur die
+  DB-Gleisliste entscheiden kann: Kaiserslautern führt ein Gleis „120" aus
+  `ref="1;120"` (Ebene 1, ohne Tram- oder Bus-Merkmal), und Hof Hbf ein
+  Gleis „10". Beide Bahnhöfe fallen deshalb in der Simulation mit „keine
+  Route" aus. `/api/route` holt die DB-Gleisliste ohnehin (als Trenner in
+  `istGleicherBahnsteig`) – sie auch als **Filter** zu benutzen, verbietet
+  sich nach bisheriger Regel („aus einer lückenhaften Liste darf nichts
+  geschlossen werden"), wäre aber zu messen wert.
+- **Vier Bahnhöfe der Stichprobe haben in OSM keinen einzigen Bahnsteig mit
+  Gleisnummer** – Singen, Zwickau, Husum, Iserlohn; seit dem 13.09. kommt
+  Mannheim Hbf dazu, wo die echten DB-Bahnsteige nur `name` tragen. Dort
+  greift das Standardmodell, wie vorgesehen.
+- **Drei Bahnhöfe der Stichprobe tragen keinen einzigen Zugang** –
+  Hamburg-Altona, Chemnitz Hbf, Jena Paradies. Ungeprüft, ob das die Daten
+  sind oder die Ableitung.
 - **Das Berlin-Fixture ist älter als die POI-Zeilen der Overpass-Abfrage**
   (Commit `fcc6e53` gegen `2b46a48`). Tests der `mit-stopp`-Variante prüfen
   damit einen Bahnhof ohne Zwischenziele.
+
+## Die Standortwahl am Ankunftsgleis (13.09.2026, abends)
+
+Der Endpunkt nahm `abschnitt` seit dem Vormittag entgegen, die App hatte kein
+Bedienelement dafür. Die Wahl, die den Weg entscheidet, war nicht treffbar.
+
+### Was gebaut wurde
+
+Drei Knöpfe auf dem Dashboard, **über** der Routenwahl: Anfang, Mitte, Ende,
+je mit der Gehzeit, die von dort gilt. Nebeneinander statt untereinander wie
+die Routenwahl – die Wahl ist räumlich, und die Reihenfolge im Markup ist die
+Reihenfolge am Bahnsteig.
+
+Beide Knopfreihen lesen aus **einem** Gehzeit-Speicher, geschlüsselt nach
+Variante **und** Standort. Zwei getrennte Listen hätten nach jedem Wechsel die
+jeweils andere stillschweigend veralten lassen: Minuten vom alten Standort an
+den neuen Knöpfen. Was einmal geholt ist, bleibt richtig und wird nicht
+zweimal geholt.
+
+### Die Naht zwischen Knopf und Wirkung – endlich geprüft
+
+`frontend/src/App.test.tsx` ist neu und die erste Datei, die das Dazwischen
+prüft: echter `App`, echte Verdrahtung, gemockt ist nur die Netzgrenze. Genau
+dort saßen am 07.09. alle vier Fehler der toten Routenwahl – `Dashboard.test.tsx`
+mockte `onVariante` weg, `varianten.test.ts` prüfte den Lader, und dazwischen
+lag ungeprüfter Code.
+
+Drei Funde, alle von den eigenen Tests:
+
+1. **Ein laufender Standortwechsel sperrte die Routenwahl nicht mit.** Zwei
+   Anfragen für dieselbe Route hätten sich stapeln können.
+2. **Der Gleiswechsel-Vorschlag rechnete ohne `abschnitt`** und fiel damit
+   still auf die Bahnsteigmitte zurück. Am Kopfbahnhof hätte der Vorschlag
+   einen anderen Weg gezeigt als den auf dem Schirm, ohne dass irgendetwas
+   das sagt.
+3. **Nach dem Übernehmen blieb der Gehzeit-Speicher des alten Gleises stehen.**
+
+## Simulation: das Schema über 60 Metropol- und Großbahnhöfe (13.09.2026)
+
+Zweiter Durchgang, bewusst andere Bahnhöfe als im ersten – die drei
+Metropolknoten als Pflicht. **35 ausgewertet, null Befunde.**
+
+| | |
+|---|---|
+| Ebenen je Bahnhof | min 1 · median 3 · max 5 |
+| Antwortgröße | min 0,6 kB · median 4,6 kB · max 20,6 kB (Berlin Hbf) |
+| Schemabau | median 2 ms, max 30 ms |
+| Bahnsteige ohne Achse | 0 |
+| Kreuzende Ebenen > 20° | 3 – Ludwigshafen 75°, Köln Messe/Deutz 46°, Berlin Südkreuz 31° |
+
+**25 fielen aus, und nur ein Teil davon liegt an uns:** 18 an
+Overpass-Zeitüberschreitungen (die öffentliche Instanz war unter Last), 4 an
+Bahnhöfen ohne einen einzigen Bahnsteig in OSM, 1 nicht gefunden – und **2 an
+einem echten Fehler**, siehe unten.
+
+### Was der Ausfall über die Simulation selbst sagt
+
+Die Pause von 3 s lief nur nach **erfolgreichen** Abrufen; ein Fehlschlag ging
+ohne Atempause in den nächsten. Gegen eine Drosselung ist das genau die
+falsche Reaktion. `simulation-standort.ts` macht es anders (längere
+Grundpause, wachsende nach Fehlschlägen) und kann mit `ABLAGE_NUR=1` ganz ohne
+Netz laufen.
+
+## Die Gleisliste enthielt Straßenbahnsteige und verschluckte echte Gleise
+
+Der Auslöser war eine Zeile im Lauf: `Kaiserslautern Hbf … keine Route 1 → 120`.
+Die Simulation fährt vom ersten zum letzten Gleis – und in
+**Frankfurt(Main)Hbf war das letzte „Gleis" der Straßenbahnsteig „Platz der
+Republik"**. Der Metropolknoten war damit gar nicht gemessen.
+
+Dahinter lagen drei Fehler, alle über **983 Bahnsteigrefs aus 94 abgelegten
+Bahnhöfen** nachgemessen:
+
+1. **Trennzeichen.** `parseRefs` kannte `;` und `/`. In den Daten stehen
+   außerdem `,` und `:` – Leipzig Hbf trägt `"18a,19"`, Hannover `"2,2a"` und
+   `"2b,3,3a,3b"`, Düsseldorf `"3:4"`. Diese Gleise fehlten in der Liste, und
+   an ihrer Stelle stand ein Gebilde, das kein Gleis ist. Ausgerechnet an
+   **Leipzig Hbf hieß das: Gleis 19 gibt es nicht** – an dem Bahnhof, an dem
+   der Kopfbahnhof-Fall gemessen wurde. Hannover gewinnt acht Gleise zurück.
+2. **Vorsilbe.** `"Gleis 21"` ist Gleis 21. Vier Gleise an einem Bahnhof waren
+   so nicht eingebbar.
+3. **Straßenbahnsteige.** `railway=platform` tragen in OSM auch Tram- und
+   Bussteige. Der gefährliche Fall ist nicht `"B"` oder `"Omnibusbahnhof"`,
+   sondern die **Zahl**: **München Hbf führte vier „Gleise" 1–4, die samt und
+   sonders Haltestellen auf dem Vorplatz sind** (Hauptbahnhof Süd,
+   Hopfenstraße, Holzkirchner Bahnhof). Wer Gleis 2 eingab, wurde zur Tram
+   geschickt.
+
+**Die Regel dagegen ist eng gehalten und gegen die Ablage geprüft.** `train=yes`
+zu *verlangen* wäre zu scharf (184 von 983 Refs tragen es nicht, darunter
+Kaiserslauterns Gleise 1 und 8/10), und `highway=platform` mitzunehmen nimmt
+Düsseldorfs Gleis 1 mit. Ausgeschlossen wird nur, was sich **selbst** als Tram-
+oder Bussteig ausweist und sich nicht auch als Eisenbahnsteig. Dazu: eine
+Gleisbezeichnung trägt eine Ziffer – Basels `"Regio 1"` und `"Fern 4"` bleiben.
+
+Gemessen über 94 Bahnhöfe: **867 Einträge werden 808**, davon 74 entfernt und
+15 gewonnen. Jeder entfernte zahlenförmige Eintrag ist einzeln geprüft und war
+ein Straßenbahnsteig. Ein Bahnhof fällt dabei auf null Gleise: **Mannheim Hbf**,
+dessen Liste aus vier Tram-Haltestellen bestand, während die echten
+DB-Bahnsteige dort nur `name` tragen und kein `ref`. Das ist die ehrlichere
+Antwort – vorher führte die App zu einer Tram.
+
+## Simulation: die Standortwahl über 62 Bahnhöfe – null Befunde
+
+`backend/scripts/simulation-standort.ts` fährt jeden Bahnhof **dreimal** – vom
+Anfang, von der Mitte, vom Ende des Ankunftsbahnsteigs – und prüft jede der
+drei Antworten gegen dasselbe Ebenendesign. Dazu eine Zusicherung, die bisher
+nirgends geprüft war: **Jeder Ebenenwechsel der Route muss auf beiden Ebenen
+als Anlage markiert sein.**
+
+- **62 von 62 kennen alle drei Startpunkte.** Der Rückfall auf die Mitte trat
+  kein einziges Mal ein.
+- **An 62 von 62 ändert der Standort die Gehzeit, an 10 den Weg selbst.**
+
+| Bahnhof | Anfang | Mitte | Ende | Spanne |
+|---|---|---|---|---|
+| Hamburg-Altona | 734 s | 512 s | **282 s** | 452 s |
+| Frankfurt(Main)Hbf | 673 s | 463 s | **250 s** | 423 s |
+| München Hbf | **625 s** | 785 s | 944 s | 319 s |
+| Essen Hbf | 408 s | 168 s | **121 s** | 287 s |
+| Dresden Hbf | 330 s | **244 s** | 519 s | 275 s |
+| Kiel Hbf | **179 s** | 311 s | 444 s | 265 s |
+
+**Die Richtung dreht sich.** In München gewinnt der Anfang, in Hamburg-Altona
+das Ende, in Dresden die Mitte. Eine feste Annahme – „Reisende stehen in der
+Mitte" – wäre an jedem zweiten Bahnhof die falsche. Und der Sonderfall zählt:
+**Fulda und Mainz sind ab der Mitte in 4 bzw. 6 Sekunden am Ziel** und ab den
+Enden in vier Minuten.
+
+Zehnmal ist es nicht dieselbe Strecke, sondern ein anderer Weg:
+
+```
+Berlin Gesundbrunnen   anfang/mitte  -1 → -2 → -1
+                       ende          -1 → 0 → -0,3 → -0,7 → -1
+Köln Messe/Deutz       anfang         1 → 0            (596 s)
+                       mitte/ende     1 → -1 → 0       (750 s / 548 s)
+Trier Hbf              anfang/mitte   0 → -1 → 0
+                       ende           0                (eine Ebene)
+Schwerin Hbf           anfang         0                (269 s)
+                       mitte/ende     0 → -1 → 0       (429 s / 244 s)
+```
+
+### Ein Befund war meine eigene Fehlmessung
+
+Der erste Lauf meldete **11 nicht markierte Treppen an drei Bahnhöfen**. Die
+Prüfung suchte den **ersten** Besuch einer Ebene – während `schema.ebenen` seit
+dem 13.09. eine Liste von **Besuchen** ist und Berlin Hbf die Ebene −1 zweimal
+betritt, einmal über Rolltreppen und einmal über Treppen. Auf dem zweiten
+Besuch stehen die Treppen sehr wohl.
+
+Die Fehlmessung hatte bereits zu einer Änderung an `elementeFuer` geführt; sie
+ist zurückgenommen. Sie hätte eine Anlage in **beide** Bilder gezeichnet, auch
+in das, in dem niemand sie benutzt. **Dieselbe Klasse Irrtum wie am 07.09.**
+(`description` statt `beschreibung`) – eine falsche Messung, auf der kurz eine
+Behauptung stand. Geprüft ist die Zusicherung jetzt an beiden Enden: in der
+Simulation über alle Besuche, und als Test gegen Berlin Hbf ab allen drei
+Standorten.
 
 ## Offen: was NICHT geprüft ist (Stand 05.09.2026)
 
