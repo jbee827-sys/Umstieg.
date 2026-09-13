@@ -29,6 +29,17 @@ const ANBINDUNG_MAX_M = 30;
  */
 const VERWAIST_MAX_M = 10;
 
+/**
+ * Wie nah ein begehbarer Knoten an der Bahnsteigachse liegen muss, um als
+ * „auf dem Bahnsteig" zu gelten.
+ *
+ * Berlins Tiefbahnsteige liegen 24 m auseinander; 12 m ist die Haelfte davon
+ * und damit die groesste Weite, die nicht auf den Nachbarbahnsteig greifen
+ * kann. Zusaetzlich gewinnt immer der NAECHSTE Bahnsteig - ein Knoten haengt
+ * nie an zweien.
+ */
+const BAHNSTEIG_NAEHE_M = 12;
+
 export function haversineM(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const rad = Math.PI / 180;
   const dLat = (lat2 - lat1) * rad;
@@ -462,6 +473,19 @@ export function baueGraph(osm: OverpassAntwort): StationGraph {
     }
   }
 
+  // --- Pass E: der Bahnsteig als begehbare Linie ---
+  //
+  // Bis hierher ist ein Bahnsteig eine Kette aus drei Punkten. Wer ihn
+  // dazwischen betritt - und das tut jeder, der eine Rolltreppe in der Mitte
+  // nimmt -, muss erst zu einem der drei laufen. An Berlins Gleis 5/6 waren
+  // das 342 m statt 92: 123 m zurueck zum Anfang, dann 215 m wieder vor.
+  //
+  // Die Kette wird deshalb um die begehbaren Knoten ergaenzt, die ohnehin auf
+  // dem Bahnsteig liegen, in ihrer Reihenfolge entlang der Achse. Neue Knoten
+  // entstehen dabei keine - nur die Kanten, die den Bahnsteig zu dem machen,
+  // was er ist: eine Flaeche, auf der man der Laenge nach gehen kann.
+  verdichteBahnsteigketten(knoten, fuegeKanteHinzu);
+
   // --- Pass POI: Zwischenziele der Variante `mit-stopp` ---
   //
   // Sie hängen nur AM Graphen, sie sind nicht Teil seines Gerüsts: Ein POI
@@ -545,6 +569,106 @@ export function baueGraph(osm: OverpassAntwort): StationGraph {
  * Punkt 3 zaehlt Inseln, nicht Gleisnummern: Ein Bahnsteig traegt oft zwei
  * Gleise (Braunschweig: "1;2"), und die sind derselbe begehbare Ort.
  */
+/**
+ * Lage eines Punktes auf einer Achse: Anteil 0..1 entlang, Abstand quer.
+ */
+function achsenLage(
+  a: GraphKnoten,
+  b: GraphKnoten,
+  p: { lat: number; lon: number },
+): { anteil: number; querM: number } | null {
+  const mLat = 111_320;
+  const mLon = mLat * Math.cos((a.lat * Math.PI) / 180);
+  const bx = (b.lon - a.lon) * mLon;
+  const by = (b.lat - a.lat) * mLat;
+  const px = (p.lon - a.lon) * mLon;
+  const py = (p.lat - a.lat) * mLat;
+  const laenge2 = bx * bx + by * by;
+  if (laenge2 === 0) return null;
+  const t = (px * bx + py * by) / laenge2;
+  return { anteil: t, querM: Math.hypot(px - t * bx, py - t * by) };
+}
+
+/**
+ * Die Bahnsteigketten um die Knoten ergaenzen, die auf ihnen liegen.
+ *
+ * Ein Knoten haengt an HOECHSTENS einem Bahnsteig - dem naechsten. Sonst
+ * entstuende zwischen zwei Bahnsteigen eine ebene Kante, also ein Weg ueber
+ * die Gleise.
+ */
+function verdichteBahnsteigketten(
+  knoten: Map<string, GraphKnoten>,
+  fuegeKanteHinzu: (kante: GraphKante) => void,
+): void {
+  interface Achse {
+    anfang: GraphKnoten;
+    ende: GraphKnoten;
+    mitte?: GraphKnoten;
+    level: number;
+  }
+  const achsen = new Map<string, Achse>();
+  for (const k of knoten.values()) {
+    if (!k.bahnsteigId || !k.abschnitt) continue;
+    let eintrag = achsen.get(k.bahnsteigId);
+    if (!eintrag) {
+      eintrag = { anfang: k, ende: k, level: k.level };
+      achsen.set(k.bahnsteigId, eintrag);
+    }
+    if (k.abschnitt === 'anfang') eintrag.anfang = k;
+    if (k.abschnitt === 'ende') eintrag.ende = k;
+    if (k.abschnitt === 'mitte') eintrag.mitte = k;
+  }
+
+  // Jeden begehbaren Knoten seinem naechsten Bahnsteig zuordnen.
+  const mitglieder = new Map<string, { knoten: GraphKnoten; anteil: number }[]>();
+  for (const kandidat of knoten.values()) {
+    if (!kandidat.id.startsWith('n')) continue; // nur physische Knoten
+    let bester: { id: string; anteil: number; querM: number } | null = null;
+    for (const [id, achse] of achsen) {
+      if (achse.level !== kandidat.level) continue;
+      if (achse.anfang === achse.ende) continue;
+      const lage = achsenLage(achse.anfang, achse.ende, kandidat);
+      if (!lage) continue;
+      if (lage.querM > BAHNSTEIG_NAEHE_M) continue;
+      if (lage.anteil < 0 || lage.anteil > 1) continue;
+      if (!bester || lage.querM < bester.querM) {
+        bester = { id, anteil: lage.anteil, querM: lage.querM };
+      }
+    }
+    if (!bester) continue;
+    if (!mitglieder.has(bester.id)) mitglieder.set(bester.id, []);
+    mitglieder.get(bester.id)!.push({ knoten: kandidat, anteil: bester.anteil });
+  }
+
+  for (const [id, achse] of achsen) {
+    const liste = mitglieder.get(id) ?? [];
+    if (liste.length === 0) continue;
+    const kette = [
+      { knoten: achse.anfang, anteil: 0 },
+      ...liste,
+      { knoten: achse.ende, anteil: 1 },
+    ];
+    if (achse.mitte) {
+      const lage = achsenLage(achse.anfang, achse.ende, achse.mitte);
+      kette.push({ knoten: achse.mitte, anteil: lage ? lage.anteil : 0.5 });
+    }
+    kette.sort((a, b) => a.anteil - b.anteil);
+    for (let i = 0; i < kette.length - 1; i++) {
+      const von = kette[i].knoten;
+      const nach = kette[i + 1].knoten;
+      if (von.id === nach.id) continue;
+      fuegeKanteHinzu({
+        von: von.id,
+        nach: nach.id,
+        laengeM: haversineM(von.lat, von.lon, nach.lat, nach.lon),
+        deltaLevel: 0,
+        typ: 'eben',
+        barrierefrei: true,
+      });
+    }
+  }
+}
+
 function verbindeVerwaisteAufzuege(
   knoten: Map<string, GraphKnoten>,
   adjazenz: Map<string, GraphKante[]>,

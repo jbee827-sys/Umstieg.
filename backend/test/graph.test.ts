@@ -28,6 +28,32 @@ function erreichbar(graph: StationGraph, vonId: string, nachId: string): boolean
   return false;
 }
 
+/** Kuerzeste Strecke in Metern ueber die Kanten – fuer Erreichbarkeit mit Mass. */
+function kuerzesteDistanz(graph: StationGraph, vonId: string, nachId: string): number {
+  const dist = new Map<string, number>([[vonId, 0]]);
+  const offen = new Set(graph.knoten.keys());
+  while (offen.size > 0) {
+    let u: string | null = null;
+    let best = Number.POSITIVE_INFINITY;
+    for (const k of offen) {
+      const d = dist.get(k) ?? Number.POSITIVE_INFINITY;
+      if (d < best) {
+        best = d;
+        u = k;
+      }
+    }
+    if (u === null || best === Number.POSITIVE_INFINITY) break;
+    offen.delete(u);
+    if (u === nachId) return best;
+    for (const kante of graph.adjazenz.get(u) ?? []) {
+      const v = kante.von === u ? kante.nach : kante.von;
+      const alt = best + kante.laengeM;
+      if (alt < (dist.get(v) ?? Number.POSITIVE_INFINITY)) dist.set(v, alt);
+    }
+  }
+  return Number.POSITIVE_INFINITY;
+}
+
 describe('haversineM', () => {
   it('berechnet die Distanz auf Meter genau', () => {
     // 0,002° Länge auf Breite 52° ≈ 136,9 m
@@ -308,5 +334,26 @@ describe('Verwaiste Aufzugausstiege (Braunschweig Hbf)', () => {
       if (!hatAufzug) ohneAufzug.push(id);
     }
     expect(ohneAufzug).toEqual([]);
+  });
+});
+
+describe('Bahnsteig als begehbare Linie', () => {
+  const graph = baueGraph(ladeFixture('overpass/berlin-hbf'));
+
+  it('macht den Bahnsteig auf ganzer Laenge begehbar, nicht nur an drei Punkten', () => {
+    // n2739626420 ist der Fuss einer Rolltreppe, 5 m neben der Achse von
+    // Gleis 5/6 und 123 m von dessen Anfang. Die Bahnsteigmitte liegt bei
+    // 215 m - 92 m Luftlinie. Ueber eine Kette aus nur anfang/mitte/ende
+    // waren es 342 m: erst 123 m zurueck zum Anfang, dann 215 m vor.
+    const d = kuerzesteDistanz(graph, 'n2739626420@-2', 'gleis6:mitte');
+    expect(d).toBeLessThan(150);
+  });
+
+  it('verbindet keine Knoten des Nachbarbahnsteigs in die Kette', () => {
+    // Die Tiefbahnsteige liegen 24 m auseinander. Wuerde die Anbindung so
+    // weit greifen, entstuende ein ebener Weg zwischen zwei Bahnsteigen -
+    // durch die Gleise hindurch.
+    const d = kuerzesteDistanz(graph, 'gleis6:mitte', 'gleis8:mitte');
+    expect(d).toBeGreaterThan(40);
   });
 });
