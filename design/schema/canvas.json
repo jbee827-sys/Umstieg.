@@ -1,0 +1,77 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 402,
+      "h": 874,
+      "title": "Schnitt · Berlin Hbf 14 → 6",
+      "is_interactive": true
+    },
+    {
+      "file": "Gekreuzt.dc.html",
+      "x": 502,
+      "y": 0,
+      "w": 402,
+      "h": 874,
+      "title": "Grundriss · 81° sichtbar"
+    },
+    {
+      "file": "KleinerBahnhof.dc.html",
+      "x": 1004,
+      "y": 0,
+      "w": 402,
+      "h": 874,
+      "title": "Zwei Ebenen · Braunschweig 1 → 6"
+    },
+    {
+      "file": "Standardmodell.dc.html",
+      "x": 1506,
+      "y": 0,
+      "w": 402,
+      "h": 874,
+      "title": "Stufe 3 · ohne Kartenmaterial"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "brief",
+      "x": 0,
+      "y": -230,
+      "w": 900,
+      "text": "Schematische Navigation, Screen 3 — vier Artboards gegen echte Daten aus GET /api/route.\n\nJEDE EBENE BILDET IHRE EIGENE GEOMETRIE AB. Gleisebenen als maßstäbliche Balken mit den Anlagen an ihrer gemessenen Stelle; Übergangsebenen als Grundriss aus dem begehbaren Netz. Symbole: Rolltreppe durchgezogen, Treppe gestrichelt, Aufzug als Kasten.\n\nOFFENE ENTSCHEIDUNG: Artboard 2 zeigt beide Gleisebenen ungedreht übereinander — Berlins Ebenen stehen 81° zueinander. Artboard 1 verzichtet darauf zugunsten der Lesbarkeit.\n\nNicht gezeichnet, weil unbelegt: Abschnitte A–G, Anzeigetafeln.\n\nAnforderungen: docs/2026-09-13-schema-navigation-anforderungen.md"
+    },
+    {
+      "id": "main-note",
+      "x": 0,
+      "y": 910,
+      "w": 402,
+      "text": "Zwei Bilder, zwei Aufgaben.\n\nGLEISEBENE: der Bahnsteig trägt die Orientierung — waagerechte Balken in echter Reihenfolge und maßstäblicher Länge, ohne Drehung. Darüber die Anlagen an ihrer gemessenen Stelle: Rolltreppe durchgezogen, Treppe gestrichelt, Aufzug als Kasten. Gleis 5/6 hat sie bei 32, 120, 156, 178, 198, 223, 244, 260 und 329 m.\n\nÜBERGANGSEBENE: dort gibt es keinen Bahnsteig, also trägt der Grundriss selbst. Graue Gänge, Kurven und Ringe aus dem Kartenmaterial, der Weg rot darauf, die Anlagen als Bezugspunkte. Berlins Ebene 1 hat 71 Gangstücke — man sieht, woran man abbiegt."
+    },
+    {
+      "id": "gekreuzt-note",
+      "x": 502,
+      "y": 910,
+      "w": 402,
+      "text": "Die Gegenposition: beide Gleisebenen ungedreht übereinander. Die 81° sind zu sehen statt zu lesen, der Abstieg schrumpft auf eine Zeile.\n\nEhrlicher zur Lage im Raum, aber ohne Zugänge und ohne Wegform — und bei einem Bahnhof ohne Kreuzung (der Regelfall) ist der Vorteil weg."
+    },
+    {
+      "id": "klein-note",
+      "x": 1004,
+      "y": 910,
+      "w": 402,
+      "text": "Das andere Extrem: zwei Ebenen, und der Weg geht hinunter UND wieder hinauf. Beide Ebenen tragen Gleise — die Annahme „unten ist immer Durchgang\" hält nicht."
+    },
+    {
+      "id": "stufe3-note",
+      "x": 1506,
+      "y": 910,
+      "w": 402,
+      "text": "Kein Kartenmaterial: keine Längen, keine Abstände, keine Querreihenfolge. Deshalb Plaketten statt Balken — ein Balken behauptete einen Maßstab, den niemand geprüft hat."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

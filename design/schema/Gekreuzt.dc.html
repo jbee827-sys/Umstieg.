@@ -1,0 +1,195 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Archivo', system-ui, sans-serif; background: #f3f2f2; color: #201e1d; }
+    a { color: #ec3013; } a:hover { color: #ae1800; }
+    button { font-family: inherit; }
+  </style>
+</helmet>
+
+<div style="width: 402px; height: 874px; display: flex; flex-direction: column; background: #f3f2f2; overflow: hidden">
+
+  <div style="padding: 54px 16px 12px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #d7d3d3">
+    <button style="flex: none; width: 38px; height: 38px; border-radius: 999px; border: 1px solid #d7d3d3; background: #f8f4f4; display: grid; place-items: center; cursor: pointer">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#201e1d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <div style="flex: 1; min-width: 0">
+      <div style="font-weight: 800; font-size: 19px; line-height: 1.1">Gleis 6</div>
+      <div style="font-size: 12px; color: #605d5d; margin-top: 2px">ICE 508 · ab 15:37 · Berlin Hbf</div>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px; padding: 6px 12px; border-radius: 14px; background: #fdf3e0">
+      <div style="display: flex; align-items: center; gap: 6px">
+        <span style="width: 9px; height: 9px; border-radius: 50%; background: #e08a00"></span>
+        <span style="font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; color: #e08a00; line-height: 1">11:20</span>
+      </div>
+      <div style="font-size: 10px; font-weight: 700; letter-spacing: .06em; color: #a86800; text-transform: uppercase">Knapp · 1:45 Puffer</div>
+    </div>
+  </div>
+
+  <div style="flex: 1; min-height: 0; overflow: hidden; background: #eae9e9; padding: 10px 12px 0">
+    <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px">
+      <div style="font-size: 10px; font-weight: 800; letter-spacing: .12em; color: #7d7979; text-transform: uppercase">Grundriss · beide Gleisebenen</div>
+      <div style="font-size: 10px; font-weight: 700; color: #ec3013">kreuzen sich um 81°</div>
+    </div>
+
+    <!-- Die Ebenen liegen wirklich so zueinander: oben 76°, unten 157°.
+         Ein Bild mit parallelen Baendern verschweigt genau das. -->
+    <div style="position: relative; width: 378px; height: 372px; border-radius: 14px; background: #f8f4f4; border: 1px solid #d7d3d3; overflow: hidden">
+      <svg width="378" height="372" viewBox="0 0 378 372" style="display: block">
+
+        <sc-for list="{{ oben }}" as="b" hint-placeholder-count="3">
+          <line x1="{{ b.x1 }}" y1="{{ b.y1 }}" x2="{{ b.x2 }}" y2="{{ b.y2 }}"
+                stroke="{{ b.farbe }}" stroke-width="{{ b.dicke }}" stroke-linecap="round"
+                stroke-dasharray="{{ b.strich }}"/>
+          <text x="{{ b.lx }}" y="{{ b.ly }}" font-family="Archivo, sans-serif" font-size="10" font-weight="{{ b.gewicht }}" fill="{{ b.schrift }}" text-anchor="middle">{{ b.gleise }}</text>
+        </sc-for>
+
+        <sc-for list="{{ unten }}" as="b" hint-placeholder-count="5">
+          <line x1="{{ b.x1 }}" y1="{{ b.y1 }}" x2="{{ b.x2 }}" y2="{{ b.y2 }}"
+                stroke="{{ b.farbe }}" stroke-width="{{ b.dicke }}" stroke-linecap="round"/>
+          <text x="{{ b.lx }}" y="{{ b.ly }}" font-family="Archivo, sans-serif" font-size="10" font-weight="{{ b.gewicht }}" fill="{{ b.schrift }}" text-anchor="middle">{{ b.gleise }}</text>
+        </sc-for>
+
+        <!-- Abstieg an der Kreuzung: vier Rolltreppen, keine erfundene Wegkurve -->
+        <circle cx="{{ knoten.x }}" cy="{{ knoten.y }}" r="26" fill="#ec3013" fill-opacity=".10"/>
+        <circle cx="{{ knoten.x }}" cy="{{ knoten.y }}" r="15" fill="#201e1d"/>
+        <text x="{{ knoten.x }}" y="{{ knoten.yText }}" font-family="Archivo, sans-serif" font-size="11" font-weight="800" fill="#f3f2f2" text-anchor="middle">4×</text>
+
+        <circle cx="{{ start.x }}" cy="{{ start.y }}" r="7" fill="#201e1d" stroke="#f8f4f4" stroke-width="3"/>
+        <circle cx="{{ ziel.x }}" cy="{{ ziel.y }}" r="8" fill="#ec3013" stroke="#f8f4f4" stroke-width="3"/>
+      </svg>
+
+      <div style="position: absolute; left: 12px; bottom: 10px; display: flex; flex-direction: column; gap: 4px">
+        <div style="display: flex; align-items: center; gap: 6px"><span style="width: 16px; height: 3px; border-radius: 2px; background: #c9c4c4"></span><span style="font-size: 9px; color: #7d7979">Ebene +2 · Gleise 11–16</span></div>
+        <div style="display: flex; align-items: center; gap: 6px"><span style="width: 16px; height: 5px; border-radius: 3px; background: #605d5d"></span><span style="font-size: 9px; color: #7d7979">Ebene −2 · Gleise 1–8, 22</span></div>
+      </div>
+    </div>
+
+    <!-- Der Abstieg als eigene Zeile: fuenf Ebenen, vier Rolltreppen -->
+    <div style="margin-top: 10px; display: flex; align-items: center; gap: 4px; padding: 9px 10px; border-radius: 12px; background: #f8f4f4; border: 1px solid #d7d3d3">
+      <sc-for list="{{ treppe }}" as="t" hint-placeholder-count="9">
+        <div style="display: flex; align-items: center; gap: 4px">
+          <sc-if value="{{ t.istEbene }}" hint-placeholder-val="{{ true }}">
+            <span style="font-size: 10px; font-weight: 800; color: {{ t.farbe }}; font-variant-numeric: tabular-nums">{{ t.text }}</span>
+          </sc-if>
+          <sc-if value="{{ t.istPfeil }}" hint-placeholder-val="{{ false }}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9b9797" stroke-width="3" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </sc-if>
+        </div>
+      </sc-for>
+      <span style="margin-left: auto; font-size: 9px; color: #7d7979">4× Rolltreppe abwärts</span>
+    </div>
+
+    <div style="margin-top: 8px; display: flex; align-items: flex-start; gap: 7px; padding: 8px 10px; border-radius: 10px; background: #f8f4f4; border: 1px solid #d7d3d3">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7d7979" stroke-width="2.4" stroke-linecap="round" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+      <span style="font-size: 10px; line-height: 1.4; color: #605d5d">Gleisrichtungen und Bahnsteiglängen sind echt, die Abstände quer sind zur Lesbarkeit gedehnt. Abschnitte A–G sind nicht verortet.</span>
+    </div>
+  </div>
+
+  <div style="background: #f3f2f2; border-radius: 22px 22px 0 0; margin-top: -14px; position: relative; padding: 16px 0 0; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 -10px 30px rgba(45,43,43,.10)">
+    <div style="display: flex; gap: 13px; align-items: flex-start; padding: 0 18px">
+      <div style="width: 50px; height: 50px; background: #ec3013; border-radius: 15px; display: grid; place-items: center; flex: none">
+        <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#f3f2f2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18h4l8-9h6M3 18v-3M21 9V6"/></svg>
+      </div>
+      <div style="flex: 1; min-width: 0">
+        <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #7d7979">Schritt 21 von 26</div>
+        <div style="font-weight: 800; font-size: 20px; line-height: 1.15; margin-top: 3px">Rolltreppe hinunter zur Ebene −2</div>
+        <div style="font-size: 13px; color: #605d5d; margin-top: 3px">Unten 330 m nach links bis Gleis 6</div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 9px; padding: 0 18px 18px">
+      <button style="min-height: 54px; width: 62px; border-radius: 999px; border: 1px solid #d7d3d3; background: #f8f4f4; display: grid; place-items: center; cursor: pointer">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#201e1d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </button>
+      <button style="flex: 1; min-height: 54px; border-radius: 999px; border: none; background: #ec3013; color: #f3f2f2; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; cursor: pointer">
+        <span>Weiter</span>
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#f3f2f2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"querDehnung":{"editor":"range","default":0.9,"min":0.4,"max":1.6,"step":0.1,"section":"Grundriss"}}'>
+/* Echte Werte: richtungGrad 76 (oben) und 157 (unten), Laengen und querM
+   aus docs/beispiel-schema-berlin-14-6.json. */
+const OBEN = { richtung: 76, bahnsteige: [
+  { gleise: '15/16', laengeM: 170, querM: 0 },
+  { gleise: '13/14', laengeM: 428, querM: 50, rolle: 'start' },
+  { gleise: '11/12', laengeM: 426, querM: 69 } ] };
+
+const UNTEN = { richtung: 157, bahnsteige: [
+  { gleise: '22', laengeM: 77, querM: 0 },
+  { gleise: '7/8', laengeM: 430, querM: 48 },
+  { gleise: '5/6', laengeM: 430, querM: 72, rolle: 'ziel' },
+  { gleise: '3/4', laengeM: 430, querM: 86 },
+  { gleise: '1/2', laengeM: 430, querM: 111 } ] };
+
+const CX = 189, CY = 176, LAENGS = 0.53;
+
+class Component extends DCLogic {
+  lage(ebene, dehnung, oben) {
+    const bogen = Math.PI / 180;
+    const dx = Math.sin(ebene.richtung * bogen);
+    const dy = -Math.cos(ebene.richtung * bogen);
+    const px = -dy, py = dx;
+    const mittel = ebene.bahnsteige.reduce((s, b) => s + b.querM, 0) / ebene.bahnsteige.length;
+
+    return ebene.bahnsteige.map((b) => {
+      const off = (b.querM - mittel) * dehnung;
+      const mx = CX + px * off;
+      const my = CY + py * off;
+      const halb = (b.laengeM * LAENGS) / 2;
+      const istWeg = b.rolle === 'start' || b.rolle === 'ziel';
+      return {
+        gleise: b.gleise,
+        x1: Math.round(mx - dx * halb), y1: Math.round(my - dy * halb),
+        x2: Math.round(mx + dx * halb), y2: Math.round(my + dy * halb),
+        lx: Math.round(mx + dx * (halb + 16)), ly: Math.round(my + dy * (halb + 16) + 4),
+        dicke: istWeg ? (oben ? 5 : 7) : oben ? 3 : 5,
+        farbe: b.rolle === 'ziel' ? '#ec3013' : b.rolle === 'start' ? '#201e1d' : oben ? '#c9c4c4' : '#8f8a8a',
+        strich: oben && !istWeg ? '7 6' : 'none',
+        schrift: istWeg ? '#201e1d' : '#9b9797',
+        gewicht: istWeg ? '800' : '600',
+        mx, my,
+      };
+    });
+  }
+
+  renderVals() {
+    const dehnung = this.props.querDehnung ?? 0.9;
+    const oben = this.lage(OBEN, dehnung, true);
+    const unten = this.lage(UNTEN, dehnung, false);
+    const start = oben.find((b) => b.gleise === '13/14');
+    const ziel = unten.find((b) => b.gleise === '5/6');
+
+    const ebenen = [2, 1, 0, -1, -2];
+    const treppe = [];
+    ebenen.forEach((lvl, i) => {
+      treppe.push({
+        istEbene: true, istPfeil: false,
+        text: lvl > 0 ? '+' + lvl : String(lvl),
+        farbe: lvl === 2 || lvl === -2 ? '#201e1d' : '#9b9797',
+      });
+      if (i < ebenen.length - 1) treppe.push({ istEbene: false, istPfeil: true, text: '' });
+    });
+
+    return {
+      oben, unten, treppe,
+      start: { x: Math.round(start.mx), y: Math.round(start.my) },
+      ziel: { x: Math.round(ziel.mx), y: Math.round(ziel.my) },
+      knoten: { x: CX, y: CY, yText: CY + 4 },
+    };
+  }
+}
+</script>
+</body>
+</html>
