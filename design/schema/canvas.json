@@ -47,7 +47,7 @@
       "x": 0,
       "y": 910,
       "w": 402,
-      "text": "Zwei Bilder, zwei Aufgaben.\n\nGLEISEBENE: der Bahnsteig trägt die Orientierung — waagerechte Balken in echter Reihenfolge und maßstäblicher Länge, ohne Drehung. Darüber die Anlagen an ihrer gemessenen Stelle: Rolltreppe durchgezogen, Treppe gestrichelt, Aufzug als Kasten. Gleis 5/6 hat sie bei 32, 120, 156, 178, 198, 223, 244, 260 und 329 m.\n\nÜBERGANGSEBENE: dort gibt es keinen Bahnsteig, also trägt der Grundriss selbst. Graue Gänge, Kurven und Ringe aus dem Kartenmaterial, der Weg rot darauf, die Anlagen als Bezugspunkte. Berlins Ebene 1 hat 71 Gangstücke — man sieht, woran man abbiegt."
+      "text": "Der Platz folgt dem Reisenden: Die Ebene, auf der er steht, bekommt 323 px, die übrigen schrumpfen auf eine Zeile.\n\nGLEISEBENE — waagerechte Balken in echter Reihenfolge und maßstäblicher Länge. Die Anlagen liegen IM Balken, hell ausgespart: Rolltreppe durchgezogen, Treppe gestrichelt, Aufzug als Kasten. Gleis 5/6 hat sie bei 32, 120, 156, 178, 198, 223, 244, 260 und 329 m.\n\nÜBERGANGSEBENE — dort gibt es keinen Bahnsteig, also trägt der Grundriss: graue Gänge aus dem Kartenmaterial, der Weg rot darauf, die Anlagen als Bezugspunkte. Ebene 0 läuft 26 m hinaus und kommt fast am Startpunkt zurück — die Rolltreppen liegen hintereinander."
     },
     {
       "id": "gekreuzt-note",
@@ -61,14 +61,14 @@
       "x": 1004,
       "y": 910,
       "w": 402,
-      "text": "Das andere Extrem: zwei Ebenen, und der Weg geht hinunter UND wieder hinauf. Beide Ebenen tragen Gleise — die Annahme „unten ist immer Durchgang\" hält nicht."
+      "text": "Dieselbe Bildsprache bei ZWEI Ebenen: Braunschweig Hbf, Gleis 1 nach 6, barrierefrei. Das aktive Band bekommt hier 461 px statt 323 — weniger Ebenen heißt mehr Platz für die, die zählt.\n\nBeide Ebenen tragen Gleise, und der Weg geht hinunter UND wieder hinauf. Die Annahme „unten ist immer Durchgang\" hält nicht."
     },
     {
       "id": "stufe3-note",
       "x": 1506,
       "y": 910,
       "w": 402,
-      "text": "Kein Kartenmaterial: keine Längen, keine Abstände, keine Querreihenfolge. Deshalb Plaketten statt Balken — ein Balken behauptete einen Maßstab, den niemand geprüft hat."
+      "text": "Kein Kartenmaterial (Stufe 3): keine Längen, keine Querlage, keine Zugänge. Die Balken zeigen deshalb keinen Maßstab und die Kopfzeile sagt „Länge unbekannt\" statt einer Zahl.\n\nDer Vorbehalt steht unter dem Bild, nicht im Impressum."
     }
   ],
   "launch": {

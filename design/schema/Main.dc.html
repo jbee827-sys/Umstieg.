@@ -80,7 +80,7 @@
                   <line x1="{{ a.x1 }}" y1="{{ a.y1 }}" x2="{{ a.x2 }}" y2="{{ a.y2 }}" stroke="{{ a.farbe }}" stroke-width="{{ a.dicke }}" stroke-linecap="butt" stroke-dasharray="{{ a.strich }}"/>
                 </sc-for>
                 <sc-for list="{{ band.kaesten }}" as="a" hint-placeholder-count="6">
-                  <rect x="{{ a.x }}" y="{{ a.y }}" width="{{ a.w }}" height="{{ a.w }}" rx="1.5" fill="#f8f4f4" stroke="{{ a.farbe }}" stroke-width="{{ a.dicke }}"/>
+                  <rect x="{{ a.x }}" y="{{ a.y }}" width="{{ a.w }}" height="{{ a.w }}" rx="1.5" fill="{{ a.fuellung }}" stroke="{{ a.farbe }}" stroke-width="{{ a.dicke }}"/>
                 </sc-for>
 
                 <sc-if value="{{ band.weg }}" hint-placeholder-val="{{ true }}">
@@ -264,7 +264,9 @@ class Component extends DCLogic {
           const wichtig = !!b.rolle;
           bahnsteige.push({
             gleise: b.gleise, y: Math.round(y) + 0.5, x1: x0, x2: x0 + breite,
-            dicke: wichtig ? 7 : 3,
+            // Der wichtige Bahnsteig traegt die Markierungen IM Balken und
+            // muss dafuer dick genug sein, dass man sie unterscheidet.
+            dicke: wichtig ? 13 : 3,
             farbe: b.rolle === 'ziel' ? '#ec3013' : b.rolle === 'start' ? '#201e1d' : '#c4bfbf',
             schrift: wichtig ? '#201e1d' : '#9b9797',
             gewicht: wichtig ? '800' : '600',
@@ -281,14 +283,16 @@ class Component extends DCLogic {
             if (gesehen.has(s)) continue;
             gesehen.add(s);
             const x = Math.round(x0 + (a.beiM / b.laengeM) * breite) + 0.5;
-            const aufR = a.aufRoute;
+            const mitte = Math.round(y) + 0.5;
+            // Die Anlage sitzt AM GLEIS, also liegt ihre Marke im Balken -
+            // hell ausgespart, damit sie auf dem dunklen Bahnsteig traegt.
             if (a.typ === 'aufzug') {
-              kaesten.push({ x: x - 3.5, y: Math.round(y) + 8.5, w: 7, farbe: aufR ? '#ec3013' : '#7d7979', dicke: aufR ? 2.4 : 1.6 });
+              kaesten.push({ x: x - 3.5, y: mitte - 3.5, w: 7, farbe: 'none', dicke: 0, fuellung: '#f8f6f6' });
             } else {
               striche.push({
-                x1: x, y1: Math.round(y) - 18.5, x2: x, y2: Math.round(y) - 6.5,
-                farbe: aufR ? '#ec3013' : '#7d7979', dicke: aufR ? 3 : 1.8,
-                strich: a.typ === 'treppe' ? '2.5 2.5' : 'none',
+                x1: x, y1: mitte - 6, x2: x, y2: mitte + 6,
+                farbe: '#f8f6f6', dicke: a.aufRoute ? 3.4 : 2,
+                strich: a.typ === 'treppe' ? '2.2 2' : 'none',
               });
             }
           }
@@ -296,7 +300,7 @@ class Component extends DCLogic {
           if (genutzt) {
             const x = Math.round(x0 + (genutzt.beiM / b.laengeM) * breite);
             notiz = {
-              x: Math.min(svgW - 4, Math.max(30, x)), y: Math.round(y) - 24,
+              x: Math.min(svgW - 4, Math.max(30, x)), y: Math.round(y) - 16,
               text: genutzt.beiM + ' m',
               anker: x > svgW - 40 ? 'end' : 'middle',
             };
@@ -304,7 +308,7 @@ class Component extends DCLogic {
               ? 'Abgang bei ' + genutzt.beiM + ' m · ' + genutzt.rolltreppe + ' Rolltreppen'
               : 'Aufgang bei ' + genutzt.beiM + ' m · dann ' + laenge(ebene.weg || []) + ' m bis Gleis ' + b.gleise.split('/')[1];
           }
-          rechts = b.laengeM + ' m Bahnsteig';
+          rechts = b.laengeM ? b.laengeM + ' m Bahnsteig' : 'Länge unbekannt';
         });
       } else if (istAktiv) {
         const bild = this.einpassen(ebene, svgW, svgH);
@@ -316,7 +320,7 @@ class Component extends DCLogic {
             const aufR = a.aufRoute;
             if (a.punkte.length === 1 || a.typ === 'aufzug') {
               const p = bild(a.punkte[0]);
-              kaesten.push({ x: p.x - 3.5, y: p.y - 3.5, w: 7, farbe: aufR ? '#ec3013' : '#7d7979', dicke: aufR ? 2.4 : 1.6 });
+              kaesten.push({ x: p.x - 3.5, y: p.y - 3.5, w: 7, farbe: aufR ? '#ec3013' : '#7d7979', dicke: aufR ? 2.4 : 1.6, fuellung: '#f8f6f6' });
             } else {
               const p = bild(a.punkte[0]), q = bild(a.punkte[1]);
               striche.push({
