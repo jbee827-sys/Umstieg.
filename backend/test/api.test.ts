@@ -80,8 +80,10 @@ describe('GET /api/route', () => {
     const res = await app.inject({ method: 'GET', url: ROUTE_URL });
     const ergebnis = res.json() as RouteErgebnis;
     expect(ergebnis.schema).toBeDefined();
-    // Der Mini-Bahnhof hat eine Gleisebene und eine Unterführung darunter.
-    expect(ergebnis.schema!.ebenen.map((e) => e.level)).toEqual([0, -1]);
+    // Die Ebenen folgen dem Weg: hinunter in die Unterführung und wieder
+    // herauf - Ebene 0 kommt zweimal vor.
+    expect(ergebnis.schema!.ebenen.map((e) => e.level)).toEqual([0, -1, 0]);
+    expect(ergebnis.schema!.ebenen[0].rolle).toBe('start');
     expect(ergebnis.schema!.ebenen[0].bahnsteige.flatMap((b) => b.gleise)).toContain('1');
     expect(ergebnis.schema!.wechsel.length).toBeGreaterThan(0);
     expect(ergebnis.schema!.vorbehalte.length).toBeGreaterThan(0);

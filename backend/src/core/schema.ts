@@ -44,8 +44,6 @@ const ZUGANG_QUER_MAX_M = 30;
 /** Zwei Anlagen näher als das sind derselbe Zugang, kein zweiter. */
 const ZUGANG_BUENDEL_M = 25;
 
-/** Ab dieser Kantenzahl gilt eine Ebene als begangen, nicht nur durchquert. */
-const VERBINDUNG_MIN_KANTEN = 1;
 
 /**
  * Wie weit um die Route herum die Ebene gezeigt wird.
@@ -234,22 +232,6 @@ function ordneQuer(bahnsteige: Bahnsteigrohbau[]): {
   return { reihenfolge: [...sortiert, ...ohneAchse], querM, richtungGrad: richtung };
 }
 
-/** Ebenen, auf denen die Route waagerecht unterwegs war. */
-function ebenenDerRoute(pfad: RoutenPfad): Map<number, number> {
-  const zaehler = new Map<number, number>();
-  for (let i = 0; i < pfad.kanten.length; i++) {
-    if (pfad.kanten[i].deltaLevel !== 0) continue;
-    const level = pfad.knoten[i]?.level;
-    if (level === undefined) continue;
-    zaehler.set(level, (zaehler.get(level) ?? 0) + 1);
-  }
-  for (const knoten of [pfad.knoten[0], pfad.knoten[pfad.knoten.length - 1]]) {
-    if (!knoten) continue;
-    zaehler.set(knoten.level, Math.max(zaehler.get(knoten.level) ?? 0, VERBINDUNG_MIN_KANTEN));
-  }
-  return zaehler;
-}
-
 /** Ebenenwechsel des Wegs, in der Reihenfolge des Wegs. */
 function sammleWechsel(pfad: RoutenPfad): SchemaWechsel[] {
   const wechsel: SchemaWechsel[] = [];
@@ -265,49 +247,46 @@ function sammleWechsel(pfad: RoutenPfad): SchemaWechsel[] {
 }
 
 /**
- * Der Weg auf jeder Ebene - ein Stueck je Besuch.
+ * Die Besuche der Route, in ihrer Reihenfolge.
  *
- * Die Trennung nach Besuchen ist nicht kosmetisch: Ein Weg, der hinunter in
- * die Unterfuehrung und wieder herauf fuehrt, beruehrt die Gleisebene
- * zweimal. In einer einzigen Liste stuenden beide Besuche hintereinander,
- * und die Verbindung zwischen ihnen waere eine erfundene Strecke - in einer
- * Stichprobe ueber 16 Bahnhoefe wuchs der Weg dadurch um die Haelfte.
+ * Ein Besuch ist ein zusammenhaengendes Stueck Weg auf einer Ebene. Wer
+ * hinunter in die Unterfuehrung geht und wieder herauf, besucht die
+ * Gleisebene zweimal - und zwischen den beiden Besuchen liegt kein Weg,
+ * sondern eine Treppe. Sie in eine Liste je Ebene zu werfen erzeugte eine
+ * erfundene Strecke; in einer Stichprobe ueber 16 Bahnhoefe wuchs der Weg
+ * dadurch um die Haelfte.
  */
-function wegJeEbene(
+function besucheDerRoute(
   pfad: RoutenPfad,
   zuXY: (k: { lat: number; lon: number }) => SchemaPunkt,
-): Map<number, SchemaWegstueck[]> {
-  const wege = new Map<number, SchemaWegstueck[]>();
-  let aktuell: { level: number; punkte: SchemaPunkt[] } | null = null;
+): { level: number; weg: SchemaPunkt[] }[] {
+  const besuche: { level: number; weg: SchemaPunkt[] }[] = [];
+  let aktuell: { level: number; weg: SchemaPunkt[] } | null = null;
 
   const schliesse = (): void => {
-    if (!aktuell || aktuell.punkte.length < 2) {
-      aktuell = null;
-      return;
+    if (aktuell && aktuell.weg.length >= 2) {
+      besuche.push({ level: aktuell.level, weg: vereinfacheLinie(aktuell.weg, GLAETTUNG_M) });
+    } else if (aktuell) {
+      // Ein Besuch ohne Weg ist trotzdem ein Besuch - er traegt nur keine
+      // Linie. Ohne ihn fehlte im Bild ein Band, das der Reisende betritt.
+      besuche.push({ level: aktuell.level, weg: aktuell.weg });
     }
-    if (!wege.has(aktuell.level)) wege.set(aktuell.level, []);
-    wege.get(aktuell.level)!.push({ punkte: vereinfacheLinie(aktuell.punkte, GLAETTUNG_M) });
     aktuell = null;
   };
 
   for (const knoten of pfad.knoten) {
     if (!aktuell || aktuell.level !== knoten.level) {
       schliesse();
-      aktuell = { level: knoten.level, punkte: [] };
+      aktuell = { level: knoten.level, weg: [] };
     }
     const punkt = zuXY(knoten);
-    // Aufeinanderliegende Punkte tragen nichts bei und blaehen die Antwort.
-    const letzter = aktuell.punkte[aktuell.punkte.length - 1];
-    if (!letzter || letzter.x !== punkt.x || letzter.y !== punkt.y) aktuell.punkte.push(punkt);
+    const letzter = aktuell.weg[aktuell.weg.length - 1];
+    if (!letzter || letzter.x !== punkt.x || letzter.y !== punkt.y) aktuell.weg.push(punkt);
   }
   schliesse();
-  return wege;
+  return besuche;
 }
 
-/** Alle Punkte aller Stuecke - fuer Abstandsfragen, nicht zum Zeichnen. */
-function punkteVon(stuecke: SchemaWegstueck[]): SchemaPunkt[] {
-  return stuecke.flatMap((s) => s.punkte);
-}
 
 /** Die Ebenenwechsel-Kanten des Graphen, jede genau einmal. */
 function* ebenenwechselKanten(
@@ -713,17 +692,12 @@ export function baueBahnhofSchema(graph: StationGraph, pfad: RoutenPfad): Bahnho
   for (const kante of pfad.kanten) {
     if (kante.deltaLevel !== 0) aufRoute.add(`${kante.von}|${kante.nach}`);
   }
-  const wege = wegJeEbene(pfad, zuXY);
+  const besuche = besucheDerRoute(pfad, zuXY);
 
-  const beruehrt = ebenenDerRoute(pfad);
-  const alleLevel = new Set<number>([...proLevel.keys(), ...beruehrt.keys()]);
-
-  const ebenen: SchemaEbene[] = [];
-  let ohneAchse = 0;
-  for (const level of [...alleLevel].sort((a, b) => b - a)) {
-    const rohbau = proLevel.get(level) ?? [];
-    const { reihenfolge, querM, richtungGrad } = ordneQuer(rohbau);
-
+  /** Die Bahnsteige einer Ebene, fertig fuer die Antwort. */
+  const bahnsteigeVon = (level: number): { liste: SchemaBahnsteig[]; richtungGrad?: number; ohneAchse: number } => {
+    const { reihenfolge, querM, richtungGrad } = ordneQuer(proLevel.get(level) ?? []);
+    let ohneAchse = 0;
     const liste: SchemaBahnsteig[] = reihenfolge.map((b) => {
       const hatAchse = b.anfang !== undefined && b.ende !== undefined;
       const laengeM = hatAchse
@@ -739,34 +713,36 @@ export function baueBahnhofSchema(graph: StationGraph, pfad: RoutenPfad): Bahnho
       // Zugänge nur dort, wo der Reisende wirklich steht. An den übrigen
       // Bahnsteigen ist die Stelle ohne Belang und die Antwort bliebe sonst
       // nicht klein.
-      const zugaenge =
-        rolle && hatAchse ? zugaengeFuer(b, graph, aufRoute, zuXY) : undefined;
+      const zugaenge = rolle && hatAchse ? zugaengeFuer(b, graph, aufRoute, zuXY) : undefined;
       return {
         bahnsteigId: b.bahnsteigId,
         gleise: b.gleise,
         ...(laengeM !== undefined ? { laengeM } : {}),
         ...(querM.has(b.bahnsteigId) ? { querM: Math.round(querM.get(b.bahnsteigId)!) } : {}),
         ...(rolle ? { rolle } : {}),
-        ...(anlagenZahlen.has(b.bahnsteigId)
-          ? { anlagen: anlagenZahlen.get(b.bahnsteigId)! }
-          : {}),
+        ...(anlagenZahlen.has(b.bahnsteigId) ? { anlagen: anlagenZahlen.get(b.bahnsteigId)! } : {}),
         ...(hatAchse ? { von: zuXY(b.anfang!), bis: zuXY(b.ende!) } : {}),
         ...(zugaenge ? { zugaenge } : {}),
       };
     });
+    return { liste, richtungGrad, ohneAchse };
+  };
 
-    const wichtige = new Set(
-      liste.filter((b) => b.rolle !== undefined).map((b) => b.bahnsteigId),
-    );
-    const elemente = elementeFuer(
-      graph,
-      level,
-      punkteVon(wege.get(level) ?? []),
-      bahnsteige,
-      wichtige,
-      aufRoute,
-      zuXY,
-    );
+  // Je Ebene nur einmal zaehlen, auch wenn sie mehrfach besucht wird.
+  const gezaehlt = new Set<number>();
+  let ohneAchse = 0;
+
+  const ebenen: SchemaEbene[] = besuche.map((besuch, i) => {
+    const { liste, richtungGrad, ohneAchse: fehlend } = bahnsteigeVon(besuch.level);
+    if (!gezaehlt.has(besuch.level)) {
+      gezaehlt.add(besuch.level);
+      ohneAchse += fehlend;
+    }
+
+    const wichtige = new Set(liste.filter((b) => b.rolle !== undefined).map((b) => b.bahnsteigId));
+    // Netz und Anlagen gelten je BESUCH: Was beim ersten Mal in Sichtweite
+    // lag, muss es beim zweiten nicht sein - der Weg verlaeuft dort anders.
+    const elemente = elementeFuer(graph, besuch.level, besuch.weg, bahnsteige, wichtige, aufRoute, zuXY);
 
     // Wie diese Ebene im Bezugsrahmen liegt: 0 = waagerecht wie die
     // Startebene. Auf −90..+90 gefaltet, weil eine Gleisachse keine Richtung
@@ -779,21 +755,23 @@ export function baueBahnhofSchema(graph: StationGraph, pfad: RoutenPfad): Bahnho
       richtungLokalGrad = Math.round(d);
     }
 
-    ebenen.push({
-      level,
-      art: liste.length > 0 ? 'gleise' : 'verbindung',
+    const rolle = i === 0 ? ('start' as const) : i === besuche.length - 1 ? ('ziel' as const) : undefined;
+
+    return {
+      level: besuch.level,
+      ...(rolle ? { rolle } : {}),
+      art: liste.length > 0 ? ('gleise' as const) : ('verbindung' as const),
       ...(richtungGrad !== undefined ? { richtungGrad: Math.round(richtungGrad) } : {}),
       ...(richtungLokalGrad !== undefined ? { richtungLokalGrad } : {}),
       bahnsteige: liste,
-      aufRoute: beruehrt.has(level),
-      ...(wege.has(level) ? { weg: wege.get(level)! } : {}),
+      ...(besuch.weg.length > 0 ? { weg: besuch.weg } : {}),
       // Netz nur, wo keine Bahnsteige die Orientierung tragen.
-      ...(liste.length === 0 && wege.has(level)
-        ? { netz: netzFuer(graph, level, punkteVon(wege.get(level)!), zuXY) }
+      ...(liste.length === 0 && besuch.weg.length > 0
+        ? { netz: netzFuer(graph, besuch.level, besuch.weg, zuXY) }
         : {}),
       ...(elemente.length > 0 ? { elemente } : {}),
-    });
-  }
+    };
+  });
 
   // Kreuzungswinkel nur zwischen den beiden Ebenen, die den Reisenden
   // betreffen – Ankunft und Abfahrt. Ein Winkel zwischen zwei Ebenen, die er

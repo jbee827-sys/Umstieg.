@@ -16,7 +16,16 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 07.09.2026)
+## Hier weitermachen (Stand 13.09.2026)
+
+> **Zuletzt (13.09.):** Das Bahnhofsschema liefert jetzt echte Geometrie je
+> Ebene – siehe „Schematische Navigation: Geometrie statt Schrittliste".
+> Zwei Fehler kamen dabei heraus, die nur die Geometrie sichtbar machen
+> konnte; Berlin 14 → 6 braucht seitdem 305 s statt 575 s. **Der nächste
+> Schritt ist die Umsetzung im Frontend** – `Ebenenschema.tsx` leitet sein
+> Bild weiter aus den Schritttexten ab und kennt nichts von alldem.
+
+### Davor: Mobilabnahme (Stand 07.09.2026)
 
 > **Am 07.09. lief die Mobilabnahme (P6 / ToDo 3) – erstmals am echten
 > Gerät.** Zwei Ergebnisse:
@@ -182,6 +191,166 @@ Schritt ist deshalb P1 Task 12 (Mobilabnahme, fünf Punkte im Plan). Das
 braucht Handarbeit an einem echten Gerät.
 
 </details>
+
+## Schematische Navigation: Geometrie statt Schrittliste (13.09.2026)
+
+D4 aus dem Design-Abgleich („Navigation: Schema statt Landkarte") ist
+angegangen – und dabei hat sich die Aufgabe als größer herausgestellt, als
+sie dort stand.
+
+### Der Ausgangsbefund
+
+`docs/spike-schema-geometrie-ergebnis.md` hält die Sondierung fest. Kurz:
+
+- **OSM trägt die Geometrie.** Bahnsteigachsen, Querreihenfolge, Aufzüge,
+  Rolltreppen, Treppen, Ebenen – alles belegt. Die Querreihenfolge ist echt
+  ableitbar (Berlins Gleis 22 liegt neben 7/8, nicht hinter 1/2).
+- **RIS::Stations liefert keine Koordinaten** – bei keinem der 20 Berliner
+  Gleise. Konzept §4.2 verspricht sie.
+- **Abschnitte A–G sind nicht verortet.** OSM kennt für Berlin keinen
+  einzigen; FaSta nennt sie an 4 von 8 Großbahnhöfen und dort nur an
+  einzelnen Bahnsteigen.
+- **Zur Wagenreihung: kein neuer Fund.** Dass `ist-wr.noncd.db.de` nicht mehr
+  existiert, steht seit dem 04.09. unter „Die Wagenreihung ist tot". Der
+  Spike hat es nachgemessen, nicht entdeckt.
+
+**Eine Aussage im Anforderungsdokument war zunächst falsch:** „Der Wegverlauf
+innerhalb einer Ebene ist nicht belegt". Für Stufe 1 stimmt das nicht – jeder
+Pfadknoten trägt Koordinaten. Korrigiert.
+
+### Was gebaut wurde
+
+`GET /api/route` liefert neu ein Feld `schema` (`core/schema.ts`), **ohne
+einen einzigen zusätzlichen externen Aufruf** – die Daten lagen im Graphen und
+wurden nur nie ausgeliefert:
+
+- **Bezugsrahmen in Metern.** Ursprung ist der Startpunkt der Route, die
+  x-Achse die Gleisrichtung der Ankunftsebene.
+- **Ebenen als Ablauffolge, nicht nach Höhe.** Ein Eintrag ist EIN BESUCH.
+  Wer hinunter in die Unterführung geht und wieder herauf, hat drei Einträge:
+  Ebene 1, Ebene 0, Ebene 1.
+- **Bahnsteige** mit Länge, Querlage und Zugängen; ein Zugang bündelt die
+  Anlagen an einer Stelle („bei 242 m, vier Rolltreppen"). Berlins Gleis 5/6
+  trägt 27 Anlagen an acht Stellen.
+- **Begehbares Netz** der Übergangsebenen (80 m um den Weg, zu Gängen und
+  Ringen verschmolzen) – ohne es hängt die Route im Leeren.
+- **Anlagen mit Grundriss:** Rolltreppe und Treppe als Strecke, Aufzug als
+  Punkt. Das ist keine Gestaltung, sondern ihre Form.
+- **Linienzüge geglättet** (Douglas-Peucker, 1,5 m) – kleiner als jede Ecke,
+  an der jemand abbiegt, größer als das Messrauschen.
+
+Antwortgröße median 5,4 kB, größter gemessener Wert 19,7 kB (Dortmund).
+
+### Zwei Fehler, die erst die Geometrie sichtbar gemacht hat
+
+**1. Ein Bahnsteig war eine Kette aus drei Knoten.** `anfang`, `mitte`,
+`ende`, dazwischen 215-m-Kanten, und der Umriss hing nicht am Fußwegnetz. Wer
+den Bahnsteig zwischen zwei dieser Punkte betrat – also jeder, der eine
+Rolltreppe in der Mitte nimmt – musste erst zu einem der drei laufen. Berlin
+14 → 6: **342 m statt 92**. Behoben mit `verdichteBahnsteigketten`; ein Knoten
+hängt an höchstens einem Bahnsteig, sonst entstünde ein ebener Weg über die
+Gleise.
+
+Wirkung: **340 m → 265 m, Gehzeit 575 s → 305 s.**
+
+**2. Der Weg je Ebene war eine Sammelliste.** Zwei Besuche derselben Ebene
+landeten hintereinander darin, und die Verbindung zwischen ihnen war eine
+erfundene Strecke – im Bild als Weg zu sehen. In Hannover 279 statt 185 m.
+Gefunden von der Simulation, in 8 von 16 geprüften Bahnhöfen. **Berlin 14 → 6
+ist zufällig monoton; an diesem einen Prüffall wäre es nie aufgefallen.**
+
+### Simulation über 60 Bahnhöfe
+
+`backend/scripts/simulation-schema.ts` fährt die volle Kette Overpass → Graph
+→ Route → Schema, stets vom ersten zum letzten Gleis, und prüft jede
+Behauptung des Schemas. **Erster Lauf: 41 ausgewertet, nach der Korrektur
+null Befunde.**
+
+| | |
+|---|---|
+| Ebenen je Bahnhof | 1: 8 · 2: 22 · 3: 6 · 4: 11 |
+| Kreuzende Ebenen > 20° | 4 – Dortmund 88°, Düsseldorf 87°, Osnabrück 83°, Kassel-Wf 67° |
+| Schemabau | median 2 ms, max 24 ms |
+
+**Der Zweiebenenfall ist die Mehrheit, nicht Berlins fünf.** Und acht
+Bahnhöfe haben genau eine Ebene – Kopfbahnhöfe wie Karlsruhe und Kiel.
+
+### Der Standort am Ankunftsgleis entscheidet den Weg
+
+Leipzig Hbf, Gleis 6 → 16, beide auf derselben Ebene. Zwei Wege konkurrieren:
+die U-Form um den Kopf des Bahnhofs und die Unterführung am anderen Ende.
+
+```
+Anfang   303 m · 343 s · durch die Unterführung (Ebenen 1 → 0 → 1)
+Mitte    354 m · 354 s · U-Form, eine Ebene
+Ende     251 m · 251 s · U-Form, eine Ebene
+```
+
+Das Routing findet beide Wege von selbst – die Bahnsteigverdichtung hat das
+erst möglich gemacht. Gebraucht wird nur die **Eingabe, wo jemand steht**.
+`/api/route` nimmt sie als `abschnitt=anfang|mitte|ende` bereits entgegen;
+`findeStartknoten` wertet sie aus. Solange die Wagenreihung fehlt, ist das die
+einzige Eingabe, die den Weg kennt.
+
+Das Fixture `test/fixtures/synthetisch/kopfbahnhof.json` hält den Fall klein
+und prüfbar fest.
+
+### Entwurf
+
+`design/schema/` – fünf Artboards gegen echte Daten, veröffentlicht als
+Leinwand. Der Platz folgt dem Reisenden: die aktive Ebene bekommt 323 px (bei
+zwei Ebenen 461), die übrigen schrumpfen auf eine Zeile.
+
+| Artboard | Fall |
+|---|---|
+| Main | Berlin Hbf 14 → 6 · fünf Ebenen, 430-m-Bahnsteige, 81° Kreuzung |
+| Kopfbahnhof | Leipzig 6 → 16 · Standortwahl entscheidet den Weg |
+| KleinerBahnhof | Braunschweig 1 → 6 · hinunter und wieder herauf |
+| Standardmodell | Stufe 3 · ohne Maßstab, „Länge unbekannt" |
+| Gekreuzt | Grundriss statt Bänder · die 81° sichtbar |
+
+Anforderungen und Datenvertrag:
+`docs/2026-09-13-schema-navigation-anforderungen.md`, echter
+Beispieldatensatz: `docs/beispiel-schema-berlin-14-6.json`.
+
+### Offen am Design
+
+Nach Gewicht:
+
+1. **Das Frontend zeichnet noch das alte Bild.** `Ebenenschema.tsx` leitet
+   sein Schema weiter aus den Schritttexten ab und kennt weder Bahnsteige noch
+   Zugänge noch Netz. Die Umsetzung von D4 steht aus – der Endpunkt liefert
+   alles, was sie braucht.
+2. **Standortwahl als Bedienelement.** Im Artboard sind es drei Knöpfe; in der
+   App gibt es sie nicht. Wo sie hingehört (Eingabemaske oder
+   Navigationsseite) ist ungeklärt.
+3. **Parallel oder gedreht bei kreuzenden Ebenen.** Betrifft rund jeden
+   zehnten Umstieg. Artboard „Gekreuzt" zeigt die Gegenposition; entschieden
+   ist nichts.
+4. **Abschnitt A–G: Platz reserviert, Quelle fehlt.** Die gleichmäßige
+   Einteilung ist nur in der Bahnsteigmitte belegt (13 m Fehler bei 61 m
+   Abschnittsbreite), die Richtung gar nicht.
+5. **Der Längsversatz der Bahnsteige zueinander fehlt im Vertrag.** Die Balken
+   sind deshalb zentriert gezeichnet – eine leise Behauptung. Der Endpunkt
+   könnte ihn liefern.
+6. **Der Rot-Konflikt ist ungelöst.** `#ec3013` ist Route, Aktion und Ampelrot
+   zugleich. Die Artboards weichen aus, indem sie grüne und gelbe Ampeln
+   zeigen.
+7. **Wie Vorbehalte sichtbar werden**, ohne die Seite zu belasten – derzeit
+   eine Fußzeile unter dem Bild.
+8. **„Anzeige" als Orientierungspunkt ist gestrichen.** 25 von 26
+   OSM-Treffern auf `information=board` sind Fremdtafeln („Wildbienen").
+   Ersatz offen.
+
+### Offen am Rande
+
+- **Die Gleisliste des Graphen enthält Nicht-Gleise** – „M", „G", „B",
+  „Eilgutbühne", aus `ref`-Tags an Bahnsteigen ohne Gleisnummer. Für das
+  Schema harmlos, für die Gleiseingabe und die Prüfung „gibt es dieses
+  Gleis?" nicht.
+- **Das Berlin-Fixture ist älter als die POI-Zeilen der Overpass-Abfrage**
+  (Commit `fcc6e53` gegen `2b46a48`). Tests der `mit-stopp`-Variante prüfen
+  damit einen Bahnhof ohne Zwischenziele.
 
 ## Offen: was NICHT geprüft ist (Stand 05.09.2026)
 

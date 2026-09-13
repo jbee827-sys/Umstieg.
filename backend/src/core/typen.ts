@@ -210,8 +210,19 @@ export interface SchemaElement {
   beiM?: number;
 }
 
+/**
+ * EIN BESUCH einer Ebene, nicht die Ebene selbst.
+ *
+ * Die Liste folgt dem Weg, nicht der Hoehe: Wer hinunter in die
+ * Unterfuehrung geht und wieder herauf, hat drei Eintraege - Ebene 0,
+ * Ebene -1, Ebene 0. Eine nach Hoehe sortierte Liste verschwiege genau die
+ * Reihenfolge, der jemand folgt, und musste den Weg in Stuecke zerlegen, die
+ * dann niemand mehr zuordnen kann.
+ */
 export interface SchemaEbene {
   level: number;
+  /** Erster Besuch = `start`, letzter = `ziel`, dazwischen nichts. */
+  rolle?: 'start' | 'ziel';
   /** `gleise` = trägt Bahnsteige · `verbindung` = Halle, Unterführung, Steg. */
   art: 'gleise' | 'verbindung';
   /** Gleisrichtung in Grad (0–180), nur bei `art: 'gleise'`. */
@@ -225,17 +236,8 @@ export interface SchemaEbene {
    */
   richtungLokalGrad?: number;
   bahnsteige: SchemaBahnsteig[];
-  /** Berührt die Route diese Ebene? */
-  aufRoute: boolean;
-  /**
-   * Der Weg auf dieser Ebene, als ein Stück je Besuch.
-   *
-   * Eine Liste, kein Linienzug: Wer hinunter in die Unterführung geht und
-   * wieder herauf, betritt die Gleisebene ZWEIMAL. Ein einziger Linienzug
-   * zöge zwischen beiden Besuchen eine Linie, die niemand geht - und im
-   * Bild sähe sie aus wie ein Weg.
-   */
-  weg?: SchemaWegstueck[];
+  /** Der Weg auf DIESEM Besuch, als Linienzug im Bezugsrahmen. */
+  weg?: SchemaPunkt[];
   /**
    * Das begehbare Netz dieser Ebene in Routennähe.
    *

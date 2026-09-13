@@ -412,3 +412,35 @@ describe('berechneRoute mit-stopp', () => {
     expect(berechneRoute(ohne, 'gleis1:mitte', 'gleis2:mitte', 'mit-stopp')).toBeNull();
   });
 });
+
+describe('Kopfbahnhof – zwei Wege, die Wahl haengt vom Standort ab', () => {
+  const graph = baueGraph(ladeFixture('synthetisch/kopfbahnhof'));
+
+  /** Die Ebenenfolge des Wegs - verraet, welcher der beiden Wege genommen wurde. */
+  function ebenenfolge(von: string, nach: string): number[] {
+    const pfad = berechneRoute(graph, von, nach, 'schnellste', 'normal')!;
+    const folge: number[] = [];
+    for (const kn of pfad.knoten) if (folge[folge.length - 1] !== kn.level) folge.push(kn.level);
+    return folge;
+  }
+
+  it('nimmt am Bahnsteigende die U-Form ueber den Kopf', () => {
+    // Dort ist der Kopf nebenan - hinunter und wieder herauf waere Unsinn.
+    expect(ebenenfolge('gleis1:ende', 'gleis2:mitte')).toEqual([0]);
+  });
+
+  it('nimmt am Bahnsteiganfang die Unterfuehrung', () => {
+    // 205 m bis zum Kopf und wieder zurueck, oder sechs Meter zur Treppe.
+    // Wer nur den Weg ab Bahnsteigmitte kennt, verpasst diesen Unterschied.
+    expect(ebenenfolge('gleis1:anfang', 'gleis2:mitte')).toEqual([0, -1, 0]);
+  });
+
+  it('waehlt vom Bahnsteiganfang aus den kuerzeren der beiden Wege', () => {
+    const ueberKopf = berechneRoute(graph, 'gleis1:ende', 'gleis2:mitte', 'schnellste', 'normal')!;
+    const unten = berechneRoute(graph, 'gleis1:anfang', 'gleis2:mitte', 'schnellste', 'normal')!;
+    // Beide Wege existieren; keiner ist laenger als der Umweg ueber das
+    // jeweils andere Ende es waere.
+    expect(unten.laengeM).toBeLessThan(220);
+    expect(ueberKopf.laengeM).toBeLessThan(220);
+  });
+});

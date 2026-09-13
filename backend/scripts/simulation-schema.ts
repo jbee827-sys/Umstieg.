@@ -43,23 +43,29 @@ const CACHE = join(
   '6db04a47-3c2c-491e-84a8-985fc6d8dc06', 'scratchpad', 'osm-cache',
 );
 
+/**
+ * Zweiter Durchgang (13.09.2026): die drei Metropolknoten als Pflicht, sonst
+ * bewusst ANDERE Bahnhoefe als im ersten Lauf - ein zweites Mal dieselben zu
+ * fahren prueft nichts Neues.
+ */
 const BAHNHOEFE = [
-  // gross
-  'Berlin Hbf', 'Hamburg Hbf', 'München Hbf', 'Frankfurt(Main)Hbf', 'Köln Hbf',
-  'Stuttgart Hbf', 'Düsseldorf Hbf', 'Hannover Hbf', 'Nürnberg Hbf', 'Leipzig Hbf',
-  'Dortmund Hbf', 'Essen Hbf', 'Bremen Hbf', 'Dresden Hbf', 'Duisburg Hbf',
-  'Mannheim Hbf', 'Karlsruhe Hbf', 'Münster(Westf)Hbf', 'Kassel-Wilhelmshöhe', 'Würzburg Hbf',
-  // mittel
-  'Augsburg Hbf', 'Braunschweig Hbf', 'Kiel Hbf', 'Erfurt Hbf', 'Rostock Hbf',
-  'Freiburg(Breisgau) Hbf', 'Mainz Hbf', 'Osnabrück Hbf', 'Bielefeld Hbf', 'Aachen Hbf',
-  'Bonn Hbf', 'Wuppertal Hbf', 'Ulm Hbf', 'Heidelberg Hbf', 'Koblenz Hbf',
-  'Saarbrücken Hbf', 'Magdeburg Hbf', 'Regensburg Hbf', 'Göttingen', 'Gießen',
-  'Marburg(Lahn)', 'Lüneburg', 'Cottbus Hbf', 'Schwerin Hbf', 'Heilbronn Hbf',
-  'Konstanz', 'Bamberg', 'Fulda', 'Hamm(Westf)Hbf', 'Hagen Hbf',
-  // klein
-  'Uelzen', 'Treuchtlingen', 'Angermünde', 'Büchen', 'Neuenmarkt-Wirsberg',
-  'Gütersloh Hbf', 'Riedstadt-Goddelau', 'Bad Kleinen', 'Kirchhain(Bz Kassel)', 'Zernitz',
+  // Metropolen (Pflicht)
+  'Berlin Hbf', 'Frankfurt(Main)Hbf', 'München Hbf',
+  // weitere Grossknoten, im ersten Lauf nicht dabei
+  'Berlin Ostbahnhof', 'Berlin Gesundbrunnen', 'Berlin Südkreuz', 'Hamburg-Altona',
+  'Hamburg Dammtor', 'Frankfurt(M) Flughafen Fernbf', 'München-Pasing', 'Köln Messe/Deutz',
+  'Düsseldorf Flughafen', 'Essen-Steele', 'Oberhausen Hbf', 'Krefeld Hbf',
+  'Mönchengladbach Hbf', 'Siegen Hbf', 'Trier Hbf', 'Kaiserslautern Hbf', 'Ludwigshafen(Rh)Hbf',
+  'Offenburg', 'Basel Bad Bf', 'Singen(Hohentwiel)', 'Friedrichshafen Stadt', 'Kempten(Allgäu)Hbf',
+  'Ingolstadt Hbf', 'Passau Hbf', 'Hof Hbf', 'Plauen(Vogtl)ob Bf', 'Zwickau(Sachs)Hbf',
+  'Chemnitz Hbf', 'Halle(Saale)Hbf', 'Dessau Hbf', 'Stendal', 'Wittenberge',
+  'Neubrandenburg', 'Stralsund Hbf', 'Greifswald', 'Flensburg', 'Husum',
+  'Oldenburg(Oldb)Hbf', 'Emden Hbf', 'Wilhelmshaven Hbf', 'Minden(Westf)', 'Paderborn Hbf',
+  'Lippstadt', 'Soest', 'Iserlohn', 'Solingen Hbf', 'Remscheid Hbf',
+  'Limburg Süd', 'Montabaur', 'Wetzlar', 'Bad Hersfeld', 'Eisenach',
+  'Gotha', 'Jena Paradies', 'Gera Hbf', 'Naumburg(Saale)Hbf', 'Weimar',
 ];
+
 
 interface Befund {
   name: string;
@@ -106,7 +112,7 @@ function pruefe(schema: BahnhofSchema, pfadLaenge: number, aufWechseln: number):
     for (const n of ebene.netz ?? []) {
       if (n.punkte.length < 2) fehler.push('Wegstueck mit weniger als zwei Punkten');
     }
-    for (const p of [...(ebene.weg ?? []), ...(ebene.netz ?? [])].flatMap((n) => n.punkte)) {
+    for (const p of [...(ebene.weg ?? []), ...(ebene.netz ?? []).flatMap((n) => n.punkte)]) {
       if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) fehler.push('Punkt ohne endliche Koordinate');
     }
   }
@@ -114,13 +120,11 @@ function pruefe(schema: BahnhofSchema, pfadLaenge: number, aufWechseln: number):
   // Der zerlegte Weg muss den ganzen Weg ergeben.
   let summe = 0;
   for (const ebene of schema.ebenen) {
-    for (const stueck of ebene.weg ?? []) {
-      for (let i = 1; i < stueck.punkte.length; i++) {
-        summe += Math.hypot(
-          stueck.punkte[i].x - stueck.punkte[i - 1].x,
-          stueck.punkte[i].y - stueck.punkte[i - 1].y,
-        );
-      }
+    for (let i = 1; i < (ebene.weg?.length ?? 0); i++) {
+      summe += Math.hypot(
+        ebene.weg![i].x - ebene.weg![i - 1].x,
+        ebene.weg![i].y - ebene.weg![i - 1].y,
+      );
     }
   }
   const erwartet = pfadLaenge - aufWechseln;

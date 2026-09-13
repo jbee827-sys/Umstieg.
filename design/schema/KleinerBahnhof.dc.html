@@ -54,7 +54,7 @@
     </div>
 
     <div style="display: flex; flex-direction: column">
-      <sc-for list="{{ baender }}" as="band" hint-placeholder-count="2">
+      <sc-for list="{{ baender }}" as="band" hint-placeholder-count="3">
 
         <div style="height: {{ band.hoehe }}px; box-sizing: border-box; border-radius: {{ band.radius }}px; background: {{ band.flaeche }}; border: {{ band.rahmen }}; padding: {{ band.polster }}; display: flex; flex-direction: column; justify-content: {{ band.ausrichtung }}; overflow: hidden">
 
@@ -83,9 +83,9 @@
                   <rect x="{{ a.x }}" y="{{ a.y }}" width="{{ a.w }}" height="{{ a.w }}" rx="1.5" fill="{{ a.fuellung }}" stroke="{{ a.farbe }}" stroke-width="{{ a.dicke }}"/>
                 </sc-for>
 
-                <sc-for list="{{ band.wege }}" as="w" hint-placeholder-count="2">
-                  <path d="{{ w.d }}" fill="none" stroke="#ec3013" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                </sc-for>
+                <sc-if value="{{ band.weg }}" hint-placeholder-val="{{ true }}">
+                  <path d="{{ band.weg }}" fill="none" stroke="#ec3013" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </sc-if>
 
                 <sc-if value="{{ band.punkt }}" hint-placeholder-val="{{ false }}">
                   <circle cx="{{ band.punkt.x }}" cy="{{ band.punkt.y }}" r="10" fill="#ec3013" fill-opacity=".16"/>
@@ -153,7 +153,7 @@
 <script data-dc-script data-props='{"schrittNr":{"editor":"range","default":8,"min":1,"max":13,"step":1,"section":"Weg"}}'>
 /* Braunschweig Hbf, Gleis 1 nach 6, barrierefrei (13.09.2026)
    Meter im Bezugsrahmen des Bahnhofs, Linienzuege geglaettet. */
-const SCHEMA = {"ebenen":[{"level":1,"art":"gleise","weg":[{"punkte":[{"x":0,"y":0},{"x":6,"y":-5}]},{"punkte":[{"x":7,"y":38},{"x":0,"y":37}]}],"elemente":[{"typ":"treppe","punkte":[{"x":-13,"y":-5},{"x":-18,"y":-5}],"aufRoute":false,"beiM":134},{"typ":"treppe","punkte":[{"x":-12,"y":14},{"x":-18,"y":14}],"aufRoute":false,"beiM":134},{"typ":"aufzug","punkte":[{"x":6,"y":-5}],"aufRoute":true,"beiM":158},{"typ":"aufzug","punkte":[{"x":6,"y":14}],"aufRoute":false,"beiM":158},{"typ":"treppe","punkte":[{"x":11,"y":-7},{"x":16,"y":-7}],"aufRoute":false,"beiM":168},{"typ":"treppe","punkte":[{"x":11,"y":13},{"x":16,"y":12}],"aufRoute":false,"beiM":168},{"typ":"treppe","punkte":[{"x":12,"y":55},{"x":17,"y":55}],"aufRoute":false,"beiM":201},{"typ":"treppe","punkte":[{"x":11,"y":36},{"x":17,"y":36}],"aufRoute":false,"beiM":202},{"typ":"aufzug","punkte":[{"x":7,"y":57}],"aufRoute":false,"beiM":211},{"typ":"aufzug","punkte":[{"x":7,"y":38}],"aufRoute":true,"beiM":212},{"typ":"treppe","punkte":[{"x":-12,"y":56},{"x":-17,"y":56}],"aufRoute":false,"beiM":235},{"typ":"treppe","punkte":[{"x":-12,"y":37},{"x":-17,"y":38}],"aufRoute":false,"beiM":236}],"bahnsteige":[{"gleise":"1/2","laengeM":303,"querM":0,"rolle":"start","zugaenge":[{"beiM":146,"pos":{"x":-6,"y":5},"aufzug":2,"rolltreppe":0,"treppe":2,"aufRoute":true},{"beiM":168,"pos":{"x":16,"y":3},"aufzug":0,"rolltreppe":0,"treppe":2,"aufRoute":false}]},{"gleise":"3/3b/4","laengeM":322,"querM":12},{"gleise":"5/6","laengeM":437,"querM":37,"rolle":"ziel","zugaenge":[{"beiM":207,"pos":{"x":12,"y":35},"aufzug":3,"rolltreppe":0,"treppe":3,"aufRoute":true},{"beiM":236,"pos":{"x":-17,"y":36},"aufzug":0,"rolltreppe":0,"treppe":3,"aufRoute":false}]},{"gleise":"7/8","laengeM":425,"querM":56}]},{"level":0,"art":"gleise","weg":[{"punkte":[{"x":6,"y":-5},{"x":-1,"y":-5},{"x":-1,"y":14},{"x":0,"y":38},{"x":7,"y":38}]}],"elemente":[{"typ":"aufzug","punkte":[{"x":7,"y":38}],"aufRoute":true},{"typ":"aufzug","punkte":[{"x":6,"y":-5}],"aufRoute":true},{"typ":"treppe","punkte":[{"x":5,"y":-7},{"x":9,"y":-7}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":6,"y":36},{"x":10,"y":36}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":-7,"y":14},{"x":-11,"y":14}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":-6,"y":37},{"x":-11,"y":37}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":5,"y":13},{"x":10,"y":13}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":-7,"y":-6},{"x":-11,"y":-5}],"aufRoute":false},{"typ":"aufzug","punkte":[{"x":6,"y":14}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":6,"y":55},{"x":10,"y":55}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":-6,"y":56},{"x":-10,"y":56}],"aufRoute":false},{"typ":"aufzug","punkte":[{"x":7,"y":57}],"aufRoute":false}],"bahnsteige":[{"gleise":"D","laengeM":80,"querM":0},{"gleise":"C","laengeM":80,"querM":11}]}]};
+const SCHEMA = {"ebenen":[{"level":1,"art":"gleise","rolle":"start","weg":[{"x":0,"y":0},{"x":6,"y":-5}],"elemente":[{"typ":"treppe","punkte":[{"x":-13,"y":-5},{"x":-18,"y":-5}],"aufRoute":false,"beiM":134},{"typ":"treppe","punkte":[{"x":-12,"y":14},{"x":-18,"y":14}],"aufRoute":false,"beiM":134},{"typ":"aufzug","punkte":[{"x":6,"y":-5}],"aufRoute":true,"beiM":158},{"typ":"aufzug","punkte":[{"x":6,"y":14}],"aufRoute":false,"beiM":158},{"typ":"treppe","punkte":[{"x":11,"y":-7},{"x":16,"y":-7}],"aufRoute":false,"beiM":168},{"typ":"treppe","punkte":[{"x":11,"y":13},{"x":16,"y":12}],"aufRoute":false,"beiM":168},{"typ":"treppe","punkte":[{"x":12,"y":55},{"x":17,"y":55}],"aufRoute":false,"beiM":201},{"typ":"treppe","punkte":[{"x":11,"y":36},{"x":17,"y":36}],"aufRoute":false,"beiM":202},{"typ":"aufzug","punkte":[{"x":7,"y":57}],"aufRoute":false,"beiM":211},{"typ":"aufzug","punkte":[{"x":7,"y":38}],"aufRoute":true,"beiM":212},{"typ":"treppe","punkte":[{"x":-12,"y":56},{"x":-17,"y":56}],"aufRoute":false,"beiM":235},{"typ":"treppe","punkte":[{"x":-12,"y":37},{"x":-17,"y":38}],"aufRoute":false,"beiM":236}],"bahnsteige":[{"gleise":"1/2","laengeM":303,"querM":0,"rolle":"start","zugaenge":[{"beiM":146,"pos":{"x":-6,"y":5},"aufzug":2,"rolltreppe":0,"treppe":2,"aufRoute":true},{"beiM":168,"pos":{"x":16,"y":3},"aufzug":0,"rolltreppe":0,"treppe":2,"aufRoute":false}]},{"gleise":"3/3b/4","laengeM":322,"querM":12},{"gleise":"5/6","laengeM":437,"querM":37,"rolle":"ziel","zugaenge":[{"beiM":207,"pos":{"x":12,"y":35},"aufzug":3,"rolltreppe":0,"treppe":3,"aufRoute":true},{"beiM":236,"pos":{"x":-17,"y":36},"aufzug":0,"rolltreppe":0,"treppe":3,"aufRoute":false}]},{"gleise":"7/8","laengeM":425,"querM":56}]},{"level":0,"art":"gleise","weg":[{"x":6,"y":-5},{"x":-1,"y":-5},{"x":-1,"y":14},{"x":0,"y":38},{"x":7,"y":38}],"elemente":[{"typ":"aufzug","punkte":[{"x":7,"y":38}],"aufRoute":true},{"typ":"aufzug","punkte":[{"x":6,"y":-5}],"aufRoute":true},{"typ":"treppe","punkte":[{"x":5,"y":-7},{"x":9,"y":-7}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":6,"y":36},{"x":10,"y":36}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":-7,"y":14},{"x":-11,"y":14}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":-6,"y":37},{"x":-11,"y":37}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":5,"y":13},{"x":10,"y":13}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":-7,"y":-6},{"x":-11,"y":-5}],"aufRoute":false},{"typ":"aufzug","punkte":[{"x":6,"y":14}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":6,"y":55},{"x":10,"y":55}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":-6,"y":56},{"x":-10,"y":56}],"aufRoute":false},{"typ":"aufzug","punkte":[{"x":7,"y":57}],"aufRoute":false}],"bahnsteige":[{"gleise":"D","laengeM":80,"querM":0},{"gleise":"C","laengeM":80,"querM":11}]},{"level":1,"art":"gleise","rolle":"ziel","weg":[{"x":7,"y":38},{"x":0,"y":37}],"elemente":[{"typ":"treppe","punkte":[{"x":-13,"y":-5},{"x":-18,"y":-5}],"aufRoute":false,"beiM":134},{"typ":"treppe","punkte":[{"x":-12,"y":14},{"x":-18,"y":14}],"aufRoute":false,"beiM":134},{"typ":"aufzug","punkte":[{"x":6,"y":-5}],"aufRoute":true,"beiM":158},{"typ":"aufzug","punkte":[{"x":6,"y":14}],"aufRoute":false,"beiM":158},{"typ":"treppe","punkte":[{"x":11,"y":-7},{"x":16,"y":-7}],"aufRoute":false,"beiM":168},{"typ":"treppe","punkte":[{"x":11,"y":13},{"x":16,"y":12}],"aufRoute":false,"beiM":168},{"typ":"treppe","punkte":[{"x":12,"y":55},{"x":17,"y":55}],"aufRoute":false,"beiM":201},{"typ":"treppe","punkte":[{"x":11,"y":36},{"x":17,"y":36}],"aufRoute":false,"beiM":202},{"typ":"aufzug","punkte":[{"x":7,"y":57}],"aufRoute":false,"beiM":211},{"typ":"aufzug","punkte":[{"x":7,"y":38}],"aufRoute":true,"beiM":212},{"typ":"treppe","punkte":[{"x":-12,"y":56},{"x":-17,"y":56}],"aufRoute":false,"beiM":235},{"typ":"treppe","punkte":[{"x":-12,"y":37},{"x":-17,"y":38}],"aufRoute":false,"beiM":236}],"bahnsteige":[{"gleise":"1/2","laengeM":303,"querM":0,"rolle":"start","zugaenge":[{"beiM":146,"pos":{"x":-6,"y":5},"aufzug":2,"rolltreppe":0,"treppe":2,"aufRoute":true},{"beiM":168,"pos":{"x":16,"y":3},"aufzug":0,"rolltreppe":0,"treppe":2,"aufRoute":false}]},{"gleise":"3/3b/4","laengeM":322,"querM":12},{"gleise":"5/6","laengeM":437,"querM":37,"rolle":"ziel","zugaenge":[{"beiM":207,"pos":{"x":12,"y":35},"aufzug":3,"rolltreppe":0,"treppe":3,"aufRoute":true},{"beiM":236,"pos":{"x":-17,"y":36},"aufzug":0,"rolltreppe":0,"treppe":3,"aufRoute":false}]},{"gleise":"7/8","laengeM":425,"querM":56}]}]};
 
 const SCHRITTE = [["eben",1,"Nach Ausstieg wenige Meter geradeaus"],["eben",1,"Wenige Meter halblinks"],["aufzug",0,"Aufzug zur Ebene 0"],["eben",0,"Wenige Meter links"],["rampe",0,"Rampe hinunter zur Ebene 0"],["rampe",0,"Rampe hinunter zur Ebene 0"],["rampe",0,"Rampe hinunter zur Ebene 0"],["rampe",0,"Rampe hinunter zur Ebene 0"],["rampe",0,"Rampe hinunter zur Ebene 0"],["rampe",0,"Rampe hinunter zur Ebene 0"],["eben",0,"Wenige Meter links"],["aufzug",1,"Aufzug zur Ebene 1"],["eben",1,"Wenige Meter links zu Gleis 6"]];
 
@@ -168,23 +168,15 @@ const POLSTER = 13;
 
 const ICONS = { rolltreppe: 'M3 18h4l8-9h6M3 18v-3M21 9V6', eben: 'M5 12h14M13 6l6 6-6 6' };
 
-/* Der Weg einer Ebene ist eine Liste von Stuecken - eines je Besuch. Wer
-   hinunter und wieder herauf geht, betritt die Gleisebene zweimal, und
-   zwischen den beiden Besuchen liegt kein Weg. */
-function laenge(stuecke) {
+/* Ein Eintrag der Ebenenliste ist EIN BESUCH, also genau ein Linienzug. Wer
+   hinunter und wieder herauf geht, hat zwei Eintraege - und zwischen ihnen
+   liegt kein Weg, sondern eine Treppe. */
+function laenge(weg) {
   let l = 0;
-  for (const st of stuecke || []) {
-    for (let i = 1; i < st.punkte.length; i++) {
-      l += Math.hypot(st.punkte[i].x - st.punkte[i-1].x, st.punkte[i].y - st.punkte[i-1].y);
-    }
+  for (let i = 1; i < (weg || []).length; i++) {
+    l += Math.hypot(weg[i].x - weg[i-1].x, weg[i].y - weg[i-1].y);
   }
   return Math.round(l);
-}
-
-function letzterPunkt(stuecke) {
-  const liste = stuecke || [];
-  const st = liste[liste.length - 1];
-  return st ? st.punkte[st.punkte.length - 1] : null;
 }
 
 /* "11,12,13,14,15,16" -> "11–16". Eine Aufzaehlung passt nicht in eine Zeile,
@@ -217,7 +209,7 @@ class Component extends DCLogic {
     const alle = [];
     for (const n of ebene.netz || []) alle.push(...n.punkte);
     for (const e of ebene.elemente || []) alle.push(...e.punkte);
-    for (const st of ebene.weg || []) alle.push(...st.punkte);
+    alle.push(...(ebene.weg || []));
     if (alle.length === 0) return null;
     const xs = alle.map((p) => p.x), ys = alle.map((p) => p.y);
     const x0 = Math.min(...xs), x1 = Math.max(...xs);
@@ -255,7 +247,7 @@ class Component extends DCLogic {
 
       let bahnsteige = [], netz = [], striche = [], kaesten = [];
       let punkt = null, fuss = null, notiz = null;
-      const wege = [];
+      let wegD = null;
       let rechts = gleisband ? 'Gleise ' + spanne(alleGleise) : laenge(ebene.weg || []) + ' m';
 
       if (istAktiv && gleisband) {
@@ -344,11 +336,10 @@ class Component extends DCLogic {
               });
             }
           }
-          for (const st of ebene.weg || []) {
-            wege.push({ d: 'M ' + st.punkte.map((p) => { const q = bild(p); return q.x + ' ' + q.y; }).join(' L ') });
+          if ((ebene.weg || []).length > 1) {
+            wegD = 'M ' + ebene.weg.map((p) => { const q = bild(p); return q.x + ' ' + q.y; }).join(' L ');
+            punkt = bild(ebene.weg[ebene.weg.length - 1]);
           }
-          const letzt = letzterPunkt(ebene.weg);
-          if (letzt) punkt = bild(letzt);
           rechts = laenge(ebene.weg || []) + ' m';
           fuss = (ebene.netz || []).length + ' Gänge · ' + (ebene.elemente || []).length + ' Anlagen in Sicht';
         }
@@ -360,14 +351,15 @@ class Component extends DCLogic {
         radius: istAktiv ? 16 : 11,
         polster: istAktiv ? POLSTER + 'px' : '0 ' + POLSTER + 'px',
         ausrichtung: istAktiv ? 'flex-start' : 'center',
-        titel: gleisband ? 'Ebene ' + name : 'Ebene ' + name + ' · Übergang',
+        titel: (gleisband ? 'Ebene ' + name : 'Ebene ' + name + ' · Übergang')
+          + (ebene.rolle === 'start' ? ' · Ankunft' : ebene.rolle === 'ziel' ? ' · Abfahrt' : ''),
         rechts,
         flaeche: istAktiv ? '#f8f6f6' : warDa.has(ebene.level) ? '#e2dfdf' : '#edebeb',
         rahmen: istAktiv ? '1.5px solid #ec3013' : '1px solid #e0dcdc',
         tinte: istAktiv ? '#3a3737' : '#8e8a8a',
         tinteNeben: istAktiv ? '#8e8a8a' : '#a5a1a1',
         bahnsteige, netz, striche, kaesten, punkt, fuss, notiz,
-        wege,
+        weg: wegD,
         wechsel: i < anzahl - 1 ? 'Rolltreppe' : null,
       });
 
