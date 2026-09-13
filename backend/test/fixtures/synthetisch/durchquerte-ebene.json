@@ -1,0 +1,76 @@
+{
+  "_beschreibung": [
+    "Eine Ebene, die die Route nur SENKRECHT durchquert.",
+    "Gleis 1 liegt auf Ebene 0, Gleis 2 auf Ebene -2. Dazwischen liegt Ebene -1,",
+    "und zwar so, dass beide Treppen an EINEM Knoten (n120) zusammenstossen:",
+    "Wer hinunterkommt, geht sofort weiter hinunter, ohne einen Meter zu laufen.",
+    "",
+    "Genau dort war `weg` leer, `abstandZumWeg` lieferte Unendlich, und der",
+    "Naehefilter in `elementeFuer` warf beide Treppen aus dem Bild. Die Ebene",
+    "stand dann da, ohne zu zeigen, wodurch man sie betritt und verlaesst.",
+    "Gefunden von der Standort-Simulation am 13.09.2026 (Berlin Hbf, Frankfurt",
+    "Flughafen Fernbf, Augsburg Hbf).",
+    "",
+    "Auf Ebene -1 liegt ausserdem ein Aufzug abseits (n140/n141, rund 300 m",
+    "entfernt). Er darf NICHT ins Bild - der Filter soll weiter filtern, nur",
+    "eben nicht das, worauf der Reisende steht."
+  ],
+  "elements": [
+    { "type": "node", "id": 101, "lat": 52.5250, "lon": 13.3690 },
+    { "type": "node", "id": 102, "lat": 52.5250, "lon": 13.3720 },
+    {
+      "type": "way",
+      "id": 201,
+      "nodes": [101, 102],
+      "tags": { "railway": "platform", "ref": "1", "level": "0", "train": "yes" }
+    },
+
+    { "type": "node", "id": 111, "lat": 52.5240, "lon": 13.3690 },
+    { "type": "node", "id": 112, "lat": 52.5240, "lon": 13.3720 },
+    {
+      "type": "way",
+      "id": 202,
+      "nodes": [111, 112],
+      "tags": { "railway": "platform", "ref": "2", "level": "-2", "train": "yes" }
+    },
+
+    { "type": "node", "id": 110, "lat": 52.5250, "lon": 13.3705 },
+    {
+      "type": "way",
+      "id": 203,
+      "nodes": [110, 101],
+      "tags": { "highway": "footway", "level": "0" }
+    },
+
+    { "type": "node", "id": 120, "lat": 52.5248, "lon": 13.3705 },
+    {
+      "type": "way",
+      "id": 204,
+      "nodes": [110, 120],
+      "tags": { "highway": "steps", "level": "-1;0", "incline": "down" }
+    },
+    {
+      "type": "way",
+      "id": 205,
+      "nodes": [120, 130],
+      "tags": { "highway": "steps", "level": "-2;-1", "incline": "down" }
+    },
+
+    { "type": "node", "id": 130, "lat": 52.5242, "lon": 13.3705 },
+    {
+      "type": "way",
+      "id": 206,
+      "nodes": [130, 111],
+      "tags": { "highway": "footway", "level": "-2" }
+    },
+
+    { "type": "node", "id": 140, "lat": 52.5248, "lon": 13.3750 },
+    {
+      "type": "way",
+      "id": 207,
+      "nodes": [140, 141],
+      "tags": { "highway": "elevator", "level": "-1;0" }
+    },
+    { "type": "node", "id": 141, "lat": 52.5248, "lon": 13.3750 }
+  ]
+}
