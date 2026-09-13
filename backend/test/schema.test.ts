@@ -5,20 +5,18 @@ import { baueGraph } from '../src/core/graph.js';
 import { berechneRoute } from '../src/core/routing.js';
 import { baueBahnhofSchema, vereinfacheLinie } from '../src/core/schema.js';
 import { syntheseGraph } from '../src/core/synthmodell.js';
-import type { OverpassAntwort, RoutenPfad, StationsInfo } from '../src/core/typen.js';
+import type { OverpassAntwort, StationsInfo } from '../src/core/typen.js';
 
 function ladeFixture(name: string): OverpassAntwort {
   const pfad = fileURLToPath(new URL(`./fixtures/${name}.json`, import.meta.url));
   return JSON.parse(readFileSync(pfad, 'utf8')) as OverpassAntwort;
 }
 
-/** Ohne Route: nur die Geometrie soll geprüft werden, nicht der Weg darüber. */
-const OHNE_ROUTE: RoutenPfad = { knoten: [], kanten: [], laengeM: 0 };
-
 describe('baueBahnhofSchema – Lage der Bahnsteige', () => {
   const graph = baueGraph(ladeFixture('synthetisch/quer-bahnhof'));
-  const schema = baueBahnhofSchema(graph, OHNE_ROUTE);
-  const ebene0 = schema.ebenen.find((e) => e.level === 0)!;
+  const pfad = berechneRoute(graph, 'gleis5:mitte', 'gleis3:mitte', 'schnellste', 'normal')!;
+  const schema = baueBahnhofSchema(graph, pfad);
+  const ebene0 = schema.ebenen[0];
 
   it('ordnet die Bahnsteige nach ihrer Lage, nicht nach der Gleisnummer', () => {
     // Von Nord nach Sued liegen sie 3, 1, 5. Eine Sortierung nach Nummer
@@ -65,8 +63,17 @@ describe('baueBahnhofSchema – Bänder und Route', () => {
     expect(unten?.bahnsteige).toEqual([]);
   });
 
-  it('sortiert die Ebenen von oben nach unten', () => {
-    expect(schema.ebenen.map((e) => e.level)).toEqual([0, -1]);
+  it('führt die Ebenen in der Reihenfolge des Wegs, nicht von oben nach unten', () => {
+    // Hinunter in die Unterführung und wieder herauf: Ebene 0 kommt ZWEIMAL
+    // vor. Eine nach Höhe sortierte Liste verschwiege die Reihenfolge - und
+    // die ist es, der jemand folgt.
+    expect(schema.ebenen.map((e) => e.level)).toEqual([0, -1, 0]);
+  });
+
+  it('markiert den ersten Besuch als Start und den letzten als Ziel', () => {
+    expect(schema.ebenen[0].rolle).toBe('start');
+    expect(schema.ebenen[schema.ebenen.length - 1].rolle).toBe('ziel');
+    expect(schema.ebenen[1].rolle).toBeUndefined();
   });
 
   it('markiert Start- und Zielbahnsteig', () => {
@@ -77,25 +84,23 @@ describe('baueBahnhofSchema – Bänder und Route', () => {
     expect(ziel?.gleise).toContain('2');
   });
 
-  it('trennt zwei Besuche derselben Ebene, statt sie zu verbinden', () => {
-    // Der Weg fuehrt von Gleis 1 hinunter in die Unterfuehrung und wieder
-    // hinauf zu Gleis 2 - Ebene 0 wird zweimal betreten. Ein einziger
-    // Linienzug zoege zwischen beiden Besuchen eine Linie, die niemand geht.
-    const ebene0 = schema.ebenen.find((e) => e.level === 0)!;
-    expect(ebene0.weg).toHaveLength(2);
-    for (const stueck of ebene0.weg!) expect(stueck.punkte.length).toBeGreaterThan(1);
+  it('gibt jedem Besuch seinen eigenen Weg', () => {
+    // Jeder Eintrag ist EIN Besuch, also genau ein Linienzug. Die frühere
+    // Sammelliste je Ebene zog zwischen zwei Besuchen eine Linie, die
+    // niemand geht.
+    const besuche = schema.ebenen.filter((e) => e.level === 0);
+    expect(besuche).toHaveLength(2);
+    for (const b of besuche) expect(b.weg!.length).toBeGreaterThan(1);
   });
 
   it('zerlegt den Weg vollständig, auch wenn eine Ebene zweimal vorkommt', () => {
     let summe = 0;
     for (const ebene of schema.ebenen) {
-      for (const stueck of ebene.weg ?? []) {
-        for (let i = 1; i < stueck.punkte.length; i++) {
-          summe += Math.hypot(
-            stueck.punkte[i].x - stueck.punkte[i - 1].x,
-            stueck.punkte[i].y - stueck.punkte[i - 1].y,
-          );
-        }
+      for (let i = 1; i < (ebene.weg?.length ?? 0); i++) {
+        summe += Math.hypot(
+          ebene.weg![i].x - ebene.weg![i - 1].x,
+          ebene.weg![i].y - ebene.weg![i - 1].y,
+        );
       }
     }
     const aufWechseln = pfad.kanten
@@ -202,7 +207,7 @@ describe('baueBahnhofSchema – echte Lage auf der Ebene', () => {
   const ziel = unten.bahnsteige.find((b) => b.rolle === 'ziel')!;
 
   it('legt den Ursprung auf den Startpunkt der Route', () => {
-    expect(oben.weg![0].punkte[0]).toEqual({ x: 0, y: 0 });
+    expect(oben.weg![0]).toEqual({ x: 0, y: 0 });
   });
 
   it('dreht die Gleisrichtung der Startebene auf die x-Achse', () => {
@@ -239,13 +244,11 @@ describe('baueBahnhofSchema – echte Lage auf der Ebene', () => {
     // zerlegter Linienzug halten muss.
     let summe = 0;
     for (const ebene of schema.ebenen) {
-      for (const stueck of ebene.weg ?? []) {
-        for (let i = 1; i < stueck.punkte.length; i++) {
-          summe += Math.hypot(
-            stueck.punkte[i].x - stueck.punkte[i - 1].x,
-            stueck.punkte[i].y - stueck.punkte[i - 1].y,
-          );
-        }
+      for (let i = 1; i < (ebene.weg?.length ?? 0); i++) {
+        summe += Math.hypot(
+          ebene.weg![i].x - ebene.weg![i - 1].x,
+          ebene.weg![i].y - ebene.weg![i - 1].y,
+        );
       }
     }
     const aufWechseln = pfad.kanten

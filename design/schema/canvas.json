@@ -6,16 +6,17 @@
       "y": 0,
       "w": 402,
       "h": 874,
-      "title": "Schnitt · Berlin Hbf 14 → 6",
+      "title": "Fünf Ebenen · Berlin Hbf 14 → 6",
       "is_interactive": true
     },
     {
-      "file": "Gekreuzt.dc.html",
+      "file": "Kopfbahnhof.dc.html",
       "x": 502,
       "y": 0,
       "w": 402,
       "h": 874,
-      "title": "Grundriss · 81° sichtbar"
+      "title": "Kopfbahnhof · Leipzig, Standort entscheidet",
+      "is_interactive": true
     },
     {
       "file": "KleinerBahnhof.dc.html",
@@ -23,7 +24,7 @@
       "y": 0,
       "w": 402,
       "h": 874,
-      "title": "Zwei Ebenen · Braunschweig 1 → 6"
+      "title": "Runter und rauf · Braunschweig 1 → 6"
     },
     {
       "file": "Standardmodell.dc.html",
@@ -32,43 +33,58 @@
       "w": 402,
       "h": 874,
       "title": "Stufe 3 · ohne Kartenmaterial"
+    },
+    {
+      "file": "Gekreuzt.dc.html",
+      "x": 2008,
+      "y": 0,
+      "w": 402,
+      "h": 874,
+      "title": "Grundriss · 81° sichtbar"
     }
   ],
   "annotations": [
     {
       "id": "brief",
       "x": 0,
-      "y": -230,
+      "y": -260,
       "w": 900,
-      "text": "Schematische Navigation, Screen 3 — vier Artboards gegen echte Daten aus GET /api/route.\n\nJEDE EBENE BILDET IHRE EIGENE GEOMETRIE AB. Gleisebenen als maßstäbliche Balken mit den Anlagen an ihrer gemessenen Stelle; Übergangsebenen als Grundriss aus dem begehbaren Netz. Symbole: Rolltreppe durchgezogen, Treppe gestrichelt, Aufzug als Kasten.\n\nOFFENE ENTSCHEIDUNG: Artboard 2 zeigt beide Gleisebenen ungedreht übereinander — Berlins Ebenen stehen 81° zueinander. Artboard 1 verzichtet darauf zugunsten der Lesbarkeit.\n\nNicht gezeichnet, weil unbelegt: Abschnitte A–G, Anzeigetafeln.\n\nAnforderungen: docs/2026-09-13-schema-navigation-anforderungen.md"
+      "text": "Schematische Navigation, Screen 3 — fünf Artboards gegen echte Daten aus GET /api/route.\n\nDIE EBENENLISTE FOLGT DEM WEG, nicht der Höhe: Wer hinunter in die Unterführung geht und wieder herauf, hat drei Bänder — Ebene 1, Ebene 0, Ebene 1. Die aktive Ebene bekommt fast den ganzen Platz.\n\nGleisebene: maßstäbliche Balken, Anlagen IM Balken an ihrer gemessenen Stelle. Übergangsebene: Grundriss aus dem begehbaren Netz. Rolltreppe durchgezogen, Treppe gestrichelt, Aufzug als Kasten.\n\nNicht gezeichnet, weil unbelegt: Abschnitte A–G, Anzeigetafeln.\n\nAnforderungen: docs/2026-09-13-schema-navigation-anforderungen.md"
     },
     {
       "id": "main-note",
       "x": 0,
       "y": 910,
       "w": 402,
-      "text": "Der Platz folgt dem Reisenden: Die Ebene, auf der er steht, bekommt 323 px, die übrigen schrumpfen auf eine Zeile.\n\nGLEISEBENE — waagerechte Balken in echter Reihenfolge und maßstäblicher Länge. Die Anlagen liegen IM Balken, hell ausgespart: Rolltreppe durchgezogen, Treppe gestrichelt, Aufzug als Kasten. Gleis 5/6 hat sie bei 32, 120, 156, 178, 198, 223, 244, 260 und 329 m.\n\nÜBERGANGSEBENE — dort gibt es keinen Bahnsteig, also trägt der Grundriss: graue Gänge aus dem Kartenmaterial, der Weg rot darauf, die Anlagen als Bezugspunkte. Ebene 0 läuft 26 m hinaus und kommt fast am Startpunkt zurück — die Rolltreppen liegen hintereinander."
+      "text": "Der große Fall: fünf Ebenen, 430-m-Bahnsteige, 81° Kreuzung. Gleis 5/6 hat acht Zugänge, die Route nimmt den bei 242 m.\n\nAuf Ebene 0 läuft der Weg 26 m hinaus und kommt fast am Startpunkt zurück — die Rolltreppen liegen hintereinander, man muss sich umdrehen."
     },
     {
-      "id": "gekreuzt-note",
+      "id": "kopf-note",
       "x": 502,
       "y": 910,
       "w": 402,
-      "text": "Die Gegenposition: beide Gleisebenen ungedreht übereinander. Die 81° sind zu sehen statt zu lesen, der Abstieg schrumpft auf eine Zeile.\n\nEhrlicher zur Lage im Raum, aber ohne Zugänge und ohne Wegform — und bei einem Bahnhof ohne Kreuzung (der Regelfall) ist der Vorteil weg."
+      "text": "DER WICHTIGE FALL. Leipzig Hbf, Gleis 6 → 16, beide auf derselben Ebene. Zwei Wege stehen in Konkurrenz: die U-Form um den Kopf des Bahnhofs und die Unterführung am anderen Ende.\n\nDie Standortwahl oben entscheidet, welcher gewinnt — und das ist keine Anzeige, sondern gerechnet:\n  Anfang  303 m · 343 s · über die Unterführung (1 → 0 → 1)\n  Mitte   354 m · 354 s · U-Form, eine Ebene\n  Ende    251 m · 251 s · U-Form, eine Ebene\n\nSolange die Wagenreihung fehlt, ist der Standort am Ankunftsgleis die einzige Eingabe, die den Weg kennt."
     },
     {
       "id": "klein-note",
       "x": 1004,
       "y": 910,
       "w": 402,
-      "text": "Dieselbe Bildsprache bei ZWEI Ebenen: Braunschweig Hbf, Gleis 1 nach 6, barrierefrei. Das aktive Band bekommt hier 461 px statt 323 — weniger Ebenen heißt mehr Platz für die, die zählt.\n\nBeide Ebenen tragen Gleise, und der Weg geht hinunter UND wieder hinauf. Die Annahme „unten ist immer Durchgang\" hält nicht."
+      "text": "Braunschweig Hbf, Gleis 1 → 6, barrierefrei: hinunter zur Stadtbahnebene und wieder herauf. Ebene 1 erscheint deshalb ZWEIMAL in der Liste — als Ankunft und als Abfahrt."
     },
     {
       "id": "stufe3-note",
       "x": 1506,
       "y": 910,
       "w": 402,
-      "text": "Kein Kartenmaterial (Stufe 3): keine Längen, keine Querlage, keine Zugänge. Die Balken zeigen deshalb keinen Maßstab und die Kopfzeile sagt „Länge unbekannt\" statt einer Zahl.\n\nDer Vorbehalt steht unter dem Bild, nicht im Impressum."
+      "text": "Kein Kartenmaterial (Stufe 3): keine Längen, keine Querlage, keine Zugänge. Die Kopfzeile sagt „Länge unbekannt\" statt einer Zahl, der Vorbehalt steht unter dem Bild."
+    },
+    {
+      "id": "gekreuzt-note",
+      "x": 2008,
+      "y": 910,
+      "w": 402,
+      "text": "Die Gegenposition zur Bänderdarstellung: beide Gleisebenen ungedreht übereinander. Vier von 41 simulierten Bahnhöfen kreuzen sich über 20° — Dortmund 88°, Düsseldorf 87°, Osnabrück 83°."
     }
   ],
   "launch": {

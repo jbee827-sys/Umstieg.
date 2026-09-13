@@ -1,0 +1,118 @@
+{
+  "_zweck": "Kopfbahnhof mit ZWEI Wegen zwischen denselben Gleisen: die U-Form ueber den Kopf (Osten, Way 603) und die Unterfuehrung am anderen Ende (Westen, Ways 604-606). Welcher schneller ist, haengt davon ab, WO am Bahnsteig jemand steht - genau der Unterschied, der einen Umstieg gelingen oder scheitern laesst. Bahnsteige 205 m lang, 40 m auseinander.",
+  "elements": [
+    {
+      "type": "node",
+      "id": 501,
+      "lat": 52.0,
+      "lon": 12.0
+    },
+    {
+      "type": "node",
+      "id": 502,
+      "lat": 52.0,
+      "lon": 12.003
+    },
+    {
+      "type": "node",
+      "id": 503,
+      "lat": 52.00036,
+      "lon": 12.0
+    },
+    {
+      "type": "node",
+      "id": 504,
+      "lat": 52.00036,
+      "lon": 12.003
+    },
+    {
+      "type": "node",
+      "id": 511,
+      "lat": 52.0,
+      "lon": 11.9999
+    },
+    {
+      "type": "node",
+      "id": 512,
+      "lat": 52.00036,
+      "lon": 11.9999
+    },
+    {
+      "type": "way",
+      "id": 601,
+      "nodes": [
+        501,
+        502
+      ],
+      "tags": {
+        "railway": "platform",
+        "ref": "1",
+        "level": "0"
+      }
+    },
+    {
+      "type": "way",
+      "id": 602,
+      "nodes": [
+        503,
+        504
+      ],
+      "tags": {
+        "railway": "platform",
+        "ref": "2",
+        "level": "0"
+      }
+    },
+    {
+      "type": "way",
+      "id": 603,
+      "nodes": [
+        502,
+        504
+      ],
+      "tags": {
+        "highway": "footway",
+        "level": "0"
+      }
+    },
+    {
+      "type": "way",
+      "id": 604,
+      "nodes": [
+        511,
+        501
+      ],
+      "tags": {
+        "highway": "steps",
+        "incline": "up",
+        "level": "-1;0"
+      }
+    },
+    {
+      "type": "way",
+      "id": 605,
+      "nodes": [
+        511,
+        512
+      ],
+      "tags": {
+        "highway": "footway",
+        "tunnel": "yes",
+        "level": "-1"
+      }
+    },
+    {
+      "type": "way",
+      "id": 606,
+      "nodes": [
+        512,
+        503
+      ],
+      "tags": {
+        "highway": "steps",
+        "incline": "up",
+        "level": "-1;0"
+      }
+    }
+  ]
+}
