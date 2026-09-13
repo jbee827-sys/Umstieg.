@@ -39,7 +39,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > kennt weder Bahnsteige noch Zugänge noch Netz. Der Endpunkt liefert alles,
 > was sie braucht.
 >
-> **Nicht deployt:** `main` steht 13 Commits zurück; alles seit dem 07.09.
+> **Nicht deployt:** `main` steht 11 Commits zurück; alles seit dem 08.09.
 > liegt nur auf `feat/mvp`.
 
 ### Davor: Bahnhofsschema mit Geometrie (13.09.2026, vormittags)
