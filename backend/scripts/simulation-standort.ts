@@ -81,7 +81,33 @@ const BAHNHOEFE = [
   'Gotha', 'Jena Paradies', 'Gera Hbf', 'Naumburg(Saale)Hbf', 'Weimar',
   // Der Fall, der die Wahl ueberhaupt erzwungen hat.
   'Leipzig Hbf',
+  // Dazu die Bahnhoefe des ERSTEN Schemalaufs. Fuer das Schema waeren sie
+  // eine Wiederholung - fuer die Standortwahl nicht: Diese Achse ist an
+  // keinem Bahnhof je gemessen worden, und sie liegen ohnehin in der Ablage,
+  // kosten Overpass also nichts.
+  'Hamburg Hbf', 'Köln Hbf', 'Stuttgart Hbf', 'Düsseldorf Hbf', 'Hannover Hbf',
+  'Nürnberg Hbf', 'Dortmund Hbf', 'Essen Hbf', 'Bremen Hbf', 'Dresden Hbf',
+  'Duisburg Hbf', 'Mannheim Hbf', 'Karlsruhe Hbf', 'Münster(Westf)Hbf',
+  'Kassel-Wilhelmshöhe', 'Würzburg Hbf', 'Augsburg Hbf', 'Braunschweig Hbf',
+  'Kiel Hbf', 'Erfurt Hbf', 'Rostock Hbf', 'Freiburg(Breisgau) Hbf', 'Mainz Hbf',
+  'Osnabrück Hbf', 'Bielefeld Hbf', 'Aachen Hbf', 'Bonn Hbf', 'Wuppertal Hbf',
+  'Ulm Hbf', 'Heidelberg Hbf', 'Koblenz Hbf', 'Saarbrücken Hbf', 'Magdeburg Hbf',
+  'Regensburg Hbf', 'Göttingen', 'Gießen', 'Marburg(Lahn)', 'Lüneburg',
+  'Cottbus Hbf', 'Schwerin Hbf', 'Heilbronn Hbf', 'Konstanz', 'Bamberg', 'Fulda',
+  'Hamm(Westf)Hbf', 'Hagen Hbf', 'Uelzen', 'Treuchtlingen', 'Angermünde',
+  'Büchen', 'Neuenmarkt-Wirsberg', 'Gütersloh Hbf', 'Riedstadt-Goddelau',
+  'Bad Kleinen', 'Kirchhain(Bz Kassel)', 'Zernitz',
 ];
+
+/**
+ * Nur aus der Ablage lesen, nichts neu holen?
+ *
+ * Der Schemalauf vom 13.09.2026 verlor 18 von 60 Bahnhoefen an
+ * Overpass-Zeitueberschreitungen - die oeffentliche Instanz war unter Last.
+ * Fuer die Frage dieses Laufs ist das gleichgueltig: Was in der Ablage liegt,
+ * genuegt. `ABLAGE_NUR=1` faehrt deshalb ohne einen einzigen Netzabruf.
+ */
+const ABLAGE_NUR = process.env.ABLAGE_NUR === '1';
 
 interface Lauf {
   abschnitt: Abschnitt;
@@ -173,12 +199,19 @@ function pruefeMarkierung(schema: BahnhofSchema): string[] {
   const fehler: string[] = [];
   for (const wechsel of schema.wechsel) {
     for (const level of [wechsel.vonLevel, wechsel.nachLevel]) {
-      const ebene = schema.ebenen.find((e) => e.level === level);
-      if (!ebene) {
+      // ALLE Besuche dieser Ebene, nicht der erste. `schema.ebenen` ist seit
+      // dem 13.09.2026 eine Liste von BESUCHEN - Berlin Hbf betritt Ebene -1
+      // zweimal, einmal ueber Rolltreppen und einmal ueber Treppen. Ein
+      // `find` haette dort die Treppen vermisst, die auf dem zweiten Besuch
+      // sehr wohl stehen.
+      const besuche = schema.ebenen.filter((e) => e.level === level);
+      if (besuche.length === 0) {
         fehler.push(`Ebenenwechsel nach ${level} fuehrt auf eine Ebene, die das Schema nicht hat`);
         continue;
       }
-      const markiert = (ebene.elemente ?? []).some((e) => e.typ === wechsel.typ && e.aufRoute);
+      const markiert = besuche.some((e) =>
+        (e.elemente ?? []).some((el) => el.typ === wechsel.typ && el.aufRoute),
+      );
       if (!markiert) {
         fehler.push(
           `${wechsel.typ} ${wechsel.vonLevel}→${wechsel.nachLevel} ist auf Ebene ${level} nicht markiert`,
@@ -216,6 +249,7 @@ async function holeOsm(
   mkdirSync(CACHE, { recursive: true });
   const pfad = join(CACHE, `${eva}.json`);
   if (existsSync(pfad)) return JSON.parse(readFileSync(pfad, 'utf8')) as OverpassAntwort;
+  if (ABLAGE_NUR) throw new Error('nicht in der Ablage (ABLAGE_NUR)');
   try {
     const antwort = await overpassQuery(lat, lon, 400);
     writeFileSync(pfad, JSON.stringify(antwort), 'utf8');

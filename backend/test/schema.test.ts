@@ -383,3 +383,73 @@ describe('vereinfacheLinie', () => {
     expect(vereinfacheLinie(zwei, 5)).toEqual(zwei);
   });
 });
+
+/**
+ * Jeder Ebenenwechsel der Route muss im Bild stehen - auf BEIDEN Ebenen.
+ *
+ * Fuer den Reisenden ist das der Unterschied zwischen "hier geht es runter,
+ * dort wieder hoch" und einem Sprung ins Nichts. Die Zusicherung galt schon
+ * vorher; geprueft war sie nicht.
+ *
+ * WICHTIG beim Pruefen: `schema.ebenen` ist eine Liste von BESUCHEN, und eine
+ * Ebene kann mehrfach darin stehen. Wer nur den ersten Besuch ansieht,
+ * erzeugt sich selbst einen Fehlbefund - genau das ist am 13.09.2026
+ * passiert, als eine Simulationspruefung „Treppe auf Ebene -1 nicht
+ * markiert" meldete. Berlin Hbf betritt die -1 zweimal: einmal ueber
+ * Rolltreppen, einmal ueber Treppen.
+ */
+describe('baueBahnhofSchema – jeder Ebenenwechsel ist markiert', () => {
+  const graph = baueGraph(ladeFixture('overpass/berlin-hbf'));
+
+  for (const abschnitt of ['anfang', 'mitte', 'ende'] as const) {
+    it(`Berlin Hbf ab ${abschnitt}: beide Enden jedes Wechsels tragen ihre Anlage`, () => {
+      const pfad = berechneRoute(
+        graph,
+        `gleis14:${abschnitt}`,
+        'gleis6:mitte',
+        'schnellste',
+        'normal',
+      )!;
+      const schema = baueBahnhofSchema(graph, pfad);
+      expect(schema.wechsel.length).toBeGreaterThan(0);
+
+      for (const wechsel of schema.wechsel) {
+        for (const level of [wechsel.vonLevel, wechsel.nachLevel]) {
+          const besuche = schema.ebenen.filter((e) => e.level === level);
+          expect(besuche.length, `Ebene ${level} fehlt im Schema`).toBeGreaterThan(0);
+          const markiert = besuche.some((e) =>
+            (e.elemente ?? []).some((el) => el.typ === wechsel.typ && el.aufRoute),
+          );
+          expect(
+            markiert,
+            `${wechsel.typ} ${wechsel.vonLevel}→${wechsel.nachLevel} fehlt auf Ebene ${level}`,
+          ).toBe(true);
+        }
+      }
+    });
+  }
+
+  /**
+   * Der Fall in Reinform: Die Route betritt Ebene -1 und verlaesst sie sofort
+   * wieder, ohne einen Meter darauf zu gehen. `weg` hat dort genau EINEN
+   * Punkt, und `abstandZumWeg` haette frueher Unendlich geliefert.
+   */
+  it('zeigt die Anlagen auch auf einer Ebene, die nur durchquert wird', () => {
+    const durchgang = baueGraph(ladeFixture('synthetisch/durchquerte-ebene'));
+    const pfad = berechneRoute(
+      durchgang,
+      'gleis1:mitte',
+      'gleis2:mitte',
+      'schnellste',
+      'normal',
+    )!;
+    const schema = baueBahnhofSchema(durchgang, pfad);
+
+    const durchquert = schema.ebenen.find((e) => e.level === -1);
+    expect(durchquert, 'Ebene -1 fehlt im Schema').toBeDefined();
+    // Kein Meter Weg auf dieser Ebene - nur hinunter und weiter hinunter.
+    expect((durchquert!.weg ?? []).length).toBeLessThanOrEqual(1);
+    // Beide Treppen muessen trotzdem im Bild stehen.
+    expect((durchquert!.elemente ?? []).filter((e) => e.aufRoute)).toHaveLength(2);
+  });
+});

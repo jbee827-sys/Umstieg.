@@ -659,6 +659,14 @@ function elementeFuer(
       amBahnsteig.push(element);
       continue;
     }
+    // Gemessen wird gegen den Weg DIESES Besuchs, auch fuer eine Anlage, die
+    // die Route nutzt. Das ist Absicht, und es hat am 13.09.2026 kurzzeitig
+    // anders ausgesehen: Eine Pruefung meldete „Treppe auf Ebene -1 nicht
+    // markiert" und legte nahe, `aufRoute` vom Filter auszunehmen. Die
+    // Meldung war falsch - sie suchte den ERSTEN Besuch der Ebene, waehrend
+    // Berlin Hbf die -1 zweimal betritt und die Treppen auf dem zweiten
+    // Besuch sehr wohl stehen. Eine Anlage vom Filter auszunehmen haette sie
+    // in BEIDE Bilder gezeichnet, auch in das, in dem niemand sie benutzt.
     const abstand = abstandZumWeg(zuXY(aufEbene), weg);
     if (abstand > ELEMENT_RADIUS_M) continue;
     abseits.push({ abstand, element });
