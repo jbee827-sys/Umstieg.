@@ -71,7 +71,7 @@
                   <path d="{{ n.d }}" fill="none" stroke="#c9c4c4" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
                 </sc-for>
 
-                <sc-for list="{{ band.bahnsteige }}" as="bs" hint-placeholder-count="2">
+                <sc-for list="{{ band.bahnsteige }}" as="bs" hint-placeholder-count="5">
                   <line x1="{{ bs.x1 }}" y1="{{ bs.y }}" x2="{{ bs.x2 }}" y2="{{ bs.y }}" stroke="{{ bs.farbe }}" stroke-width="{{ bs.dicke }}" stroke-linecap="round"/>
                   <text x="{{ bs.lx }}" y="{{ bs.ly }}" font-family="Archivo, sans-serif" font-size="10" font-weight="{{ bs.gewicht }}" fill="{{ bs.schrift }}" text-anchor="end">{{ bs.gleise }}</text>
                 </sc-for>
@@ -83,9 +83,9 @@
                   <rect x="{{ a.x }}" y="{{ a.y }}" width="{{ a.w }}" height="{{ a.w }}" rx="1.5" fill="{{ a.fuellung }}" stroke="{{ a.farbe }}" stroke-width="{{ a.dicke }}"/>
                 </sc-for>
 
-                <sc-if value="{{ band.weg }}" hint-placeholder-val="{{ true }}">
-                  <path d="{{ band.weg }}" fill="none" stroke="#ec3013" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                </sc-if>
+                <sc-for list="{{ band.wege }}" as="w" hint-placeholder-count="2">
+                  <path d="{{ w.d }}" fill="none" stroke="#ec3013" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </sc-for>
 
                 <sc-if value="{{ band.punkt }}" hint-placeholder-val="{{ false }}">
                   <circle cx="{{ band.punkt.x }}" cy="{{ band.punkt.y }}" r="10" fill="#ec3013" fill-opacity=".16"/>
@@ -153,7 +153,7 @@
 <script data-dc-script data-props='{"schrittNr":{"editor":"range","default":2,"min":1,"max":3,"step":1,"section":"Weg"}}'>
 /* Standardmodell ohne Kartenmaterial (Stufe 3), Gleis 1 nach 4
    Meter im Bezugsrahmen des Bahnhofs, Linienzuege geglaettet. */
-const SCHEMA = {"ebenen":[{"level":0,"art":"gleise","weg":[{"x":0,"y":0},{"x":0,"y":60}],"elemente":[{"typ":"treppe","punkte":[{"x":0,"y":0}],"aufRoute":true},{"typ":"treppe","punkte":[{"x":0,"y":60}],"aufRoute":true},{"typ":"treppe","punkte":[{"x":0,"y":20}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":0,"y":40}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":0,"y":80}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":0,"y":100}],"aufRoute":false}],"bahnsteige":[{"gleise":"1","rolle":"start"},{"gleise":"2"},{"gleise":"3"},{"gleise":"4","rolle":"ziel"},{"gleise":"5"},{"gleise":"6"}]},{"level":-1,"art":"verbindung","weg":[{"x":0,"y":0},{"x":0,"y":60}],"netz":[{"punkte":[{"x":0,"y":0},{"x":0,"y":100}]}],"elemente":[{"typ":"treppe","punkte":[{"x":0,"y":0}],"aufRoute":true},{"typ":"treppe","punkte":[{"x":0,"y":60}],"aufRoute":true},{"typ":"treppe","punkte":[{"x":0,"y":20}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":0,"y":40}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":0,"y":80}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":0,"y":100}],"aufRoute":false}],"bahnsteige":[]}]};
+const SCHEMA = {"ebenen":[{"level":0,"art":"gleise","bahnsteige":[{"gleise":"1","rolle":"start"},{"gleise":"2"},{"gleise":"3"},{"gleise":"4","rolle":"ziel"},{"gleise":"5"},{"gleise":"6"}]},{"level":-1,"art":"verbindung","weg":[{"punkte":[{"x":0,"y":0},{"x":0,"y":60}]}],"netz":[{"punkte":[{"x":0,"y":0},{"x":0,"y":100}]}],"elemente":[{"typ":"treppe","punkte":[{"x":0,"y":0}],"aufRoute":true},{"typ":"treppe","punkte":[{"x":0,"y":60}],"aufRoute":true},{"typ":"treppe","punkte":[{"x":0,"y":20}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":0,"y":40}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":0,"y":80}],"aufRoute":false},{"typ":"treppe","punkte":[{"x":0,"y":100}],"aufRoute":false}],"bahnsteige":[]}]};
 
 const SCHRITTE = [["treppe",-1,"Nach Ausstieg Treppe hinunter zur Unterführung (-1)"],["eben",-1,"Ca. 60 m geradeaus"],["treppe",0,"Treppe hoch zur Ebene 0 zu Gleis 4"]];
 
@@ -168,10 +168,23 @@ const POLSTER = 13;
 
 const ICONS = { rolltreppe: 'M3 18h4l8-9h6M3 18v-3M21 9V6', eben: 'M5 12h14M13 6l6 6-6 6' };
 
-function laenge(weg) {
+/* Der Weg einer Ebene ist eine Liste von Stuecken - eines je Besuch. Wer
+   hinunter und wieder herauf geht, betritt die Gleisebene zweimal, und
+   zwischen den beiden Besuchen liegt kein Weg. */
+function laenge(stuecke) {
   let l = 0;
-  for (let i = 1; i < weg.length; i++) l += Math.hypot(weg[i].x - weg[i-1].x, weg[i].y - weg[i-1].y);
+  for (const st of stuecke || []) {
+    for (let i = 1; i < st.punkte.length; i++) {
+      l += Math.hypot(st.punkte[i].x - st.punkte[i-1].x, st.punkte[i].y - st.punkte[i-1].y);
+    }
+  }
   return Math.round(l);
+}
+
+function letzterPunkt(stuecke) {
+  const liste = stuecke || [];
+  const st = liste[liste.length - 1];
+  return st ? st.punkte[st.punkte.length - 1] : null;
 }
 
 /* "11,12,13,14,15,16" -> "11–16". Eine Aufzaehlung passt nicht in eine Zeile,
@@ -204,7 +217,7 @@ class Component extends DCLogic {
     const alle = [];
     for (const n of ebene.netz || []) alle.push(...n.punkte);
     for (const e of ebene.elemente || []) alle.push(...e.punkte);
-    alle.push(...(ebene.weg || []));
+    for (const st of ebene.weg || []) alle.push(...st.punkte);
     if (alle.length === 0) return null;
     const xs = alle.map((p) => p.x), ys = alle.map((p) => p.y);
     const x0 = Math.min(...xs), x1 = Math.max(...xs);
@@ -241,7 +254,8 @@ class Component extends DCLogic {
       const svgH = Math.max(40, hoehe - POLSTER * 2 - 16 - 8 - 20);
 
       let bahnsteige = [], netz = [], striche = [], kaesten = [];
-      let wegD = null, punkt = null, fuss = null, notiz = null;
+      let punkt = null, fuss = null, notiz = null;
+      const wege = [];
       let rechts = gleisband ? 'Gleise ' + spanne(alleGleise) : laenge(ebene.weg || []) + ' m';
 
       if (istAktiv && gleisband) {
@@ -330,10 +344,11 @@ class Component extends DCLogic {
               });
             }
           }
-          if ((ebene.weg || []).length > 1) {
-            wegD = 'M ' + ebene.weg.map((p) => { const q = bild(p); return q.x + ' ' + q.y; }).join(' L ');
-            punkt = bild(ebene.weg[ebene.weg.length - 1]);
+          for (const st of ebene.weg || []) {
+            wege.push({ d: 'M ' + st.punkte.map((p) => { const q = bild(p); return q.x + ' ' + q.y; }).join(' L ') });
           }
+          const letzt = letzterPunkt(ebene.weg);
+          if (letzt) punkt = bild(letzt);
           rechts = laenge(ebene.weg || []) + ' m';
           fuss = (ebene.netz || []).length + ' Gänge · ' + (ebene.elemente || []).length + ' Anlagen in Sicht';
         }
@@ -352,7 +367,7 @@ class Component extends DCLogic {
         tinte: istAktiv ? '#3a3737' : '#8e8a8a',
         tinteNeben: istAktiv ? '#8e8a8a' : '#a5a1a1',
         bahnsteige, netz, striche, kaesten, punkt, fuss, notiz,
-        weg: wegD,
+        wege,
         wechsel: i < anzahl - 1 ? 'Rolltreppe' : null,
       });
 

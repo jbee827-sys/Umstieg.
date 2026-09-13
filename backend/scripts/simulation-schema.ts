@@ -106,7 +106,7 @@ function pruefe(schema: BahnhofSchema, pfadLaenge: number, aufWechseln: number):
     for (const n of ebene.netz ?? []) {
       if (n.punkte.length < 2) fehler.push('Wegstueck mit weniger als zwei Punkten');
     }
-    for (const p of [...(ebene.weg ?? []), ...(ebene.netz ?? []).flatMap((n) => n.punkte)]) {
+    for (const p of [...(ebene.weg ?? []), ...(ebene.netz ?? [])].flatMap((n) => n.punkte)) {
       if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) fehler.push('Punkt ohne endliche Koordinate');
     }
   }
@@ -114,17 +114,23 @@ function pruefe(schema: BahnhofSchema, pfadLaenge: number, aufWechseln: number):
   // Der zerlegte Weg muss den ganzen Weg ergeben.
   let summe = 0;
   for (const ebene of schema.ebenen) {
-    for (let i = 1; i < (ebene.weg?.length ?? 0); i++) {
-      summe += Math.hypot(
-        ebene.weg![i].x - ebene.weg![i - 1].x,
-        ebene.weg![i].y - ebene.weg![i - 1].y,
-      );
+    for (const stueck of ebene.weg ?? []) {
+      for (let i = 1; i < stueck.punkte.length; i++) {
+        summe += Math.hypot(
+          stueck.punkte[i].x - stueck.punkte[i - 1].x,
+          stueck.punkte[i].y - stueck.punkte[i - 1].y,
+        );
+      }
     }
   }
   const erwartet = pfadLaenge - aufWechseln;
   // Toleranz: die Glaettung darf Ecken abschneiden, aber nicht die Form.
-  if (erwartet > 20 && Math.abs(summe - erwartet) > erwartet * 0.12 + 5) {
-    fehler.push(`Wegzerlegung weicht ab: ${Math.round(summe)} statt ${Math.round(erwartet)} m`);
+  if (erwartet > 20 && summe > erwartet + 5) {
+    fehler.push(`Wegzerlegung zu lang: ${Math.round(summe)} statt ${Math.round(erwartet)} m`);
+  }
+  // Nach unten darf die Glaettung abschneiden, aber nicht die Form verlieren.
+  if (erwartet > 20 && summe < erwartet * 0.85) {
+    fehler.push(`Wegzerlegung zu kurz: ${Math.round(summe)} statt ${Math.round(erwartet)} m`);
   }
   return fehler;
 }

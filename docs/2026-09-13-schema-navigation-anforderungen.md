@@ -71,7 +71,7 @@ interface SchemaEbene {
   richtungLokalGrad?: number   // Lage IM Bezugsrahmen; 0 = wie die Ankunftsebene
   bahnsteige: SchemaBahnsteig[]
   aufRoute: boolean            // berührt die Route diese Ebene?
-  weg?: SchemaPunkt[]          // der Weg auf dieser Ebene, Linienzug in Metern
+  weg?: SchemaWegstueck[]      // der Weg auf dieser Ebene, EIN STÜCK JE BESUCH
   netz?: SchemaWegstueck[]     // begehbares Netz in Routennähe, NUR bei art='verbindung'
   elemente?: SchemaElement[]   // Ebenenwechsel als sichtbare Bezugspunkte
 }
@@ -181,7 +181,7 @@ mehrere Dinge, für die es keinen Beleg gibt.
 | Bahnsteigbalken mit Länge | `laengeM` | ja, **wenn vorhanden**. Fehlt es, darf der Balken keinen Maßstab suggerieren. |
 | Aufzüge/Rolltreppen am Bahnsteig | `bahnsteige[].anlagen` · `zugaenge` | Am Ankunfts- und Abfahrtsbahnsteig **verortet** (siehe unten), an den übrigen als Anzahl. |
 | Ebenenwechsel-Symbol auf der Route | `anlagen[]`, `wechsel[]` | ja, mit richtigem Typ (Treppe ≠ Rolltreppe ≠ Aufzug). |
-| Routenlinie über die Bänder | `ebenen[].weg` | **ja, als gemessener Linienzug** — Kurven und Kehren inbegriffen. Nur bei Stufe 3 fehlt er. |
+| Routenlinie über die Bänder | `ebenen[].weg` | **ja, als gemessener Linienzug** — Kurven und Kehren inbegriffen. **Ein Stück je Besuch**: Wer eine Ebene zweimal betritt, hat dort zwei getrennte Wegstücke, und zwischen ihnen darf keine Linie stehen. |
 | Zugänge am Bahnsteig (Stelle) | `bahnsteige[].zugaenge` | **ja**, an ihrer gemessenen Stelle. Gebündelt: an einer Stelle stehen oft 4–6 Anlagen. |
 | Gänge, Kurven, Ringe einer Übergangsebene | `ebenen[].netz` | **ja**, aus dem Kartenmaterial, 80 m um den Weg. Nur bei `art: 'verbindung'`. |
 | Einzelne Anlage als Bezugspunkt | `ebenen[].elemente` | **ja**, mit Grundriss. Form aus dem Typ: Rolltreppe durchgezogen, Treppe gestrichelt, Aufzug als Kasten. |

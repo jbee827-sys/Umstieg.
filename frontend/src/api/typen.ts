@@ -100,8 +100,14 @@ export interface SchemaEbene {
   richtungLokalGrad?: number;
   bahnsteige: SchemaBahnsteig[];
   aufRoute: boolean;
-  /** Der Weg auf dieser Ebene als gemessener Linienzug. */
-  weg?: SchemaPunkt[];
+  /**
+   * Der Weg auf dieser Ebene – ein Stück je Besuch.
+   *
+   * Eine Liste, kein Linienzug: Wer hinunter in die Unterführung geht und
+   * wieder herauf, betritt die Gleisebene ZWEIMAL. Ein einziger Linienzug
+   * zöge zwischen beiden Besuchen eine Linie, die niemand geht.
+   */
+  weg?: SchemaWegstueck[];
   /** Begehbares Netz in Routennähe – nur bei `art: 'verbindung'`. */
   netz?: SchemaWegstueck[];
   /** Ebenenwechsel als sichtbare Bezugspunkte. */

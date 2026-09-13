@@ -227,8 +227,15 @@ export interface SchemaEbene {
   bahnsteige: SchemaBahnsteig[];
   /** Berührt die Route diese Ebene? */
   aufRoute: boolean;
-  /** Der Weg auf dieser Ebene als Linienzug im Bezugsrahmen. */
-  weg?: SchemaPunkt[];
+  /**
+   * Der Weg auf dieser Ebene, als ein Stück je Besuch.
+   *
+   * Eine Liste, kein Linienzug: Wer hinunter in die Unterführung geht und
+   * wieder herauf, betritt die Gleisebene ZWEIMAL. Ein einziger Linienzug
+   * zöge zwischen beiden Besuchen eine Linie, die niemand geht - und im
+   * Bild sähe sie aus wie ein Weg.
+   */
+  weg?: SchemaWegstueck[];
   /**
    * Das begehbare Netz dieser Ebene in Routennähe.
    *
