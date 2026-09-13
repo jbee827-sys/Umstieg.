@@ -87,7 +87,185 @@ export interface RouteErgebnis {
   schritte: Schritt[];
   gehzeitSek: number;
   karte?: Record<string, unknown>; // GeoJSON FeatureCollection je Ebene
+  /** Maßstabsfreies Bahnhofsbild für die schematische Navigation. */
+  schema?: BahnhofSchema;
   hinweise: string[]; // transparente Degradations-/Fallback-Hinweise
+}
+
+// --- Schematisches Bahnhofsbild ---
+//
+// Getrennt von `karte` (GeoJSON) und nicht daraus ableitbar: Die Karte
+// beantwortet „wo auf der Erde“, das Schema „wie liegt es zueinander“. Für
+// eine geschlossene Halle ist die zweite Frage die nützliche, und sie lässt
+// sich auch dann beantworten, wenn die erste keine brauchbare Antwort hat.
+
+/**
+ * Ein Punkt im Bahnhofs-Bezugsrahmen, in METERN.
+ *
+ * Ursprung ist der Startpunkt der Route, die x-Achse die Gleisrichtung der
+ * Startebene. Damit liegt der Ankunftsbahnsteig waagerecht, alles andere in
+ * seiner echten Lage dazu - auch eine Ebene, die quer dazu steht.
+ */
+export interface SchemaPunkt {
+  x: number;
+  y: number;
+}
+
+/**
+ * Eine Zugangsstelle: alle Anlagen, die am selben Ort den Bahnsteig verlassen.
+ *
+ * Einzeln aufgefuehrt sind sie Rauschen - Berlins Bahnsteig 5/6 traegt 27
+ * Anlagen auf 430 m. Gebuendelt sind sie die Auskunft, die der Reisende
+ * braucht: "Zugang bei 127 m, vier Rolltreppen".
+ */
+export interface SchemaZugang {
+  /** Lage entlang des Bahnsteigs in Metern, 0 = Bahnsteiganfang. */
+  beiM: number;
+  pos: SchemaPunkt;
+  aufzug: number;
+  rolltreppe: number;
+  treppe: number;
+  /** Nutzt die Route genau diesen Zugang? */
+  aufRoute: boolean;
+}
+
+export interface SchemaBahnsteig {
+  bahnsteigId: string;
+  /** Gleise an diesem Bahnsteig, aufsteigend – "5", "6". */
+  gleise: string[];
+  /**
+   * Bahnsteiglänge in Metern, oder `undefined`.
+   *
+   * `undefined` heisst „nicht bekannt“ und ist ein echter Fall: Das
+   * Standardmodell (Stufe 3) kennt nur einen Bahnsteigpunkt, keine Achse.
+   * Eine erfundene Länge wäre schlimmer als keine – der Balken behauptete
+   * sonst einen Maßstab, den niemand geprüft hat.
+   */
+  laengeM?: number;
+  /**
+   * Lage quer zur Gleisrichtung in Metern, kleinster Wert der Ebene = 0.
+   *
+   * Welche SEITE dabei die Null trägt, ist willkürlich – ein Schema hat
+   * keinen Kompass. Die REIHENFOLGE und die ABSTÄNDE sind es nicht.
+   */
+  querM?: number;
+  rolle?: 'start' | 'ziel';
+  /**
+   * Anlagen an diesem Bahnsteig, gezählt statt einzeln aufgeführt.
+   *
+   * Berlin hat rund 200 Ebenenwechsel; ein Schema hat Platz für eine
+   * Handvoll. Eine Zahl („2 Aufzüge") ist das, was ein Bild davon zeigen
+   * kann — die Liste wäre nur Gewicht in der Antwort.
+   */
+  anlagen?: { aufzug: number; rolltreppe: number; treppe: number };
+  /** Bahnsteigenden im Bezugsrahmen - fehlen ohne Achse (Stufe 3). */
+  von?: SchemaPunkt;
+  bis?: SchemaPunkt;
+  /**
+   * Wo man diesen Bahnsteig verlassen kann, in Reihenfolge entlang der Achse.
+   *
+   * Nur am Ankunfts- und Abfahrtsbahnsteig: An den uebrigen interessiert die
+   * Zahl, nicht die Stelle, und die Antwort bliebe sonst nicht klein.
+   */
+  zugaenge?: SchemaZugang[];
+}
+
+export interface SchemaAnlage {
+  typ: KantenTyp;
+  vonLevel: number;
+  nachLevel: number;
+  /** Bahnsteig, an dem die Anlage liegt – fehlt, wenn ihr keiner nahe genug ist. */
+  beiGleisen?: string[];
+  /** Lage im Bezugsrahmen – fehlt nur, wenn die Ebene keine Geometrie hat. */
+  pos?: SchemaPunkt;
+  /** Lage entlang des Bahnsteigs in Metern, wenn sie an einem liegt. */
+  beiM?: number;
+}
+
+export interface SchemaPoi {
+  art: 'wc' | 'kiosk';
+  level: number;
+  beiGleisen?: string[];
+}
+
+/** Ein Stück begehbarer Weg auf einer Ebene – der Grundriss, nicht die Route. */
+export interface SchemaWegstueck {
+  punkte: SchemaPunkt[];
+}
+
+/**
+ * Ein Ebenenwechsel, wie er auf DIESER Ebene im Grundriss liegt.
+ *
+ * Ein Reisender richtet sich nicht an Koordinaten aus, sondern an dem, was er
+ * sieht: "an der zweiten Rolltreppe links". Deshalb tragen die Anlagen ihren
+ * Grundriss, nicht nur ihre Zahl.
+ */
+export interface SchemaElement {
+  typ: KantenTyp;
+  /** Zwei Punkte bei Treppe/Rolltreppe/Rampe, EINER beim Aufzug. */
+  punkte: SchemaPunkt[];
+  /** Führt die Route über diese Anlage? */
+  aufRoute: boolean;
+  /** Meter entlang des Bahnsteigs, wenn die Anlage an einem liegt. */
+  beiM?: number;
+}
+
+export interface SchemaEbene {
+  level: number;
+  /** `gleise` = trägt Bahnsteige · `verbindung` = Halle, Unterführung, Steg. */
+  art: 'gleise' | 'verbindung';
+  /** Gleisrichtung in Grad (0–180), nur bei `art: 'gleise'`. */
+  richtungGrad?: number;
+  /**
+   * Wie diese Ebene IM BEZUGSRAHMEN liegt, in Grad.
+   *
+   * 0 = waagerecht wie die Startebene. Berlins Tiefebene steht bei 81 - wer
+   * die Baender waagerecht stapeln will, dreht sie um genau diesen Wert und
+   * weiss dabei, was er wegdreht.
+   */
+  richtungLokalGrad?: number;
+  bahnsteige: SchemaBahnsteig[];
+  /** Berührt die Route diese Ebene? */
+  aufRoute: boolean;
+  /** Der Weg auf dieser Ebene als Linienzug im Bezugsrahmen. */
+  weg?: SchemaPunkt[];
+  /**
+   * Das begehbare Netz dieser Ebene in Routennähe.
+   *
+   * Nur bei `art: 'verbindung'`. Ohne es zeigt eine Übergangsebene eine rote
+   * Linie im Nichts – der Reisende sieht, DASS er abbiegt, aber nicht, WORAN.
+   * Berlins Ebene 1 ist ein Ring; das zu sehen beantwortet die Frage von
+   * selbst. Auf einer Gleisebene wäre dasselbe Netz nur Gewirr: dort tragen
+   * die Bahnsteige die Orientierung.
+   */
+  netz?: SchemaWegstueck[];
+  /** Ebenenwechsel auf dieser Ebene, als sichtbare Bezugspunkte. */
+  elemente?: SchemaElement[];
+}
+
+export interface SchemaWechsel {
+  vonLevel: number;
+  nachLevel: number;
+  typ: KantenTyp;
+}
+
+export interface BahnhofSchema {
+  /** Von oben nach unten, absteigend nach `level`. */
+  ebenen: SchemaEbene[];
+  /** Nur die Anlagen, die die Route nutzt – je eine je Ebenenwechsel. */
+  anlagen: SchemaAnlage[];
+  pois: SchemaPoi[];
+  /** Ebenenwechsel der Route, in der Reihenfolge des Wegs. */
+  wechsel: SchemaWechsel[];
+  /**
+   * Winkel zwischen Ankunfts- und Abfahrtsebene in Grad (0–90).
+   *
+   * Berlin Hbf ist ein Kreuzungsbahnhof: 81°. Ein Bild mit parallelen
+   * Bändern verschweigt das – es darf, aber es soll die Wahl treffen können.
+   */
+  kreuzungswinkelGrad?: number;
+  /** Was dieses Bild NICHT belegt. Gehört sichtbar an die Darstellung. */
+  vorbehalte: string[];
 }
 
 // --- DB-Datenquellen ---

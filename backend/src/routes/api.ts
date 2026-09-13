@@ -10,6 +10,7 @@ import { gehzeitSekunden } from '../core/gehzeit.js';
 import { berlinTeile } from '../core/zeit.js';
 import { baueGraph, graphZuGeoJSON, kopiereGraph } from '../core/graph.js';
 import { klassifiziere } from '../core/klassifikation.js';
+import { baueBahnhofSchema } from '../core/schema.js';
 import { berechneRoute, findeStartknoten, istGleicherBahnsteig } from '../core/routing.js';
 import { gleicherBahnsteigErgebnis, syntheseGraph, wendeFastaAn } from '../core/synthmodell.js';
 import { generiereSchritte } from '../core/textgen.js';
@@ -512,6 +513,7 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
       schritte: generiereSchritte(pfad, { ungefaehr: graph.stufe === 3, profil }),
       gehzeitSek: gehzeitSekunden(pfad, profil),
       karte: graphZuGeoJSON(graph, pfad),
+      schema: baueBahnhofSchema(graph, pfad),
       hinweise,
     };
   });
