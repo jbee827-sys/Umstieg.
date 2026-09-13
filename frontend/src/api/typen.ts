@@ -4,6 +4,15 @@
 export type KantenTyp = 'eben' | 'treppe' | 'rolltreppe' | 'aufzug' | 'rampe';
 export type Gehprofil = 'zuegig' | 'normal' | 'langsam';
 export type RoutenVariante = 'schnellste' | 'einfachste' | 'barrierefrei' | 'mit-stopp';
+/**
+ * Wo am Ankunftsgleis jemand steht.
+ *
+ * Solange die Wagenreihung tot ist (siehe README, 04.09.2026), ist das die
+ * EINZIGE Eingabe, die den Weg kennt: An einem Kopfbahnhof entscheidet sie,
+ * ob die U-Form ueber den Bahnhofskopf oder die Unterfuehrung am anderen
+ * Ende der kuerzere Weg ist.
+ */
+export type Bahnsteigabschnitt = 'anfang' | 'mitte' | 'ende';
 export type Stufe = 1 | 2 | 3;
 export type Ampelfarbe = 'gruen' | 'gelb' | 'rot';
 
@@ -172,7 +181,7 @@ export interface RouteParameter {
   gleisAb: string;
   zugAn?: string;
   wagen?: string;
-  abschnitt?: string;
+  abschnitt?: Bahnsteigabschnitt;
   profil: Gehprofil;
   variante: RoutenVariante;
 }

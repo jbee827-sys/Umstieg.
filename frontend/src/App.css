@@ -1345,6 +1345,73 @@
   opacity: 1;
   border-color: var(--color-text);
 }
+/*
+ * Standortwahl am Ankunftsgleis (Artboard „Kopfbahnhof").
+ *
+ * Drei Knoepfe NEBENEINANDER, nicht untereinander wie die Routenwahl: Die
+ * Wahl ist raeumlich - Anfang, Mitte, Ende liegen am Bahnsteig genauso
+ * nebeneinander. Die Reihenfolge im Markup ist die Reihenfolge am Gleis.
+ */
+.standortwahl {
+  display: flex;
+  gap: 8px;
+}
+.standortwahl-knopf {
+  flex: 1;
+  min-width: 0;
+  /* 56 px wie die Routenwahl-Zeile - mit Gepaeck in der einen Hand ist das
+     die Groesse, die sich noch treffen laesst. */
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 6px;
+  border: 1px solid var(--color-divider);
+  border-radius: 14px;
+  background: transparent;
+  font-family: inherit;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.12s ease;
+}
+.standortwahl-knopf:active {
+  transform: scale(0.985);
+}
+.standortwahl-knopf.gewaehlt {
+  border-color: var(--color-text);
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+.standortwahl-name {
+  font-size: 15px;
+  font-weight: 600;
+}
+.standortwahl-min {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+  /* Platz bleibt frei, auch wenn keine Minuten kamen - sonst springen die
+     drei Knoepfe in der Hoehe, waehrend die Zeiten eintrudeln. */
+  min-height: 1.2em;
+}
+.standortwahl-knopf:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.standortwahl-knopf.laedt {
+  opacity: 1;
+  border-color: var(--color-text);
+}
+.standortwahl-hinweis {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--color-neutral-700);
+}
+
 .routenwahl-fehler {
   margin: 10px 0 0;
   padding: 10px 12px;
