@@ -1,0 +1,142 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Archivo', system-ui, sans-serif; background: #f3f2f2; color: #201e1d; }
+    a { color: #ec3013; } a:hover { color: #ae1800; }
+    button { font-family: inherit; }
+  </style>
+</helmet>
+
+<div style="width: 402px; height: 874px; display: flex; flex-direction: column; background: #f3f2f2; overflow: hidden">
+
+  <div style="padding: 54px 16px 12px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #d7d3d3">
+    <button style="flex: none; width: 38px; height: 38px; border-radius: 999px; border: 1px solid #d7d3d3; background: #f8f4f4; display: grid; place-items: center; cursor: pointer">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#201e1d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <div style="flex: 1; min-width: 0">
+      <div style="font-weight: 800; font-size: 19px; line-height: 1.1">Gleis 4</div>
+      <div style="font-size: 12px; color: #605d5d; margin-top: 2px">RE 3 · ab 09:12 · Bad Kleinen</div>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px; padding: 6px 12px; border-radius: 14px; background: #e6f2ec">
+      <div style="display: flex; align-items: center; gap: 6px">
+        <span style="width: 9px; height: 9px; border-radius: 50%; background: #0f7a4f"></span>
+        <span style="font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; color: #0f7a4f; line-height: 1">06:00</span>
+      </div>
+      <div style="font-size: 10px; font-weight: 700; letter-spacing: .06em; color: #0b5c3b; text-transform: uppercase">Reicht · ca. 4 min Puffer</div>
+    </div>
+  </div>
+
+  <!-- Stufe 3: kein Kartenmaterial. Das Bild darf hier KEINEN Massstab
+       behaupten - keine Balkenlaengen, keine Abstaende, keine Reihenfolge
+       quer. Was bleibt, ist die Abfolge. -->
+  <div style="flex: 1; min-height: 0; background: #eae9e9; padding: 10px 12px 0">
+
+    <div style="display: flex; align-items: center; gap: 8px; padding: 9px 11px; border-radius: 12px; background: #fdf3e0; border: 1px solid #f0d9a8; margin-bottom: 10px">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a86800" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M12 3l9 17H3L12 3z"/><path d="M12 9v5M12 17h.01"/></svg>
+      <span style="font-size: 11px; font-weight: 700; line-height: 1.35; color: #7a4c00">Für diesen Bahnhof liegt kein Kartenmaterial vor. Das Bild zeigt die Abfolge, keine Entfernungen.</span>
+    </div>
+
+    <div style="position: relative; width: 378px">
+      <sc-for list="{{ baender }}" as="band" hint-placeholder-count="2">
+        <div style="position: relative; margin-bottom: {{ band.abstand }}px; border-radius: 14px; background: #f8f4f4; border: {{ band.rahmen }}; padding: 12px 14px 14px">
+          <div style="font-size: 9px; font-weight: 800; letter-spacing: .14em; color: #9b9797; margin-bottom: 12px">{{ band.titel }}</div>
+
+          <!-- Ohne Achse kein Balken: Gleise als Plaketten, bewusst gleich
+               gross und ohne Reihenfolgeanspruch. -->
+          <div style="display: flex; flex-wrap: wrap; gap: 8px">
+            <sc-for list="{{ band.gleise }}" as="g" hint-placeholder-count="6">
+              <div style="display: flex; align-items: center; justify-content: center; min-width: 46px; height: 34px; padding: 0 10px; border-radius: 10px; background: {{ g.flaeche }}; border: {{ g.rahmen }}; font-size: 15px; font-weight: 800; color: {{ g.tinte }}">{{ g.name }}</div>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ band.fuss }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top: 10px; font-size: 10px; color: #7d7979">{{ band.fuss }}</div>
+          </sc-if>
+        </div>
+
+        <sc-if value="{{ band.wechsel }}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; align-items: center; gap: 8px; margin: -4px 0 8px 18px">
+            <span style="display: grid; place-items: center; width: 24px; height: 24px; border-radius: 8px; background: #201e1d">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f3f2f2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+            </span>
+            <span style="font-size: 12px; font-weight: 700; color: #444141">{{ band.wechsel }}</span>
+          </div>
+        </sc-if>
+      </sc-for>
+    </div>
+
+    <div style="margin-top: 4px; display: flex; align-items: flex-start; gap: 7px; padding: 8px 10px; border-radius: 10px; background: #f8f4f4; border: 1px solid #d7d3d3">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7d7979" stroke-width="2.4" stroke-linecap="round" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+      <span style="font-size: 10px; line-height: 1.4; color: #605d5d">Standardmodell: Lage und Abstände sind geschätzt, nicht aus Kartenmaterial belegt. Abschnitte A–G sind nicht verortet.</span>
+    </div>
+  </div>
+
+  <div style="background: #f3f2f2; border-radius: 22px 22px 0 0; margin-top: -14px; position: relative; padding: 16px 0 0; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 -10px 30px rgba(45,43,43,.10)">
+    <div style="display: flex; gap: 13px; align-items: flex-start; padding: 0 18px">
+      <div style="width: 50px; height: 50px; background: #ec3013; border-radius: 15px; display: grid; place-items: center; flex: none">
+        <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#f3f2f2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+      </div>
+      <div style="flex: 1; min-width: 0">
+        <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #7d7979">Schritt 2 von 4</div>
+        <div style="font-weight: 800; font-size: 20px; line-height: 1.15; margin-top: 3px">Treppe hinunter zur Unterführung</div>
+        <div style="font-size: 13px; color: #605d5d; margin-top: 3px">Danach ca. 40 m bis zum Aufgang Gleis 4</div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 9px; padding: 0 18px 18px">
+      <button style="min-height: 54px; width: 62px; border-radius: 999px; border: 1px solid #d7d3d3; background: #f8f4f4; display: grid; place-items: center; cursor: pointer">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#201e1d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </button>
+      <button style="flex: 1; min-height: 54px; border-radius: 999px; border: none; background: #ec3013; color: #f3f2f2; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; cursor: pointer">
+        <span>Weiter</span>
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#f3f2f2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script>
+/* Das Synthesemodell kennt je Gleis EINEN Punkt und keine Achse - deshalb
+   liefert das Schema hier laengeM und querM gar nicht. Genau das zeigt
+   dieses Artboard: was das Bild kann, wenn es nichts messen darf. */
+class Component extends DCLogic {
+  renderVals() {
+    const gleise = ['1', '2', '3', '4', '5', '6'];
+    return {
+      baender: [
+        {
+          titel: 'BAHNSTEIGE',
+          rahmen: '2px solid #ec3013',
+          abstand: 10,
+          gleise: gleise.map((g) => ({
+            name: g,
+            flaeche: g === '4' ? '#ec3013' : g === '1' ? '#201e1d' : '#eae9e9',
+            rahmen: g === '4' || g === '1' ? 'none' : '1px solid #d7d3d3',
+            tinte: g === '4' || g === '1' ? '#f8f4f4' : '#605d5d',
+          })),
+          fuss: 'Ankunft Gleis 1 · Abfahrt Gleis 4 · Reihenfolge unbekannt',
+          wechsel: 'Treppe hinunter',
+        },
+        {
+          titel: 'UNTERFÜHRUNG',
+          rahmen: '1px solid #d7d3d3',
+          abstand: 10,
+          gleise: [],
+          fuss: 'Eine Querung, ca. 40 m — im Standardmodell angenommen',
+          wechsel: null,
+        },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

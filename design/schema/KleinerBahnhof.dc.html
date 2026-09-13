@@ -1,0 +1,181 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Archivo', system-ui, sans-serif; background: #f3f2f2; color: #201e1d; }
+    a { color: #ec3013; } a:hover { color: #ae1800; }
+    button { font-family: inherit; }
+  </style>
+</helmet>
+
+<div style="width: 402px; height: 874px; display: flex; flex-direction: column; background: #f3f2f2; overflow: hidden">
+
+  <div style="padding: 54px 16px 12px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #d7d3d3">
+    <button style="flex: none; width: 38px; height: 38px; border-radius: 999px; border: 1px solid #d7d3d3; background: #f8f4f4; display: grid; place-items: center; cursor: pointer">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#201e1d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+    </button>
+    <div style="flex: 1; min-width: 0">
+      <div style="font-weight: 800; font-size: 19px; line-height: 1.1">Gleis 6</div>
+      <div style="font-size: 12px; color: #605d5d; margin-top: 2px">Braunschweig Hbf · barrierefrei</div>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px; padding: 6px 12px; border-radius: 14px; background: #e6f2ec">
+      <div style="display: flex; align-items: center; gap: 6px">
+        <span style="width: 9px; height: 9px; border-radius: 50%; background: #0f7a4f"></span>
+        <span style="font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; color: #0f7a4f; line-height: 1">08:40</span>
+      </div>
+      <div style="font-size: 10px; font-weight: 700; letter-spacing: .06em; color: #0b5c3b; text-transform: uppercase">Reicht · 5:10 Puffer</div>
+    </div>
+  </div>
+
+  <div style="flex: 1; min-height: 0; background: #eae9e9; padding: 10px 12px 0">
+    <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px">
+      <div style="font-size: 10px; font-weight: 800; letter-spacing: .12em; color: #7d7979; text-transform: uppercase">Schema · nicht maßstäblich quer</div>
+      <div style="font-size: 10px; font-weight: 700; color: #7d7979">2 Ebenen · runter und wieder rauf</div>
+    </div>
+
+    <div style="position: relative; width: 378px; height: {{ gesamtHoehe }}px">
+      <svg width="378" height="{{ gesamtHoehe }}" viewBox="0 0 378 {{ gesamtHoehe }}" style="position: absolute; inset: 0; pointer-events: none; z-index: 2">
+        <path d="{{ spur }}" fill="none" stroke="#ec3013" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+
+      <sc-for list="{{ baender }}" as="band" hint-placeholder-count="2">
+        <div style="position: absolute; left: 0; top: {{ band.top }}px; width: 378px; height: {{ band.hoehe }}px; border-radius: 14px; background: {{ band.flaeche }}; border: {{ band.rahmen }}; box-sizing: border-box">
+          <div style="position: absolute; left: 12px; top: 9px; right: 12px; display: flex; align-items: center; justify-content: space-between">
+            <span style="font-size: 9px; font-weight: 800; letter-spacing: .14em; color: {{ band.tinte }}">{{ band.titel }}</span>
+          </div>
+          <sc-for list="{{ band.bahnsteige }}" as="bs" hint-placeholder-count="4">
+            <div style="position: absolute; left: 12px; top: {{ bs.top }}px; width: 354px; height: 16px; display: flex; align-items: center; gap: 8px">
+              <span style="width: 44px; flex: none; text-align: right; font-size: 11px; font-weight: {{ bs.gewicht }}; color: {{ bs.schrift }}">{{ bs.gleise }}</span>
+              <span style="display: block; width: {{ bs.breite }}px; height: {{ bs.dicke }}px; border-radius: 999px; background: {{ bs.farbe }}"></span>
+              <sc-if value="{{ bs.marke }}" hint-placeholder-val="{{ false }}">
+                <span style="flex: none; font-size: 9px; font-weight: 800; letter-spacing: .08em; color: #ec3013">{{ bs.marke }}</span>
+              </sc-if>
+            </div>
+          </sc-for>
+          <sc-if value="{{ band.anlagenText }}" hint-placeholder-val="{{ false }}">
+            <div style="position: absolute; left: 64px; bottom: 7px; font-size: 9px; color: #7d7979">{{ band.anlagenText }}</div>
+          </sc-if>
+        </div>
+
+        <sc-if value="{{ band.wechsel }}" hint-placeholder-val="{{ true }}">
+          <div style="position: absolute; left: 216px; top: {{ band.wechselTop }}px; height: 22px; display: flex; align-items: center; gap: 5px; z-index: 3">
+            <span style="display: grid; place-items: center; width: 18px; height: 18px; border-radius: 6px; background: #0f7a4f">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#f3f2f2" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8v18H8zM12 7v10M9 10l3-3 3 3"/></svg>
+            </span>
+            <span style="font-size: 9px; font-weight: 700; color: #444141">{{ band.wechsel }}</span>
+          </div>
+        </sc-if>
+      </sc-for>
+    </div>
+
+    <div style="margin-top: 10px; display: flex; align-items: flex-start; gap: 7px; padding: 8px 10px; border-radius: 10px; background: #f8f4f4; border: 1px solid #d7d3d3">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7d7979" stroke-width="2.4" stroke-linecap="round" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+      <span style="font-size: 10px; line-height: 1.4; color: #605d5d">Der Weg führt über die Stadtbahnebene hinunter und wieder hinauf — beide Ebenen tragen Gleise. Abschnitte A–G sind nicht verortet.</span>
+    </div>
+  </div>
+
+  <div style="background: #f3f2f2; border-radius: 22px 22px 0 0; margin-top: -14px; position: relative; padding: 16px 0 0; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 -10px 30px rgba(45,43,43,.10)">
+    <div style="display: flex; gap: 13px; align-items: flex-start; padding: 0 18px">
+      <div style="width: 50px; height: 50px; background: #0f7a4f; border-radius: 15px; display: grid; place-items: center; flex: none">
+        <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#f3f2f2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10v18H7zM12 8v8M9 11l3-3 3 3"/></svg>
+      </div>
+      <div style="flex: 1; min-width: 0">
+        <div style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #7d7979">Schritt 4 von 9</div>
+        <div style="font-weight: 800; font-size: 20px; line-height: 1.15; margin-top: 3px">Aufzug hinauf zu Gleis 5/6</div>
+        <div style="font-size: 13px; color: #605d5d; margin-top: 3px">4 Aufzüge an diesem Bahnsteig</div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 9px; padding: 0 18px 18px">
+      <button style="min-height: 54px; width: 62px; border-radius: 999px; border: 1px solid #d7d3d3; background: #f8f4f4; display: grid; place-items: center; cursor: pointer">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#201e1d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </button>
+      <button style="flex: 1; min-height: 54px; border-radius: 999px; border: none; background: #ec3013; color: #f3f2f2; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; cursor: pointer">
+        <span>Weiter</span>
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#f3f2f2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script>
+/* Braunschweig Hbf, Gleis 1 nach 6, barrierefrei. Echte Werte aus dem
+   Overpass-Fixture ueber baueBahnhofSchema(). Zwei Gleisebenen, und der Weg
+   geht hinunter und wieder hinauf - eine andere Form als Berlins Abstieg. */
+const EBENEN = [
+  { level: 1, bahnsteige: [
+      { gleise: '1/2', laengeM: 303, querM: 0, rolle: 'start' },
+      { gleise: '3/3b/4', laengeM: 322, querM: 12 },
+      { gleise: '5/6', laengeM: 437, querM: 37, rolle: 'ziel', anlagen: { aufzug: 4, rolltreppe: 0, treppe: 7 } },
+      { gleise: '7/8', laengeM: 425, querM: 56, anlagen: { aufzug: 0, rolltreppe: 0, treppe: 1 } } ] },
+  { level: 0, bahnsteige: [
+      { gleise: 'D', laengeM: 80, querM: 0 },
+      { gleise: 'C', laengeM: 80, querM: 11, anlagen: { aufzug: 0, rolltreppe: 0, treppe: 1 } } ] },
+];
+
+const BAR_W = 300, MAX_LEN = 437, KOPF_H = 40, FUSS_H = 18, LUECKE = 28;
+
+class Component extends DCLogic {
+  renderVals() {
+    const baender = [];
+    let top = 0;
+    let startY = 0, zielY = 0, untenY = 0;
+
+    EBENEN.forEach((ebene, i) => {
+      let y = KOPF_H;
+      const zeilen = ebene.bahnsteige.map((bs, k) => {
+        const vorher = ebene.bahnsteige[k - 1];
+        y += vorher ? 20 + (bs.querM - vorher.querM) * 0.34 : 0;
+        const istWeg = bs.rolle === 'start' || bs.rolle === 'ziel';
+        return {
+          gleise: bs.gleise,
+          top: y - 8,
+          breite: Math.round((bs.laengeM / MAX_LEN) * BAR_W),
+          dicke: istWeg ? 11 : 7,
+          farbe: bs.rolle === 'ziel' ? '#ec3013' : bs.rolle === 'start' ? '#201e1d' : '#c9c4c4',
+          schrift: istWeg ? '#201e1d' : '#7d7979',
+          gewicht: istWeg ? '800' : '600',
+          marke: bs.rolle === 'ziel' ? 'ZIEL' : bs.rolle === 'start' ? 'START' : null,
+        };
+      });
+      const hoehe = y + 10 + FUSS_H;
+      const a = ebene.bahnsteige.find((b) => b.rolle === 'ziel');
+
+      baender.push({
+        top, hoehe,
+        titel: 'EBENE ' + (ebene.level > 0 ? '+' + ebene.level : ebene.level) + ' · ' +
+          (ebene.level === 0 ? 'STADTBAHN C · D' : 'GLEISE ' + ebene.bahnsteige.map((b) => b.gleise).join(' · ')),
+        flaeche: '#f8f4f4',
+        rahmen: i === 0 ? '2px solid #ec3013' : '1px solid #d7d3d3',
+        tinte: '#605d5d',
+        bahnsteige: zeilen,
+        anlagenText: a && a.anlagen ? a.anlagen.aufzug + ' Aufzüge · ' + a.anlagen.treppe + ' Treppen' : null,
+        wechsel: i === 0 ? 'Aufzug, zweimal' : null,
+        wechselTop: top + hoehe + 4,
+      });
+
+      if (i === 0) {
+        startY = top + zeilen[0].top + 5;
+        zielY = top + zeilen[2].top + 5;
+      } else {
+        untenY = top + 30;
+      }
+      top += hoehe + LUECKE;
+    });
+
+    // Hinunter und wieder hinauf: die einzige Wegform, die hier belegt ist.
+    const spur = 'M 170 ' + startY + ' L 170 ' + untenY + ' L 238 ' + untenY + ' L 238 ' + zielY;
+
+    return { baender, gesamtHoehe: top - LUECKE, spur };
+  }
+}
+</script>
+</body>
+</html>
