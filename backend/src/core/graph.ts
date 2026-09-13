@@ -287,12 +287,50 @@ export function baueGraph(osm: OverpassAntwort): StationGraph {
     nodeListen: number[][];
   }
 
+  /**
+   * Die Gleisnummern eines Bahnsteigs aus seinem `ref`-Tag.
+   *
+   * Drei Regeln, alle am 13.09.2026 ueber 983 Bahnsteigrefs aus 85 abgelegten
+   * Bahnhoefen gemessen - die Simulation hat sie aufgedeckt, indem sie in
+   * Frankfurt(Main)Hbf vom Gleis 1 zum „Platz der Republik" fuhr.
+   *
+   * 1. TRENNZEICHEN. Bisher nur ";" und "/". In den Daten stehen ausserdem
+   *    "," und ":" - Leipzig Hbf traegt "18a,19", Hannover "2,2a" und
+   *    "2b,3,3a,3b", Duesseldorf "3:4". Deren Gleise fehlten damit in der
+   *    Liste, und an ihrer Stelle stand ein Gebilde, das kein Gleis ist.
+   *    Am Kopfbahnhof Leipzig hiess das: „Gleis 19" gibt es nicht.
+   * 2. VORSILBE. "Gleis 21" ist Gleis 21. Sechs Bahnsteige schreiben es aus.
+   * 3. EINE GLEISNUMMER HAT EINE ZIFFER. Was keine traegt, ist keine:
+   *    "Omnibusbahnhof", "Eilgutbuehne", "Museumsbahnsteig", "Platz der
+   *    Republik", die Strassenbahnsteige "B", "C", "L", "M", "G". Basels
+   *    "Regio 1" und "Fern 4" bleiben - sie sind dort die Gleisbezeichnung.
+   */
   function parseRefs(tag: string | undefined): string[] {
-    // Getrennt per ";" oder "/" ("11/12" ist bei Relationen üblich)
     return (tag ?? '')
-      .split(/[;/]/)
-      .map((r) => r.trim())
-      .filter((r) => r.length > 0);
+      .split(/[;/,:]/)
+      .map((r) => r.trim().replace(/^(?:Gleis|Gl\.?)\s+/i, '').trim())
+      .filter((r) => r.length > 0 && /\d/.test(r));
+  }
+
+  /**
+   * Ist das ein EISENBAHNsteig?
+   *
+   * `railway=platform` traegt in OSM auch Strassenbahnsteige: Frankfurts
+   * Bahnhofsvorplatz liefert so die „Gleise" B, C, L und „Platz der
+   * Republik" - und die Simulation fuhr am 13.09.2026 zum letzten davon
+   * statt zu Gleis 24. Der Metropolknoten war damit gar nicht gemessen.
+   *
+   * Die Regel ist bewusst eng: Ausgeschlossen wird nur, was sich SELBST als
+   * Strassenbahn- oder Bussteig ausweist und sich NICHT auch als
+   * Eisenbahnsteig. `train=yes` zu VERLANGEN waere zu scharf - 184 von 983
+   * gemessenen Bahnsteigrefs tragen es nicht, darunter Kaiserslauterns
+   * Gleise 1 und 8/10. Auch `highway=platform` bleibt draussen: Es faellt
+   * genau ein echtes Gleis mit (Duisburgs Gleis 1) und faengt dafuer nur
+   * Chemnitz' „Omnibusbahnhof", den Regel 3 oben ohnehin nimmt.
+   */
+  function istEisenbahnsteig(tags: Record<string, string>): boolean {
+    if (tags.train === 'yes') return true;
+    return tags.tram !== 'yes' && tags.bus !== 'yes';
   }
 
   const bahnsteige: BahnsteigDaten[] = [];
@@ -301,6 +339,7 @@ export function baueGraph(osm: OverpassAntwort): StationGraph {
   for (const rel of relationen) {
     const tags = rel.tags ?? {};
     if (tags.railway !== 'platform') continue;
+    if (!istEisenbahnsteig(tags)) continue;
     const nodeListen: number[][] = [];
     for (const member of rel.members ?? []) {
       if (member.type !== 'way' || member.role === 'inner') continue;
@@ -324,6 +363,7 @@ export function baueGraph(osm: OverpassAntwort): StationGraph {
   for (const way of ways) {
     const tags = way.tags ?? {};
     if (tags.railway !== 'platform') continue;
+    if (!istEisenbahnsteig(tags)) continue;
     if (relationsMitgliedWays.has(way.id)) continue; // schon über Relation erfasst
     bahnsteige.push({
       bahnsteigId: `w${way.id}`,
