@@ -1,7 +1,8 @@
 import { Ampel } from '../components/Ampel'
 import type { EingabeWerte } from '../components/Eingabe'
-import type { Ampelfarbe, RouteErgebnis, RoutenVariante } from '../api/typen'
+import type { Ampelfarbe, Bahnsteigabschnitt, RouteErgebnis, RoutenVariante } from '../api/typen'
 import { ampelFarbe } from '../navigation/ampel'
+import { ABSCHNITTE, ABSCHNITT_NAMEN } from '../api/standorte'
 
 /**
  * Gehzeit je Variante in Sekunden. `undefined` heisst: konnte nicht berechnet
@@ -12,6 +13,17 @@ export interface VariantenStand {
   barrierefrei?: number
   'mit-stopp'?: number
   gewaehlt: RoutenVariante
+}
+
+/**
+ * Gehzeit je Standort am Ankunftsgleis, in Sekunden - dieselbe Regel wie bei
+ * `VariantenStand`: `undefined` heisst „nicht gerechnet", nicht „null".
+ */
+export interface StandortStand {
+  anfang?: number
+  mitte?: number
+  ende?: number
+  gewaehlt: Bahnsteigabschnitt
 }
 
 interface DashboardProps {
@@ -35,7 +47,12 @@ interface DashboardProps {
   laedt?: RoutenVariante
   /** Warum die zuletzt getippte Variante nicht kam. `null` = alles gut. */
   variantenFehler?: string | null
+  /** Standort am Ankunftsgleis, mit den Gehzeiten der drei Stellen. */
+  standorte: StandortStand
+  /** Standort, der gerade geholt wird - `undefined`, solange nichts laeuft. */
+  standortLaedt?: Bahnsteigabschnitt
   onVariante: (v: RoutenVariante) => void
+  onStandort: (a: Bahnsteigabschnitt) => void
   onNavigation: () => void
   onMeldungen: () => void
 }
@@ -74,7 +91,10 @@ export function Dashboard({
   hinweis,
   laedt,
   variantenFehler,
+  standorte,
+  standortLaedt,
   onVariante,
+  onStandort,
   onNavigation,
   onMeldungen,
 }: DashboardProps) {
@@ -111,6 +131,46 @@ export function Dashboard({
         </section>
       </div>
 
+      {/*
+        * Die Standortwahl steht UEBER der Routenwahl, weil sie die Voraussetzung
+        * ist: Sie aendert die Gehzeit ALLER drei Varianten. Umgekehrt gilt das
+        * auch, deshalb liegen beide Minutenreihen in `App.tsx` in EINEM Speicher,
+        * der nach Variante UND Standort schluesselt.
+        */}
+      <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
+        <label id="standortwahl-label">Wo stehst du auf Gleis {werte.gleisAn}?</label>
+        <div className="standortwahl" role="group" aria-labelledby="standortwahl-label">
+          {ABSCHNITTE.map((a) => {
+            const gewaehlt = standorte.gewaehlt === a
+            const laedtDieser = standortLaedt === a
+            return (
+              <button
+                key={a}
+                type="button"
+                className={`standortwahl-knopf${gewaehlt ? ' gewaehlt' : ''}${
+                  laedtDieser ? ' laedt' : ''
+                }`}
+                aria-pressed={gewaehlt}
+                aria-busy={laedtDieser || undefined}
+                // Wie bei der Routenwahl: waehrend ein Wechsel laeuft, nimmt
+                // kein Knopf einen zweiten entgegen.
+                disabled={standortLaedt !== undefined || laedt !== undefined}
+                onClick={() => onStandort(a)}
+              >
+                <span className="standortwahl-name">{ABSCHNITT_NAMEN[a]}</span>
+                <span className="standortwahl-min">
+                  {laedtDieser ? 'lädt …' : minuten(standorte[a])}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+        <p className="standortwahl-hinweis">
+          Der Punkt am Bahnsteig entscheidet den Weg – ohne Wagenreihung weiß die App
+          sonst nicht, wo du aussteigst.
+        </p>
+      </fieldset>
+
       <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
         <label>Route</label>
         <div className="routenwahl" role="group" aria-label="Routenvariante">
@@ -129,8 +189,9 @@ export function Dashboard({
                 // Waehrend ein Wechsel laeuft, nimmt keine Zeile einen
                 // zweiten entgegen. Sonst stapeln sich auf dem Handy drei
                 // Anfragen, von denen die zuletzt beantwortete gewinnt - und
-                // das muss nicht die zuletzt getippte sein.
-                disabled={laedt !== undefined}
+                // das muss nicht die zuletzt getippte sein. Ein laufender
+                // STANDORTwechsel sperrt genauso: Er holt dieselbe Route.
+                disabled={laedt !== undefined || standortLaedt !== undefined}
                 onClick={() => onVariante(k.wert)}
               >
                 <span className="routenwahl-punkt" aria-hidden="true">

@@ -23,6 +23,35 @@ type Basis = Omit<RouteParameter, 'variante'>
 type HoleFn = (p: RouteParameter) => Promise<RouteErgebnis>
 
 /**
+ * Die uebrigen Varianten, der Reihe nach, aus derselben Basis.
+ *
+ * Eigene Funktion, seit es einen ZWEITEN Anlass gibt, sie zu holen: Wechselt
+ * der Standort am Ankunftsgleis, gelten die Minuten an den Variantenknoepfen
+ * nicht mehr - sie waren fuer den alten Standort gerechnet.
+ */
+export async function ladeWeitereVarianten(
+  basis: Basis,
+  gewaehlt: RoutenVariante,
+  hole: HoleFn,
+  beiWert: (variante: RoutenVariante, gehzeitSek: number) => void,
+  /** Was schon im Gehzeit-Speicher liegt, wird nicht zweimal geholt. */
+  schonBekannt: (variante: RoutenVariante) => boolean = () => false,
+): Promise<void> {
+  for (const weitere of ANGEBOTENE.filter((v) => v !== gewaehlt && !schonBekannt(v))) {
+    try {
+      // eslint-disable-next-line no-await-in-loop -- Nacheinander ist hier der ZWECK, nicht das Versehen: Promise.all waere genau der Fehler, den der Kommentar an `ladeVarianten` beschreibt.
+      const andere = await hole({ ...basis, variante: weitere })
+      beiWert(weitere, andere.gehzeitSek)
+    } catch {
+      // Kein Fehler fuer den Nutzer: Der Knopf zeigt dann keine Minuten.
+      // 'barrierefrei' antwortet regelmaessig mit 404, wenn es keinen
+      // nutzbaren Aufzug gibt - und 'mit-stopp', wenn der Bahnhof weder WC
+      // noch Kiosk kartiert hat.
+    }
+  }
+}
+
+/**
  * Laedt die Routenvarianten NACHEINANDER, nicht gleichzeitig.
  *
  * Urspruenglich war das ein Notbehelf: Zwei gleichzeitige Anfragen fuer
@@ -49,16 +78,5 @@ export async function ladeVarianten(
 
   // Die uebrigen der Reihe nach, aus demselben Grund wie oben: Jede weitere
   // gleichzeitige Anfrage waere eine, die auf denselben Bahnhof wartet.
-  for (const weitere of ANGEBOTENE.filter((v) => v !== gewaehlt)) {
-    try {
-      // eslint-disable-next-line no-await-in-loop -- Nacheinander ist hier der ZWECK, nicht das Versehen: Promise.all waere genau der Fehler, den der Kommentar oben beschreibt.
-      const andere = await hole({ ...basis, variante: weitere })
-      beiZweit(weitere, andere.gehzeitSek)
-    } catch {
-      // Kein Fehler fuer den Nutzer: Der Knopf zeigt dann keine Minuten.
-      // 'barrierefrei' antwortet regelmaessig mit 404, wenn es keinen
-      // nutzbaren Aufzug gibt - und 'mit-stopp', wenn der Bahnhof weder WC
-      // noch Kiosk kartiert hat.
-    }
-  }
+  await ladeWeitereVarianten(basis, gewaehlt, hole, beiZweit)
 }

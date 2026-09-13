@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Dashboard } from './Dashboard'
 import type { EingabeWerte } from '../components/Eingabe'
@@ -14,6 +14,7 @@ const werte: EingabeWerte = {
   wagenAb: '',
   profil: 'normal',
   variante: 'schnellste',
+  abschnitt: 'mitte',
 }
 const route: RouteErgebnis = { stufe: 1, schritte: [], gehzeitSek: 300, hinweise: [] }
 
@@ -24,8 +25,10 @@ function zeige(ueber: Partial<Parameters<typeof Dashboard>[0]> = {}) {
     restSek: undefined as number | undefined,
     abgefahren: false,
     varianten: { schnellste: 300, gewaehlt: 'schnellste' as const },
+    standorte: { mitte: 300, gewaehlt: 'mitte' as const },
     hinweis: false,
     onVariante: vi.fn(),
+    onStandort: vi.fn(),
     onNavigation: vi.fn(),
     onMeldungen: vi.fn(),
     ...ueber,
@@ -137,5 +140,73 @@ describe('Dashboard: Rueckmeldung beim Variantenwechsel', () => {
   it('schweigt ohne Fehler', () => {
     zeige({ varianten: { schnellste: 300, gewaehlt: 'schnellste' } })
     expect(screen.queryByRole('alert')).toBeNull()
+  })
+})
+
+/**
+ * Standortwahl am Ankunftsgleis (Entwurf: Artboard „Kopfbahnhof").
+ *
+ * Sie ist keine Verzierung. An Leipzig Hbf, Gleis 6 nach 16, fuehrt „Anfang"
+ * durch die Unterfuehrung (343 s) und „Ende" ueber den Bahnhofskopf (251 s) -
+ * derselbe Umstieg, zwei Wege, 100 s Unterschied. Solange die Wagenreihung
+ * tot ist, ist diese Wahl die einzige Eingabe, die den Weg kennt.
+ */
+describe('Dashboard: Standortwahl am Ankunftsgleis', () => {
+  const LEIPZIG = { anfang: 343, mitte: 354, ende: 251, gewaehlt: 'mitte' as const }
+
+  it('nennt das Gleis, um das es geht', () => {
+    zeige({ standorte: LEIPZIG })
+    expect(screen.getByText(/Wo stehst du auf Gleis 6\?/)).toBeDefined()
+  })
+
+  it('bietet Anfang, Mitte und Ende an - in der Reihenfolge des Bahnsteigs', () => {
+    zeige({ standorte: LEIPZIG })
+    const gruppe = screen.getByRole('group', { name: /Wo stehst du/ })
+    const namen = within(gruppe)
+      .getAllByRole('button')
+      .map((b) => b.textContent)
+    expect(namen).toEqual(['Anfang6 min', 'Mitte6 min', 'Ende5 min'])
+  })
+
+  it('markiert die gewaehlte Stelle', () => {
+    zeige({ standorte: LEIPZIG })
+    expect(screen.getByRole('button', { name: /^Mitte/ }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: /^Ende/ }).getAttribute('aria-pressed')).toBe('false')
+  })
+
+  /** Dieselbe Regel wie bei den Varianten: lieber keine Zahl als eine geratene. */
+  it('laesst die Minuten weg, solange sie nicht gerechnet sind', () => {
+    zeige({ standorte: { mitte: 354, gewaehlt: 'mitte' } })
+    expect(screen.getByRole('button', { name: /^Anfang/ }).textContent).toBe('Anfang')
+  })
+
+  it('meldet den Tipp nach oben', async () => {
+    const props = zeige({ standorte: LEIPZIG })
+    await userEvent.click(screen.getByRole('button', { name: /^Anfang/ }))
+    expect(props.onStandort).toHaveBeenCalledWith('anfang')
+  })
+
+  it('zeigt am getippten Knopf, dass er laedt', () => {
+    zeige({ standorte: LEIPZIG, standortLaedt: 'anfang' })
+    const knopf = screen.getByRole('button', { name: /^Anfang/ })
+    expect(knopf.getAttribute('aria-busy')).toBe('true')
+    expect(knopf.textContent).toMatch(/lädt/i)
+  })
+
+  /**
+   * Ein laufender Wechsel sperrt BEIDE Reihen. Sonst stapeln sich auf dem
+   * Handy Anfragen, von denen die zuletzt beantwortete gewinnt - und das muss
+   * nicht die zuletzt getippte sein.
+   */
+  it('sperrt die Routenwahl, solange ein Standort geholt wird', () => {
+    zeige({ standorte: LEIPZIG, standortLaedt: 'anfang' })
+    expect(
+      (screen.getByRole('button', { name: /Barrierefrei/ }) as HTMLButtonElement).disabled,
+    ).toBe(true)
+  })
+
+  it('sperrt die Standortwahl, solange eine Variante geholt wird', () => {
+    zeige({ standorte: LEIPZIG, laedt: 'barrierefrei' })
+    expect((screen.getByRole('button', { name: /^Ende/ }) as HTMLButtonElement).disabled).toBe(true)
   })
 })

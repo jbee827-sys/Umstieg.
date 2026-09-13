@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { sucheStationen } from '../api/client'
-import type { BahnhofTreffer, Gehprofil, RoutenVariante, TafelEintrag } from '../api/typen'
+import type {
+  BahnhofTreffer,
+  Bahnsteigabschnitt,
+  Gehprofil,
+  RoutenVariante,
+  TafelEintrag,
+} from '../api/typen'
+import { STANDORT_VOREINSTELLUNG } from '../api/standorte'
 import { Zugauswahl } from './Zugauswahl'
 import { ReiseImport } from './ReiseImport'
 import type { Umstieg } from '../reise/reisetext'
@@ -17,6 +24,12 @@ export interface EingabeWerte {
   wagenAb: string
   profil: Gehprofil
   variante: RoutenVariante
+  /**
+   * Wo am ANKUNFTSGLEIS jemand steht. Gewaehlt wird das auf dem Dashboard,
+   * nicht hier: Erst dort ist sichtbar, was die Wahl am Weg aendert, und erst
+   * dort steht der Reisende ueberhaupt am Gleis.
+   */
+  abschnitt: Bahnsteigabschnitt
   /** Zugnummer des Ankunftszugs (für die Wagenreihung), z. B. "3" aus "RE 3" */
   zugAn?: string
   /** Volle Bezeichnungen wie in der Tafel ("ICE 1006") – Filter für die Live-Überwachung. */
@@ -220,6 +233,7 @@ export function Eingabe({ laden, fehler, erkannt, entwurf, onBerechnen }: Eingab
         wagenAb: wagenAb.trim(),
         profil,
         variante: 'schnellste',
+        abschnitt: STANDORT_VOREINSTELLUNG,
         zugAn: zugAnkunft ? zugnummer(zugAnkunft.zug) : undefined,
         zugAnName: zugAnkunft?.zug,
         zugAbName: zugAbfahrt?.zug,

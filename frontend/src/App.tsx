@@ -1,15 +1,22 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { holeRoute, RouteFehler } from './api/client'
-import { ersteVariante, ladeVarianten } from './api/varianten'
+import { ersteVariante, ladeVarianten, ladeWeitereVarianten } from './api/varianten'
+import { gehzeitSchluessel, ladeStandorte, STANDORT_VOREINSTELLUNG } from './api/standorte'
 import { verbindeLive } from './api/sse'
-import type { BahnhofTreffer, LiveEreignis, RouteErgebnis, RoutenVariante } from './api/typen'
+import type {
+  BahnhofTreffer,
+  Bahnsteigabschnitt,
+  LiveEreignis,
+  RouteErgebnis,
+  RoutenVariante,
+} from './api/typen'
 import { Datenschutz } from './components/Datenschutz'
 import { Fusszeile } from './components/Fusszeile'
 import { Impressum } from './components/Impressum'
 import { Angekommen } from './screens/Angekommen'
 import { Navileiste } from './components/Navileiste'
-import { Dashboard, type VariantenStand } from './screens/Dashboard'
+import { Dashboard, type StandortStand, type VariantenStand } from './screens/Dashboard'
 import { Navigation } from './screens/Navigation'
 import { Meldungen } from './screens/Meldungen'
 import { Eingabe, type EingabeWerte } from './components/Eingabe'
@@ -102,7 +109,50 @@ function App() {
   // Route bleibt nach Berechnung vollständig im Speicher – die Anzeige
   // funktioniert auch, wenn die Verbindung im Bahnhof abreißt (Konzept).
   const [route, setRoute] = useState<RouteErgebnis | null>(null)
-  const [varianten, setVarianten] = useState<VariantenStand>({ gewaehlt: 'schnellste' })
+  /**
+   * Gehzeiten in Sekunden, geschluesselt nach Variante UND Standort.
+   *
+   * EIN Speicher fuer beide Knopfreihen, weil beide Achsen zusammen den Weg
+   * bestimmen: Am Kopfbahnhof aendert der Standort die Gehzeit ALLER
+   * Varianten. Zwei getrennte Listen haetten nach jedem Wechsel die jeweils
+   * andere Reihe stillschweigend veralten lassen - Minuten vom alten Standort
+   * an den neuen Knoepfen. Hier kann das nicht passieren: Ein Eintrag gilt
+   * fuer genau ein Paar, und was einmal geholt ist, bleibt richtig.
+   */
+  const [gehzeiten, setGehzeiten] = useState<Record<string, number>>({})
+  // Spiegelt `gehzeiten` fuer die Nachladeschleifen: Sie laufen NACH dem
+  // Zustandswechsel und saehen im Abschluss sonst den Stand von vorher.
+  const gehzeitenRef = useRef<Record<string, number>>({})
+  const merkeGehzeit = useCallback(
+    (v: RoutenVariante, a: Bahnsteigabschnitt, sek: number) =>
+      setGehzeiten((alt) => {
+        const neu = { ...alt, [gehzeitSchluessel(v, a)]: sek }
+        gehzeitenRef.current = neu
+        return neu
+      }),
+    [],
+  )
+  const [gewaehlteVariante, setGewaehlteVariante] = useState<RoutenVariante>('schnellste')
+  const [gewaehlterStandort, setGewaehlterStandort] =
+    useState<Bahnsteigabschnitt>(STANDORT_VOREINSTELLUNG)
+  const varianten: VariantenStand = useMemo(
+    () => ({
+      gewaehlt: gewaehlteVariante,
+      schnellste: gehzeiten[gehzeitSchluessel('schnellste', gewaehlterStandort)],
+      barrierefrei: gehzeiten[gehzeitSchluessel('barrierefrei', gewaehlterStandort)],
+      'mit-stopp': gehzeiten[gehzeitSchluessel('mit-stopp', gewaehlterStandort)],
+    }),
+    [gehzeiten, gewaehlteVariante, gewaehlterStandort],
+  )
+  const standorte: StandortStand = useMemo(
+    () => ({
+      gewaehlt: gewaehlterStandort,
+      anfang: gehzeiten[gehzeitSchluessel(gewaehlteVariante, 'anfang')],
+      mitte: gehzeiten[gehzeitSchluessel(gewaehlteVariante, 'mitte')],
+      ende: gehzeiten[gehzeitSchluessel(gewaehlteVariante, 'ende')],
+    }),
+    [gehzeiten, gewaehlteVariante, gewaehlterStandort],
+  )
   // Die aktuelle Route fuer den SSE-Behandler, ohne ihn bei jeder Aenderung
   // neu zu abonnieren.
   const routeRef = useRef<RouteErgebnis | null>(null)
@@ -115,6 +165,8 @@ function App() {
   /** Variante, die gerade geholt wird - `undefined`, solange nichts laeuft. */
   const [variantenLaden, setVariantenLaden] = useState<RoutenVariante | undefined>(undefined)
   const [variantenFehler, setVariantenFehler] = useState<string | null>(null)
+  /** Standort, der gerade geholt wird - `undefined`, solange nichts laeuft. */
+  const [standortLaden, setStandortLaden] = useState<Bahnsteigabschnitt | undefined>(undefined)
   const [liveEreignis, setLiveEreignis] = useState<LiveEreignis | null>(null)
   /** Zeitstempel des Tafelausfalls, solange er anhaelt (null = Quelle antwortet). */
   const [quelleWegSeit, setQuelleWegSeit] = useState<string | null>(null)
@@ -214,7 +266,11 @@ function App() {
     // Eine neue Rechnung raeumt den Variantenfehler mit weg - er gehoert zur
     // vorigen Reise und stuende sonst noch am neuen Dashboard.
     setVariantenFehler(null)
-    const basis = {
+    // Eine neue Reise faengt mit einem leeren Gehzeit-Speicher an: Die alten
+    // Minuten gehoeren zu einem anderen Bahnhof.
+    setGehzeiten({})
+    gehzeitenRef.current = {}
+    const ohneStandort = {
       eva: eingabe.eva,
       gleisAn: eingabe.gleisAn,
       gleisAb: eingabe.gleisAb,
@@ -222,6 +278,9 @@ function App() {
       zugAn: eingabe.zugAn,
       wagen: eingabe.wagenAn || undefined,
     }
+    // NICHT `standort` - so heisst in dieser Datei die GPS-Position.
+    const standortAmGleis = eingabe.abschnitt
+    const basis = { ...ohneStandort, abschnitt: standortAmGleis }
     const gewaehlt = ersteVariante(eingabe.variante)
     try {
       await ladeVarianten(
@@ -232,11 +291,19 @@ function App() {
           setLaden(false)
           setWerte(eingabe)
           setRoute(haupt)
-          setVarianten({ gewaehlt, [gewaehlt]: haupt.gehzeitSek })
+          setGewaehlteVariante(gewaehlt)
+          setGewaehlterStandort(standortAmGleis)
+          merkeGehzeit(gewaehlt, standortAmGleis, haupt.gehzeitSek)
           setVersatz(0)
           setBildschirm('dashboard')
         },
-        (variante, sek) => setVarianten((v) => ({ ...v, [variante]: sek })),
+        (variante, sek) => merkeGehzeit(variante, standortAmGleis, sek),
+      )
+      // Erst die Varianten, dann die beiden anderen Standorte - in dieser
+      // Reihenfolge, weil die Variantenknoepfe direkt unter der Ampel stehen
+      // und zuerst gelesen werden.
+      await ladeStandorte(ohneStandort, gewaehlt, standortAmGleis, holeRoute, (a, sek) =>
+        merkeGehzeit(gewaehlt, a, sek),
       )
     } catch (e) {
       setLaden(false)
@@ -247,7 +314,7 @@ function App() {
     // `setBildschirm` ist selbst ein useCallback ohne Abhaengigkeiten und
     // damit stabil - anders als der nackte Setter davor kann der Linter das
     // nicht sehen und will ihn genannt haben.
-  }, [setBildschirm])
+  }, [setBildschirm, merkeGehzeit])
 
   /**
    * Variante wechseln.
@@ -271,7 +338,8 @@ function App() {
    */
   const waehleVariante = useCallback(
     (v: RoutenVariante) => {
-      if (!werte || v === varianten.gewaehlt || variantenLaden !== undefined) return
+      if (!werte || v === gewaehlteVariante || variantenLaden !== undefined) return
+      const standortAmGleis = werte.abschnitt
       setVariantenLaden(v)
       setVariantenFehler(null)
       void holeRoute({
@@ -281,15 +349,33 @@ function App() {
         profil: werte.profil,
         zugAn: werte.zugAn,
         wagen: werte.wagenAn || undefined,
+        abschnitt: standortAmGleis,
         variante: v,
       })
-        .then((neu) => {
+        .then(async (neu) => {
           setRoute(neu)
           setWerte({ ...werte, variante: v })
-          // Spreizen, nicht ersetzen: Die Minuten der anderen Knoepfe sind
-          // bereits geholt und aendern sich durch einen Wechsel nicht.
-          setVarianten((s) => ({ ...s, gewaehlt: v, [v]: neu.gehzeitSek }))
+          setGewaehlteVariante(v)
+          merkeGehzeit(v, standortAmGleis, neu.gehzeitSek)
           setVersatz(0)
+          // Die Standortknoepfe zeigen Minuten der NEUEN Variante - die
+          // fehlenden nachholen. Was schon im Speicher liegt, wird nicht
+          // zweimal geholt.
+          await ladeStandorte(
+            {
+              eva: werte.eva,
+              gleisAn: werte.gleisAn,
+              gleisAb: werte.gleisAb,
+              profil: werte.profil,
+              zugAn: werte.zugAn,
+              wagen: werte.wagenAn || undefined,
+            },
+            v,
+            standortAmGleis,
+            holeRoute,
+            (a, sek) => merkeGehzeit(v, a, sek),
+            (a) => gehzeitenRef.current[gehzeitSchluessel(v, a)] !== undefined,
+          )
         })
         .catch((e: unknown) => {
           // Der Fehlertext des Backends ist hier der bessere: Er nennt den
@@ -301,7 +387,58 @@ function App() {
         })
         .finally(() => setVariantenLaden(undefined))
     },
-    [werte, varianten.gewaehlt, variantenLaden],
+    [werte, gewaehlteVariante, variantenLaden, merkeGehzeit],
+  )
+
+  /**
+   * Standort am Ankunftsgleis wechseln.
+   *
+   * Der Zwilling von `waehleVariante`, und aus demselben Grund eigenstaendig:
+   * Ein Wechsel holt GENAU EINE Route und fuehrt seinen Fortschritt am
+   * getippten Knopf. Nur der Weg selbst ist hier ein anderer - er kann sich
+   * vollstaendig aendern, nicht nur in der Laenge. An Leipzig Hbf, Gleis 6
+   * nach 16, fuehrt „Anfang" durch die Unterfuehrung und „Ende" ueber den
+   * Bahnhofskopf: andere Ebenen, andere Treppen, andere Schritte.
+   */
+  const waehleStandort = useCallback(
+    (a: Bahnsteigabschnitt) => {
+      if (!werte || a === gewaehlterStandort || standortLaden !== undefined) return
+      const variante = gewaehlteVariante
+      const ohneStandort = {
+        eva: werte.eva,
+        gleisAn: werte.gleisAn,
+        gleisAb: werte.gleisAb,
+        profil: werte.profil,
+        zugAn: werte.zugAn,
+        wagen: werte.wagenAn || undefined,
+      }
+      setStandortLaden(a)
+      setVariantenFehler(null)
+      void holeRoute({ ...ohneStandort, abschnitt: a, variante })
+        .then(async (neu) => {
+          setRoute(neu)
+          setWerte({ ...werte, abschnitt: a })
+          setGewaehlterStandort(a)
+          merkeGehzeit(variante, a, neu.gehzeitSek)
+          // Der Fortschritt in der Schrittliste gehoert zum alten Weg.
+          setVersatz(0)
+          // Die Variantenknoepfe zeigen jetzt Minuten fuer den NEUEN Standort.
+          await ladeWeitereVarianten(
+            { ...ohneStandort, abschnitt: a },
+            variante,
+            holeRoute,
+            (v, sek) => merkeGehzeit(v, a, sek),
+            (v) => gehzeitenRef.current[gehzeitSchluessel(v, a)] !== undefined,
+          )
+        })
+        .catch((e: unknown) => {
+          const detail = e instanceof RouteFehler ? e.message : undefined
+          const code = e instanceof RouteFehler ? e.code : 'netz'
+          setVariantenFehler(detail || FEHLER_TEXTE[code] || 'Diese Route liess sich nicht berechnen.')
+        })
+        .finally(() => setStandortLaden(undefined))
+    },
+    [werte, gewaehlterStandort, gewaehlteVariante, standortLaden, merkeGehzeit],
   )
 
   // Live-Überwachung, solange eine Route offen ist.
@@ -525,6 +662,9 @@ function App() {
           restSek={restSek}
           abgefahren={abgefahren}
           varianten={varianten}
+          standorte={standorte}
+          standortLaedt={standortLaden}
+          onStandort={waehleStandort}
           hinweis={ungelesen(meldungen) > 0}
           laedt={variantenLaden}
           variantenFehler={variantenFehler}
