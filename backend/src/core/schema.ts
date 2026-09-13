@@ -264,22 +264,49 @@ function sammleWechsel(pfad: RoutenPfad): SchemaWechsel[] {
   return wechsel;
 }
 
-/** Der Weg auf jeder Ebene, als Linienzug im Bezugsrahmen. */
+/**
+ * Der Weg auf jeder Ebene - ein Stueck je Besuch.
+ *
+ * Die Trennung nach Besuchen ist nicht kosmetisch: Ein Weg, der hinunter in
+ * die Unterfuehrung und wieder herauf fuehrt, beruehrt die Gleisebene
+ * zweimal. In einer einzigen Liste stuenden beide Besuche hintereinander,
+ * und die Verbindung zwischen ihnen waere eine erfundene Strecke - in einer
+ * Stichprobe ueber 16 Bahnhoefe wuchs der Weg dadurch um die Haelfte.
+ */
 function wegJeEbene(
   pfad: RoutenPfad,
   zuXY: (k: { lat: number; lon: number }) => SchemaPunkt,
-): Map<number, SchemaPunkt[]> {
-  const wege = new Map<number, SchemaPunkt[]>();
+): Map<number, SchemaWegstueck[]> {
+  const wege = new Map<number, SchemaWegstueck[]>();
+  let aktuell: { level: number; punkte: SchemaPunkt[] } | null = null;
+
+  const schliesse = (): void => {
+    if (!aktuell || aktuell.punkte.length < 2) {
+      aktuell = null;
+      return;
+    }
+    if (!wege.has(aktuell.level)) wege.set(aktuell.level, []);
+    wege.get(aktuell.level)!.push({ punkte: vereinfacheLinie(aktuell.punkte, GLAETTUNG_M) });
+    aktuell = null;
+  };
+
   for (const knoten of pfad.knoten) {
-    if (!wege.has(knoten.level)) wege.set(knoten.level, []);
-    const liste = wege.get(knoten.level)!;
+    if (!aktuell || aktuell.level !== knoten.level) {
+      schliesse();
+      aktuell = { level: knoten.level, punkte: [] };
+    }
     const punkt = zuXY(knoten);
     // Aufeinanderliegende Punkte tragen nichts bei und blaehen die Antwort.
-    const letzter = liste[liste.length - 1];
-    if (!letzter || letzter.x !== punkt.x || letzter.y !== punkt.y) liste.push(punkt);
+    const letzter = aktuell.punkte[aktuell.punkte.length - 1];
+    if (!letzter || letzter.x !== punkt.x || letzter.y !== punkt.y) aktuell.punkte.push(punkt);
   }
-  for (const [level, punkte] of wege) wege.set(level, vereinfacheLinie(punkte, GLAETTUNG_M));
+  schliesse();
   return wege;
+}
+
+/** Alle Punkte aller Stuecke - fuer Abstandsfragen, nicht zum Zeichnen. */
+function punkteVon(stuecke: SchemaWegstueck[]): SchemaPunkt[] {
+  return stuecke.flatMap((s) => s.punkte);
 }
 
 /** Die Ebenenwechsel-Kanten des Graphen, jede genau einmal. */
@@ -734,7 +761,7 @@ export function baueBahnhofSchema(graph: StationGraph, pfad: RoutenPfad): Bahnho
     const elemente = elementeFuer(
       graph,
       level,
-      wege.get(level) ?? [],
+      punkteVon(wege.get(level) ?? []),
       bahnsteige,
       wichtige,
       aufRoute,
@@ -762,7 +789,7 @@ export function baueBahnhofSchema(graph: StationGraph, pfad: RoutenPfad): Bahnho
       ...(wege.has(level) ? { weg: wege.get(level)! } : {}),
       // Netz nur, wo keine Bahnsteige die Orientierung tragen.
       ...(liste.length === 0 && wege.has(level)
-        ? { netz: netzFuer(graph, level, wege.get(level)!, zuXY) }
+        ? { netz: netzFuer(graph, level, punkteVon(wege.get(level)!), zuXY) }
         : {}),
       ...(elemente.length > 0 ? { elemente } : {}),
     });

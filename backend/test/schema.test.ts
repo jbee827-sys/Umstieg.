@@ -77,6 +77,33 @@ describe('baueBahnhofSchema – Bänder und Route', () => {
     expect(ziel?.gleise).toContain('2');
   });
 
+  it('trennt zwei Besuche derselben Ebene, statt sie zu verbinden', () => {
+    // Der Weg fuehrt von Gleis 1 hinunter in die Unterfuehrung und wieder
+    // hinauf zu Gleis 2 - Ebene 0 wird zweimal betreten. Ein einziger
+    // Linienzug zoege zwischen beiden Besuchen eine Linie, die niemand geht.
+    const ebene0 = schema.ebenen.find((e) => e.level === 0)!;
+    expect(ebene0.weg).toHaveLength(2);
+    for (const stueck of ebene0.weg!) expect(stueck.punkte.length).toBeGreaterThan(1);
+  });
+
+  it('zerlegt den Weg vollständig, auch wenn eine Ebene zweimal vorkommt', () => {
+    let summe = 0;
+    for (const ebene of schema.ebenen) {
+      for (const stueck of ebene.weg ?? []) {
+        for (let i = 1; i < stueck.punkte.length; i++) {
+          summe += Math.hypot(
+            stueck.punkte[i].x - stueck.punkte[i - 1].x,
+            stueck.punkte[i].y - stueck.punkte[i - 1].y,
+          );
+        }
+      }
+    }
+    const aufWechseln = pfad.kanten
+      .filter((k) => k.deltaLevel !== 0)
+      .reduce((sum, k) => sum + k.laengeM, 0);
+    expect(summe).toBeLessThan(pfad.laengeM - aufWechseln + 2);
+  });
+
   it('listet die Ebenenwechsel der Route in der Reihenfolge des Wegs', () => {
     expect(schema.wechsel.map((w) => [w.vonLevel, w.nachLevel])).toEqual([
       [0, -1],
@@ -175,7 +202,7 @@ describe('baueBahnhofSchema – echte Lage auf der Ebene', () => {
   const ziel = unten.bahnsteige.find((b) => b.rolle === 'ziel')!;
 
   it('legt den Ursprung auf den Startpunkt der Route', () => {
-    expect(oben.weg![0]).toEqual({ x: 0, y: 0 });
+    expect(oben.weg![0].punkte[0]).toEqual({ x: 0, y: 0 });
   });
 
   it('dreht die Gleisrichtung der Startebene auf die x-Achse', () => {
@@ -212,11 +239,13 @@ describe('baueBahnhofSchema – echte Lage auf der Ebene', () => {
     // zerlegter Linienzug halten muss.
     let summe = 0;
     for (const ebene of schema.ebenen) {
-      for (let i = 1; i < (ebene.weg?.length ?? 0); i++) {
-        summe += Math.hypot(
-          ebene.weg![i].x - ebene.weg![i - 1].x,
-          ebene.weg![i].y - ebene.weg![i - 1].y,
-        );
+      for (const stueck of ebene.weg ?? []) {
+        for (let i = 1; i < stueck.punkte.length; i++) {
+          summe += Math.hypot(
+            stueck.punkte[i].x - stueck.punkte[i - 1].x,
+            stueck.punkte[i].y - stueck.punkte[i - 1].y,
+          );
+        }
       }
     }
     const aufWechseln = pfad.kanten
