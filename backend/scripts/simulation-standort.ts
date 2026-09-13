@@ -194,14 +194,39 @@ function ebenenfolge(schema: BahnhofSchema): string {
   return schema.ebenen.map((e) => e.level).join(' → ');
 }
 
-async function holeOsm(eva: string, lat: number, lon: number): Promise<OverpassAntwort> {
+/**
+ * Was schon in der Ablage liegt, wird nicht neu geholt - sonst nach hinten
+ * wachsende Pausen.
+ *
+ * Der erste Lauf am 13.09. verlor elf Bahnhoefe an Overpass-Zeitueberschreitungen,
+ * und zwar ab dem Punkt, an dem die Ablage leer lief: Die 3-Sekunden-Pause lief
+ * nur nach ERFOLGREICHEN Abrufen, ein Fehlschlag ging ohne Atempause in den
+ * naechsten. Gegen eine Drosselung ist genau das die falsche Reaktion. Deshalb
+ * hier: laengere Grundpause, und nach einem Fehlschlag eine wachsende.
+ */
+const PAUSE_MS = 6000;
+const PAUSE_NACH_FEHLER_MS = 30_000;
+
+async function holeOsm(
+  eva: string,
+  lat: number,
+  lon: number,
+  fehlerBisher: { anzahl: number },
+): Promise<OverpassAntwort> {
   mkdirSync(CACHE, { recursive: true });
   const pfad = join(CACHE, `${eva}.json`);
   if (existsSync(pfad)) return JSON.parse(readFileSync(pfad, 'utf8')) as OverpassAntwort;
-  const antwort = await overpassQuery(lat, lon, 400);
-  writeFileSync(pfad, JSON.stringify(antwort), 'utf8');
-  await new Promise((r) => setTimeout(r, 3000)); // Fairness
-  return antwort;
+  try {
+    const antwort = await overpassQuery(lat, lon, 400);
+    writeFileSync(pfad, JSON.stringify(antwort), 'utf8');
+    fehlerBisher.anzahl = 0;
+    await new Promise((r) => setTimeout(r, PAUSE_MS));
+    return antwort;
+  } catch (e) {
+    fehlerBisher.anzahl += 1;
+    await new Promise((r) => setTimeout(r, PAUSE_NACH_FEHLER_MS * fehlerBisher.anzahl));
+    throw e;
+  }
 }
 
 /** Ein Lauf ab einem Bahnsteigabschnitt - oder `null`, wenn keine Route steht. */
@@ -245,6 +270,7 @@ async function main(): Promise<void> {
   ladeSecrets();
   const befunde: Befund[] = [];
   const uebersprungen: string[] = [];
+  const fehlerBisher = { anzahl: 0 };
 
   for (const [i, name] of BAHNHOEFE.entries()) {
     process.stdout.write(`[${i + 1}/${BAHNHOEFE.length}] ${name} … `);
@@ -256,7 +282,7 @@ async function main(): Promise<void> {
         continue;
       }
       const { eva, lat, lon } = treffer[0];
-      const osm = await holeOsm(eva, lat, lon);
+      const osm = await holeOsm(eva, lat, lon, fehlerBisher);
 
       const graph = baueGraph(osm);
       graph.stufe = klassifiziere(graph);
