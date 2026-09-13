@@ -287,6 +287,65 @@ Bahnsteig — dem nächsten —, sonst entstünde ein ebener Weg über die Gleis
 Die Route nimmt jetzt die Rolltreppe, die neben der Bahnsteigmitte
 herauskommt — statt der, die 123 m davor liegt. Vier Minuten.
 
+## 5b. Simulation über 60 Bahnhöfe (13.09.2026)
+
+`backend/scripts/simulation-schema.ts` fährt die volle Kette Overpass →
+Graph → Route → Schema und prüft jede Behauptung des Schemas gegen das, was
+es behaupten darf. Gefahren wird stets vom **ersten zum letzten Gleis** — der
+längste Weg im Haus.
+
+**41 Bahnhöfe ausgewertet, 19 übersprungen, 0 Befunde.**
+
+| | |
+|---|---|
+| Stufen | 1: 39 · 2: 2 |
+| Ebenen je Bahnhof | 1: 8 · 2: 22 · 3: 6 · 4: 11 |
+| Antwortgröße | min 1,1 · median 5,4 · **max 19,7 kB** |
+| Graphbau | median 22 ms, max 170 ms |
+| Schemabau | median 2 ms, **max 24 ms** |
+| Bahnsteige ohne Achse | 0 |
+
+### Was die Simulation gefunden hat
+
+**Ein Fehler, und zwar ein durchschlagender.** In 8 von 16 zuerst geprüften
+Bahnhöfen war die Summe der Ebenenwege länger als der Weg selbst — in
+Hannover 279 statt 185 m. Ursache: Ein Weg, der hinunter in die Unterführung
+und wieder herauf führt, berührte die Gleisebene zweimal, und beide Besuche
+lagen in einer Liste. Die Verbindung dazwischen war eine erfundene Strecke,
+die im Bild wie ein Weg ausgesehen hätte. Behoben; `ebenen[].weg` ist
+seitdem eine Liste von Stücken, eines je Besuch. **Berlin 14 → 6 ist
+zufällig monoton — an diesem einen Prüffall wäre es nie aufgefallen.**
+
+Nach der Korrektur: kein einziger Befund über alle 41 Bahnhöfe.
+
+### Was die Simulation über den Entwurf sagt
+
+- **Der Zweiebenenfall ist die Mehrheit** (22 von 41), nicht Berlins fünf.
+  Acht Bahnhöfe haben genau **eine** Ebene — Kopfbahnhöfe wie Karlsruhe und
+  Kiel, wo der Weg um den Prellbock herum auf einer Ebene bleibt und es
+  folgerichtig keinen einzigen Zugang gibt. Für diesen Fall gibt es noch
+  kein Artboard.
+- **Berlin ist mit seiner Kreuzung kein Sonderfall.** Vier von 41 Bahnhöfen
+  haben Ankunfts- und Abfahrtsebene über 20° gegeneinander: Dortmund 88°,
+  Düsseldorf 87°, Osnabrück 83°, Kassel-Wilhelmshöhe 67°. Die offene Frage
+  „parallel oder gedreht" betrifft also rund jeden zehnten Umstieg.
+- **Die Antwort bleibt klein genug.** Dortmund ist der Ausreißer mit 19,7 kB
+  (193 Netzstücke, 74 Anlagen); der Median liegt bei 5,4 kB.
+
+### Übersprungen — und warum das kein Ausfall ist
+
+Neun Bahnhöfe liefen in einen **Overpass-Timeout** (öffentliche Instanz,
+vorübergehend). Sechs hatten **keine Route im reinen OSM-Graphen**
+(Gütersloh, Lüneburg und vier weitere) — hier greift im echten Endpunkt das
+Standardmodell, das die Simulation bewusst umgeht: Sie prüft den Graphen,
+nicht die Degradationskette.
+
+**Ein neuer Befund am Rande:** Die Gleisliste des Graphen enthält Einträge,
+die keine Gleise sind — „M", „G", „B", „Eilgutbühne". Sie stammen aus
+`ref`-Tags an Bahnsteigen, die keine Gleisnummern tragen. Für das Schema ist
+das harmlos, für die Gleiseingabe und die Prüfung „gibt es dieses Gleis?"
+nicht. Eigener Vorgang.
+
 ## 6. Empfehlung
 
 1. **Das Schema aus echter Geometrie ableiten, nicht aus den Schritttexten.**
