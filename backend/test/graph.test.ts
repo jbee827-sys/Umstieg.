@@ -349,6 +349,18 @@ describe('Bahnsteig als begehbare Linie', () => {
     expect(d).toBeLessThan(150);
   });
 
+  it('verdichtet die Kette JEDES Gleises eines Bahnsteigs, nicht nur des letzten', () => {
+    // Leipzig Hbf, Bahnsteig 6/7, gemessen am 14.09.2026: gleis6:mitte hing
+    // nur an gleis6:anfang und gleis6:ende, je 103 m entfernt. Die Treppe zur
+    // Unterfuehrung 72 m weiter kostete deshalb 139 s statt 72 s - erst zum
+    // Anfang, dann zurueck. Die Achsen waren nach Bahnsteig geschluesselt, und
+    // gleis7:* ueberschrieb gleis6:*.
+    const zwei = baueGraph(ladeFixture('synthetisch/zweigleisbahnsteig'));
+    // Mitte bei 102 m, Treppenkopf bei 62 m: 41 m Luftlinie.
+    expect(kuerzesteDistanz(zwei, 'gleis1:mitte', 'n710@0')).toBeLessThan(60);
+    expect(kuerzesteDistanz(zwei, 'gleis2:mitte', 'n710@0')).toBeLessThan(60);
+  });
+
   it('verbindet keine Knoten des Nachbarbahnsteigs in die Kette', () => {
     // Die Tiefbahnsteige liegen 24 m auseinander. Wuerde die Anbindung so
     // weit greifen, entstuende ein ebener Weg zwischen zwei Bahnsteigen -

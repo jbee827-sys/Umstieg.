@@ -1,0 +1,28 @@
+{
+  "_zweck": "EIN Bahnsteig, ZWEI Gleise (ref '1;2'), 205 m lang, als schlichte Linie ohne Zwischenknoten - wie Leipzig Hbf 6/7. Bei 30 % der Laenge fuehrt eine Treppe (Node 710, 2 m neben der Achse) hinunter in eine Unterfuehrung. Der Treppenkopf haengt an keinem Weg; erreichbar ist er nur ueber den Bahnsteig. Bis zum 14.09.2026 wurde nur die Kette des ZULETZT verarbeiteten Gleises verdichtet - von der Mitte des anderen war die Treppe nicht zu erreichen.",
+  "elements": [
+    { "type": "node", "id": 701, "lat": 52.0, "lon": 12.0 },
+    { "type": "node", "id": 702, "lat": 52.0, "lon": 12.003 },
+    { "type": "node", "id": 710, "lat": 52.00002, "lon": 12.0009 },
+    { "type": "node", "id": 711, "lat": 52.00002, "lon": 12.00098 },
+    { "type": "node", "id": 712, "lat": 51.9997, "lon": 12.00098 },
+    {
+      "type": "way",
+      "id": 801,
+      "nodes": [701, 702],
+      "tags": { "railway": "platform", "ref": "1;2", "level": "0" }
+    },
+    {
+      "type": "way",
+      "id": 802,
+      "nodes": [711, 710],
+      "tags": { "highway": "steps", "incline": "up", "level": "-1;0" }
+    },
+    {
+      "type": "way",
+      "id": 803,
+      "nodes": [711, 712],
+      "tags": { "highway": "footway", "tunnel": "yes", "level": "-1" }
+    }
+  ]
+}
