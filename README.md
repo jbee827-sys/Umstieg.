@@ -16,7 +16,71 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 14.09.2026)
+## Hier weitermachen (Stand 14.09.2026, abends)
+
+> **Zuletzt (14.09., abends):** Drei Änderungen am Ebenenschema, alle auf
+> `feat/mvp` committet, **nicht gepusht, nicht deployt**:
+>
+> 1. **Das Band mit Ankunfts- oder Abfahrtsgleis zeigt keinen Weg mehr** –
+>    nur den Standort (Anfang/Mitte/Ende) auf dem Balken, den Ebenenwechsel
+>    als rote Scheibe mit Symbol am genutzten Zugang und das Ziel. Den Weg
+>    dazwischen sagt der Text. Übergangsebenen behalten die Linie.
+> 2. **Anlagen als Symbole** statt Striche und Kästen: Rolltreppe (zwei
+>    Waagerechte, 45°-Diagonale), Treppe, Aufzug – im Balken, im Grundriss,
+>    in der Legende und neben den Schritten. Treppe und Rolltreppe am selben
+>    Ort: nur die Rolltreppe; ein Aufzug steht daneben. Quelle:
+>    `components/AnlagenSymbol.tsx`, Regeln in `schema/symbole.ts`.
+> 3. **Geglättete Schritte** (`core/textgen.ts`, `GLAETTUNG_M = 6`):
+>    Versätze der Fußwege unter 6 m quer sind keine eigenen Schritte mehr.
+>    München 5 → 82: 11 statt 23 Schritte.
+>
+> **Der Zickzack im München-Beispiel war kein Routingfehler.** Keine
+> erzwungene Alternative ist schneller als die gewählte Route (625 s). Er kam
+> aus der Bildabbildung – die Querlage springt, wo die Bezugsbahnsteige
+> wechseln, und längs zeichnet das Bild 0,45 px/m, quer bis 1,5 px/m – und
+> aus der L-Treppe der kartierten Fußwege am Holzkirchner Flügelbahnhof, die
+> der Text Stufe für Stufe ansagte.
+>
+> **Simulation, vierter Durchgang**, über die ganze Ablage
+> (`LISTE=ablage npx tsx scripts/simulation-lauf3.ts <aus.jsonl>`, danach
+> `frontend/scripts/simulation-bild.ts <aus.jsonl>`): 2082 Routen an 111
+> Bahnhöfen – 19 groß, 60 mittel, 32 klein.
+>
+> | Prüfung | Ergebnis |
+> |---|---|
+> | Routing: Schema, Markierung, Schritte, Alternativen | 1 Befund – Düsseldorf Hbf 1 → 20: Wegzerlegung 236 statt 231 m |
+> | Bild | 0 Befunde (erster Symbolsatz: 344 Routen an 67 Bahnhöfen) |
+> | Symbolschilder im Grundriss, die sich decken | 0 (erster Symbolsatz: 846 Paare) |
+> | Scheiben auf dem Balken / abseits | 2708 / 504 – abseits heißt ≥ 20 px oder jenseits der Bahnsteigenden |
+> | Schritte je Route (951 Routen, 115 Bahnhöfe) | Median 11 → 6, „wenige Meter" 5468 → 813; keine Route länger, keine Anlage verloren |
+> | Bekannte Werte aus diesem README | 22 von 23 exakt oder schneller; Braunschweig barrierefrei 192 s offline gegen 191 s aus der Produktion (mit FaSta, andere Messung) |
+>
+> **Zwei Funde der Simulation, beide vor dem Commit behoben:** Das erste
+> Setzverfahren schob Symbole nur hin und her – 191 ragten über ihren Balken,
+> 304 standen auf einem Punkt. Jetzt zerfällt der Balken an den Punkten in
+> freie Abschnitte, und zu dichte Orte werden einer. Und 126 Scheiben hingen
+> halb auf der Balkenkante: Treppen, die auf breiten Inselbahnsteigen neben
+> der Achse ansetzen. Sie rasten jetzt am genutzten Zugang ein.
+>
+> **Offen:** 195 Routen an 19 Bahnhöfen nehmen Treppen oder Rampen ohne
+> Ebenenwechsel („stumm"); 6 Bahnhöfe mit Umwegen zu einem Zugang (Bielefeld,
+> Bonn, Gütersloh, Schwerin, Wittenberge, Berlin-Spandau); Düsseldorf 1 → 20
+> (s. o.); die U-Form eines Kopfbahnhofs steht nur noch im Text (154 Routen
+> an 18 Bahnhöfen); was „Anfang" im Bahnhof bedeutet, sagen die Knöpfe nicht.
+> `simulation-schema.ts` und `simulation-standort.ts` lesen beim Start den
+> Schlüssel-Tresor – nur nach Rückfrage starten (siehe `D:\Claude-code\CLAUDE.md`).
+>
+> ```bash
+> cd backend && npm test && npm run lint     # 418 von 418, Lint sauber
+> cd frontend && npm test && npm run lint    # 371 von 371, Lint sauber
+> ```
+>
+> **OSM-Ablage:** `backend/osm-ablage/osm-cache/` (gitignored); im Code kennt
+> nur `ABLAGE` in `scripts/osm-ablage-fuellen.ts` den Pfad. Routen für Abzüge
+> und Planmappe: `backend/osm-ablage/routen/`, Laufprotokolle:
+> `backend/osm-ablage/laeufe/`. Planmappe: `frontend/scripts/design-mappe.tsx`.
+
+### Davor (14.09.2026, nachmittags)
 
 > **Zuletzt (14.09.):** Das Frontend zeichnet das neue Ebenenschema (D4) –
 > ein Band je Ebenenbesuch, Bahnsteige längs maßstäblich samt Versatz, der
@@ -376,10 +440,10 @@ Beispieldatensatz: `docs/beispiel-schema-berlin-14-6.json`.
 
 Nach Gewicht:
 
-1. **Das Frontend zeichnet noch das alte Bild.** `Ebenenschema.tsx` leitet
-   sein Schema weiter aus den Schritttexten ab und kennt weder Bahnsteige noch
-   Zugänge noch Netz. Die Umsetzung von D4 steht aus – der Endpunkt liefert
-   alles, was sie braucht. **Der wichtigste offene Punkt.**
+1. ~~**Das Frontend zeichnet noch das alte Bild.**~~ ✅ **umgesetzt am
+   14.09.2026** – die Bänder kommen aus der echten Geometrie; seit dem Abend
+   ohne Linie auf den Gleisbändern und mit Anlagensymbolen (siehe „Hier
+   weitermachen").
 2. ~~**Standortwahl als Bedienelement.**~~ ✅ **gebaut am 13.09.2026** – drei
    Knöpfe auf dem **Dashboard**, über der Routenwahl. Die Frage „Eingabemaske
    oder Navigationsseite" ist damit zugunsten des Dashboards entschieden: Erst
@@ -786,7 +850,7 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | 21 | **Leerzeichen vor dem Komma nach der eckigen Klammer** | `analysiere()` in `frontend/src/reise/reisetext.ts` ersetzt den Klammerzusatz durch `' '`, das Backend (`KLAMMERZUSATZ` in `core/bahnhofsname.ts`) durch `''`. Aus „S+U Hauptbahnhof [Gleis 1-8], Berlin" wird deshalb **„S+U Hauptbahnhof , Berlin"** – mit Leerzeichen vor dem Komma. Am 06.09.2026 nebenbei aufgefallen, als das VMV-Format zerlegt wurde. Schadet der Suche derzeit **nicht** (die Störwort-Schälung räumt es mit weg), landet aber sichtbar als Suchtext im Formular. Kosmetisch, eine Zeile. |
 | 24 | **Verwaiste Aufzüge über FaSta zuordnen statt über 10 m** | Die ausgelieferte Regel (`VERWAIST_MAX_M = 10`) rät den Bahnsteig über die Entfernung. FaSta **benennt** ihn: Der verwaiste Aufzug in Braunschweig trägt `"zu Gleis 1/2"`, und `verankerterBahnsteig()` aus §5 löst das bereits auf. Der Verbindungsschlüssel ist OSMs `ref:operator_inventory` = FaSta-Anlagennummer, in beiden Datensätzen vorhanden. Damit fiele eine geratene Zahl weg. **Zu klären:** Der Graph wird ohne FaSta gebaut (FaSta kommt je Anfrage auf einer Kopie dazu) – die Anbindung müsste also in `wendeFastaAn` wandern oder der Graphbau FaSta kennen. Die 10-m-Regel bliebe als Rückfall für Anlagen ohne Beschreibung (Hannover: 2 von 20). |
 | 23 | **Die Ankunftserkennung ist in der Halle unerreichbar** | M5 der Mobilabnahme: `pruefeAnkunft()` sperrt bei `genauigkeitM > GENAUIGKEIT_MAX_M` (100 m), gemessen wurden ±118 m **am Fenster**. Der Zähler startet in der Halle nie, Radius und Verweildauer kommen nicht zum Tragen. Die 100 m sind für den Kartenpunkt richtig und für die Ankunft zu streng – **zwei Fragen an einer Zahl**. Zu entscheiden ist eine eigene, lockerere Ankunftsschwelle, nicht ein neuer Wert für beide. Nach der Abnahme nicht dringend: Selberklicken funktioniert. Einzelheiten unter „Die Mobilabnahme". |
-| 22 | **Die Naht Knopf → Wirkung bleibt ungetestet** | Die vier Fehler vom 07.09. sassen alle zwischen zwei grünen Testdateien: `Dashboard.test.tsx` mockt `onVariante` weg, `varianten.test.ts` speist die Hole-Funktion ein. Behoben sind die Fehler, die Lücke nicht – es gibt weiterhin **keinen** Test, der `App.tsx` mit einem echten Klick durchläuft. Ein `App.test.tsx` mit gemocktem `holeRoute` würde die ganze Gattung schliessen, nicht nur diesen Fall. |
+| ~~22~~ | ~~**Die Naht Knopf → Wirkung bleibt ungetestet**~~ ✅ **erledigt 13.09.2026** | `frontend/src/App.test.tsx` klickt durch den echten `App`, gemockt ist nur die Netzgrenze (siehe „Die Naht zwischen Knopf und Wirkung – endlich geprüft"). Ursprünglich: Die vier Fehler vom 07.09. sassen alle zwischen zwei grünen Testdateien: `Dashboard.test.tsx` mockt `onVariante` weg, `varianten.test.ts` speist die Hole-Funktion ein. Behoben sind die Fehler, die Lücke nicht – es gibt weiterhin **keinen** Test, der `App.tsx` mit einem echten Klick durchläuft. Ein `App.test.tsx` mit gemocktem `holeRoute` würde die ganze Gattung schliessen, nicht nur diesen Fall. |
 | 4e | **Test für die Achsenableitung (§5-B)** | Ab zwei verankerten Bahnsteigen bestimmt deren Richtung, wo die *unverankerten* liegen. Kein Test prüft das Ergebnis: In den Fixtures sind entweder alle Bahnsteige verankert (Hannover, Berlin) oder nur einer (Unit-Tests). Gebraucht wird ein Fall mit zwei verankerten **und** zwei unverankerten – der Regelfall an mittelgrossen Bahnhöfen. Eine Stunde Arbeit. |
 | 5 | **Vercel: Framework-Preset steht auf „Services"** | Rückstand der `experimentalServices`-Erkennung beim `vercel link`. Die `vercel.json` überschreibt es, der Build ist nachweislich korrekt – kosmetisch, aber irreführend. Settings → Build & Deployment. |
 | 6 | **Vercel-Preview-Variable nur für `feat/mvp`** | `VITE_API_BASE` konnte nicht „für alle Preview-Zweige" gesetzt werden (CLI-Fehler in v53.1.0: der vorgeschlagene Befehl ist derselbe, der scheitert). Neue Zweige brauchen einen eigenen Eintrag oder das Dashboard. |
