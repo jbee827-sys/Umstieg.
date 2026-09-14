@@ -36,10 +36,13 @@ describe('peilungGrad', () => {
 });
 
 describe('generiereSchritte', () => {
-  it('Referenzpfad → exakte Satzfolge (alle 5 Richtungen, Rundung, Ebenenwechsel)', () => {
+  it('Referenzpfad → exakte Satzfolge (Richtungen, Rundung, Ebenenwechsel)', () => {
     // Kurs je Kante (Kompass): 0° · 10° (merge) · 10° Rolltreppe hoch · 55° (halbrechts)
-    // · 145° (rechts, <10 m) · 100° (halblinks) · 355° (links) · Treppe hinunter
+    // · 145° für 8 m, dann 100° für 30 m · 355° (links) · Treppe hinunter
     // · Aufzug (senkrecht, gleiche Koordinate) · 355° geradeaus zu Gleis 7.
+    // Die 8 m bei 145° liegen nur 4,7 m neben der Sehne p4→p6: ein Versatz,
+    // kein Abbiegen (GLAETTUNG_M = 6). Bis zum 14.09.2026 standen dort zwei
+    // Schritte, „Wenige Meter rechts" und „30 m halblinks".
     const knoten = [
       xy('p0', 0, 0),
       xy('p1', 0, 25),
@@ -71,18 +74,27 @@ describe('generiereSchritte', () => {
       'Nach Ausstieg 50 m geradeaus',
       'Rolltreppe hoch zur Ebene 1',
       '20 m halbrechts',
-      'Wenige Meter rechts',
-      '30 m halblinks',
+      '40 m halbrechts',
       '20 m links',
       'Treppe hinunter zur Ebene 0',
       'Aufzug zur Unterführung (-1)',
       '40 m geradeaus zu Gleis 7',
     ]);
     expect(schritte.map((s) => s.typ)).toEqual([
-      'eben', 'rolltreppe', 'eben', 'eben', 'eben', 'eben', 'treppe', 'aufzug', 'eben',
+      'eben', 'rolltreppe', 'eben', 'eben', 'eben', 'treppe', 'aufzug', 'eben',
     ]);
     expect(schritte.map((s) => s.distanzM)).toEqual([
-      50, undefined, 20, undefined, 30, 20, undefined, undefined, 40,
+      50, undefined, 20, 40, 20, undefined, undefined, 40,
+    ]);
+  });
+
+  it('halblinks: 45° nach links mit echtem Versatz', () => {
+    // 0° für 20 m, dann 315° für 21 m – der Knick liegt 7,9 m neben der Sehne.
+    const knoten = [xy('a', 0, 0), xy('b', 0, 20), xy('c', -15, 35, 0, '2')];
+    const kanten = [kante('a', 'b', 'eben', 20), kante('b', 'c', 'eben', 21)];
+    expect(generiereSchritte(machePfad(knoten, kanten)).map((s) => s.text)).toEqual([
+      'Nach Ausstieg 20 m geradeaus',
+      '20 m halblinks zu Gleis 2',
     ]);
   });
 
@@ -140,6 +152,50 @@ describe('generiereSchritte', () => {
     const schritte = generiereSchritte(machePfad(knoten, [kante('a', 'b', 'rampe', 28, -1)]));
     expect(schritte[0].text).toBe('Nach Ausstieg Rampe hinunter zur Unterführung (-1) zu Gleis 3');
     expect(schritte[0].distanzM).toBe(30);
+  });
+});
+
+describe('Glatte Richtung: Versätze der Fußwege sind keine Schritte', () => {
+  // München Hbf, Gleis 5 → 82 ab Anfang (14.09.2026): Die kartierten Fußwege
+  // am Kopf des Holzkirchner Flügelbahnhofs laufen als L-Treppe – 20 m ost,
+  // 7 m nord, 45 m ost, 28 m nord. Daraus wurden acht Schritte: „wenige Meter
+  // rechts / 20 m halblinks / wenige Meter links / 40 m rechts …". Niemand
+  // biegt dort ab; der Fußweg macht nur einen Versatz.
+  it('ein Versatz unter 6 m quer wird kein eigener Schritt', () => {
+    const knoten = [xy('a', 0, 0), xy('b', 20, 0), xy('c', 20, 4), xy('d', 46, 4, 0, '3')];
+    const kanten = [kante('a', 'b', 'eben', 20), kante('b', 'c', 'eben', 4), kante('c', 'd', 'eben', 26)];
+    expect(generiereSchritte(machePfad(knoten, kanten)).map((s) => s.text)).toEqual([
+      'Nach Ausstieg 50 m geradeaus zu Gleis 3',
+    ]);
+  });
+
+  it('eine Treppe aus kurzen Fußwegstücken wird EINE Richtung', () => {
+    // Vier Stufen zu je 8 m ost und 3 m nord: im Ganzen ein Weg nach Nordost.
+    const punkte: [number, number][] = [[0, 0], [8, 0], [8, 3], [16, 3], [16, 6], [24, 6], [24, 9], [32, 9]];
+    const knoten = punkte.map(([x, y], i) => xy(`s${i}`, x, y, 0, i === punkte.length - 1 ? '4' : undefined));
+    const kanten = punkte.slice(1).map(([x, y], i) => {
+      const [x0, y0] = punkte[i];
+      return kante(`s${i}`, `s${i + 1}`, 'eben', Math.hypot(x - x0, y - y0));
+    });
+    const pfad = machePfad(knoten, kanten);
+    const schritte = generiereSchritte(pfad, { profil: 'normal' });
+
+    expect(schritte.map((s) => s.text)).toEqual(['Nach Ausstieg 40 m geradeaus zu Gleis 4']);
+    // Der Schritt deckt weiter den ganzen Pfad, und die Zeit bleibt dieselbe.
+    expect(schritte[0].knotenVon).toBe(0);
+    expect(schritte[0].knotenBis).toBe(pfad.knoten.length - 1);
+    expect(schritte.reduce((a, s) => a + (s.sekunden ?? 0), 0)).toBe(gehzeitSekunden(pfad, 'normal'));
+  });
+
+  it('eine Abbiegung mit mehr als 6 m Versatz bleibt ein eigener Schritt', () => {
+    // Schutz gegen zu viel Glättung: 15 m quer ist ein Weg, kein Versatz.
+    const knoten = [xy('a', 0, 0), xy('b', 20, 0), xy('c', 20, 15), xy('d', 40, 15, 0, '3')];
+    const kanten = [kante('a', 'b', 'eben', 20), kante('b', 'c', 'eben', 15), kante('c', 'd', 'eben', 20)];
+    expect(generiereSchritte(machePfad(knoten, kanten)).map((s) => s.text)).toEqual([
+      'Nach Ausstieg 20 m geradeaus',
+      '20 m links',
+      '20 m rechts zu Gleis 3',
+    ]);
   });
 });
 
