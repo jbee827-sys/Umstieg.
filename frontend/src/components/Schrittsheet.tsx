@@ -1,4 +1,6 @@
 import type { Schritt } from '../api/typen'
+import { istSymboltyp } from '../schema/symbole'
+import { AnlagenSymbol } from './AnlagenSymbol'
 import { Schrittliste } from './Schrittliste'
 
 interface SchrittsheetProps {
@@ -27,7 +29,14 @@ export function Schrittsheet({ schritte, position, onZurueck, onWeiter }: Schrit
       <div className="schrittsheet-zaehler">
         Schritt {position + 1} von {schritte.length}
       </div>
-      <p className="schrittsheet-text">{aktuell.text}</p>
+      {istSymboltyp(aktuell.typ) ? (
+        <p className="schrittsheet-text mit-symbol">
+          <AnlagenSymbol typ={aktuell.typ} groesse={30} strich={2.3} />
+          <span>{aktuell.text}</span>
+        </p>
+      ) : (
+        <p className="schrittsheet-text">{aktuell.text}</p>
+      )}
       {zusatz && <p className="schrittsheet-detail">{zusatz}</p>}
       <div className="schrittsheet-knoepfe">
         <button

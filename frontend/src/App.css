@@ -1114,14 +1114,48 @@
   align-items: center;
   gap: 5px;
 }
-.schema-legende-strich {
-  stroke: var(--color-neutral-700);
-  stroke-width: 2;
+
+/* — Anlagensymbole (seit 14.09.2026 statt Strichen und Kästen) —
+   Die Farbe kommt über currentColor aus `color`. */
+.anlagensymbol {
+  display: inline-block;
+  flex: none;
 }
-.schema-legende-kasten {
-  fill: none;
-  stroke: var(--color-neutral-700);
-  stroke-width: 1.5;
+.schema-legende .anlagensymbol,
+.schema-wechsel .anlagensymbol {
+  color: var(--color-neutral-700);
+}
+.schema-symbol {
+  color: var(--color-neutral-100);
+}
+.schema-scheibe {
+  color: #fff;
+}
+.schema-scheibe.ankunft {
+  color: var(--color-accent);
+}
+.schema-ort {
+  color: var(--color-neutral-700);
+}
+.schema-ort-schild {
+  fill: var(--color-neutral-100);
+  stroke: #c9c4c4;
+  stroke-width: 1;
+}
+.schritt-symbol {
+  flex: none;
+  align-self: center;
+  margin-left: auto;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  color: var(--color-text);
+}
+.schrittsheet-text.mit-symbol {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 /* — Das grobe Bild aus den Schritttexten (Standardmodell) — */

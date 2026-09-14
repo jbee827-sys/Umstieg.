@@ -1,4 +1,6 @@
-import type { KantenTyp, SchemaEbene, SchemaPunkt, SchemaWechsel } from '../api/typen'
+import type { KantenTyp, SchemaEbene, SchemaElement, SchemaPunkt, SchemaWechsel } from '../api/typen'
+import { istSymboltyp, ohneGenutzte, orteAuf, orteImGrundriss, setzeSymbole } from './symbole'
+import type { GesetztesSymbol, Hindernis, Symboltyp } from './symbole'
 
 /**
  * Die Geometrie eines Bandes, fertig in Zeichenkoordinaten.
@@ -15,39 +17,17 @@ import type { KantenTyp, SchemaEbene, SchemaPunkt, SchemaWechsel } from '../api/
  * beantwortet „woran biege ich ab" — dort gibt es keinen Bahnsteig, also
  * muss der Grundriss selbst tragen.
  *
- * Auf BEIDEN liegt der Weg als gemessener Linienzug. Bis zum 14.09.2026
- * zeichnete die Gleisebene nur Balken; die U-Form eines Kopfbahnhofs – vom
- * Gleis zum Kopf, quer, zum Gleis – kam im Bild nicht vor, obwohl sie der
- * ganze Weg ist.
+ * Seit dem 14.09.2026 zeigt das Band mit dem Ankunfts- oder Abfahrtsgleis
+ * KEINEN Weg mehr: nur den Punkt, an dem man steht, die Stelle, an der es
+ * die Ebene wechselt, und das Ziel. Den Weg dazwischen sagt der Text. Die
+ * Linie über 17 gestauchte Bahnsteige (München Hbf) war dort ein Zickzack,
+ * den es im Bahnhof nicht gibt. Übergangsebenen behalten ihn als Linie.
  */
 
 /** Ein Punkt in Zeichenkoordinaten (nicht in Metern). */
 export interface Bildpunkt {
   x: number
   y: number
-}
-
-export interface Bildstrich {
-  x1: number
-  y1: number
-  x2: number
-  y2: number
-  typ: KantenTyp
-  aufRoute: boolean
-}
-
-export interface Bildkasten {
-  x: number
-  y: number
-  seite: number
-  aufRoute: boolean
-}
-
-/** Eine Anlagenmarke IM Bahnsteigbalken, an ihrer gemessenen Stelle. */
-export interface Balkenmarke {
-  x: number
-  typ: KantenTyp
-  aufRoute: boolean
 }
 
 /**
@@ -64,6 +44,18 @@ export interface Wechselmarke {
   typ: KantenTyp
   richtung: 'hinunter' | 'hinauf'
   art: 'verlassen' | 'ankommen'
+  /** Liegt auf einem Bahnsteigbalken – am Zugang, den der Weg nimmt. */
+  aufBalken: boolean
+  /** Meter entlang des Bahnsteigs, wenn sie an einem Zugang liegt. */
+  beiM?: number
+  /** Die Ankunft am Abfahrtsbahnsteig: Sie IST das Ziel und wird als Ziel gezeichnet. */
+  alsZiel?: boolean
+}
+
+/** Das Ende des Wegs – auf dem Abfahrtsbahnsteig mit der Anlage, über die man ankommt. */
+export interface Zielpunkt extends Bildpunkt {
+  typ?: KantenTyp
+  beiM?: number
 }
 
 /** Anfang, Mitte, Ende des Ankunftsbahnsteigs – die Standortwahl, im Bild. */
@@ -83,7 +75,8 @@ export interface Bildbalken {
   /** Liegt der Balken nach seinen echten Enden? Sonst darf er keinen Maßstab suggerieren. */
   massstaeblich: boolean
   laengeM?: number
-  marken: Balkenmarke[]
+  /** Die Anlagen am Bahnsteig, gesetzt: ein Symbol je Anlage, ohne Überlappung. */
+  symbole: GesetztesSymbol[]
   /** Der Zugang, den die Route nimmt — die Stelle, auf die es ankommt. */
   zugang?: { x: number; beiM: number; aufzug: number; rolltreppe: number; treppe: number }
   /** Position der Beschriftung links. */
@@ -91,17 +84,21 @@ export interface Bildbalken {
   ly: number
 }
 
+/** Anlagen im Grundriss einer Übergangsebene, die der Weg NICHT nimmt. */
+export interface Uebergangsort extends Bildpunkt {
+  symbole: Symboltyp[]
+}
+
 /** Was jedes Band trägt, egal welcher Art. */
 interface Wegbild {
   weg: Bildpunkt[]
-  /** Anlagen, die der Weg auf dieser Ebene nutzt, mit Grundriss. */
-  anlagen: Bildstrich[]
-  aufzuege: Bildkasten[]
+  /** Wird der Weg als Linie gezeichnet? Auf Ankunfts- und Abfahrtsband nicht. */
+  zeigeWeg: boolean
   wechsel: Wechselmarke[]
   /** Nur beim ersten Besuch: wo der Reisende steht. */
   start?: Bildpunkt
   /** Nur beim letzten Besuch: wo der Weg endet. */
-  ziel?: Bildpunkt
+  ziel?: Zielpunkt
 }
 
 export interface Gleisbild extends Wegbild {
@@ -114,9 +111,7 @@ export interface Gleisbild extends Wegbild {
 export interface Uebergangsbild extends Wegbild {
   art: 'verbindung'
   netz: Bildpunkt[][]
-  /** Anlagen in Sichtweite, die der Weg NICHT nutzt. */
-  striche: Bildstrich[]
-  kaesten: Bildkasten[]
+  orte: Uebergangsort[]
   /** Nur ein Punkt: Die Ebene wird senkrecht durchquert, kein Meter Weg. */
   nurDurchquert: boolean
 }
@@ -180,6 +175,12 @@ const ANLAGE_QUER_MAX_M = 30
 const LAENGS_REICHWEITE_M = 30
 /** Näher als das an seiner Achse: Der Punkt liegt AUF dem Bahnsteig. */
 const AUF_DEM_BAHNSTEIG_M = 3
+/** Halbe Breite des Standortpunkts und eines Ziels ohne Anlage. */
+const PUNKT_R = 7.5
+/** Halbe Breite der roten Scheibe mit Symbol. */
+const SCHEIBE_R = 9.5
+/** So nah an einem Balken liegt ein Ebenenwechsel AUF ihm. */
+const AUF_BALKEN_PX = 8
 
 const BOGEN = Math.PI / 180
 
@@ -271,6 +272,7 @@ function wegenden(weg: Bildpunkt[], opt: Bandoptionen): Pick<Wegbild, 'wechsel' 
       typ: opt.wechselVorher.typ,
       richtung: richtungVon(opt.wechselVorher),
       art: 'ankommen',
+      aufBalken: false,
     })
   }
   if (letzter && opt.wechselNachher) {
@@ -279,6 +281,7 @@ function wegenden(weg: Bildpunkt[], opt: Bandoptionen): Pick<Wegbild, 'wechsel' 
       typ: opt.wechselNachher.typ,
       richtung: richtungVon(opt.wechselNachher),
       art: 'verlassen',
+      aufBalken: false,
     })
   }
   return {
@@ -288,25 +291,30 @@ function wegenden(weg: Bildpunkt[], opt: Bandoptionen): Pick<Wegbild, 'wechsel' 
   }
 }
 
-/** Anlagen, die der Weg nutzt: Treppe als Strecke, Aufzug als Kasten. */
-function routenanlagen(
-  ebene: SchemaEbene,
-  bild: (p: SchemaPunkt) => Bildpunkt,
-): Pick<Wegbild, 'anlagen' | 'aufzuege'> {
-  const anlagen: Bildstrich[] = []
-  const aufzuege: Bildkasten[] = []
-  for (const element of ebene.elemente ?? []) {
-    if (!element.aufRoute || element.punkte.length === 0) continue
-    if (element.typ === 'aufzug' || element.punkte.length === 1) {
-      const p = bild(element.punkte[0])
-      aufzuege.push({ x: p.x, y: p.y, seite: 9, aufRoute: true })
-      continue
-    }
-    const a = bild(element.punkte[0])
-    const b = bild(element.punkte[1])
-    anlagen.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, typ: element.typ, aufRoute: true })
+/** Mitte der Punkte einer Anlage – bei Treppe und Rolltreppe die Mitte der Strecke. */
+function mitteVon(element: SchemaElement): SchemaPunkt {
+  return {
+    x: element.punkte.reduce((s, q) => s + q.x, 0) / element.punkte.length,
+    y: element.punkte.reduce((s, q) => s + q.y, 0) / element.punkte.length,
   }
-  return { anlagen, aufzuege }
+}
+
+/**
+ * Die Anlagen einer Übergangsebene, an ihrer Mitte im Bild – als Orte nach
+ * den Regeln aus `symbole.ts`, frei gehalten, wo eine rote Scheibe steht.
+ */
+function grundrissOrte(
+  elemente: SchemaElement[] | undefined,
+  bild: (p: SchemaPunkt) => Bildpunkt,
+  wechsel: Wechselmarke[],
+): Uebergangsort[] {
+  const anlagen = (elemente ?? [])
+    .filter((element) => element.punkte.length > 0)
+    .map((element) => {
+      const p = bild(mitteVon(element))
+      return { x: p.x, y: p.y, typ: element.typ }
+    })
+  return orteImGrundriss(anlagen, wechsel)
 }
 
 /** Alle Punkte einer Übergangsebene, die ins Bild müssen. */
@@ -338,33 +346,16 @@ export function zeichneUebergang(
   const bild = (p: SchemaPunkt): Bildpunkt => passend(drehe(p))
 
   const netz = (ebene.netz ?? []).map((stueck) => stueck.punkte.map(bild))
-  const striche: Bildstrich[] = []
-  const kaesten: Bildkasten[] = []
-  for (const element of ebene.elemente ?? []) {
-    if (element.aufRoute) continue // die zeichnet `routenanlagen`, hervorgehoben
-    // Ein Aufzug steht still und ist ein Punkt; eine Treppe läuft waagerecht
-    // mit und ist eine Strecke. Die Form kommt aus der Sache, nicht aus der
-    // Gestaltung.
-    if (element.typ === 'aufzug' || element.punkte.length === 1) {
-      const p = bild(element.punkte[0])
-      kaesten.push({ x: p.x, y: p.y, seite: 7, aufRoute: false })
-      continue
-    }
-    const a = bild(element.punkte[0])
-    const b = bild(element.punkte[1])
-    striche.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, typ: element.typ, aufRoute: false })
-  }
-
   const weg = (ebene.weg ?? []).map(bild)
+  const enden = wegenden(weg, opt)
   return {
     art: 'verbindung',
     netz,
-    striche,
-    kaesten,
+    orte: grundrissOrte(ebene.elemente, bild, enden.wechsel),
     weg,
+    zeigeWeg: true,
     nurDurchquert: weg.length < 2,
-    ...routenanlagen(ebene, bild),
-    ...wegenden(weg, opt),
+    ...enden,
   }
 }
 
@@ -376,6 +367,42 @@ function gasseZwischen(querMeter: number): number {
   return Math.min(52, 24 + Math.abs(querMeter) * 0.4)
 }
 
+/** Längs so nah am genutzten Zugang eines Balkens: Der Wechsel IST dieser Zugang. */
+const AM_ZUGANG_PX = 15
+/** …und quer höchstens so weit – ein Inselbahnsteig ist breiter als seine Achse. */
+const ZUGANG_QUER_PX = 24
+
+/**
+ * Ein Ebenenwechsel, der an einem Bahnsteig ansetzt, liegt AUF dessen Balken
+ * – am Zugang, den der Weg nimmt, und nicht darüber hinaus.
+ *
+ * Zwei Wege dorthin: Er liegt ohnehin am Balken, oder er liegt längs am
+ * genutzten Zugang dieses Balkens. Der zweite fängt die Treppe, die auf einem
+ * breiten Inselbahnsteig mehr als 3 m neben der Achse ansetzt – die Querlage
+ * teilt sie zwischen zwei Balken, und in der Simulation vom 14.09.2026 hingen
+ * 126 Scheiben so halb auf der Kante.
+ */
+function legeAufBalken(marke: Wechselmarke, balken: Bildbalken[]): Wechselmarke {
+  const amBalken = (k: Bildbalken): boolean =>
+    Math.abs(marke.y - k.y) <= AUF_BALKEN_PX && marke.x >= k.x1 - 6 && marke.x <= k.x2 + 6
+  const amZugang = (k: Bildbalken): boolean =>
+    k.zugang !== undefined &&
+    Math.abs(marke.x - k.zugang.x) <= AM_ZUGANG_PX &&
+    Math.abs(marke.y - k.y) <= ZUGANG_QUER_PX
+  const b = balken
+    .filter((k) => k.rolle && (amBalken(k) || amZugang(k)))
+    .sort((p, q) => Math.abs(marke.y - p.y) - Math.abs(marke.y - q.y))[0]
+  if (!b) return marke
+  const x = b.zugang ? b.zugang.x : marke.x
+  return {
+    ...marke,
+    aufBalken: true,
+    x: begrenze(x, b.x1 + SCHEIBE_R, b.x2 - SCHEIBE_R),
+    y: b.y,
+    ...(b.zugang ? { beiM: b.zugang.beiM } : {}),
+  }
+}
+
 /**
  * Eine Gleisebene: waagerechte Balken in echter Reihenfolge und echter Lage.
  *
@@ -384,7 +411,7 @@ function gasseZwischen(querMeter: number): number {
  * Abstand; gestaucht, damit acht Bahnsteige auf ein Telefon passen. Der Weg
  * folgt beidem: längs im selben Maßstab wie die Balken, quer über die
  * Balkenlagen gestaucht. So liegt ein Punkt auf Bahnsteig 16/17 auch im Bild
- * auf dem Balken 16/17 – und die U-Form um den Kopf ist eine U-Form.
+ * auf dem Balken 16/17.
  */
 export function zeichneGleisebene(
   ebene: SchemaEbene,
@@ -507,19 +534,15 @@ export function zeichneGleisebene(
   }
 
   // --- Anlagen am Ankunfts- und Abfahrtsbahnsteig ---
-  // Nur dort verortet: an den Nachbarbahnsteigen wäre jede Marke Gewirr —
+  // Nur dort verortet: an den Nachbarbahnsteigen wäre jedes Symbol Gewirr —
   // dort zählt die Zahl, und die steht in der Kopfzeile. Jede Anlage an den
   // Bahnsteig, dessen Achse ihr am nächsten liegt; sonst trüge der
   // Ankunftsbahnsteig auch die Treppen des Abfahrtsbahnsteigs.
   const wichtige = platziert.filter((p) => p.b.rolle && p.b.laengeM !== undefined)
-  const markenJe = new Map<string, Balkenmarke[]>()
-  const gesehen = new Set<string>()
+  const markenJe = new Map<string, { x: number; typ: KantenTyp }[]>()
   for (const element of ebene.elemente ?? []) {
     if (element.beiM === undefined || element.punkte.length === 0) continue
-    const mitte = drehe({
-      x: element.punkte.reduce((s, q) => s + q.x, 0) / element.punkte.length,
-      y: element.punkte.reduce((s, q) => s + q.y, 0) / element.punkte.length,
-    })
+    const mitte = drehe(mitteVon(element))
     let bester: (typeof wichtige)[number] | undefined
     for (const w of wichtige) {
       const abstand = Math.abs(mitte.y - w.yM)
@@ -527,19 +550,15 @@ export function zeichneGleisebene(
       if (!bester || abstand < Math.abs(mitte.y - bester.yM)) bester = w
     }
     if (!bester) continue
-    const x = laengs(mitte.x)
-    // Was im Bild dichter als fünf Punkte beieinanderliegt, fällt zusammen —
-    // sonst steht dort ein Fleck statt einer Auskunft.
-    const schluessel = `${bester.b.bahnsteigId}:${element.typ}:${Math.round(x / 5)}`
-    if (gesehen.has(schluessel)) continue
-    gesehen.add(schluessel)
     const liste = markenJe.get(bester.b.bahnsteigId) ?? []
-    liste.push({ x, typ: element.typ, aufRoute: element.aufRoute })
+    liste.push({ x: laengs(mitte.x), typ: element.typ })
     markenJe.set(bester.b.bahnsteigId, liste)
   }
 
+  const ids: (string | undefined)[] = []
   const balken: Bildbalken[] = [
     ...platziert.map((p, i) => {
+      ids.push(p.b.bahnsteigId)
       const genutzt = p.b.rolle ? (p.b.zugaenge ?? []).find((z) => z.aufRoute) : undefined
       return {
         gleise: p.b.gleise,
@@ -549,7 +568,7 @@ export function zeichneGleisebene(
         ...(p.b.rolle ? { rolle: p.b.rolle } : {}),
         massstaeblich: p.b.laengeM !== undefined,
         ...(p.b.laengeM !== undefined ? { laengeM: p.b.laengeM } : {}),
-        marken: markenJe.get(p.b.bahnsteigId) ?? [],
+        symbole: [],
         ...(genutzt
           ? {
               zugang: {
@@ -566,18 +585,20 @@ export function zeichneGleisebene(
       }
     }),
     ...frei.map((b, k) => {
-      const y = bildY[platziert.length + k]
-      return {
+      ids.push(undefined)
+      const balkenY = bildY[platziert.length + k]
+      const ungemessen: Bildbalken = {
         gleise: b.gleise,
-        y,
+        y: balkenY,
         x1: GASSE_LINKS,
         x2: GASSE_LINKS + innenW,
-        ...(b.rolle ? { rolle: b.rolle } : {}),
         massstaeblich: false,
-        marken: [],
+        symbole: [],
         lx: GASSE_LINKS - 8,
-        ly: y + 4,
+        ly: balkenY + 4,
       }
+      if (b.rolle) ungemessen.rolle = b.rolle
+      return ungemessen
     }),
   ]
 
@@ -607,14 +628,64 @@ export function zeichneGleisebene(
     }
   }
 
+  // --- Weg, Punkte, Scheiben ---
   const weg = (ebene.weg ?? []).map(bild)
+  const enden = wegenden(weg, opt)
+  const zeigeWeg = !(opt.erster || opt.letzter)
+  let { wechsel, start, ziel } = enden
+  if (!zeigeWeg) {
+    wechsel = wechsel.map((m) => legeAufBalken(m, balken))
+    const startBalken = balken.find((b) => b.rolle === 'start')
+    const hier = standorte?.marken.find((m) => m.hier)
+    if (opt.erster && startBalken && hier) {
+      start = { x: begrenze(hier.x, startBalken.x1 + PUNKT_R, startBalken.x2 - PUNKT_R), y: startBalken.y }
+    }
+    const zielBalken = balken.find((b) => b.rolle === 'ziel')
+    if (opt.letzter && zielBalken) {
+      const ankunft = wechsel.find((m) => m.art === 'ankommen' && m.aufBalken && m.y === zielBalken.y)
+      if (ankunft) {
+        ankunft.alsZiel = true
+        ziel = {
+          x: ankunft.x,
+          y: ankunft.y,
+          typ: ankunft.typ,
+          ...(ankunft.beiM !== undefined ? { beiM: ankunft.beiM } : {}),
+        }
+      } else if (ziel) {
+        ziel = { x: begrenze(ziel.x, zielBalken.x1 + PUNKT_R, zielBalken.x2 - PUNKT_R), y: zielBalken.y }
+      }
+    }
+  }
+
+  // --- Symbole: erst jetzt, weil sie den Punkten ausweichen ---
+  balken.forEach((b, i) => {
+    const id = ids[i]
+    if (!b.rolle || !id) return
+    const aufDiesem = (p: Bildpunkt): boolean => p.y === b.y && p.x >= b.x1 - 1 && p.x <= b.x2 + 1
+    const scheiben = wechsel.filter((m) => m.aufBalken && aufDiesem(m))
+    const hindernisse: Hindernis[] = [
+      ...(!zeigeWeg && start && aufDiesem(start) ? [{ x: start.x, breite: PUNKT_R * 2 }] : []),
+      ...scheiben.map((m) => ({ x: m.x, breite: istSymboltyp(m.typ) ? SCHEIBE_R * 2 : PUNKT_R * 2 })),
+      ...(!zeigeWeg && ziel && aufDiesem(ziel) && !scheiben.some((m) => m.alsZiel)
+        ? [{ x: ziel.x, breite: PUNKT_R * 2 }]
+        : []),
+    ]
+    const orte = ohneGenutzte(
+      orteAuf(markenJe.get(id) ?? []),
+      scheiben.map((m) => ({ x: m.x, typ: m.typ })),
+    )
+    b.symbole = setzeSymbole(orte, hindernisse, b.x1, b.x2)
+  })
+
   return {
     art: 'gleise',
     balken,
     weg,
+    zeigeWeg,
     ...(standorte ? { standorte } : {}),
-    ...routenanlagen(ebene, bild),
-    ...wegenden(weg, opt),
+    wechsel,
+    ...(start ? { start } : {}),
+    ...(ziel ? { ziel } : {}),
   }
 }
 

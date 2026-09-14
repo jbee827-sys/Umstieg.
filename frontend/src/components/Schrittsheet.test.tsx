@@ -57,6 +57,32 @@ describe('Schrittsheet', () => {
     expect(screen.getByRole('button', { name: /Weiter/ }).hasAttribute('disabled')).toBe(true)
   })
 
+  it('zeigt neben einem Schritt über eine Treppe ihr Symbol', () => {
+    const { container } = render(
+      <Schrittsheet schritte={schritte} position={1} onZurueck={() => {}} onWeiter={() => {}} />,
+    )
+    expect(container.querySelector('.schrittsheet-text [data-symbol="treppe"]')).not.toBeNull()
+  })
+
+  it('zeigt bei einem ebenen Schritt kein Symbol', () => {
+    const { container } = render(
+      <Schrittsheet schritte={schritte} position={0} onZurueck={() => {}} onWeiter={() => {}} />,
+    )
+    expect(container.querySelector('.schrittsheet-text [data-symbol]')).toBeNull()
+  })
+
+  it('trägt das Symbol auch in „Alle Schritte" – genau am Treppenschritt', () => {
+    const { container } = render(
+      <Schrittsheet schritte={schritte} position={0} onZurueck={() => {}} onWeiter={() => {}} />,
+    )
+    const zeilen = [...container.querySelectorAll('.schrittliste .schritt')]
+    expect(zeilen.map((z) => z.querySelector('[data-symbol]')?.getAttribute('data-symbol') ?? null)).toEqual([
+      null,
+      'treppe',
+      null,
+    ])
+  })
+
   it('macht die volle Liste aufklappbar erreichbar', async () => {
     render(<Schrittsheet schritte={schritte} position={0} onZurueck={() => {}} onWeiter={() => {}} />)
     await userEvent.click(screen.getByText(/Alle Schritte/))
