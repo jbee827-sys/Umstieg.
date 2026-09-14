@@ -49,42 +49,116 @@ interface Segment {
   knotenBis: number;
 }
 
-/** Kanten zu Segmenten: benachbarte eben-Kanten gleicher Richtung (±22,5°) verschmelzen. */
+/**
+ * Unter dieser Querabweichung ist ein Knick kein Abbiegen, sondern der
+ * Verlauf des Fußwegs.
+ *
+ * München Hbf, Gleis 5 → 82 (14.09.2026): Die kartierten Fußwege am Kopf des
+ * Holzkirchner Flügelbahnhofs laufen als L-Treppe, und aus jeder Stufe wurde
+ * ein Schritt – acht Anweisungen für 80 m, „wenige Meter links / 40 m
+ * rechts / 20 m links …". 6 m ist breiter als ein Versatz um eine Säule und
+ * schmaler als jeder Gang, in den man abbiegt.
+ */
+const GLAETTUNG_M = 6;
+
+/**
+ * Die Knoten eines ebenen Laufs, an denen sich die Richtung wirklich ändert
+ * (Douglas-Peucker über die Knotenindizes). Anfang und Ende bleiben immer.
+ */
+function haltepunkte(knoten: GraphKnoten[], von: number, bis: number): number[] {
+  const bezug = knoten[von];
+  const mLat = 111_320;
+  const mLon = mLat * Math.cos((bezug.lat * Math.PI) / 180);
+  const xy = (k: GraphKnoten) => ({ x: (k.lon - bezug.lon) * mLon, y: (k.lat - bezug.lat) * mLat });
+  const teile = (a: number, b: number): number[] => {
+    if (b - a < 2) return [a, b];
+    const p = xy(knoten[a]);
+    const q = xy(knoten[b]);
+    const dx = q.x - p.x;
+    const dy = q.y - p.y;
+    const sehne = Math.hypot(dx, dy);
+    let weiteste = a;
+    let abstand = -1;
+    for (let i = a + 1; i < b; i++) {
+      const r = xy(knoten[i]);
+      // Sehne der Länge null (der Weg kehrt an seinen Anfang zurück): Dann
+      // zählt der Abstand zum Anfang - der Wendepunkt bleibt stehen.
+      const d = sehne === 0
+        ? Math.hypot(r.x - p.x, r.y - p.y)
+        : Math.abs(dy * (r.x - p.x) - dx * (r.y - p.y)) / sehne;
+      if (d > abstand) {
+        abstand = d;
+        weiteste = i;
+      }
+    }
+    if (abstand <= GLAETTUNG_M) return [a, b];
+    return [...teile(a, weiteste).slice(0, -1), ...teile(weiteste, b)];
+  };
+  return teile(von, bis);
+}
+
+/**
+ * Kanten zu Segmenten.
+ *
+ * Ein ebener Lauf (gleiche Ebene, nur `eben`) wird an seinen Haltepunkten
+ * zerlegt; die Richtung eines Stücks ist die Sehne zwischen ihnen, die Länge
+ * bleibt die echte Weglänge. Danach verschmelzen benachbarte Stücke gleicher
+ * Richtung (±22,5°) wie bisher.
+ */
 function baueSegmente(pfad: RoutenPfad): Segment[] {
   const segmente: Segment[] = [];
-  for (let i = 0; i < pfad.kanten.length; i++) {
-    const kante = pfad.kanten[i];
-    const von = pfad.knoten[i];
-    const nach = pfad.knoten[i + 1];
-    const degeneriert = von.lat === nach.lat && von.lon === nach.lon;
-    const peilung = degeneriert ? null : peilungGrad(von, nach);
+  const haenge = (von: number, bis: number, typ: KantenTyp): void => {
+    let laengeM = 0;
+    for (let k = von; k < bis; k++) laengeM += pfad.kanten[k].laengeM;
+    const a = pfad.knoten[von];
+    const b = pfad.knoten[bis];
+    const degeneriert = a.lat === b.lat && a.lon === b.lon;
+    const peilung = degeneriert ? null : peilungGrad(a, b);
 
     const letztes = segmente[segmente.length - 1];
     if (
-      kante.typ === 'eben' &&
+      typ === 'eben' &&
       letztes?.typ === 'eben' &&
       letztes.peilungEnde !== null &&
       peilung !== null &&
       Math.abs(winkelDelta(letztes.peilungEnde, peilung)) <= MERGE_SCHWELLE_GRAD
     ) {
-      letztes.laengeM += kante.laengeM;
+      letztes.laengeM += laengeM;
       letztes.peilungEnde = peilung;
-      letztes.zielLevel = nach.level;
-      letztes.knotenBis = i + 1;
-      continue;
+      letztes.zielLevel = b.level;
+      letztes.knotenBis = bis;
+      return;
     }
     segmente.push({
-      typ: kante.typ,
-      laengeM: kante.laengeM,
+      typ,
+      laengeM,
       peilungStart: peilung,
       peilungEnde: peilung,
       // Laufrichtung zählt: die Kante kann rückwärts begangen werden,
       // kante.deltaLevel gilt nur für die Speicherrichtung von→nach.
-      deltaLevel: nach.level - von.level,
-      zielLevel: nach.level,
-      knotenVon: i,
-      knotenBis: i + 1,
+      deltaLevel: b.level - a.level,
+      zielLevel: b.level,
+      knotenVon: von,
+      knotenBis: bis,
     });
+  };
+
+  let i = 0;
+  while (i < pfad.kanten.length) {
+    if (pfad.kanten[i].typ !== 'eben') {
+      haenge(i, i + 1, pfad.kanten[i].typ);
+      i++;
+      continue;
+    }
+    // Ein Lauf endet auch an einem Ebenenwechsel ohne Treppe: Die Schritte
+    // müssen die Besuche des Schemas eins zu eins abbilden.
+    const level = pfad.knoten[i].level;
+    let j = i;
+    while (j < pfad.kanten.length && pfad.kanten[j].typ === 'eben' && pfad.knoten[j + 1].level === level) j++;
+    if (j === i) j = i + 1;
+    const halte = haltepunkte(pfad.knoten, i, j);
+    for (let h = 0; h < halte.length - 1; h++) haenge(halte[h], halte[h + 1], 'eben');
+    i = j;
   }
   return segmente;
 }
