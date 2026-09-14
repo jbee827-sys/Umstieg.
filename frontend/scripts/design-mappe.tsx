@@ -141,7 +141,7 @@ const OFFEN: [string, string][] = [
   ['Bild an zwei Bahnhöfen', 'Nürnberg und Schwerin: Start oder Ziel liegt bis 24 px neben dem eigenen Balken – Bahnsteige, die sich fortsetzen oder kreuzen.'],
   ['Lauf 3 unvollständig', '54 von 77 Bahnhöfen übersprungen, fast alle, weil Overpass heute nicht lieferte. Die Ablage füllt sich weiter; der Lauf braucht dann kein Netz.'],
   ['Was „Anfang" heißt', 'Anfang und Ende folgen der Zeichenrichtung in OSM. Das Bild legt den Anfang jetzt immer links, die Knöpfe sagen aber nicht, welches Ende das im Bahnhof ist – etwa „am Kopf".'],
-  ['Nicht deployt, nicht committet', 'Alles liegt uncommittet auf feat/mvp; main steht 11 Commits zurück. Die Leinwand in design/schema zeigt noch den alten Leipzig-Stand.'],
+  ['Nicht deployt', 'Committet auf feat/mvp, noch nicht gepusht; die Produktion zeigt den alten Stand. Die Leinwand in design/schema zeigt noch den alten Leipzig-Stand.'],
 ];
 
 const html = `<title>Planmappe Ebenenschema</title>
