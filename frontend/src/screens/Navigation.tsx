@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Ebenenschema } from '../components/Ebenenschema'
 import { Schrittsheet } from '../components/Schrittsheet'
 import { leiteSchemaAb } from '../schema/ableitung'
+import { baueBandmodell } from '../schema/bandmodell'
 import type { RouteErgebnis } from '../api/typen'
 import type { Standort } from '../standort/typen'
 
@@ -34,10 +35,14 @@ export function Navigation({
   onWeiter,
   onAngekommen,
 }: NavigationProps) {
-  const modell = leiteSchemaAb(route.schritte, position, gleisAn, gleisAb)
+  // Die echte Geometrie, wenn die Antwort sie traegt - sonst das grobe Bild
+  // aus den Schritttexten. Beides wird gebaut: `leiteSchemaAb` ist billig,
+  // und der Rueckfall muss dastehen, bevor er gebraucht wird.
+  const bandmodell = baueBandmodell(route.schema, route.schritte, position)
+  const grob = leiteSchemaAb(route.schritte, position, gleisAn, gleisAb)
   return (
     <>
-      <Ebenenschema modell={modell} bahnhofName={bahnhofName} />
+      <Ebenenschema modell={bandmodell} ersatz={grob} bahnhofName={bahnhofName} />
 
       {route.stufe !== 3 && route.karte && (
         <details className="karte-aufklappbar">

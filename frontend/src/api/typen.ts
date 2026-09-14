@@ -101,22 +101,31 @@ export interface SchemaElement {
   beiM?: number;
 }
 
+/**
+ * EIN BESUCH einer Ebene, nicht die Ebene selbst.
+ *
+ * Die Liste folgt dem WEG, nicht der Höhe: Wer hinunter in die Unterführung
+ * geht und wieder herauf, hat drei Einträge – Ebene 1, Ebene 0, Ebene 1.
+ * Derselbe `level` kann also mehrfach vorkommen, und wer die Liste mit
+ * `find` durchsucht, findet den falschen Besuch.
+ */
 export interface SchemaEbene {
   level: number;
+  /** Erster Besuch = `start`, letzter = `ziel`, dazwischen nichts. */
+  rolle?: 'start' | 'ziel';
   art: 'gleise' | 'verbindung';
   richtungGrad?: number;
   /** Lage IM Bezugsrahmen; 0 = waagerecht wie die Ankunftsebene. */
   richtungLokalGrad?: number;
   bahnsteige: SchemaBahnsteig[];
-  aufRoute: boolean;
   /**
-   * Der Weg auf dieser Ebene – ein Stück je Besuch.
+   * Der Weg auf DIESEM Besuch, als Linienzug im Bezugsrahmen.
    *
-   * Eine Liste, kein Linienzug: Wer hinunter in die Unterführung geht und
-   * wieder herauf, betritt die Gleisebene ZWEIMAL. Ein einziger Linienzug
-   * zöge zwischen beiden Besuchen eine Linie, die niemand geht.
+   * Ein einzelner Linienzug, weil die Trennung nach Besuchen schon in der
+   * Liste steckt. Bei einem Besuch, der nur senkrecht durchquert wird
+   * (hinunter und sofort weiter hinunter), steht hier EIN Punkt.
    */
-  weg?: SchemaWegstueck[];
+  weg?: SchemaPunkt[];
   /** Begehbares Netz in Routennähe – nur bei `art: 'verbindung'`. */
   netz?: SchemaWegstueck[];
   /** Ebenenwechsel als sichtbare Bezugspunkte. */
