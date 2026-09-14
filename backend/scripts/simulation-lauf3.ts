@@ -45,6 +45,7 @@ import {
   pruefeBahnsteigwege,
   pruefeMarkierung,
   pruefeSchema,
+  pruefeSchritte,
 } from './pruefungen.js';
 
 const ABSCHNITTE = ['anfang', 'mitte', 'ende'] as const;
@@ -64,6 +65,11 @@ interface Lauf {
   bahnhof: string;
   eva: string;
   stufe: number;
+  /** Gleise im Graphen – die Größenklasse des Bahnhofs. */
+  gleise: number;
+  /** Schritte der Route, und wie viele davon „wenige Meter" sagen. */
+  schritte: number;
+  kleinstschritte: number;
   gleisAn: string;
   gleisAb: string;
   abschnitt: Abschnitt;
@@ -202,7 +208,11 @@ function main(): void {
           const schema = baueBahnhofSchema(graph, pfad);
           const schritte = generiereSchritte(pfad, { ungefaehr: graph.stufe === 3, profil: 'normal' });
           const aufWechseln = pfad.kanten.filter((k) => k.deltaLevel !== 0).reduce((s, k) => s + k.laengeM, 0);
-          const fehler = [...pruefeSchema(schema, pfad.laengeM, aufWechseln), ...pruefeMarkierung(schema)];
+          const fehler = [
+            ...pruefeSchema(schema, pfad.laengeM, aufWechseln),
+            ...pruefeMarkierung(schema),
+            ...pruefeSchritte(schritte, pfad, gehzeitSek),
+          ];
           let zweit: { zweitbesteSek?: number; zweitbesteTyp?: string } = {};
           if (variante === 'schnellste') {
             const erster = pfad.kanten.find((k) => k.deltaLevel !== 0);
@@ -215,6 +225,9 @@ function main(): void {
             bahnhof: name,
             eva,
             stufe: graph.stufe,
+            gleise: graph.gleise.length,
+            schritte: schritte.length,
+            kleinstschritte: schritte.filter((s) => /wenige Meter/i.test(s.text)).length,
             gleisAn,
             gleisAb,
             abschnitt,
@@ -257,6 +270,21 @@ function auswerten(laeufe: Lauf[], bahnsteigBefunde: Map<string, string[]>, uebe
   const schnell = laeufe.filter((l) => l.variante === 'schnellste');
   const barriere = laeufe.filter((l) => l.variante === 'barrierefrei');
   console.log(`Schnellste: ${schnell.length} · barrierefrei: ${barriere.length}`);
+
+  // --- Größenklassen: vom Metropolknoten bis zum Kleinstadtbahnhof ---
+  const klasse = (gleise: number): string => (gleise >= 12 ? 'groß' : gleise >= 6 ? 'mittel' : 'klein');
+  console.log('\nGrößenklassen (Gleise im Graphen: groß ≥ 12 · mittel 6–11 · klein ≤ 5):');
+  for (const k of ['groß', 'mittel', 'klein']) {
+    const ls = laeufe.filter((l) => klasse(l.gleise) === k);
+    if (ls.length === 0) continue;
+    const mitBefund = ls.filter((l) => l.fehler.length > 0);
+    console.log(
+      `  ${k.padEnd(7)} ${String(new Set(ls.map((l) => l.bahnhof)).size).padStart(3)} Bahnhöfe · ` +
+        `${String(ls.length).padStart(4)} Routen · ${mitBefund.length} mit Befund · ` +
+        `Schritte median ${median(ls.map((l) => l.schritte))} (max ${Math.max(...ls.map((l) => l.schritte))}) · ` +
+        `„wenige Meter" je Route median ${median(ls.map((l) => l.kleinstschritte))}`,
+    );
+  }
 
   // --- Standort: Wie oft ändert er den WEG, nicht nur die Länge? ---
   const jePaar = new Map<string, Lauf[]>();
