@@ -2,6 +2,7 @@
 // ECHTEN Routen - für die Durchsicht des Entwurfs, nicht für die Auslieferung.
 //
 // Aufruf: npx tsx --tsconfig tsconfig.app.json scripts/design-mappe.tsx <ziel.html> <routen-verzeichnis>
+// Die Routen zieht `backend/scripts/routenabzug.ts` aus der OSM-Ablage.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,23 +33,32 @@ const GRUPPEN: { titel: string; text: string; blaetter: Blatt[] }[] = [
   {
     titel: 'Leipzig Hbf, Gleis 6 → 16',
     text:
-      'Derselbe Umstieg, drei Standorte am Ankunftsgleis. Der Kopfbahnhof bietet zwei Wege: die U-Form über den Querbahnsteig und die Unterführung am anderen Ende. Welcher schneller ist, entscheidet, wo man aussteigt – und seit der Kettenkorrektur vom 14.09. gewinnt die Unterführung auch ab der Mitte.',
+      'Derselbe Umstieg, drei Standorte am Ankunftsgleis. Der Kopfbahnhof bietet zwei Wege: die U-Form über den Querbahnsteig und die Unterführung am anderen Ende. Das Band mit dem Ankunftsgleis zeigt seit dem 14.09. abends keinen Weg mehr: den Punkt, an dem man steht, die Treppe als rote Scheibe am Zugang – und die übrigen Anlagen als Symbole.',
     blaetter: [
-      { datei: 'lz-schnellste-anfang.json', bahnhof: 'Leipzig Hbf', an: '6', ab: '16', standort: 'Anfang', besuch: 0, notiz: 'Treppe 32 m entfernt, hinunter in die Unterführung. Vorher 343 s.' },
-      { datei: 'lz-schnellste-mitte.json', bahnhof: 'Leipzig Hbf', an: '6', ab: '16', standort: 'Mitte', besuch: 0, notiz: 'Vorher 354 s über den Kopf – die Treppe war vom Graphen aus nur über das Bahnsteigende erreichbar.' },
-      { datei: 'lz-schnellste-ende.json', bahnhof: 'Leipzig Hbf', an: '6', ab: '16', standort: 'Ende', besuch: 0, notiz: 'Der Kopf liegt nebenan: eine Ebene, keine Treppe. Die U-Form ist im Bild eine U-Form.' },
+      { datei: 'lz-schnellste-anfang.json', bahnhof: 'Leipzig Hbf', an: '6', ab: '16', standort: 'Anfang', besuch: 0, notiz: 'Die Treppe hinunter liegt 32 m vom Anfang; die Scheibe sitzt im Balken, beschriftet mit Richtung und Meter.' },
+      { datei: 'lz-schnellste-mitte.json', bahnhof: 'Leipzig Hbf', an: '6', ab: '16', standort: 'Mitte', besuch: 0, notiz: 'Seit der Kettenkorrektur gewinnt auch ab der Mitte die Unterführung: 323 s statt 354 s über den Kopf.' },
+      { datei: 'lz-schnellste-ende.json', bahnhof: 'Leipzig Hbf', an: '6', ab: '16', standort: 'Ende', besuch: 0, notiz: 'Eine Ebene, keine Treppe: im Bild nur Start und Ziel. Die U-Form um den Kopf steht in den drei Schritten.' },
     ],
   },
   {
     titel: 'Unterwegs und in der Tiefe',
     text:
-      'Das aktive Band ist der Besuch, auf dem der Reisende gerade steht; die übrigen schrumpfen auf eine Zeile. Übergangsebenen zeigen den Grundriss aus dem Kartenmaterial, Gleisebenen die Bahnsteige in echter Reihenfolge. Jeder Ebenenwechsel ist an beiden Enden markiert.',
+      'Das aktive Band ist der Besuch, auf dem der Reisende gerade steht; die übrigen schrumpfen auf eine Zeile. Übergangsebenen behalten den Weg als Linie – dort gibt es keinen Bahnsteig, an dem sich ein Punkt festhalten ließe – und zeigen die Anlagen, die der Weg nicht nimmt, grau auf hellem Schild.',
     blaetter: [
-      { datei: 'lz-schnellste-mitte.json', bahnhof: 'Leipzig Hbf', an: '6', ab: '16', standort: 'Mitte', besuch: 1, notiz: 'Zweites Band: die Unterführung. Angekommen über die Treppe hinunter, weiter über die Treppe hinauf.' },
+      { datei: 'lz-schnellste-mitte.json', bahnhof: 'Leipzig Hbf', an: '6', ab: '16', standort: 'Mitte', besuch: 1, notiz: 'Zweites Band: die Unterführung. Angekommen über die Treppe hinunter (Ring), weiter über die Treppe hinauf (Scheibe).' },
       { datei: 'bl-schnellste-mitte.json', bahnhof: 'Berlin Hbf', an: '14', ab: '6', standort: 'Mitte', besuch: 2, notiz: 'Ebene 0: Der Weg läuft hinaus und kommt fast an derselben Stelle zurück – die Rolltreppen liegen hintereinander.' },
-      { datei: 'bl-schnellste-mitte.json', bahnhof: 'Berlin Hbf', an: '14', ab: '6', standort: 'Mitte', besuch: 4, notiz: 'Ebene −2 kreuzt die Ankunftsebene um 81°; im Bild waagerecht, die Drehung steht darunter in Worten.' },
+      { datei: 'bl-schnellste-mitte.json', bahnhof: 'Berlin Hbf', an: '14', ab: '6', standort: 'Mitte', besuch: 4, notiz: 'Ebene −2 kreuzt die Ankunftsebene um 81°; im Bild waagerecht. Gleis 5/6 trägt seine Zugänge als Symbole, das Ziel als Scheibe.' },
       { datei: 'ffm-1-104-mitte.json', bahnhof: 'Frankfurt (Main) Hbf', an: '1', ab: '104', standort: 'Mitte', besuch: 0, notiz: 'Vom Kopfbahnsteig in den S-Bahn-Tunnel: 423 s Spanne zwischen Anfang und Ende.' },
-      { datei: 'muc-5-82-anfang.json', bahnhof: 'München Hbf', an: '5', ab: '82', standort: 'Anfang', besuch: 0, notiz: 'Hier gewinnt der Anfang: 625 s gegen 944 s vom Ende.' },
+    ],
+  },
+  {
+    titel: 'München Hbf, Gleis 5 → 82',
+    text:
+      'Das Beispiel, an dem der Zickzack auffiel. Die Linie über 17 gestauchte Bahnsteige gibt es nicht mehr; der Weg über den Kopf des Holzkirchner Flügelbahnhofs steht im Text – geglättet, 11 statt 23 Schritte. Das Routing war dabei nie falsch: Keine erzwungene Alternative ist schneller.',
+    blaetter: [
+      { datei: 'muc-5-82-anfang.json', bahnhof: 'München Hbf', an: '5', ab: '82', standort: 'Anfang', besuch: 0, notiz: 'Der Punkt am Anfang von 5/6, die Rolltreppe am Querbahnsteig als Scheibe. 625 s – der Anfang gewinnt gegen 944 s vom Ende.' },
+      { datei: 'muc-5-82-anfang.json', bahnhof: 'München Hbf', an: '5', ab: '82', standort: 'Anfang', besuch: 1, notiz: 'Die Unterführung −1: Rolltreppen und Treppen, die sich überdecken würden, stehen als EIN Schild.' },
+      { datei: 'muc-5-82-anfang.json', bahnhof: 'München Hbf', an: '5', ab: '82', standort: 'Anfang', besuch: 2, notiz: '22 Anlagen an fünf Stellen, als Symbole; das Ziel bei 117 m trägt die Rolltreppe, über die man ankommt.' },
     ],
   },
 ];
@@ -127,21 +137,23 @@ const gruppen = GRUPPEN.map(
 ).join('');
 
 const BEFUND: [string, string, string][] = [
-  ['Kettenfehler im Graphen', '36 Bahnhöfe · 86 Umwege', '6 Bahnhöfe · 9 Umwege'],
-  ['Routen durch die Korrektur schneller', '—', '245 von 1044 · max. −574 s'],
-  ['Routen mit anderem Weg', '—', '13'],
-  ['Alternativen schneller als die gewählte', '—', '0 von 1086'],
-  ['Bildstufe: Befunde', '192 Routen · 44 Bahnhöfe', '10 Routen · 2 Bahnhöfe'],
-  ['Lauf 3, neue Bahnhöfe (Schema · Bild)', '—', '399 Routen · 0 · 0'],
+  ['Lauf 4 über die ganze Ablage', '—', '2082 Routen · 111 Bahnhöfe (19 groß · 60 mittel · 32 klein)'],
+  ['Befunde im Routing (Schema, Markierung, Schritte)', '—', '1 Route (Düsseldorf, Wegzerlegung +5 m)'],
+  ['Alternativen schneller als die gewählte', '0 von 1086', '0 von 1176'],
+  ['Bildstufe: Befunde', '344 Routen · 67 Bahnhöfe (erster Symbolsatz)', '0'],
+  ['Symbolschilder, die sich überdecken', '846 Paare', '0'],
+  ['Schritte je Route (Median, 951 Routen)', '11', '6'],
+  ['„wenige Meter" gesamt', '5468', '813'],
+  ['Bekannte Werte nachgerechnet', '—', '22 von 23 exakt oder schneller'],
 ];
 
 const OFFEN: [string, string][] = [
-  ['Stumme Treppen', '111 Routen an 17 Bahnhöfen nehmen eine Treppe, Rampe oder einen Aufzug, ohne dass der Graph einen Ebenenwechsel kennt. Im Bild erscheinen sie nicht als Wechsel – genau das darf nicht sein. Meist Rampen; in Lauf 3 zwei Treppen.'],
-  ['Umwege, andere Ursache', 'Nach der Kettenkorrektur bleiben 6 Bahnhöfe mit Umwegen zu einem Zugang. Berlin-Spandau: Die Treppe bei 397 m an Gleis 3 ist vom Bahnsteig aus gar nicht erreichbar.'],
-  ['Bild an zwei Bahnhöfen', 'Nürnberg und Schwerin: Start oder Ziel liegt bis 24 px neben dem eigenen Balken – Bahnsteige, die sich fortsetzen oder kreuzen.'],
-  ['Lauf 3 unvollständig', '54 von 77 Bahnhöfen übersprungen, fast alle, weil Overpass heute nicht lieferte. Die Ablage füllt sich weiter; der Lauf braucht dann kein Netz.'],
-  ['Was „Anfang" heißt', 'Anfang und Ende folgen der Zeichenrichtung in OSM. Das Bild legt den Anfang jetzt immer links, die Knöpfe sagen aber nicht, welches Ende das im Bahnhof ist – etwa „am Kopf".'],
-  ['Nicht deployt', 'Committet auf feat/mvp, noch nicht gepusht; die Produktion zeigt den alten Stand. Die Leinwand in design/schema zeigt noch den alten Leipzig-Stand.'],
+  ['Stumme Treppen', '195 Routen an 19 Bahnhöfen nehmen eine Treppe oder Rampe, ohne dass der Graph einen Ebenenwechsel kennt. Im Bild erscheinen sie nicht als Scheibe; im Text schon.'],
+  ['Umwege, andere Ursache', '6 Bahnhöfe mit Umwegen zu einem Zugang: Bielefeld, Bonn, Gütersloh, Schwerin, Wittenberge, Berlin-Spandau (Treppe an Gleis 3 unerreichbar).'],
+  ['Düsseldorf Hbf 1 → 20', 'Die Wegzerlegung des Schemas misst 236 statt 231 m – 5 m über der Toleranz. Nicht aus dem Symbolumbau; ungeklärt.'],
+  ['Braunschweig barrierefrei', '192 s offline gegen 191 s, am 07.09. gegen die Produktion gemessen (mit FaSta). Nicht dieselbe Messung – ohne Treppe ist die Route in beiden.'],
+  ['Was „Anfang" heißt', 'Anfang und Ende folgen der Zeichenrichtung in OSM. Das Bild legt den Anfang immer links, die Knöpfe sagen aber nicht, welches Ende das im Bahnhof ist.'],
+  ['Nicht deployt', 'Committet auf feat/mvp, nicht gepusht; die Produktion zeigt den Stand vom 07.09.'],
 ];
 
 const html = `<title>Planmappe Ebenenschema</title>
@@ -232,7 +244,7 @@ body { color: var(--mp-tinte); font-family: var(--mp-text); font-size: 16px; lin
 .mp-tabelle table { border-collapse: collapse; min-width: 560px; width: 100%; max-width: 900px; }
 .mp-tabelle th, .mp-tabelle td { text-align: left; padding: 8px 14px 8px 0; border-bottom: 1px solid var(--mp-linie); vertical-align: top; }
 .mp-tabelle thead th { font-family: var(--mp-titel); font-weight: 600; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--mp-graphit); border-bottom: 1.5px solid var(--mp-tinte); }
-.mp-tabelle td:not(:first-child) { font-family: var(--mp-mono); font-size: 13.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mp-tabelle td:not(:first-child) { font-family: var(--mp-mono); font-size: 13.5px; font-variant-numeric: tabular-nums; }
 .mp-tabelle td.jetzt { color: var(--mp-tinte); font-weight: 500; }
 .mp-tabelle td.vorher { color: var(--mp-graphit); }
 
@@ -247,12 +259,13 @@ body { color: var(--mp-tinte); font-family: var(--mp-text); font-size: 16px; lin
 
 <div class="mp">
   <header class="mp-kopf">
-    <p class="mp-marke">Umstieg. · Navigation, Screen 3 · Stand 14.09.2026 · Zweig feat/mvp, nicht deployt</p>
+    <p class="mp-marke">Umstieg. · Navigation, Screen 3 · Stand 14.09.2026, abends · Zweig feat/mvp, nicht deployt</p>
     <h1>Planmappe Ebenenschema</h1>
     <p class="mp-these">
-      Ein Band je Ebenen<em>besuch</em>, in der Reihenfolge des Wegs – nicht nach Höhe. Bahnsteige längs maßstäblich
-      und in echter Querreihenfolge, der Weg als gemessener Linienzug, jede Treppe an beiden Enden markiert.
-      Alle Geräte unten sind die echten Komponenten dieses Zweigs mit echten Routen aus der OSM-Ablage.
+      Ein Band je Ebenen<em>besuch</em>, in der Reihenfolge des Wegs. Auf dem Band mit Ankunfts- und Abfahrtsgleis
+      steht kein Weg mehr – nur der Standort, die Stelle, an der es die Ebene wechselt, und das Ziel. Rolltreppe,
+      Treppe und Aufzug stehen als Symbole im Bahnsteig, im Grundriss und neben den Schritten. Alle Geräte unten sind
+      die echten Komponenten dieses Zweigs mit echten Routen aus der OSM-Ablage.
     </p>
   </header>
 
