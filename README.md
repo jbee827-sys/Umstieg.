@@ -69,6 +69,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > an 18 Bahnhöfen); was „Anfang" im Bahnhof bedeutet, sagen die Knöpfe nicht.
 > `simulation-schema.ts` und `simulation-standort.ts` lesen beim Start den
 > Schlüssel-Tresor – nur nach Rückfrage starten (siehe `D:\Claude-code\CLAUDE.md`).
+> Alle offenen Punkte stehen als **ToDos 25–35** unter „Offene ToDos".
 >
 > ```bash
 > cd backend && npm test && npm run lint     # 418 von 418, Lint sauber
@@ -471,9 +472,9 @@ Nach Gewicht:
 4. **Abschnitt A–G: Platz reserviert, Quelle fehlt.** Die gleichmäßige
    Einteilung ist nur in der Bahnsteigmitte belegt (13 m Fehler bei 61 m
    Abschnittsbreite), die Richtung gar nicht.
-5. **Der Längsversatz der Bahnsteige zueinander fehlt im Vertrag.** Die Balken
-   sind deshalb zentriert gezeichnet – eine leise Behauptung. Der Endpunkt
-   könnte ihn liefern.
+5. ~~**Der Längsversatz der Bahnsteige zueinander fehlt im Vertrag.**~~ ✅
+   **erledigt mit D4 (14.09.2026)** – `von` und `bis` liegen im Bezugsrahmen,
+   die Balken stehen längs maßstäblich samt Versatz.
 6. **Der Rot-Konflikt ist ungelöst.** `#ec3013` ist Route, Aktion und Ampelrot
    zugleich. Die Artboards weichen aus, indem sie grüne und gelbe Ampeln
    zeigen.
@@ -869,6 +870,9 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | 4e | **Test für die Achsenableitung (§5-B)** | Ab zwei verankerten Bahnsteigen bestimmt deren Richtung, wo die *unverankerten* liegen. Kein Test prüft das Ergebnis: In den Fixtures sind entweder alle Bahnsteige verankert (Hannover, Berlin) oder nur einer (Unit-Tests). Gebraucht wird ein Fall mit zwei verankerten **und** zwei unverankerten – der Regelfall an mittelgrossen Bahnhöfen. Eine Stunde Arbeit. |
 | 5 | **Vercel: Framework-Preset steht auf „Services"** | Rückstand der `experimentalServices`-Erkennung beim `vercel link`. Die `vercel.json` überschreibt es, der Build ist nachweislich korrekt – kosmetisch, aber irreführend. Settings → Build & Deployment. |
 | 6 | **Vercel-Preview-Variable nur für `feat/mvp`** | `VITE_API_BASE` konnte nicht „für alle Preview-Zweige" gesetzt werden (CLI-Fehler in v53.1.0: der vorgeschlagene Befehl ist derselbe, der scheitert). Neue Zweige brauchen einen eigenen Eintrag oder das Dashboard. |
+| **25** | **Ausliefern: 23 Commits auf `feat/mvp`** | Seit dem 08.09. ist nichts gepusht; die Produktion zeigt den Stand vom 07.09. Pushen, `main` per Fast-Forward nachziehen (siehe „Zweige"), `flyctl deploy … --ha=false`, Vercel – und danach die `vercel.json` prüfen (Falle 2 unter „Deployment-Stand"). Voraussetzung für M9 (ToDo 3) und ToDo 30. **Wartet auf Freigabe.** |
+| 26 | **Zwei Simulationen lesen den Schlüssel-Tresor ohne Not** | `simulation-schema.ts` und `simulation-standort.ts` rufen `ladeSecrets()` beim Start immer auf – auch mit `ABLAGE_NUR=1`, wo kein Netz gebraucht wird. Nach `D:\Claude-code\CLAUDE.md` starten sie deshalb nur nach Rückfrage. Nur laden, wenn wirklich abgerufen wird; dann laufen beide ohne. |
+| 27 | **Düsseldorf Hbf 1 → 20: Wegzerlegung 236 statt 231 m** | Der einzige Routing-Befund von Lauf 4 (`pruefeSchema`, ab Mitte, schnellste). Die Linienzüge der Besuche sind 5 m länger als der Pfad ohne Ebenenwechsel. Douglas-Peucker kann nicht verlängern – die Ursache liegt woanders (Besuchsgrenzen, doppelte Punkte an einem Wechsel?). Nicht aus dem Symbolumbau. |
 
 ### Als Nächstes (der Hauptstrang)
 
@@ -883,6 +887,10 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | 9b | **Wagenreihungsseite** | ⛔ **Blockiert – es gibt keine Datenquelle mehr.** Siehe „Die Wagenreihung ist tot“. |
 | **20** | **Reise-Import: das VMV-Format** | Der Parser erkennt es **gar nicht** – `parseReise` gibt `null` zurück, kein einziger Abschnitt. Am 06.09.2026 an einem echten Text isoliert, drei voneinander unabhängige Blocker, alle im Parser: (1) `istRahmen` wirft jede Zeile mit ` -> ` weg – der Pfeil ist als Kopfzeilen-Trenner gedacht, die VMV benutzt ihn mitten in der Fahrtzeile; (2) `von` ist kein Rollenwort, und die Ankunft wird gar nicht durch ein Wort markiert, sondern durch den Pfeil; (3) Abfahrt und Ankunft stehen **auf einer Zeile**, das Modell des Parsers ist ein Halt je Zeile. **Zuschnitt entschieden 06.09.2026: Bus-Etappen bleiben draußen, der Anspruch endet am letzten Bahnhalt** – die Form „Haltestelle, Ort (Zusatz)" (`Seebad Heringsdorf, Heringsdorf (Seebad)`, `Ahlbeck, Bahnhof (UBB), Ahlbeck (Seebad)`) muss damit **nicht** gelöst werden. Vorläufig: „erstmal". |
 | ~~9c~~ | ~~**Variante „Mit Stopp: WC & Kiosk“**~~ ✅ **erledigt 05.09.2026** | Gebaut und ausgeliefert. Die Spec-Annahme „die Daten sind bereits da“ stimmte nicht – die Overpass-Abfrage holte WC und Kiosk nie. Siehe „Mit Stopp: WC & Kiosk“. |
+| 28 | **Stumme Treppen und Rampen** | Lauf 4: 195 Routen an 19 Bahnhöfen nehmen eine Treppe oder Rampe, ohne dass der Graph einen Ebenenwechsel kennt (35 Treppen-, 769 Rampenkanten) – etwa eine Unterführung ohne `level`. Im Bild steht dort keine Scheibe, im Text schon. Je Fall zu klären: Fehlt `level` in OSM, oder liest der Graph `incline`/`ramp` nicht? |
+| 29 | **Umwege zu einem Zugang an 6 Bahnhöfen** | `pruefeBahnsteigwege`, Lauf 4: Bielefeld (Gleis 5, zwei Treppen), Bonn (Gleis 4), Gütersloh (Gleis 2 und 3), Schwerin (Gleis 1: Treppe über 258 statt 120 m, zwei Aufzüge), Wittenberge (Gleis 1, Aufzug), Berlin-Spandau (Gleis 3: Treppe bei 397 m unerreichbar). Nach der Kettenkorrektur eine andere Ursache – je Bahnhof am Graphen nachsehen. |
+| 30 | **M10: das neue Schema am Gerät** | Mit M9 nach dem Deployment (ToDo 25). Tragen die 11-px-Symbole in der Halle bei Gegenlicht? Reicht auf dem Ankunftsband der Punkt ohne Linie – auch am Kopfbahnhof, wo die U-Form nur noch im Text steht (154 Routen an 18 Bahnhöfen)? Stimmen die geglätteten Schritte im Gehen (`GLAETTUNG_M = 6` ist begründet, nicht gemessen)? |
+| 31 | **Was „Anfang" im Bahnhof heißt** | Anfang und Ende folgen der Zeichenrichtung in OSM. Das Bild legt den Anfang immer links, die Knöpfe sagen aber nicht, welches Ende das im Bahnhof ist – etwa „am Kopf" oder „Richtung Halle". Die Wahl entscheidet an 69 von 392 Gleispaaren den Weg selbst (Lauf 4). |
 
 Der Umbau nach dem Entwurf ist am 31.08. erfolgt (Spec und Plan unter
 `docs/superpowers/`); Spec-Abschnitt 8 ist
@@ -904,6 +912,10 @@ die Ursachenanalyse in [`docs/2026-08-31-design-abgleich.md`](./docs/2026-08-31-
 | 18 | **OpenStation auswerten** | Offener NeTEx-Datensatz der DB InfraGO, kein Schlüssel: `Level` gegen den Ebenensprung, Aufzüge + SIRI FM als FaSta-Gegenstück, 65.007 Wegekanten als Gegenprobe zu OSM. **Löst §4.3 nicht** – nur 10 % der Bahnsteige tragen Koordinaten, die Kanten keine Länge. Zahlen und Grenzen im Abschnitt „ISR verworfen". |
 | ~~19~~ | ~~**ISR Data Service beziehen**~~ ⛔ **entschieden dagegen, 06.09.2026** | Zu teuer (1.846 €/Jahr) – und ohnehin nur für Zugangsberechtigte nach ERegG § 1 Abs. 12. Der vorhandene Schlüssel deckt es nachweislich nicht ab. **Nicht erneut aufmachen.** |
 | 15 | 🔶 **Noch EIN geratener Schwellenwert** | `ERKENNUNG_MAX_M` ist seit dem 07.09.2026 erledigt: Die Zahl ist an den Suchradius des Servers gebunden (1000 m) und damit begründet, nicht geraten – siehe „M3: die 2000 m waren nie eine Schwelle". Offen bleibt `NOTBEHELF_TTL_MS`. Ursprünglicher Eintrag: `ERKENNUNG_MAX_M = 1000` (Genauigkeitsbudget der Bahnhofserkennung) und `NOTBEHELF_TTL_MS = 600000` (Cache-Frist für Stufe 3; über `GRAPH_NOTBEHELF_TTL_MS` ohne Neubau verstellbar) sind begründete Startwerte ohne Messung dahinter. Erst die Mobilabnahme zeigt die Richtung. *Der dritte Wert, `MINDEST_SCHRITT_MS = 8000` (Anzeigedauer je Schritt), ist am 02.09.2026 entfallen: Die Schrittanzeige rückt nicht mehr nach Zeit vor, damit gibt es keine Anzeigedauer mehr zu raten.* |
+| 32 | **Veraltete Planansichten** | Die Leinwand `design/schema/` und die ältere Planmappe (Artefakt `c9fced14…`) zeigen den Stand vor den Symbolen; die neue ist im Abschnitt „Hier weitermachen" verlinkt. Die alte zu überschreiben verlangt, ihre Fassung unter `C:\Users\jbeer\.claude\projects\…` zu lesen – nur nach Rückfrage. |
+| 33 | **Drei Spike-Skripte schreiben in einen alten Temp-Ordner** | `spike-schema-geometrie.ts`, `spike-schema-overpass-live.ts` und `spike-wagenreihung-geometrie.ts` tragen den Scratchpad-Pfad einer früheren Sitzung (`…/6db04a47…/scratchpad/schema-geometrie`) – außerhalb des Projekts. Auf `backend/osm-ablage/` umstellen oder löschen; es sind Wegwerfsondierungen. |
+| 34 | **Lücken der Ablage füllen** | Von der Liste `LAUF_3` fehlen 54 Bahnhöfe in der Ablage (Overpass lieferte am 14.09. nicht). `osm-ablage-fuellen.ts` braucht Netz und liest den Tresor – nur nach Rückfrage. |
+| 35 | **Braunschweig barrierefrei an der Produktion nachmessen** | Offline 192 s, am 07.09. gegen die Produktion 191 s (mit FaSta). Nach dem Deployment dort wiederholen – bis dahin sind es zwei verschiedene Messungen. Die Route nimmt in beiden keine Treppe. |
 
 ### P1 – Standort & Live-Navigation
 
