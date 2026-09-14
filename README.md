@@ -16,7 +16,41 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 13.09.2026)
+## Hier weitermachen (Stand 14.09.2026)
+
+> **Zuletzt (14.09.):** Das Frontend zeichnet das neue Ebenenschema (D4) –
+> ein Band je Ebenenbesuch, Bahnsteige längs maßstäblich samt Versatz, der
+> Weg als Linienzug auch auf Gleisebenen (die U-Form eines Kopfbahnhofs ist
+> jetzt sichtbar), jede Treppe an beiden Enden markiert, Standortleiste
+> „Anfang · Mitte · Ende" mit dem Anfang immer links. Dateien:
+> `frontend/src/schema/{bandmodell,bandbild,masse}.ts`,
+> `components/Ebenenschema.tsx`, Tests gegen echte Routen in
+> `schema/testdaten/`. **Nichts davon ist committet.**
+>
+> **Der wichtigste Fund war ein Graphfehler:** An jedem Bahnsteig mit zwei
+> Gleisen wurde nur die Kette des zuletzt verarbeiteten Gleises verdichtet
+> (`verdichteBahnsteigketten`, Achsen nach Bahnsteig statt nach Gleis
+> geschlüsselt). Leipzig 6 → 16 ab Mitte lief deshalb 354 s über den Kopf;
+> richtig sind **323 s durch die Unterführung**. Gemessen über 99 Bahnhöfe:
+> 245 von 1044 Routen werden schneller, keine langsamer, 13 nehmen einen
+> anderen Weg. Die Tabelle „Der Standort am Ankunftsgleis entscheidet" unten
+> (13.09.) ist damit für die Mitte überholt.
+>
+> **Simulation, dritter Durchgang** (`backend/scripts/simulation-lauf3.ts` +
+> `frontend/scripts/simulation-bild.ts`, Ablage über
+> `osm-ablage-fuellen.ts`): 399 Routen an 23 Bahnhöfen, null Befunde in
+> Schema, Alternativen und Bild. Neu geprüft: Bahnsteigwege (Umweg zu einem
+> Zugang – hätte den Kettenfehler an 36 Bahnhöfen gemeldet) und
+> Alternativen (keine erzwungene Route über irgendeinen Ebenenwechsel ist
+> schneller als die gewählte).
+>
+> **Offen:** 111 Routen nehmen Treppen/Rampen ohne Ebenenwechsel („stumm",
+> im Bild unsichtbar); 6 Bahnhöfe mit Umwegen anderer Ursache (Berlin-Spandau
+> Gleis 3: Treppe unerreichbar); Bild an Nürnberg und Schwerin; 54 Bahnhöfe
+> von Lauf 3 fehlen in der Ablage (Overpass); was „Anfang" im Bahnhof
+> bedeutet, sagen die Knöpfe nicht. Planmappe: `frontend/scripts/design-mappe.tsx`.
+
+### Davor (13.09.2026, abends)
 
 > **Zuletzt (13.09., abends):** Die **Standortwahl am Ankunftsgleis** steht
 > jetzt auch in der App – drei Knöpfe auf dem Dashboard, je mit der Gehzeit
