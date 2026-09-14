@@ -1,4 +1,6 @@
 import type { Schritt } from '../api/typen'
+import { istSymboltyp } from '../schema/symbole'
+import { AnlagenSymbol } from './AnlagenSymbol'
 
 const EBENENWECHSEL = new Set(['treppe', 'rolltreppe', 'aufzug', 'rampe'])
 
@@ -30,6 +32,12 @@ export function Schrittliste({ schritte, aktiv }: SchrittlisteProps) {
             {i + 1}
           </span>
           <span className="schritt-text">{schritt.text}</span>
+          {/* Am Zeilenende: So beginnen alle Texte an derselben Kante. */}
+          {istSymboltyp(schritt.typ) && (
+            <span className="schritt-symbol">
+              <AnlagenSymbol typ={schritt.typ} groesse={24} strich={2} />
+            </span>
+          )}
         </li>
       ))}
     </ol>
