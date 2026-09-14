@@ -79,6 +79,21 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > nur `ABLAGE` in `scripts/osm-ablage-fuellen.ts` den Pfad. Routen für Abzüge
 > und Planmappe: `backend/osm-ablage/routen/`, Laufprotokolle:
 > `backend/osm-ablage/laeufe/`. Planmappe: `frontend/scripts/design-mappe.tsx`.
+>
+> **Commits des Abends**, alle auf `feat/mvp`: `4013f48` (Ablage ins Projekt),
+> `39352d6` (Schritttexte glätten), `2682a37` (Anlagensymbole, Gleisbänder ohne
+> Linie), `d915ed0` (Simulation prüft die Schritte), `cd8d261` und dieser Stand
+> (README, Planmappe).
+>
+> **Nicht gepusht, nicht deployt:** `feat/mvp` steht 23 Commits vor
+> `origin/feat/mvp` und vor `main`; die Produktion zeigt den Stand vom 07.09.
+> Nächster Schritt: pushen, `main` per Fast-Forward nachziehen, Fly.io
+> (`--ha=false`) und Vercel deployen – danach M9 am Gerät.
+>
+> **Planmappe, neuer Stand** (privates Artefakt):
+> <https://claude.ai/code/artifact/656f33a6-7c0a-43bc-bb3d-77450100e7fc>. Die
+> ältere Planmappe und die Leinwand in `design/schema/` zeigen noch den Stand vor
+> den Symbolen.
 
 ### Davor (14.09.2026, nachmittags)
 
