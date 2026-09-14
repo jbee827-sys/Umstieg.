@@ -635,76 +635,99 @@ function achsenLage(
  * Ein Knoten haengt an HOECHSTENS einem Bahnsteig - dem naechsten. Sonst
  * entstuende zwischen zwei Bahnsteigen eine ebene Kante, also ein Weg ueber
  * die Gleise.
+ *
+ * Aber an JEDER Kette dieses Bahnsteigs. Ein Bahnsteig traegt meist zwei
+ * Gleise, und jedes hat seine eigenen Punkte `gleisN:anfang|mitte|ende`.
+ * Bis zum 14.09.2026 waren die Achsen nach Bahnsteig geschluesselt, das
+ * zuletzt verarbeitete Gleis ueberschrieb das erste - und nur dessen Kette
+ * wurde verdichtet. In Leipzig Hbf hing `gleis6:mitte` deshalb allein an
+ * seinen beiden Enden, 103 m in jede Richtung; die Treppe zur Unterfuehrung
+ * 72 m weiter kostete 139 s statt 72 s. Das Routing war dabei exakt - der
+ * Graph bot den direkten Weg nur nicht an.
  */
 function verdichteBahnsteigketten(
   knoten: Map<string, GraphKnoten>,
   fuegeKanteHinzu: (kante: GraphKante) => void,
 ): void {
-  interface Achse {
+  interface Kette {
     anfang: GraphKnoten;
     ende: GraphKnoten;
     mitte?: GraphKnoten;
+  }
+  interface Achse {
     level: number;
+    /** Eine Kette je Gleis - sie teilen sich den Bahnsteig, nicht die Knoten. */
+    ketten: Map<string, Kette>;
   }
   const achsen = new Map<string, Achse>();
   for (const k of knoten.values()) {
     if (!k.bahnsteigId || !k.abschnitt) continue;
-    let eintrag = achsen.get(k.bahnsteigId);
-    if (!eintrag) {
-      eintrag = { anfang: k, ende: k, level: k.level };
-      achsen.set(k.bahnsteigId, eintrag);
+    let achse = achsen.get(k.bahnsteigId);
+    if (!achse) {
+      achse = { level: k.level, ketten: new Map() };
+      achsen.set(k.bahnsteigId, achse);
     }
-    if (k.abschnitt === 'anfang') eintrag.anfang = k;
-    if (k.abschnitt === 'ende') eintrag.ende = k;
-    if (k.abschnitt === 'mitte') eintrag.mitte = k;
+    const gleis = k.gleis ?? '';
+    let kette = achse.ketten.get(gleis);
+    if (!kette) {
+      kette = { anfang: k, ende: k };
+      achse.ketten.set(gleis, kette);
+    }
+    if (k.abschnitt === 'anfang') kette.anfang = k;
+    if (k.abschnitt === 'ende') kette.ende = k;
+    if (k.abschnitt === 'mitte') kette.mitte = k;
   }
 
+  /** Die Lage des Bahnsteigs: Alle seine Ketten liegen auf denselben Enden. */
+  const geometrie = (achse: Achse): Kette | undefined =>
+    [...achse.ketten.values()].find((k) => k.anfang !== k.ende);
+
   // Jeden begehbaren Knoten seinem naechsten Bahnsteig zuordnen.
-  const mitglieder = new Map<string, { knoten: GraphKnoten; anteil: number }[]>();
+  const mitglieder = new Map<string, GraphKnoten[]>();
   for (const kandidat of knoten.values()) {
     if (!kandidat.id.startsWith('n')) continue; // nur physische Knoten
-    let bester: { id: string; anteil: number; querM: number } | null = null;
+    let bester: { id: string; querM: number } | null = null;
     for (const [id, achse] of achsen) {
       if (achse.level !== kandidat.level) continue;
-      if (achse.anfang === achse.ende) continue;
-      const lage = achsenLage(achse.anfang, achse.ende, kandidat);
+      const lage = geometrie(achse);
       if (!lage) continue;
-      if (lage.querM > BAHNSTEIG_NAEHE_M) continue;
-      if (lage.anteil < 0 || lage.anteil > 1) continue;
-      if (!bester || lage.querM < bester.querM) {
-        bester = { id, anteil: lage.anteil, querM: lage.querM };
-      }
+      const hier = achsenLage(lage.anfang, lage.ende, kandidat);
+      if (!hier) continue;
+      if (hier.querM > BAHNSTEIG_NAEHE_M) continue;
+      if (hier.anteil < 0 || hier.anteil > 1) continue;
+      if (!bester || hier.querM < bester.querM) bester = { id, querM: hier.querM };
     }
     if (!bester) continue;
     if (!mitglieder.has(bester.id)) mitglieder.set(bester.id, []);
-    mitglieder.get(bester.id)!.push({ knoten: kandidat, anteil: bester.anteil });
+    mitglieder.get(bester.id)!.push(kandidat);
   }
 
   for (const [id, achse] of achsen) {
     const liste = mitglieder.get(id) ?? [];
     if (liste.length === 0) continue;
-    const kette = [
-      { knoten: achse.anfang, anteil: 0 },
-      ...liste,
-      { knoten: achse.ende, anteil: 1 },
-    ];
-    if (achse.mitte) {
-      const lage = achsenLage(achse.anfang, achse.ende, achse.mitte);
-      kette.push({ knoten: achse.mitte, anteil: lage ? lage.anteil : 0.5 });
-    }
-    kette.sort((a, b) => a.anteil - b.anteil);
-    for (let i = 0; i < kette.length - 1; i++) {
-      const von = kette[i].knoten;
-      const nach = kette[i + 1].knoten;
-      if (von.id === nach.id) continue;
-      fuegeKanteHinzu({
-        von: von.id,
-        nach: nach.id,
-        laengeM: haversineM(von.lat, von.lon, nach.lat, nach.lon),
-        deltaLevel: 0,
-        typ: 'eben',
-        barrierefrei: true,
-      });
+    for (const k of achse.ketten.values()) {
+      if (k.anfang === k.ende) continue;
+      const anteil = (p: GraphKnoten): number => achsenLage(k.anfang, k.ende, p)?.anteil ?? 0.5;
+      const kette = [
+        { knoten: k.anfang, anteil: 0 },
+        ...liste.map((m) => ({ knoten: m, anteil: anteil(m) })),
+        { knoten: k.ende, anteil: 1 },
+      ];
+      if (k.mitte) kette.push({ knoten: k.mitte, anteil: anteil(k.mitte) });
+      kette.sort((a, b) => a.anteil - b.anteil);
+      for (let i = 0; i < kette.length - 1; i++) {
+        const von = kette[i].knoten;
+        const nach = kette[i + 1].knoten;
+        if (von.id === nach.id) continue;
+        fuegeKanteHinzu({
+          von: von.id,
+          nach: nach.id,
+          laengeM: haversineM(von.lat, von.lon, nach.lat, nach.lon),
+          deltaLevel: 0,
+          typ: 'eben',
+          barrierefrei: true,
+        });
+      }
     }
   }
 }
