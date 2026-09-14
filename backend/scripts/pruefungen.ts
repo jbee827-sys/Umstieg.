@@ -286,3 +286,39 @@ export function pruefeAlternativen(
     ...(zweit ? { zweitbesteSek: Math.round(zweit.sek), zweitbesteTyp: zweit.typ } : {}),
   };
 }
+
+/**
+ * Sagen die Schritte, was der Pfad tut – auch nach der Glättung vom 14.09.2026?
+ *
+ * Die Glättung legt Versätze der Fußwege in den Nachbarschritt. Sie darf
+ * dabei nichts verschlucken, was der Reisende wissen muss: Jede Treppe,
+ * Rolltreppe, jeder Aufzug und jede Rampe des Pfads steht als EIGENER
+ * Schritt da, in der Reihenfolge des Wegs und mit dem richtigen Typ. Und die
+ * Schritte tragen weiter den ganzen Pfad und die ganze Gehzeit – daran
+ * hängen die Karte und die Zeitanzeige.
+ */
+export function pruefeSchritte(
+  schritte: { typ: string; sekunden?: number; knotenVon?: number; knotenBis?: number }[],
+  pfad: { knoten: unknown[]; kanten: GraphKante[] },
+  gehzeitSek: number,
+): string[] {
+  const fehler: string[] = [];
+  const summe = schritte.reduce((s, x) => s + (x.sekunden ?? 0), 0);
+  if (summe !== gehzeitSek) fehler.push(`Schritte ergeben ${summe} s, die Route ${gehzeitSek} s`);
+
+  if (schritte[0]?.knotenVon !== 0) fehler.push('Erster Schritt beginnt nicht am Start');
+  if (schritte.at(-1)?.knotenBis !== pfad.knoten.length - 1) fehler.push('Letzter Schritt endet nicht am Ziel');
+  for (let i = 1; i < schritte.length; i++) {
+    if (schritte[i].knotenVon !== schritte[i - 1].knotenBis) {
+      fehler.push(`Lücke oder Überschneidung zwischen Schritt ${i} und ${i + 1}`);
+      break;
+    }
+  }
+
+  const imPfad = pfad.kanten.filter((k) => k.typ !== 'eben').map((k) => k.typ);
+  const imText = schritte.filter((s) => s.typ !== 'eben').map((s) => s.typ);
+  if (imPfad.join(',') !== imText.join(',')) {
+    fehler.push(`Anlagen im Text [${imText.join(', ')}] statt [${imPfad.join(', ')}]`);
+  }
+  return fehler;
+}
