@@ -19,13 +19,18 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { overpassQuery } from '../src/clients/overpass.js';
 import { sucheBahnhoefe } from '../src/clients/stations.js';
 
-export const ABLAGE = join(
-  homedir(), 'AppData', 'Local', 'Temp', 'claude', 'D--Claude-code',
-  '6db04a47-3c2c-491e-84a8-985fc6d8dc06', 'scratchpad', 'osm-cache',
-);
+/**
+ * Die EINE Stelle, an der die Ablage liegt – alle Skripte importieren sie.
+ *
+ * Im Projekt statt im Temp-Scratchpad einer Sitzung: Dort räumte Windows sie
+ * irgendwann weg, und acht Skripte trugen denselben Sitzungspfad fest ein.
+ * Per `.gitignore` ausgeschlossen.
+ */
+export const ABLAGE = fileURLToPath(new URL('../osm-ablage/osm-cache/', import.meta.url));
 const NAMEN = join(ABLAGE, 'namen.json');
 
 /**
