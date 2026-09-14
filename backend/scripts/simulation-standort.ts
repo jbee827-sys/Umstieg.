@@ -39,6 +39,7 @@ import type {
   RoutenPfad,
   StationGraph,
 } from '../src/core/typen.js';
+import { ABLAGE } from './osm-ablage-fuellen.js';
 
 function ladeSecrets(): void {
   const pfad = join(homedir(), '.secrets', 'umstieg.env');
@@ -53,10 +54,7 @@ function ladeSecrets(): void {
 
 // Dieselbe Ablage wie der Schemalauf - was dort geholt wurde, wird hier nicht
 // noch einmal geholt.
-const CACHE = join(
-  homedir(), 'AppData', 'Local', 'Temp', 'claude', 'D--Claude-code',
-  '6db04a47-3c2c-491e-84a8-985fc6d8dc06', 'scratchpad', 'osm-cache',
-);
+const CACHE = ABLAGE;
 
 const ABSCHNITTE = ['anfang', 'mitte', 'ende'] as const;
 type Abschnitt = (typeof ABSCHNITTE)[number];

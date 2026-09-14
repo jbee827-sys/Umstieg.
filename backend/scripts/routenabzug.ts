@@ -7,7 +7,6 @@
 //
 // Aufruf: npx tsx scripts/routenabzug.ts <EVA> <gleisAn> <gleisAb> [abschnitt] [variante] [datei]
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { baueGraph, graphZuGeoJSON } from '../src/core/graph.js';
 import { gehzeitSekunden } from '../src/core/gehzeit.js';
@@ -16,11 +15,7 @@ import { berechneRoute, findeStartknoten } from '../src/core/routing.js';
 import { baueBahnhofSchema } from '../src/core/schema.js';
 import { generiereSchritte } from '../src/core/textgen.js';
 import type { OverpassAntwort, RoutenVariante } from '../src/core/typen.js';
-
-const CACHE = join(
-  homedir(), 'AppData', 'Local', 'Temp', 'claude', 'D--Claude-code',
-  '6db04a47-3c2c-491e-84a8-985fc6d8dc06', 'scratchpad', 'osm-cache',
-);
+import { ABLAGE as CACHE } from './osm-ablage-fuellen.js';
 
 const [eva, gleisAn, gleisAb, abschnitt = 'mitte', varianteRoh = 'schnellste', datei] =
   process.argv.slice(2);

@@ -26,6 +26,7 @@ import { klassifiziere } from '../src/core/klassifikation.js';
 import { berechneRoute } from '../src/core/routing.js';
 import { baueBahnhofSchema } from '../src/core/schema.js';
 import type { BahnhofSchema, OverpassAntwort } from '../src/core/typen.js';
+import { ABLAGE as CACHE } from './osm-ablage-fuellen.js';
 
 function ladeSecrets(): void {
   const pfad = join(homedir(), '.secrets', 'umstieg.env');
@@ -37,11 +38,6 @@ function ladeSecrets(): void {
     process.env[sauber.slice(0, trenner).trim()] = sauber.slice(trenner + 1).trim();
   }
 }
-
-const CACHE = join(
-  homedir(), 'AppData', 'Local', 'Temp', 'claude', 'D--Claude-code',
-  '6db04a47-3c2c-491e-84a8-985fc6d8dc06', 'scratchpad', 'osm-cache',
-);
 
 /**
  * Zweiter Durchgang (13.09.2026): die drei Metropolknoten als Pflicht, sonst

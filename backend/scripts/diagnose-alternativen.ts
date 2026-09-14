@@ -9,18 +9,13 @@
 //
 // Aufruf: npx tsx scripts/diagnose-alternativen.ts <EVA> <gleisAn> <gleisAb> [abschnitt]
 import { existsSync, readFileSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { baueGraph, haversineM } from '../src/core/graph.js';
 import { gehzeitSekunden, kantenZeitSekunden } from '../src/core/gehzeit.js';
 import { klassifiziere } from '../src/core/klassifikation.js';
 import { berechneRoute, findeStartknoten } from '../src/core/routing.js';
 import type { GraphKante, OverpassAntwort, StationGraph } from '../src/core/typen.js';
-
-const CACHE = join(
-  homedir(), 'AppData', 'Local', 'Temp', 'claude', 'D--Claude-code',
-  '6db04a47-3c2c-491e-84a8-985fc6d8dc06', 'scratchpad', 'osm-cache',
-);
+import { ABLAGE as CACHE } from './osm-ablage-fuellen.js';
 
 const [eva, gleisAn, gleisAb, abschnitt = 'mitte'] = process.argv.slice(2);
 const pfadOsm = join(CACHE, `${eva}.json`);
