@@ -25,3 +25,6 @@ dist-ssr
 
 # mkcert-Zertifikate fuer HTTPS in der Entwicklung – nie ins Repo
 .cert/
+
+# Abzug-Bau (vite.abzug.config.ts) - erzeugt, nie ins Repo
+dist-abzug/
