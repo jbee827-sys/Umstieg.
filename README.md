@@ -25,7 +25,8 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > „Anfang · Mitte · Ende" mit dem Anfang immer links. Dateien:
 > `frontend/src/schema/{bandmodell,bandbild,masse}.ts`,
 > `components/Ebenenschema.tsx`, Tests gegen echte Routen in
-> `schema/testdaten/`. **Nichts davon ist committet.**
+> `schema/testdaten/`. **Committet auf `feat/mvp`, nicht gepusht, nicht
+> deployt.**
 >
 > **Der wichtigste Fund war ein Graphfehler:** An jedem Bahnsteig mit zwei
 > Gleisen wurde nur die Kette des zuletzt verarbeiteten Gleises verdichtet
