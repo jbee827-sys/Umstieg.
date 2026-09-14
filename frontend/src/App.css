@@ -886,6 +886,267 @@
   color: var(--color-neutral-600, #6b6767);
   margin: 6px 0 0;
 }
+
+/* Der Bandstapel: ein Band je Ebenenbesuch, in der Reihenfolge des Wegs.
+   Das aktive Band bekommt fast den ganzen Platz, die übrigen eine Zeile. */
+.schema-stapel {
+  display: flex;
+  flex-direction: column;
+}
+.schema-band {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 12px;
+  border: 1px solid #e0dcdc;
+  border-radius: 11px;
+  background: #edebeb;
+  overflow: hidden;
+}
+.schema-band.besucht {
+  background: #e2dfdf;
+}
+.schema-band.aktiv {
+  justify-content: flex-start;
+  padding: 12px;
+  border: 1.5px solid var(--color-accent);
+  border-radius: 16px;
+  background: var(--color-neutral-100);
+}
+.schema-bandkopf {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+}
+.schema-bandname,
+.schema-bandrechts {
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.schema-bandname {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+  color: var(--color-neutral-700);
+}
+.schema-band.aktiv .schema-bandname {
+  color: var(--color-text);
+  font-weight: 700;
+}
+.schema-bandrechts {
+  flex: none;
+  font-weight: 500;
+  color: var(--color-neutral-600);
+  font-variant-numeric: tabular-nums;
+}
+.schema-bild {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  margin-top: 6px;
+}
+.schema-bild text {
+  font-family: var(--font-body);
+}
+/* accent-700 statt accent: dunkel genug für 12 px auf hellem Grund. */
+.schema-bandfuss {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-accent-700);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.schema-wechsel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-neutral-700);
+}
+
+/* — Im Bild: Bahnsteige — */
+.schema-gleisname {
+  font-size: 10px;
+  font-weight: 600;
+  fill: var(--color-neutral-600);
+}
+.schema-gleisname.wichtig {
+  font-weight: 800;
+  fill: var(--color-text);
+}
+.schema-bahnsteig {
+  stroke: #c4bfbf;
+  stroke-linecap: butt;
+}
+.schema-bahnsteig.start {
+  stroke: var(--color-text);
+}
+.schema-bahnsteig.ziel {
+  stroke: var(--color-accent);
+}
+.schema-bahnsteig.ungemessen {
+  stroke-dasharray: 4 3;
+  opacity: 0.7;
+}
+.schema-marke {
+  stroke: var(--color-neutral-100);
+}
+.schema-marke-aufzug {
+  fill: var(--color-neutral-100);
+}
+.schema-notiz {
+  font-size: 10px;
+  font-weight: 700;
+  fill: var(--color-accent-700);
+}
+.schema-standort {
+  font-size: 9px;
+  font-weight: 600;
+  fill: var(--color-neutral-600);
+}
+.schema-standort.hier {
+  font-weight: 800;
+  fill: var(--color-text);
+}
+
+/* — Im Bild: Grundriss einer Übergangsebene — */
+.schema-netz {
+  fill: none;
+  stroke: #c9c4c4;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.schema-anlage {
+  stroke: var(--color-neutral-600);
+  stroke-linecap: butt;
+}
+.schema-aufzug {
+  fill: var(--color-neutral-100);
+  stroke: var(--color-neutral-600);
+}
+.schema-anlage.auf-route,
+.schema-aufzug.auf-route {
+  stroke: var(--color-accent);
+}
+
+/* — Im Bild: der Weg — */
+.schema-weg-saum,
+.schema-weg {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.schema-weg-saum {
+  stroke: var(--color-neutral-100);
+  stroke-width: 7;
+}
+.schema-weg {
+  stroke: var(--color-accent);
+  stroke-width: 3;
+}
+.schema-start {
+  fill: var(--color-neutral-100);
+  stroke: var(--color-text);
+  stroke-width: 2.5;
+}
+.schema-start-kern {
+  fill: var(--color-text);
+}
+.schema-ziel {
+  fill: var(--color-accent);
+  stroke: var(--color-neutral-100);
+  stroke-width: 2;
+}
+.schema-wechselmarke {
+  fill: var(--color-accent);
+  stroke: var(--color-neutral-100);
+  stroke-width: 1.5;
+}
+.schema-wechselmarke-pfeil {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.schema-ankunftsring {
+  fill: var(--color-neutral-100);
+  stroke: var(--color-accent);
+  stroke-width: 2;
+}
+/* Ein Saum aus der Grundfarbe hinter der Schrift: Die Anweisung liegt oft
+   über einem Balken oder dem Netz und muss trotzdem lesbar bleiben. */
+.schema-wechseltext {
+  font-size: 10px;
+  font-weight: 800;
+  fill: var(--color-accent-700);
+  paint-order: stroke;
+  stroke: var(--color-neutral-100);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+/* — Legende — */
+.schema-legende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--color-neutral-700);
+}
+.schema-legende-eintrag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.schema-legende-strich {
+  stroke: var(--color-neutral-700);
+  stroke-width: 2;
+}
+.schema-legende-kasten {
+  fill: none;
+  stroke: var(--color-neutral-700);
+  stroke-width: 1.5;
+}
+
+/* — Das grobe Bild aus den Schritttexten (Standardmodell) — */
+.schema-band-grob {
+  justify-content: flex-start;
+  gap: 8px;
+  padding-top: 10px;
+}
+.schema-grobgleise {
+  display: flex;
+  gap: 6px;
+}
+.schema-grobgleis {
+  min-width: 34px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-weight: 700;
+  font-size: 13px;
+  text-align: center;
+}
+.schema-band-grob.aktiv .schema-grobgleis {
+  background: var(--color-accent);
+}
 .karte-aufklappbar {
   margin-top: 16px;
 }
