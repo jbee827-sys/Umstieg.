@@ -1,4 +1,5 @@
 import { haversineM } from './graph.js';
+import { himmelsrichtungen, mittlereAchse, peilungGrad } from './richtung.js';
 import type {
   BahnhofSchema,
   GraphKnoten,
@@ -83,34 +84,6 @@ interface Bahnsteigrohbau {
   anfang?: GraphKnoten;
   ende?: GraphKnoten;
   mitte: GraphKnoten;
-}
-
-/** Peilung a→b in Grad (0 = Nord, im Uhrzeigersinn). */
-function peilungGrad(a: GraphKnoten, b: GraphKnoten): number {
-  const dLon = (b.lon - a.lon) * BOGEN;
-  const y = Math.sin(dLon) * Math.cos(b.lat * BOGEN);
-  const x =
-    Math.cos(a.lat * BOGEN) * Math.sin(b.lat * BOGEN) -
-    Math.sin(a.lat * BOGEN) * Math.cos(b.lat * BOGEN) * Math.cos(dLon);
-  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
-}
-
-/**
- * Mittel mehrerer Achsrichtungen.
- *
- * Über die Winkel zu mitteln wäre falsch: Ein Bahnsteig ist richtungslos,
- * 170° und 10° sind fast dieselbe Achse, ihr arithmetisches Mittel (90°)
- * steht senkrecht darauf. Deshalb über die verdoppelten Winkel mitteln und
- * das Ergebnis halbieren – das übliche Verfahren für Achsen ohne Vorzeichen.
- */
-function mittlereAchse(grade: number[]): number {
-  let x = 0;
-  let y = 0;
-  for (const g of grade) {
-    x += Math.cos(2 * g * BOGEN);
-    y += Math.sin(2 * g * BOGEN);
-  }
-  return (Math.atan2(y, x) / 2 / BOGEN + 360) % 180;
 }
 
 /**
@@ -730,6 +703,11 @@ export function baueBahnhofSchema(graph: StationGraph, pfad: RoutenPfad): Bahnho
         ...(rolle ? { rolle } : {}),
         ...(anlagenZahlen.has(b.bahnsteigId) ? { anlagen: anlagenZahlen.get(b.bahnsteigId)! } : {}),
         ...(hatAchse ? { von: zuXY(b.anfang!), bis: zuXY(b.ende!) } : {}),
+        // Im Standardmodell waere die Richtung erfunden - dort sagen die
+        // Knoepfe weiter nur „Anfang" und „Ende".
+        ...(hatAchse && graph.stufe !== 3
+          ? { himmelsrichtung: himmelsrichtungen(b.anfang!, b.ende!) }
+          : {}),
         ...(zugaenge ? { zugaenge } : {}),
       };
     });
