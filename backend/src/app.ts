@@ -234,6 +234,35 @@ export function buildApp(
   });
 
   /**
+   * Ein Parameter, der mehrfach kommt, ist ungueltig - fuer ALLE Routen.
+   *
+   * Fastify macht aus `?q=a&q=b` eine Liste, und jede Route nimmt
+   * stillschweigend einen Text an: `q.trim()` warf, und aus einer doppelten
+   * Eingabe wurde ein 500er (Anfragepruefung 15.09.2026,
+   * `test/anfragen.test.ts`). Keine Route hat einen Grund, eine Liste
+   * anzunehmen. An einer Stelle abgewiesen statt in jeder Route einzeln
+   * geprueft - die naechste Route vergaesse es sonst wieder.
+   *
+   * Der Name des Parameters geht bewusst nicht in die Antwort: Er ist
+   * Eingabe des Aufrufers, und gebraucht wird er dort nicht.
+   */
+  app.addHook('preValidation', async (req, reply) => {
+    const query = req.query as Record<string, unknown> | undefined;
+    if (query && Object.values(query).some((wert) => Array.isArray(wert))) {
+      return reply
+        .code(400)
+        .send({ fehler: 'parameter-ungueltig', detail: 'Ein Parameter ist mehrfach angegeben.' });
+    }
+  });
+
+  /**
+   * Unbekannte Pfade im Format der App. Fastifys Standardtext („Route
+   * GET:/api/gibtsnicht not found") war die einzige Fehlerantwort ohne
+   * `fehler` - und wiederholte obendrein die aufgerufene URL samt Abfrage.
+   */
+  app.setNotFoundHandler((_req, reply) => reply.code(404).send({ fehler: 'nicht-gefunden' }));
+
+  /**
    * Die Tafel gibt es in ZWEI Ausfuehrungen - und das ist Absicht.
    *
    * `tafelRoh` geht immer hinaus und gehoert dem Live-Poller: Er ist die
