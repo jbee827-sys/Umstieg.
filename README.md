@@ -16,7 +16,65 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 14.09.2026, abends)
+## Hier weitermachen (Stand 15./16.09.2026, nachts)
+
+> **„Anfang" heißt jetzt etwas (ToDo 31, entschieden und umgesetzt).** Der
+> Anfang eines Bahnsteigs ist das **Nord- bzw. Westende** – für alle
+> Bahnsteige einer Ebene an derselben Achse ausgerichtet (`core/richtung.ts`,
+> angewandt in `baueGraph`). Die Knöpfe und die Standortmarken im Bild sagen
+> es: „Nordende · Mitte · Südende" oder „Westende · Mitte · Ostende".
+> Vergleichend gemeint – „N" heißt „das nördlichere der beiden Enden" – und
+> damit an jedem Bahnsteig wahr, der nicht exakt West-Ost liegt.
+>
+> **Warum die Himmelsrichtung:** Sie ist die einzige Orientierung, die an
+> **jedem** Bahnhof aus den vorhandenen Daten belegt ist. Kopf und
+> Empfangsgebäude holt die Overpass-Abfrage nicht, und die Fahrtrichtung des
+> Zuges ließe sich nur aus dem Laufweg schätzen – an Brücken und Kurven nennte
+> sie das falsche Ende. Ohne gemessene Achse (Standardmodell) bleibt es bei
+> „Anfang/Ende": Dort wäre eine Himmelsrichtung erfunden.
+>
+> **Wie willkürlich der alte Anfang war, zeigt der Vergleich von Lauf 4 und
+> Lauf 5** (dieselbe Ablage, nur anderer Code): An **72 von 111 Bahnhöfen** lag
+> er an verschiedenen Bahnsteigen an entgegengesetzten Enden. Umbenannt sind
+> 323 von 672 unterscheidbaren Kombinationen aus Gleispaar und Variante, 349
+> bleiben gleich.
+>
+> **Kein Weg hat sich geändert, nur sein Name.** Simulation 5 über die ganze
+> Ablage – 2082 Routen an 111 Bahnhöfen – liefert dieselben Gehzeiten, dieselbe
+> Ebenenfolge, denselben einen Befund (Düsseldorf 1 → 20, ToDo 27) und dieselben
+> sechs Bahnhöfe mit Umwegen (ToDo 29); deren Meterangaben zählen jetzt ab dem
+> neuen Anfang. Im Bild: **0 Befunde**, 0 sich überdeckende Symbolschilder.
+> Einzige Abweichung: Augsburg 6 → 12 barrierefrei ab Anfang ist 1 m kürzer
+> (267 → 266 m) – **ToDo 36**, Ursache nicht untersucht.
+>
+> **Neu: der Anfragetest** (`backend/scripts/anfragen-pruefung.ts`, ohne Netz
+> und ohne Tresor). Er stellt **3446 Anfragen** an eine echte App – jedes
+> Gleispaar von Berlin Hbf mit jeder Variante und jedem Standort, dazu kaputte
+> und böswillige Eingaben, am Ende an einem echten Socket auch SSE und die
+> Ratenbegrenzung. Er hat einen **500er** gefunden: `?q=Berlin&q=Hamburg`
+> machte aus `q` eine Liste, und `q.trim()` warf. Dieselbe Falle stand bei
+> `lat`/`lon`. Behoben an **einer** Stelle für alle Routen (`app.ts`): Ein
+> mehrfach angegebener Parameter ist 400, und unbekannte Pfade antworten
+> `{fehler: 'nicht-gefunden'}` statt in Fastifys Standardtext.
+>
+> ```bash
+> cd backend && npm test && npm run lint     # 438 von 438, Lint sauber
+> cd frontend && npm test && npm run lint    # 378 von 378, Lint sauber
+> cd frontend && npm run build               # grün
+> cd backend && npx tsx scripts/anfragen-pruefung.ts   # 3446 Anfragen, 0 Befunde
+> ```
+>
+> **Nicht geprüft:** Der Blick im Browser – die Chrome-Erweiterung war nicht
+> verbunden. Die neuen Knopfbeschriftungen sind maschinell belegt, aber noch
+> von niemandem gesehen; das gehört zu **M10** (ToDo 30). Und
+> `simulation-standort.ts` lief nicht neu (Netz und Tresor), deshalb trägt die
+> Tabelle unter „Simulation: die Standortwahl über 62 Bahnhöfe" einen Vorbehalt.
+>
+> **Nicht gepusht, nicht deployt.** Die Produktion zeigt weiter den Stand vom
+> 07.09. Nächster Schritt unverändert ToDo 25: pushen, `main` per Fast-Forward
+> nachziehen, Fly.io (`--ha=false`) und Vercel – danach M9 und M10 am Gerät.
+
+### Davor (14.09.2026, abends)
 
 > **Zuletzt (14.09., abends):** Drei Änderungen am Ebenenschema, alle auf
 > `feat/mvp` committet, **nicht gepusht, nicht deployt**:
@@ -624,12 +682,18 @@ als Anlage markiert sein.**
 |---|---|---|---|---|
 | Hamburg-Altona | 734 s | 512 s | **282 s** | 452 s |
 | Frankfurt(Main)Hbf | 673 s | 463 s | **250 s** | 423 s |
-| München Hbf | **625 s** | 785 s | 944 s | 319 s |
+| München Hbf | 944 s | 785 s | **625 s** | 319 s |
 | Essen Hbf | 408 s | 168 s | **121 s** | 287 s |
 | Dresden Hbf | 330 s | **244 s** | 519 s | 275 s |
 | Kiel Hbf | **179 s** | 311 s | 444 s | 265 s |
 
-**Die Richtung dreht sich.** In München gewinnt der Anfang, in Hamburg-Altona
+> **Seit ToDo 31 (15.09.2026) ist „Anfang" das Nord- bzw. Westende.** Die
+> Tabelle ist mit der alten, zufälligen Zeichenrichtung gemessen. Nachgeprüft
+> über Lauf 5: München ist umbenannt (Gleis 5 liegt West → Ost, das Ostende
+> gewinnt mit 625 s – oben schon getauscht), Hamburg-Altona und Frankfurt sind
+> unverändert; Essen, Dresden und Kiel sind nicht nachgeprüft.
+
+**Die Richtung dreht sich.** In München gewinnt das Ostende, in Hamburg-Altona
 das Ende, in Dresden die Mitte. Eine feste Annahme – „Reisende stehen in der
 Mitte" – wäre an jedem zweiten Bahnhof die falsche. Und der Sonderfall zählt:
 **Fulda und Mainz sind ab der Mitte in 4 bzw. 6 Sekunden am Ziel** und ab den
@@ -872,6 +936,7 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | 6 | **Vercel-Preview-Variable nur für `feat/mvp`** | `VITE_API_BASE` konnte nicht „für alle Preview-Zweige" gesetzt werden (CLI-Fehler in v53.1.0: der vorgeschlagene Befehl ist derselbe, der scheitert). Neue Zweige brauchen einen eigenen Eintrag oder das Dashboard. |
 | **25** | **Ausliefern: 23 Commits auf `feat/mvp`** | Seit dem 08.09. ist nichts gepusht; die Produktion zeigt den Stand vom 07.09. Pushen, `main` per Fast-Forward nachziehen (siehe „Zweige"), `flyctl deploy … --ha=false`, Vercel – und danach die `vercel.json` prüfen (Falle 2 unter „Deployment-Stand"). Voraussetzung für M9 (ToDo 3) und ToDo 30. **Wartet auf Freigabe.** |
 | 26 | **Zwei Simulationen lesen den Schlüssel-Tresor ohne Not** | `simulation-schema.ts` und `simulation-standort.ts` rufen `ladeSecrets()` beim Start immer auf – auch mit `ABLAGE_NUR=1`, wo kein Netz gebraucht wird. Nach `D:\Claude-code\CLAUDE.md` starten sie deshalb nur nach Rückfrage. Nur laden, wenn wirklich abgerufen wird; dann laufen beide ohne. |
+| 36 | **Augsburg 6 → 12 barrierefrei: 1 m kürzer als vor ToDo 31** | Lauf 5 gegen Lauf 4, ab Anfang: 266 statt 267 m, 386 statt 387 s, gleiche Ebenenfolge. Die einzige Route von 672 unterscheidbaren Kombinationen, die weder gleich blieb noch nur die Seiten tauschte. Vermutlich ein Nebeneffekt der jetzt umgedrehten Bahnsteigkette (`verdichteBahnsteigketten` arbeitet vom Anfang aus) – **nicht untersucht**. Klein, aber es zeigt eine Reihenfolgeabhängigkeit, die es nicht geben sollte. |
 | 27 | **Düsseldorf Hbf 1 → 20: Wegzerlegung 236 statt 231 m** | Der einzige Routing-Befund von Lauf 4 (`pruefeSchema`, ab Mitte, schnellste). Die Linienzüge der Besuche sind 5 m länger als der Pfad ohne Ebenenwechsel. Douglas-Peucker kann nicht verlängern – die Ursache liegt woanders (Besuchsgrenzen, doppelte Punkte an einem Wechsel?). Nicht aus dem Symbolumbau. |
 
 ### Als Nächstes (der Hauptstrang)
@@ -890,7 +955,7 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | 28 | **Stumme Treppen und Rampen** | Lauf 4: 195 Routen an 19 Bahnhöfen nehmen eine Treppe oder Rampe, ohne dass der Graph einen Ebenenwechsel kennt (35 Treppen-, 769 Rampenkanten) – etwa eine Unterführung ohne `level`. Im Bild steht dort keine Scheibe, im Text schon. Je Fall zu klären: Fehlt `level` in OSM, oder liest der Graph `incline`/`ramp` nicht? |
 | 29 | **Umwege zu einem Zugang an 6 Bahnhöfen** | `pruefeBahnsteigwege`, Lauf 4: Bielefeld (Gleis 5, zwei Treppen), Bonn (Gleis 4), Gütersloh (Gleis 2 und 3), Schwerin (Gleis 1: Treppe über 258 statt 120 m, zwei Aufzüge), Wittenberge (Gleis 1, Aufzug), Berlin-Spandau (Gleis 3: Treppe bei 397 m unerreichbar). Nach der Kettenkorrektur eine andere Ursache – je Bahnhof am Graphen nachsehen. |
 | 30 | **M10: das neue Schema am Gerät** | Mit M9 nach dem Deployment (ToDo 25). Tragen die 11-px-Symbole in der Halle bei Gegenlicht? Reicht auf dem Ankunftsband der Punkt ohne Linie – auch am Kopfbahnhof, wo die U-Form nur noch im Text steht (154 Routen an 18 Bahnhöfen)? Stimmen die geglätteten Schritte im Gehen (`GLAETTUNG_M = 6` ist begründet, nicht gemessen)? |
-| 31 | **Was „Anfang" im Bahnhof heißt** | Anfang und Ende folgen der Zeichenrichtung in OSM. Das Bild legt den Anfang immer links, die Knöpfe sagen aber nicht, welches Ende das im Bahnhof ist – etwa „am Kopf" oder „Richtung Halle". Die Wahl entscheidet an 69 von 392 Gleispaaren den Weg selbst (Lauf 4). |
+| ~~31~~ | ~~**Was „Anfang" im Bahnhof heißt**~~ ✅ **entschieden und umgesetzt 15.09.2026** | **Anfang = Nord- bzw. Westende**, für alle Bahnsteige einer Ebene an derselben Achse ausgerichtet (`core/richtung.ts`, angewandt in `baueGraph`). Die Knöpfe und die Standortmarken im Bild sagen es: „Nordende · Mitte · Südende" oder „Westende · Mitte · Ostende" – vergleichend, also „das nördlichere der beiden Enden". Warum die Himmelsrichtung: Sie ist die einzige Orientierung, die an **jedem** Bahnhof aus den Daten belegt ist. Kopf und Empfangsgebäude kennt die Overpass-Abfrage nicht, und die Fahrtrichtung ließe sich nur aus dem Laufweg schätzen – an Brücken und Kurven das falsche Ende. Ohne gemessene Achse (Standardmodell) bleibt es bei „Anfang/Ende". Vorher: die zufällige Zeichenrichtung in OSM, an Nachbarbahnsteigen oft entgegengesetzt. Siehe „Hier weitermachen". |
 
 Der Umbau nach dem Entwurf ist am 31.08. erfolgt (Spec und Plan unter
 `docs/superpowers/`); Spec-Abschnitt 8 ist
