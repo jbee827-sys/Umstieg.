@@ -129,6 +129,12 @@ export interface SchemaZugang {
   aufRoute: boolean;
 }
 
+/**
+ * Himmelsrichtung eines Bahnsteigendes – VERGLEICHEND: „N" heisst „das
+ * nördlichere der beiden Enden", nicht „genau im Norden".
+ */
+export type Himmelsrichtung = 'N' | 'O' | 'S' | 'W';
+
 export interface SchemaBahnsteig {
   bahnsteigId: string;
   /** Gleise an diesem Bahnsteig, aufsteigend – "5", "6". */
@@ -158,6 +164,13 @@ export interface SchemaBahnsteig {
    * kann — die Liste wäre nur Gewicht in der Antwort.
    */
   anlagen?: { aufzug: number; rolltreppe: number; treppe: number };
+  /**
+   * Wohin die Enden zeigen: `von` ist der Bahnsteiganfang, `bis` das Ende.
+   *
+   * Nur bei gemessener Achse. Die Knöpfe „Nordende · Mitte · Südende" lesen
+   * es von hier; im Standardmodell wäre die Richtung erfunden.
+   */
+  himmelsrichtung?: { von: Himmelsrichtung; bis: Himmelsrichtung };
   /** Bahnsteigenden im Bezugsrahmen - fehlen ohne Achse (Stufe 3). */
   von?: SchemaPunkt;
   bis?: SchemaPunkt;

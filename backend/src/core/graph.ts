@@ -1,3 +1,4 @@
+import { mittlereAchse, nachNordwesten, peilungGrad, richteEndenAus } from './richtung.js';
 import type {
   GraphKante,
   GraphKnoten,
@@ -399,6 +400,62 @@ export function baueGraph(osm: OverpassAntwort): StationGraph {
     }
   }
 
+  /**
+   * Welches Bahnsteigende „anfang" heisst (ToDo 31, 15.09.2026).
+   *
+   * Bis dahin das Ende, das OSM zufaellig zuerst zeichnet: an zwei
+   * Nachbarbahnsteigen oft entgegengesetzte Enden, und kein Knopf konnte
+   * sagen, welches gemeint ist. Jetzt das Nord- bzw. Westende - fuer alle
+   * Bahnsteige EINER Ebene an derselben Achse ausgerichtet, damit zwei fast
+   * parallele Bahnsteige knapp beiderseits der Nordost-Diagonale nicht
+   * verschiedene Enden waehlen.
+   *
+   * Warum die Himmelsrichtung: Sie ist die einzige Orientierung, die an JEDEM
+   * Bahnhof aus den Daten belegt ist. Kopf und Empfangsgebaeude kennt die
+   * Overpass-Abfrage nicht, und die Fahrtrichtung des Zuges liesse sich nur
+   * aus dem Laufweg schaetzen - eine Schaetzung, die an Bruecken und Kurven
+   * das falsche Ende naennte.
+   */
+  type Lagepunkt = OsmElement & { lat: number; lon: number };
+  const endenJeBahnsteig = new Map<BahnsteigDaten, [Lagepunkt, Lagepunkt]>();
+  for (const bahnsteig of bahnsteige) {
+    if (bahnsteig.refs.length === 0) continue; // ohne Gleisnummer keine synthetischen Punkte
+    const punkte = bahnsteig.nodeListen
+      .flat()
+      .map((id) => osmKnoten.get(id))
+      .filter((n): n is Lagepunkt => n?.lat !== undefined && n?.lon !== undefined);
+    if (punkte.length < 2) continue;
+
+    // Bahnsteigenden = Punktpaar mit maximaler Distanz (Ways sind klein, O(n²) ok)
+    let endeA = punkte[0];
+    let endeB = punkte[1];
+    let maxDist = -1;
+    for (let i = 0; i < punkte.length; i++) {
+      for (let j = i + 1; j < punkte.length; j++) {
+        const d = haversineM(punkte[i].lat, punkte[i].lon, punkte[j].lat, punkte[j].lon);
+        if (d > maxDist) {
+          maxDist = d;
+          endeA = punkte[i];
+          endeB = punkte[j];
+        }
+      }
+    }
+    endenJeBahnsteig.set(bahnsteig, [endeA, endeB]);
+  }
+  const peilungenJeEbene = new Map<number, number[]>();
+  for (const [bahnsteig, [a, e]] of endenJeBahnsteig) {
+    const liste = peilungenJeEbene.get(bahnsteig.ebene) ?? [];
+    liste.push(peilungGrad(a, e));
+    peilungenJeEbene.set(bahnsteig.ebene, liste);
+  }
+  const richtungJeEbene = new Map<number, number>();
+  for (const [ebene, peilungen] of peilungenJeEbene) {
+    richtungJeEbene.set(ebene, nachNordwesten(mittlereAchse(peilungen)));
+  }
+  for (const [bahnsteig, [a, e]] of endenJeBahnsteig) {
+    endenJeBahnsteig.set(bahnsteig, richteEndenAus(a, e, richtungJeEbene.get(bahnsteig.ebene)!));
+  }
+
   const gleisSet = new Set<string>();
   for (const bahnsteig of bahnsteige) {
     const { bahnsteigId, refs, ebene, tags, nodeListen } = bahnsteig;
@@ -426,28 +483,12 @@ export function baueGraph(osm: OverpassAntwort): StationGraph {
 
     if (refs.length === 0) continue; // ohne Gleisnummer keine synthetischen Punkte
 
-    const punkte = nodeListen
-      .flat()
-      .map((id) => osmKnoten.get(id))
-      .filter((n): n is OsmElement => n?.lat !== undefined && n?.lon !== undefined);
-    if (punkte.length < 2) continue;
-
-    // Bahnsteigenden = Punktpaar mit maximaler Distanz (Ways sind klein, O(n²) ok)
-    let endeA = punkte[0];
-    let endeB = punkte[1];
-    let maxDist = -1;
-    for (let i = 0; i < punkte.length; i++) {
-      for (let j = i + 1; j < punkte.length; j++) {
-        const d = haversineM(punkte[i].lat!, punkte[i].lon!, punkte[j].lat!, punkte[j].lon!);
-        if (d > maxDist) {
-          maxDist = d;
-          endeA = punkte[i];
-          endeB = punkte[j];
-        }
-      }
-    }
-    const mitteLat = (endeA.lat! + endeB.lat!) / 2;
-    const mitteLon = (endeA.lon! + endeB.lon!) / 2;
+    // Anfang = Nord- bzw. Westende, siehe `endenJeBahnsteig` oben.
+    const enden = endenJeBahnsteig.get(bahnsteig);
+    if (!enden) continue;
+    const [endeA, endeB] = enden;
+    const mitteLat = (endeA.lat + endeB.lat) / 2;
+    const mitteLon = (endeA.lon + endeB.lon) / 2;
 
     for (const gleis of refs) {
       gleisSet.add(gleis);
@@ -455,9 +496,9 @@ export function baueGraph(osm: OverpassAntwort): StationGraph {
       // Umriss oben bleibt trotzdem begehbar – er ist echte Geometrie.
       if (quelleFuerGleis.get(gleis) !== bahnsteig) continue;
       const lagen: [string, number, number][] = [
-        ['anfang', endeA.lat!, endeA.lon!],
+        ['anfang', endeA.lat, endeA.lon],
         ['mitte', mitteLat, mitteLon],
-        ['ende', endeB.lat!, endeB.lon!],
+        ['ende', endeB.lat, endeB.lon],
       ];
       let vorherigeId: string | null = null;
       for (const [abschnitt, lat, lon] of lagen) {

@@ -223,10 +223,15 @@ describe('baueBahnhofSchema – echte Lage auf der Ebene', () => {
     // wären sie Rauschen, als Zugänge sind sie die Auskunft.
     expect(start.zugaenge!.length).toBeGreaterThanOrEqual(2);
     expect(start.zugaenge!.length).toBeLessThanOrEqual(5);
-    const erster = start.zugaenge![0];
-    expect(erster.beiM).toBeGreaterThan(90);
-    expect(erster.beiM).toBeLessThan(140);
-    expect(erster.rolltreppe + erster.treppe).toBeGreaterThan(1);
+    // `beiM` zaehlt ab dem Bahnsteiganfang - seit dem 15.09.2026 das
+    // Westende (ToDo 31, geprueft in richtung.test.ts). Die Gruppe rund
+    // 115 m vor dem OSTende ist dieselbe wie vorher; vorher war das Ostende
+    // nur zufaellig der Anfang.
+    const amOstende = start.zugaenge![start.zugaenge!.length - 1];
+    const vomOstende = start.laengeM! - amOstende.beiM;
+    expect(vomOstende).toBeGreaterThan(90);
+    expect(vomOstende).toBeLessThan(140);
+    expect(amOstende.rolltreppe + amOstende.treppe).toBeGreaterThan(1);
   });
 
   it('hält die Zugänge in der Reihenfolge entlang des Bahnsteigs', () => {
