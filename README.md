@@ -70,9 +70,25 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > `simulation-standort.ts` lief nicht neu (Netz und Tresor), deshalb trägt die
 > Tabelle unter „Simulation: die Standortwahl über 62 Bahnhöfe" einen Vorbehalt.
 >
-> **Nicht gepusht, nicht deployt.** Die Produktion zeigt weiter den Stand vom
-> 07.09. Nächster Schritt unverändert ToDo 25: pushen, `main` per Fast-Forward
-> nachziehen, Fly.io (`--ha=false`) und Vercel – danach M9 und M10 am Gerät.
+> **Ausgeliefert am 16.09.2026** (ToDo 25, nach neun Tagen Rückstand).
+> `feat/mvp` und `main` stehen gleichauf bei GitHub, Fly.io läuft mit **einer**
+> Maschine in `fra` (1/1 gesund), Vercel liefert den neuen Build
+> (`assets/index-WkyI6rX9.js`) unter <https://umstieg.vercel.app>. Die
+> `vercel.json` ist unverändert geblieben – Falle 2 hat diesmal nicht
+> zugeschlagen.
+>
+> Gegen die Produktion geprüft: `/api/health`, die CORS-Freigabe für
+> `umstieg.vercel.app`, der reparierte Doppelparameter (400 statt 500), der
+> unbekannte Pfad (`{"fehler":"nicht-gefunden"}`) und vier echte Routen. Die
+> Entscheidung ist dort live zu sehen – **München Gleis 5 → 82: ab dem
+> Westende 944 s, ab dem Ostende 625 s**, Bahnsteigenden `W`/`O`.
+>
+> Damit fiel auch **ToDo 35**: Braunschweig barrierefrei misst in der
+> Produktion 192 s ohne eine Treppe – dieselbe Zahl wie offline.
+>
+> **Nächster Schritt: M9 und M10 am Gerät** (ToDo 3 und 30) – der Nachtest der
+> reparierten Routenwahl und der erste Blick auf die neuen Knopfbeschriftungen
+> im Bahnhof.
 
 ### Davor (14.09.2026, abends)
 
@@ -934,7 +950,7 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | 4e | **Test für die Achsenableitung (§5-B)** | Ab zwei verankerten Bahnsteigen bestimmt deren Richtung, wo die *unverankerten* liegen. Kein Test prüft das Ergebnis: In den Fixtures sind entweder alle Bahnsteige verankert (Hannover, Berlin) oder nur einer (Unit-Tests). Gebraucht wird ein Fall mit zwei verankerten **und** zwei unverankerten – der Regelfall an mittelgrossen Bahnhöfen. Eine Stunde Arbeit. |
 | 5 | **Vercel: Framework-Preset steht auf „Services"** | Rückstand der `experimentalServices`-Erkennung beim `vercel link`. Die `vercel.json` überschreibt es, der Build ist nachweislich korrekt – kosmetisch, aber irreführend. Settings → Build & Deployment. |
 | 6 | **Vercel-Preview-Variable nur für `feat/mvp`** | `VITE_API_BASE` konnte nicht „für alle Preview-Zweige" gesetzt werden (CLI-Fehler in v53.1.0: der vorgeschlagene Befehl ist derselbe, der scheitert). Neue Zweige brauchen einen eigenen Eintrag oder das Dashboard. |
-| **25** | **Ausliefern: 23 Commits auf `feat/mvp`** | Seit dem 08.09. ist nichts gepusht; die Produktion zeigt den Stand vom 07.09. Pushen, `main` per Fast-Forward nachziehen (siehe „Zweige"), `flyctl deploy … --ha=false`, Vercel – und danach die `vercel.json` prüfen (Falle 2 unter „Deployment-Stand"). Voraussetzung für M9 (ToDo 3) und ToDo 30. **Wartet auf Freigabe.** |
+| ~~25~~ | ~~**Ausliefern: 23 Commits auf `feat/mvp`**~~ ✅ **erledigt 16.09.2026** | 28 Commits gepusht, `main` per Fast-Forward nachgezogen, Fly.io mit `--ha=false` (eine Maschine, 1/1 gesund) und Vercel in Produktion. `vercel.json` danach geprüft: unverändert. Gegen die Produktion nachgemessen: Health, CORS, vier Routen, der reparierte Doppelparameter. M9 und M10 sind damit nicht mehr blockiert. |
 | 26 | **Zwei Simulationen lesen den Schlüssel-Tresor ohne Not** | `simulation-schema.ts` und `simulation-standort.ts` rufen `ladeSecrets()` beim Start immer auf – auch mit `ABLAGE_NUR=1`, wo kein Netz gebraucht wird. Nach `D:\Claude-code\CLAUDE.md` starten sie deshalb nur nach Rückfrage. Nur laden, wenn wirklich abgerufen wird; dann laufen beide ohne. |
 | 36 | **Augsburg 6 → 12 barrierefrei: 1 m kürzer als vor ToDo 31** | Lauf 5 gegen Lauf 4, ab Anfang: 266 statt 267 m, 386 statt 387 s, gleiche Ebenenfolge. Die einzige Route von 672 unterscheidbaren Kombinationen, die weder gleich blieb noch nur die Seiten tauschte. Vermutlich ein Nebeneffekt der jetzt umgedrehten Bahnsteigkette (`verdichteBahnsteigketten` arbeitet vom Anfang aus) – **nicht untersucht**. Klein, aber es zeigt eine Reihenfolgeabhängigkeit, die es nicht geben sollte. |
 | 27 | **Düsseldorf Hbf 1 → 20: Wegzerlegung 236 statt 231 m** | Der einzige Routing-Befund von Lauf 4 (`pruefeSchema`, ab Mitte, schnellste). Die Linienzüge der Besuche sind 5 m länger als der Pfad ohne Ebenenwechsel. Douglas-Peucker kann nicht verlängern – die Ursache liegt woanders (Besuchsgrenzen, doppelte Punkte an einem Wechsel?). Nicht aus dem Symbolumbau. |
@@ -980,7 +996,7 @@ die Ursachenanalyse in [`docs/2026-08-31-design-abgleich.md`](./docs/2026-08-31-
 | 32 | **Veraltete Planansichten** | Die Leinwand `design/schema/` und die ältere Planmappe (Artefakt `c9fced14…`) zeigen den Stand vor den Symbolen; die neue ist im Abschnitt „Hier weitermachen" verlinkt. Die alte zu überschreiben verlangt, ihre Fassung unter `C:\Users\jbeer\.claude\projects\…` zu lesen – nur nach Rückfrage. |
 | 33 | **Drei Spike-Skripte schreiben in einen alten Temp-Ordner** | `spike-schema-geometrie.ts`, `spike-schema-overpass-live.ts` und `spike-wagenreihung-geometrie.ts` tragen den Scratchpad-Pfad einer früheren Sitzung (`…/6db04a47…/scratchpad/schema-geometrie`) – außerhalb des Projekts. Auf `backend/osm-ablage/` umstellen oder löschen; es sind Wegwerfsondierungen. |
 | 34 | **Lücken der Ablage füllen** | Von der Liste `LAUF_3` fehlen 54 Bahnhöfe in der Ablage (Overpass lieferte am 14.09. nicht). `osm-ablage-fuellen.ts` braucht Netz und liest den Tresor – nur nach Rückfrage. |
-| 35 | **Braunschweig barrierefrei an der Produktion nachmessen** | Offline 192 s, am 07.09. gegen die Produktion 191 s (mit FaSta). Nach dem Deployment dort wiederholen – bis dahin sind es zwei verschiedene Messungen. Die Route nimmt in beiden keine Treppe. |
+| ~~35~~ | ~~**Braunschweig barrierefrei an der Produktion nachmessen**~~ ✅ **erledigt 16.09.2026** | Gegen die frisch ausgelieferte Produktion (EVA 8000049, Gleis 1 → 6, `variante=barrierefrei`, ab der Mitte): **192 s, 12 Schritte, keine Treppe, kein Hinweis** – dieselbe Zahl wie offline. Die 191 s vom 07.09. waren der alte Stand, nicht eine andere Messung. Der Bahnsteig meldet seine Enden als `N`/`S`. |
 
 ### P1 – Standort & Live-Navigation
 
