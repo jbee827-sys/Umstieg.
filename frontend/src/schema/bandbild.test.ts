@@ -75,6 +75,23 @@ describe('Bildlage: der Anfang des Ankunftsbahnsteigs liegt links', () => {
     expect(hier(ROUTEN.leipzigMitte)).toBe('Mitte')
     expect(hier(ROUTEN.leipzigEnde)).toBe('Ende')
   })
+
+  /** ToDo 31 (15.09.2026): dieselben Wörter wie auf den Knöpfen. */
+  it('schreibt die Himmelsrichtung unter die Enden, wenn das Schema sie kennt', () => {
+    const route = structuredClone(ROUTEN.leipzigMitte)
+    for (const ebene of route.schema!.ebenen) {
+      for (const b of ebene.bahnsteige) {
+        if (b.rolle === 'start') b.himmelsrichtung = { von: 'N', bis: 'S' }
+      }
+    }
+    const marken = gleisbild(alleBilder(route).bilder[0]).standorte!.marken
+    expect(marken.map((m) => m.text)).toEqual(['Nordende', 'Mitte', 'Südende'])
+  })
+
+  it('bleibt ohne Himmelsrichtung bei Anfang und Ende', () => {
+    const marken = gleisbild(alleBilder(ROUTEN.leipzigMitte).bilder[0]).standorte!.marken
+    expect(marken.map((m) => m.text)).toEqual(['Anfang', 'Mitte', 'Ende'])
+  })
 })
 
 describe('Kopfbahnhof ab dem Ende: auf der Gleisebene nur Start und Ziel', () => {

@@ -218,7 +218,7 @@ function Gleisband({ bild, breite }: { bild: Gleisbild; breite: number }) {
           y={bild.standorte!.y + 4}
           textAnchor={m.name === 'Anfang' ? 'start' : m.name === 'Ende' ? 'end' : 'middle'}
         >
-          {m.hier ? `▲ ${m.name}` : m.name}
+          {m.hier ? `▲ ${m.text}` : m.text}
         </text>
       ))}
     </>
