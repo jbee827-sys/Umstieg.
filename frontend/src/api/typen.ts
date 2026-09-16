@@ -50,6 +50,9 @@ export interface SchemaZugang {
   aufRoute: boolean;
 }
 
+/** Vergleichend: „N" = das nördlichere der beiden Enden. Spiegel von backend/src/core/typen.ts. */
+export type Himmelsrichtung = 'N' | 'O' | 'S' | 'W';
+
 export interface SchemaBahnsteig {
   bahnsteigId: string;
   gleise: string[];
@@ -59,6 +62,8 @@ export interface SchemaBahnsteig {
   querM?: number;
   rolle?: 'start' | 'ziel';
   anlagen?: { aufzug: number; rolltreppe: number; treppe: number };
+  /** Wohin die Enden zeigen: `von` ist der Anfang. Nur bei gemessener Achse. */
+  himmelsrichtung?: { von: Himmelsrichtung; bis: Himmelsrichtung };
   von?: SchemaPunkt;
   bis?: SchemaPunkt;
   /** Nur am Ankunfts- und Abfahrtsbahnsteig. */

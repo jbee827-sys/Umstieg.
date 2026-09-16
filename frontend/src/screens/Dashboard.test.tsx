@@ -168,6 +168,42 @@ describe('Dashboard: Standortwahl am Ankunftsgleis', () => {
     expect(namen).toEqual(['Anfang6 min', 'Mitte6 min', 'Ende5 min'])
   })
 
+  /**
+   * ToDo 31 (15.09.2026): Der Anfang ist das Nord- bzw. Westende, und der
+   * Knopf sagt es. „Anfang" allein hiess im Bahnhof nichts.
+   */
+  it('nennt die Enden nach der Himmelsrichtung des Ankunftsbahnsteigs', () => {
+    const mitSchema = {
+      ...route,
+      schema: {
+        ebenen: [
+          {
+            level: 0,
+            art: 'gleise',
+            bahnsteige: [
+              {
+                bahnsteigId: 'w1',
+                gleise: ['6'],
+                rolle: 'start',
+                himmelsrichtung: { von: 'W', bis: 'O' },
+              },
+            ],
+          },
+        ],
+        anlagen: [],
+        pois: [],
+        wechsel: [],
+        vorbehalte: [],
+      },
+    } as unknown as RouteErgebnis
+    zeige({ route: mitSchema, standorte: LEIPZIG })
+    const gruppe = screen.getByRole('group', { name: /Wo stehst du/ })
+    const namen = within(gruppe)
+      .getAllByRole('button')
+      .map((b) => b.textContent)
+    expect(namen).toEqual(['Westende6 min', 'Mitte6 min', 'Ostende5 min'])
+  })
+
   it('markiert die gewaehlte Stelle', () => {
     zeige({ standorte: LEIPZIG })
     expect(screen.getByRole('button', { name: /^Mitte/ }).getAttribute('aria-pressed')).toBe('true')

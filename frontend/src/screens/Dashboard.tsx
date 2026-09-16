@@ -2,7 +2,7 @@ import { Ampel } from '../components/Ampel'
 import type { EingabeWerte } from '../components/Eingabe'
 import type { Ampelfarbe, Bahnsteigabschnitt, RouteErgebnis, RoutenVariante } from '../api/typen'
 import { ampelFarbe } from '../navigation/ampel'
-import { ABSCHNITTE, ABSCHNITT_NAMEN } from '../api/standorte'
+import { ABSCHNITTE, ankunftsRichtung, standortNamen } from '../api/standorte'
 
 /**
  * Gehzeit je Variante in Sekunden. `undefined` heisst: konnte nicht berechnet
@@ -99,6 +99,8 @@ export function Dashboard({
   onMeldungen,
 }: DashboardProps) {
   const farbe = farbeVon(restSek, route.gehzeitSek, abgefahren)
+  // „Nordende · Mitte · Südende" - oder, ohne gemessene Achse, Anfang und Ende.
+  const standortNamenJetzt = standortNamen(ankunftsRichtung(route.schema))
   return (
     <>
       <div className="routen-kopf">
@@ -157,7 +159,7 @@ export function Dashboard({
                 disabled={standortLaedt !== undefined || laedt !== undefined}
                 onClick={() => onStandort(a)}
               >
-                <span className="standortwahl-name">{ABSCHNITT_NAMEN[a]}</span>
+                <span className="standortwahl-name">{standortNamenJetzt[a]}</span>
                 <span className="standortwahl-min">
                   {laedtDieser ? 'lädt …' : minuten(standorte[a])}
                 </span>

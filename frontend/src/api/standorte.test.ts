@@ -1,6 +1,13 @@
 import { describe, it, expect, vi } from 'vitest'
-import { ABSCHNITTE, gehzeitSchluessel, ladeStandorte, STANDORT_VOREINSTELLUNG } from './standorte'
-import type { RouteErgebnis, RouteParameter } from './typen'
+import {
+  ABSCHNITTE,
+  ankunftsRichtung,
+  gehzeitSchluessel,
+  ladeStandorte,
+  STANDORT_VOREINSTELLUNG,
+  standortNamen,
+} from './standorte'
+import type { BahnhofSchema, RouteErgebnis, RouteParameter } from './typen'
 
 const basis = {
   eva: '8010205', gleisAn: '6', gleisAb: '16', profil: 'normal' as const,
@@ -35,6 +42,56 @@ describe('Standorte am Ankunftsgleis', () => {
     expect(gehzeitSchluessel('schnellste', 'anfang')).not.toBe(
       gehzeitSchluessel('barrierefrei', 'anfang'),
     )
+  })
+})
+
+/**
+ * Was „Anfang" heisst (ToDo 31, 15.09.2026): das Nord- bzw. Westende. Der
+ * Knopf nennt es, statt ein Wort zu zeigen, das im Bahnhof nichts bedeutet.
+ */
+describe('standortNamen', () => {
+  it('nennt die Enden nach der Himmelsrichtung', () => {
+    expect(standortNamen({ von: 'N', bis: 'S' })).toEqual({
+      anfang: 'Nordende',
+      mitte: 'Mitte',
+      ende: 'Südende',
+    })
+    expect(standortNamen({ von: 'W', bis: 'O' })).toEqual({
+      anfang: 'Westende',
+      mitte: 'Mitte',
+      ende: 'Ostende',
+    })
+  })
+
+  it('bleibt ohne gemessene Achse bei Anfang und Ende – lieber vage als erfunden', () => {
+    expect(standortNamen(undefined)).toEqual({ anfang: 'Anfang', mitte: 'Mitte', ende: 'Ende' })
+  })
+})
+
+describe('ankunftsRichtung', () => {
+  const schema = {
+    ebenen: [
+      { level: 1, bahnsteige: [{ bahnsteigId: 'a', gleise: ['9'] }] },
+      {
+        level: 0,
+        bahnsteige: [
+          { bahnsteigId: 'b', gleise: ['5'], rolle: 'ziel', himmelsrichtung: { von: 'N', bis: 'S' } },
+          { bahnsteigId: 'c', gleise: ['6'], rolle: 'start', himmelsrichtung: { von: 'W', bis: 'O' } },
+        ],
+      },
+    ],
+    anlagen: [],
+    pois: [],
+    wechsel: [],
+    vorbehalte: [],
+  } as unknown as BahnhofSchema
+
+  it('liest die Richtung am Ankunftsbahnsteig, nicht am Ziel', () => {
+    expect(ankunftsRichtung(schema)).toEqual({ von: 'W', bis: 'O' })
+  })
+
+  it('schweigt ohne Schema', () => {
+    expect(ankunftsRichtung(undefined)).toBeUndefined()
   })
 })
 

@@ -1,6 +1,7 @@
 import type { KantenTyp, SchemaEbene, SchemaElement, SchemaPunkt, SchemaWechsel } from '../api/typen'
 import { istSymboltyp, ohneGenutzte, orteAuf, orteImGrundriss, setzeSymbole } from './symbole'
 import type { GesetztesSymbol, Hindernis, Symboltyp } from './symbole'
+import { ABSCHNITTE, standortNamen } from '../api/standorte'
 
 /**
  * Die Geometrie eines Bandes, fertig in Zeichenkoordinaten.
@@ -61,7 +62,10 @@ export interface Zielpunkt extends Bildpunkt {
 /** Anfang, Mitte, Ende des Ankunftsbahnsteigs – die Standortwahl, im Bild. */
 export interface Standortmarke {
   x: number
+  /** Welche der drei Stellen – Anfang liegt links, wie der erste Knopf. */
   name: 'Anfang' | 'Mitte' | 'Ende'
+  /** Was darunter steht: „Nordende" – oder, ohne gemessene Achse, „Anfang". */
+  text: string
   /** Hier startet der Weg. */
   hier: boolean
 }
@@ -617,12 +621,15 @@ export function zeichneGleisebene(
       1,
     )
     const namen: Standortmarke['name'][] = ['Anfang', 'Mitte', 'Ende']
+    // Dieselben Wörter wie auf den Knöpfen: `a` ist `von`, der Anfang.
+    const texte = standortNamen(startBs.b.himmelsrichtung)
     const naechster = Math.round(t * 2)
     standorte = {
       y: kante(nutzH + STANDORT_ZEILE / 2),
       marken: [0, 0.5, 1].map((anteil, i) => ({
         x: laengs(startBs.a.x + anteil * dx),
         name: namen[i],
+        text: texte[ABSCHNITTE[i]],
         hier: i === naechster,
       })),
     }

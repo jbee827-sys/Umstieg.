@@ -1,8 +1,11 @@
 import type {
+  BahnhofSchema,
   Bahnsteigabschnitt,
+  Himmelsrichtung,
   RouteErgebnis,
   RouteParameter,
   RoutenVariante,
+  SchemaBahnsteig,
 } from './typen'
 
 /**
@@ -21,6 +24,44 @@ export const ABSCHNITT_NAMEN: Record<Bahnsteigabschnitt, string> = {
   anfang: 'Anfang',
   mitte: 'Mitte',
   ende: 'Ende',
+}
+
+const ENDE_NACH_RICHTUNG: Record<Himmelsrichtung, string> = {
+  N: 'Nordende',
+  O: 'Ostende',
+  S: 'Südende',
+  W: 'Westende',
+}
+
+/**
+ * Wie die drei Stellen am Ankunftsgleis heissen.
+ *
+ * Seit dem 15.09.2026 ist der Anfang das Nord- bzw. Westende (ToDo 31), und
+ * die Knoepfe sagen es: „Nordende · Mitte · Südende". „Anfang" allein hiess
+ * nichts - welches Ende das im Bahnhof ist, stand nirgends, und in OSM war es
+ * das zufaellig zuerst gezeichnete. Ohne gemessene Achse (Standardmodell)
+ * bleibt es bei Anfang und Ende: Dort waere eine Himmelsrichtung erfunden.
+ */
+export function standortNamen(
+  richtung?: SchemaBahnsteig['himmelsrichtung'],
+): Record<Bahnsteigabschnitt, string> {
+  if (!richtung) return ABSCHNITT_NAMEN
+  return {
+    anfang: ENDE_NACH_RICHTUNG[richtung.von],
+    mitte: ABSCHNITT_NAMEN.mitte,
+    ende: ENDE_NACH_RICHTUNG[richtung.bis],
+  }
+}
+
+/** Die Himmelsrichtung des Ankunftsbahnsteigs, wenn das Schema sie kennt. */
+export function ankunftsRichtung(
+  schema: BahnhofSchema | undefined,
+): SchemaBahnsteig['himmelsrichtung'] {
+  for (const ebene of schema?.ebenen ?? []) {
+    const start = ebene.bahnsteige.find((b) => b.rolle === 'start')
+    if (start) return start.himmelsrichtung
+  }
+  return undefined
 }
 
 /**
