@@ -56,7 +56,7 @@ const app = buildApp(fixtureClients());
 
 app
   .listen({ port, host: LISTEN_HOST })
-  .then(() => console.log(`Umstiegs-Navigator Backend läuft auf Port ${port}`))
+  .then(() => console.log(`Umstieg. Backend läuft auf Port ${port}`))
   .catch((err) => {
     console.error(err);
     process.exit(1);

@@ -1,4 +1,4 @@
-# Umstiegs-Navigator MVP – Implementierungsplan
+# Umstieg. MVP – Implementierungsplan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -148,7 +148,7 @@ describe('app', () => {
 **Files:**
 - Create: `frontend/` via `npm create vite@latest frontend -- --template react-ts`
 - Modify: `frontend/vite.config.ts` (Proxy `/api` → `http://localhost:3001`)
-- Modify: `frontend/src/App.tsx` (Titel „Umstiegs-Navigator", leere Eingabemaske-Platzhalterstruktur)
+- Modify: `frontend/src/App.tsx` (Titel „Umstieg.", leere Eingabemaske-Platzhalterstruktur)
 
 **Interfaces:**
 - Produces: laufendes Vite-Dev-Setup mit API-Proxy; `npm run build` erzeugt `frontend/dist` (wird später vom Backend statisch ausgeliefert).

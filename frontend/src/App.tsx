@@ -758,8 +758,13 @@ function App() {
     <main className="app">
       {meldung}
       <header className="kopf">
-        <div className="kicker">Umstieg.</div>
-        <h1>Dein Umstieg</h1>
+        {/* Das Lockup traegt die Wortmarke selbst, darum steht hier kein
+            Text mehr. Die h1 bleibt als Huelle: Ohne sie haette die Seite
+            keine Ueberschrift mehr - alt geht an Screenreader, width/height
+            halten den Platz frei, bevor das Bild geladen ist. */}
+        <h1 className="lockup">
+          <img src="/lockup-zwei-gleise.png" alt="Umstieg." width={1003} height={181} />
+        </h1>
         <p>Vom Ankunftsgleis zum Anschlusszug – Schritt für Schritt.</p>
       </header>
       {standortStatus === 'verweigert' && (
