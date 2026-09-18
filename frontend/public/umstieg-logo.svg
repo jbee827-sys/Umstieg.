@@ -1,5 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Umstieg">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Umstieg.">
   <rect width="64" height="64" fill="#ffffff"/>
-  <path d="M18 18v18a14 14 0 0 0 28 0V18" stroke="#ec3013" stroke-width="9" stroke-linecap="square" fill="none"/>
-  <path d="M36 23l10-17 10 17" fill="#201e1d"/>
+  <rect x="4" y="14" width="56" height="8" fill="#201e1d" fill-opacity=".4"/>
+  <rect x="4" y="42" width="56" height="8" fill="#201e1d" fill-opacity=".4"/>
+  <path d="M18 18v10a8 8 0 0 0 8 8h12a8 8 0 0 1 8 8v2" stroke="#ec3013" stroke-width="8" stroke-linecap="square" fill="none"/>
 </svg>

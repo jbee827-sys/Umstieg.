@@ -1,4 +1,4 @@
-# Umstiegs-Navigator („Umstieg.")
+# Umstieg.
 
 Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum Abfahrtsgleis liefert – als Schritt-für-Schritt-Anweisung und Karte – und live bewertet, ob der Anschluss erreichbar ist.
 

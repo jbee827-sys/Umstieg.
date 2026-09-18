@@ -38,6 +38,24 @@
   margin-top: 6px;
 }
 
+/*
+ * Das Lockup ersetzt die Textueberschrift. Die h1 bleibt als Huelle stehen,
+ * damit die Seite eine Ueberschrift behaelt - sie darf dann aber weder
+ * Schriftgroesse noch Zeilenhoehe beisteuern, sonst stuende unter dem Bild
+ * eine leere Zeile. Breite in px statt in %, damit die Marke auf jedem
+ * Geraet gleich gross wirkt; max-width faengt sehr schmale Displays ab.
+ */
+.lockup {
+  margin: 0;
+  line-height: 0;
+}
+
+.lockup img {
+  width: 200px;
+  max-width: 70%;
+  height: auto;
+}
+
 .kopf p {
   margin: 4px 0 0;
   font-size: 14px;

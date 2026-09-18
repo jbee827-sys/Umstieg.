@@ -1,4 +1,4 @@
-# Umstiegs-Navigator – Umsetzungskonzept (MVP)
+# Umstieg. – Umsetzungskonzept (MVP)
 
 Stand: 24.08.2026 · Validiert im Brainstorming · Zieldokument für die Umsetzung mit Claude Code
 

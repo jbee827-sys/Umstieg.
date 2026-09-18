@@ -1,4 +1,4 @@
-# Backend-Container fuer den Umstiegs-Navigator.
+# Backend-Container fuer Umstieg.
 #
 # Nur das Backend: das Frontend wird von Vercel statisch ausgeliefert.
 # Dieser Container muss dauerhaft laufen, weil drei Dinge Zustand halten,
