@@ -4,6 +4,7 @@ import type { RouteErgebnis } from '../api/typen'
 import { Ebenenschema } from './Ebenenschema'
 import { baueBandmodell, besuchJeSchritt } from '../schema/bandmodell'
 import { leiteSchemaAb } from '../schema/ableitung'
+import { ANKER_H, RUHIG_H, WECHSEL_H } from '../schema/masse'
 import leipzigMitte from '../schema/testdaten/leipzig-6-16-mitte.json'
 import leipzigEnde from '../schema/testdaten/leipzig-6-16-ende.json'
 
@@ -86,14 +87,49 @@ describe('Ebenenschema mit echter Geometrie', () => {
     expect(container.querySelector('path.schema-weg')).not.toBeNull()
   })
 
-  it('erklärt die drei Symbole in der Legende', () => {
+  it('trägt unter dem Bild weder Legende noch Fließtext', () => {
+    // Der feste Bildbereich hat nur Platz für das Bild. Legende und
+    // Vorbehalte füllten ihn mit Text, der bei jedem Schritt derselbe war.
     const { container } = zeige(MITTE, 0)
-    const legende = container.querySelector('.schema-legende')!
-    for (const typ of ['rolltreppe', 'treppe', 'aufzug']) {
-      expect(legende.querySelector(`[data-symbol="${typ}"]`)).not.toBeNull()
+    expect(container.querySelector('.schema-legende')).toBeNull()
+    expect(container.querySelector('.schema-hinweis')).toBeNull()
+  })
+
+  it('nennt den Bahnhof nicht mehr als Text, aber weiter im Bildnamen', () => {
+    // Der Name war der Anfang des Fußtextes. Ohne ihn müsste ein
+    // Screenreader raten, welches Haus das Bild zeigt - er steht im aria-label.
+    const { container } = zeige(MITTE, 0)
+    expect(container.textContent).not.toContain('Leipzig Hbf')
+    expect(screen.getByRole('img').getAttribute('aria-label')).toContain('Leipzig Hbf')
+  })
+
+  it('verankert das aktive Band unabhängig vom Schritt auf derselben Höhe', () => {
+    const oben = (route: RouteErgebnis, position: number) => {
+      const { container } = zeige(route, position)
+      const stapel = container.querySelector<HTMLElement>('.schema-stapel')!
+      const aktiv = container.querySelector<HTMLElement>('.schema-band.aktiv')!
+      const index = [...container.querySelectorAll('.schema-band')].indexOf(aktiv)
+      // jsdom rechnet kein Layout. Die Oberkante ergibt sich deshalb aus den
+      // Massen: Verschiebung des Stapels plus die ruhigen Bänder darüber.
+      return ANKER_H + versatzAus(stapel) + index * (RUHIG_H + WECHSEL_H)
     }
-    expect(legende.textContent).toContain('Rolltreppe')
-    expect(legende.textContent).toContain('Treppe')
-    expect(legende.textContent).toContain('Aufzug')
+    const erster = oben(MITTE, 0)
+    const mittlerer = oben(MITTE, besuchJeSchritt(MITTE.schritte).indexOf(1))
+    const letzter = oben(MITTE, MITTE.schritte.length - 1)
+    expect([mittlerer, letzter]).toEqual([erster, erster])
+  })
+
+  it('schneidet den Stapel am Bildrand ab, statt ihn zu stauchen', () => {
+    // Die Nachbarebenen wandern aus dem Bild heraus. Ohne `overflow: hidden`
+    // im Fenster stünden sie über dem Kopf und unter der Schritt-Box.
+    const { container } = zeige(MITTE, 0)
+    expect(container.querySelector('.schema-fenster .schema-stapel')).not.toBeNull()
   })
 })
+
+/** Die px-Zahl aus `transform: translateY(-56px)`. */
+function versatzAus(stapel: HTMLElement): number {
+  const treffer = /translateY\((-?[\d.]+)px\)/.exec(stapel.style.transform)
+  expect(treffer).not.toBeNull()
+  return Number(treffer![1])
+}

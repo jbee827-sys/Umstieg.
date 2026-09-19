@@ -1,5 +1,5 @@
 import type { SchemaModell } from '../schema/ableitung'
-import type { Band, Bandmodell } from '../schema/bandmodell'
+import type { Bandmodell } from '../schema/bandmodell'
 import { wechselAnweisung, wechselName } from '../schema/bandmodell'
 import { bandTitel, fusstext, wegBeschreibung } from '../schema/bandtext'
 import { zeichneBand } from '../schema/bandbild'
@@ -12,7 +12,7 @@ import type {
   Wechselmarke,
   Zielpunkt,
 } from '../schema/bandbild'
-import { RUHIG_H, WECHSEL_H, aktivHoehe, bildflaeche } from '../schema/masse'
+import { ANKER_H, RUHIG_H, WECHSEL_H, aktivHoehe, bildflaeche, stapelVersatz } from '../schema/masse'
 import { istSymboltyp, SYMBOL_PX } from '../schema/symbole'
 import { AnlagenSymbol, Glyphe } from './AnlagenSymbol'
 
@@ -237,47 +237,6 @@ function Uebergangsband({ bild, breite }: { bild: Uebergangsbild; breite: number
   )
 }
 
-/** Was das Bild dieses Bandes NICHT belegt. */
-function vorbehaltFuer(band: Band): string {
-  if (band.art !== 'gleise') return 'Grundriss aus dem Kartenmaterial — Gänge, Anlagen und Weg sind gemessen.'
-  return band.erster || band.letzter
-    ? 'Bahnsteige maßstäblich in der Länge; den Weg dazwischen nennen die Schritte.'
-    : 'Bahnsteige maßstäblich in der Länge; quer stimmt die Reihenfolge, nicht der Maßstab.'
-}
-
-function Legende() {
-  return (
-    <p className="schema-legende" aria-hidden="true">
-      <span className="schema-legende-eintrag">
-        <AnlagenSymbol typ="rolltreppe" groesse={14} />
-        Rolltreppe
-      </span>
-      <span className="schema-legende-eintrag">
-        <AnlagenSymbol typ="treppe" groesse={14} />
-        Treppe
-      </span>
-      <span className="schema-legende-eintrag">
-        <AnlagenSymbol typ="aufzug" groesse={14} />
-        Aufzug
-      </span>
-      <span className="schema-legende-eintrag">
-        <svg width="14" height="14" viewBox="0 0 14 14">
-          <circle cx="7" cy="7" r="5.2" className="schema-start" strokeWidth={2} />
-          <circle cx="7" cy="7" r="2" className="schema-start-kern" />
-        </svg>
-        Standort
-      </span>
-      <span className="schema-legende-eintrag">
-        <svg width="16" height="16" viewBox="0 0 16 16" className="schema-scheibe">
-          <circle cx="8" cy="8" r="7.3" className="schema-wechselmarke" />
-          <Glyphe typ="rolltreppe" x={8} y={8} groesse={10} strich={1.4} />
-        </svg>
-        Ebenenwechsel
-      </span>
-    </p>
-  )
-}
-
 /**
  * Das Bahnhofsschema: ein Band je EBENENBESUCH, mit echter Geometrie.
  *
@@ -299,80 +258,71 @@ export function Ebenenschema({ modell, ersatz, bahnhofName }: EbenenschemaProps)
   const anzahl = modell.baender.length
   const aktivH = aktivHoehe(anzahl)
   const flaeche = bildflaeche(anzahl)
-  const aktivesBand = modell.baender.find((b) => b.aktiv)
+  const aktiverIndex = modell.baender.findIndex((b) => b.aktiv)
 
   return (
     <section className="schema-bereich">
-      <div className="schema-stapel" role="img" aria-label={wegBeschreibung(modell, bahnhofName)}>
-        {modell.baender.map((band, i) => {
-          const bild = band.aktiv
-            ? zeichneBand(band.ebene, flaeche.breite, flaeche.hoehe, {
-                lage: modell.lage,
-                erster: band.erster,
-                letzter: band.letzter,
-                ...(band.wechselVorher ? { wechselVorher: band.wechselVorher } : {}),
-                ...(band.wechselNachher ? { wechselNachher: band.wechselNachher } : {}),
-              })
-            : null
-          const fuss = band.aktiv ? fusstext(band) : null
-          const w = band.wechselNachher
-          return (
-            <div key={band.nr}>
-              <div
-                className={`schema-band${band.aktiv ? ' aktiv' : ''}${band.besucht ? ' besucht' : ''}`}
-                style={{ height: band.aktiv ? aktivH : RUHIG_H }}
-              >
-                <div className="schema-bandkopf">
-                  <span className="schema-bandname">{bandTitel(band)}</span>
-                  <span className="schema-bandrechts">{band.rechts}</span>
+      <div className="schema-fenster" style={{ paddingTop: ANKER_H }}>
+        <div
+          className="schema-stapel"
+          role="img"
+          aria-label={wegBeschreibung(modell, bahnhofName)}
+          style={{ transform: `translateY(${stapelVersatz(Math.max(0, aktiverIndex))}px)` }}
+        >
+          {modell.baender.map((band, i) => {
+            const bild = band.aktiv
+              ? zeichneBand(band.ebene, flaeche.breite, flaeche.hoehe, {
+                  lage: modell.lage,
+                  erster: band.erster,
+                  letzter: band.letzter,
+                  ...(band.wechselVorher ? { wechselVorher: band.wechselVorher } : {}),
+                  ...(band.wechselNachher ? { wechselNachher: band.wechselNachher } : {}),
+                })
+              : null
+            const fuss = band.aktiv ? fusstext(band) : null
+            const w = band.wechselNachher
+            return (
+              <div key={band.nr}>
+                <div
+                  className={`schema-band${band.aktiv ? ' aktiv' : ''}${band.besucht ? ' besucht' : ''}`}
+                  style={{ height: band.aktiv ? aktivH : RUHIG_H }}
+                >
+                  <div className="schema-bandkopf">
+                    <span className="schema-bandname">{bandTitel(band)}</span>
+                    <span className="schema-bandrechts">{band.rechts}</span>
+                  </div>
+                  {bild && (
+                    <svg
+                      className="schema-bild"
+                      viewBox={`0 0 ${flaeche.breite} ${flaeche.hoehe}`}
+                      aria-hidden="true"
+                    >
+                      {bild.art === 'gleise' ? (
+                        <Gleisband bild={bild} breite={flaeche.breite} />
+                      ) : (
+                        <Uebergangsband bild={bild} breite={flaeche.breite} />
+                      )}
+                    </svg>
+                  )}
+                  {fuss && <p className="schema-bandfuss">{fuss}</p>}
                 </div>
-                {bild && (
-                  <svg
-                    className="schema-bild"
-                    viewBox={`0 0 ${flaeche.breite} ${flaeche.hoehe}`}
-                    aria-hidden="true"
-                  >
-                    {bild.art === 'gleise' ? (
-                      <Gleisband bild={bild} breite={flaeche.breite} />
-                    ) : (
-                      <Uebergangsband bild={bild} breite={flaeche.breite} />
-                    )}
-                  </svg>
+                {w && i < anzahl - 1 && (
+                  <div className="schema-wechsel" style={{ height: WECHSEL_H }}>
+                    <span aria-hidden="true">{w.nachLevel < w.vonLevel ? '↓' : '↑'}</span>
+                    {istSymboltyp(w.typ) && <AnlagenSymbol typ={w.typ} groesse={12} strich={1.5} />}
+                    <span>{wechselAnweisung(w)}</span>
+                  </div>
                 )}
-                {fuss && <p className="schema-bandfuss">{fuss}</p>}
+                {!w && i < anzahl - 1 && (
+                  <div className="schema-wechsel" style={{ height: WECHSEL_H }}>
+                    <span>Ebenenwechsel</span>
+                  </div>
+                )}
               </div>
-              {w && i < anzahl - 1 && (
-                <div className="schema-wechsel" style={{ height: WECHSEL_H }}>
-                  <span aria-hidden="true">{w.nachLevel < w.vonLevel ? '↓' : '↑'}</span>
-                  {istSymboltyp(w.typ) && <AnlagenSymbol typ={w.typ} groesse={12} strich={1.5} />}
-                  <span>{wechselAnweisung(w)}</span>
-                </div>
-              )}
-              {!w && i < anzahl - 1 && (
-                <div className="schema-wechsel" style={{ height: WECHSEL_H }}>
-                  <span>Ebenenwechsel</span>
-                </div>
-              )}
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
-
-      <Legende />
-      <p className="schema-hinweis">
-        {bahnhofName}
-        {aktivesBand ? ` · ${vorbehaltFuer(aktivesBand)}` : ''}
-      </p>
-      {modell.kreuzungswinkelGrad !== undefined && (
-        <p className="schema-hinweis">
-          Die Ebenen kreuzen sich um {modell.kreuzungswinkelGrad}° – im Bild liegen sie parallel.
-        </p>
-      )}
-      {modell.vorbehalte.map((v) => (
-        <p className="schema-hinweis" key={v}>
-          {v}
-        </p>
-      ))}
     </section>
   )
 }
@@ -386,48 +336,50 @@ export function Ebenenschema({ modell, ersatz, bahnhofName }: EbenenschemaProps)
 function ErsatzSchema({ modell, bahnhofName }: { modell: SchemaModell; bahnhofName: string }) {
   return (
     <section className="schema-bereich">
-      <div
-        className="schema-stapel"
-        role="img"
-        aria-label={`Ebenenschema von ${bahnhofName}: ${modell.baender
-          .map((b) => `${b.label}${b.gleise.length ? `, Gleis ${b.gleise.join(' und ')}` : ''}`)
-          .join('; ')}`}
-      >
-        {modell.baender.map((band, i) => {
-          const wechsel = modell.wechsel.find(
-            (w) =>
-              (w.vonLevel === band.level && w.nachLevel === modell.baender[i + 1]?.level) ||
-              (w.nachLevel === band.level && w.vonLevel === modell.baender[i + 1]?.level),
-          )
-          return (
-            <div key={band.level}>
-              <div
-                className={`schema-band schema-band-grob${band.aktiv ? ' aktiv' : ''}`}
-                style={{ height: 62 }}
-              >
-                <div className="schema-bandkopf">
-                  <span className="schema-bandname">{band.label}</span>
+      {/* Kein Anker wie im echten Bild: Hier sind ALLE Bänder gleich hoch, der
+          Stapel bleibt kurz und passt am Stück ins Fenster. Ihn zu verschieben
+          hätte die vorderen Ebenen aus einem halbleeren Bild geschoben. */}
+      <div className="schema-fenster">
+        <div
+          className="schema-stapel"
+          role="img"
+          aria-label={`Ebenenschema von ${bahnhofName}: ${modell.baender
+            .map((b) => `${b.label}${b.gleise.length ? `, Gleis ${b.gleise.join(' und ')}` : ''}`)
+            .join('; ')}`}
+        >
+          {modell.baender.map((band, i) => {
+            const wechsel = modell.wechsel.find(
+              (w) =>
+                (w.vonLevel === band.level && w.nachLevel === modell.baender[i + 1]?.level) ||
+                (w.nachLevel === band.level && w.vonLevel === modell.baender[i + 1]?.level),
+            )
+            return (
+              <div key={band.level}>
+                <div
+                  className={`schema-band schema-band-grob${band.aktiv ? ' aktiv' : ''}`}
+                  style={{ height: 62 }}
+                >
+                  <div className="schema-bandkopf">
+                    <span className="schema-bandname">{band.label}</span>
+                  </div>
+                  <div className="schema-grobgleise">
+                    {band.gleise.map((gleis) => (
+                      <span className="schema-grobgleis" key={gleis}>
+                        {gleis}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <div className="schema-grobgleise">
-                  {band.gleise.map((gleis) => (
-                    <span className="schema-grobgleis" key={gleis}>
-                      {gleis}
-                    </span>
-                  ))}
-                </div>
+                {i < modell.baender.length - 1 && (
+                  <div className="schema-wechsel" style={{ height: WECHSEL_H }}>
+                    <span>{wechsel ? wechselName(wechsel.typ) : 'Ebenenwechsel'}</span>
+                  </div>
+                )}
               </div>
-              {i < modell.baender.length - 1 && (
-                <div className="schema-wechsel" style={{ height: WECHSEL_H }}>
-                  <span>{wechsel ? wechselName(wechsel.typ) : 'Ebenenwechsel'}</span>
-                </div>
-              )}
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
-      <p className="schema-hinweis">
-        {bahnhofName} · Schema, keine Karte – die Abstände sind nicht maßstäblich.
-      </p>
     </section>
   )
 }
