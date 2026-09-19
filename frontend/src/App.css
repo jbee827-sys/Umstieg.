@@ -26,6 +26,24 @@
   gap: 18px;
 }
 
+/*
+ * Die Navigationsseite rollt nicht.
+ *
+ * Bis zum 19.09.2026 war sie eine lange Seite: Zum „Weiter" musste man
+ * hinunterrollen, und dabei rollte das Ebenenbild oben weg – genau das Bild,
+ * nach dem man gerade schaut. Jetzt sitzt alles fest: Kopf oben, das Schema
+ * im dehnbaren Bereich dazwischen, Schritt-Box und Leiste unten am Rand.
+ *
+ * `height` statt `min-height`: Die Spalte darf nicht wachsen, sonst wandert
+ * die Schritt-Box wieder unter den Bildschirmrand. Wer schrumpfen muss, ist
+ * `.schema-fenster` – es ist das einzige Kind mit `flex: 1`.
+ */
+.app-navigation {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
 .kicker {
   font-size: 10px;
   letter-spacing: 0.14em;
@@ -237,6 +255,39 @@
 .knopf-primaer:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+/*
+ * „Angekommen" am letzten Schritt: dieselbe Form wie „Weiter", aber im Grün
+ * der Angekommen-Seite. Es ist keine Fortsetzung, sondern der Abschluss —
+ * und der soll aussehen wie das, was danach kommt.
+ */
+.knopf-angekommen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 58px;
+  padding: 0 26px;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 17px;
+  color: var(--color-bg);
+  background: var(--color-gruen);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: var(--shadow-lg);
+  transition: background 0.18s ease, transform 0.12s ease;
+}
+
+.knopf-angekommen:hover {
+  background: color-mix(in srgb, var(--color-gruen) 88%, #000);
+}
+
+.knopf-angekommen:active {
+  transform: scale(0.985);
 }
 
 .knopf-sekundaer {
@@ -811,6 +862,16 @@
   margin: 12px 0;
 }
 
+/* Auf der Navigationsseite ist das Schema der dehnbare Teil der Spalte: Es
+   nimmt, was Kopf, Schritt-Box und Leiste uebrig lassen. Die Raender fallen
+   weg - `gap` der Spalte setzt den Abstand, ein zweiter Rand daneben liesse
+   das Bild bei jedem Geraet anders hoch stehen. */
+.app-navigation .schema-bereich {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+}
+
 .schema-flaeche {
   width: 100%;
   height: auto;
@@ -899,10 +960,24 @@
 }
 
 /* Ebenenschema und Schritt-Sheet (Screen 3) */
-.schema-hinweis {
-  font-size: 12px;
-  color: var(--color-neutral-600, #6b6767);
-  margin: 6px 0 0;
+/*
+ * Das Fenster, in dem der Bandstapel steht.
+ *
+ * Bis zum 19.09.2026 stand der Stapel frei in der Seite. Weil das aktive Band
+ * das grosse ist und mit dem Fortschritt nach unten wandert, wanderte das Bild
+ * beim Durchklicken mit - und ab dem zweiten Ebenenwechsel aus dem Sichtfeld.
+ * Jetzt bleibt das aktive Band stehen (Polster oben = ANKER_H aus masse.ts),
+ * und die Nachbarebenen wandern darum herum aus dem Fenster.
+ *
+ * `min-height: 0` ist der Punkt, an dem es haengt: Ein Flex-Kind schrumpft
+ * ohne diese Zeile nicht unter seinen Inhalt, der Stapel haette also die
+ * Schritt-Box nach unten aus dem Bildschirm geschoben. `overflow: hidden`
+ * schneidet dann ab, was nicht hineinpasst, statt es zu stauchen.
+ */
+.schema-fenster {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* Der Bandstapel: ein Band je Ebenenbesuch, in der Reihenfolge des Wegs.
@@ -910,6 +985,10 @@
 .schema-stapel {
   display: flex;
   flex-direction: column;
+  /* Der Versatz kommt aus `stapelVersatz()` als Inline-Stil. `transform`
+     statt `margin-top`: Es loest kein neues Layout aus und laeuft damit auch
+     auf schwachen Geraeten ruckfrei. */
+  will-change: transform;
 }
 .schema-band {
   box-sizing: border-box;
@@ -1118,28 +1197,12 @@
   stroke-linejoin: round;
 }
 
-/* — Legende — */
-.schema-legende {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 14px;
-  margin: 8px 0 0;
-  font-size: 11px;
-  color: var(--color-neutral-700);
-}
-.schema-legende-eintrag {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
 /* — Anlagensymbole (seit 14.09.2026 statt Strichen und Kästen) —
    Die Farbe kommt über currentColor aus `color`. */
 .anlagensymbol {
   display: inline-block;
   flex: none;
 }
-.schema-legende .anlagensymbol,
 .schema-wechsel .anlagensymbol {
   color: var(--color-neutral-700);
 }
@@ -1215,6 +1278,14 @@
   background: var(--color-bg);
   border: 2px solid var(--color-text);
 }
+
+/* Unten am Rand festgesetzt, wie die Navileiste. `flex: none` haelt sie auf
+   ihrer Hoehe, auch wenn das Bild darueber mehr Platz braucht als da ist —
+   abgeschnitten wird oben im Bild, nicht an der Bedienung. */
+.app-navigation .schrittsheet {
+  flex: none;
+  margin-top: 0;
+}
 .schrittsheet-zaehler {
   font-size: 10px;
   letter-spacing: 0.14em;
@@ -1237,8 +1308,14 @@
   gap: 8px;
   margin-top: 14px;
 }
+/* Ein Paar: gleiche Breite, gleiche Hoehe, gleiche ovale Form. `.knopf-primaer`
+   ist schon oval, `.knopf-sekundaer` hat sonst 14 px Radius — nebeneinander
+   sahen die beiden aus wie zwei verschiedene Bedienelemente. */
 .schrittsheet-knoepfe > * {
   flex: 1;
+  min-height: 56px;
+  border-radius: 999px;
+  justify-content: center;
 }
 .schrittsheet-liste > summary {
   cursor: pointer;
@@ -1246,6 +1323,16 @@
   min-height: 44px;
   font-size: 14px;
   font-weight: 700;
+}
+/*
+ * Der Aufklapper darf die Seite nicht laenger machen als den Bildschirm —
+ * sonst wandert die Schritt-Box beim Aufklappen wieder nach unten hinaus.
+ * Er rollt in sich, statt die Spalte zu sprengen.
+ */
+.schrittsheet-liste[open] {
+  max-height: 40dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* Dashboard-Bloecke (Screen 2) */

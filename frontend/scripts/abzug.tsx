@@ -11,7 +11,15 @@ import { fileURLToPath } from 'node:url';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Navigation } from '../src/screens/Navigation';
+import { Navileiste } from '../src/components/Navileiste';
 import type { BahnhofSchema, RouteErgebnis } from '../src/api/typen';
+
+/** Die Stufentexte aus `App.tsx` - der Abzug soll denselben Kopf zeigen. */
+const STUFEN_TEXT: Record<number, string> = {
+  1: 'Präzise Karte',
+  2: 'Teildaten',
+  3: 'Standardmodell (ca.-Angaben)',
+};
 
 interface Fall {
   titel: string;
@@ -86,11 +94,27 @@ const faelle: Fall[] = faelleRoh.map((roh) => {
 
 const karten = faelle
   .map((f) => {
+    // Dieselben Klassen UND dieselben Nachbarn wie in `App.tsx`: Kopf oben,
+    // Leiste unten. Der Abzug zeigte bis zum 19.09.2026 nur `<Navigation>`
+    // allein - seit die Seite ihre Hoehe unter Kopf, Bild, Schritt-Box und
+    // Leiste aufteilt, beweist ein Bild ohne Kopf und Leiste nichts.
     const inhalt = renderToStaticMarkup(
       createElement(
         'main',
-        { className: 'app' },
+        { className: 'app app-navigation' },
+        createElement(
+          'div',
+          { className: 'routen-kopf', key: 'kopf' },
+          createElement(
+            'div',
+            null,
+            createElement('div', { className: 'kicker' }, f.bahnhofName),
+            createElement('h2', null, `Gleis ${f.gleisAn} → Gleis ${f.gleisAb}`),
+          ),
+          createElement('span', { className: 'stufen-tag' }, STUFEN_TEXT[f.route.stufe]),
+        ),
         createElement(Navigation, {
+          key: 'navi',
           route: f.route,
           gleisAn: f.gleisAn,
           gleisAb: f.gleisAb,
@@ -100,6 +124,23 @@ const karten = faelle
           onZurueck: () => undefined,
           onWeiter: () => undefined,
           onAngekommen: () => undefined,
+          ...(f.route.hinweise.length > 0
+            ? {
+                zusatz: createElement(
+                  'ul',
+                  { className: 'hinweisliste' },
+                  f.route.hinweise.map((h) => createElement('li', { key: h }, h)),
+                ),
+              }
+            : {}),
+        }),
+        createElement(Navileiste, {
+          key: 'leiste',
+          aktuell: 'navigation',
+          hatRoute: true,
+          ungelesen: 0,
+          hervorgehoben: false,
+          onWechsel: () => undefined,
         }),
       ),
     );
@@ -140,7 +181,8 @@ const karten = faelle
   })
   .join('\n');
 
-const html = `<title>Umstieg. Navigationsabzug</title>
+const html = `<meta charset="utf-8">
+<title>Umstieg. Navigationsabzug</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -318,6 +360,12 @@ code {
   color: var(--color-text);
   min-height: 100%;
 }
+/* Die Navigationsseite misst sich auf dem Geraet in dvh. In der Mappe ist
+   der Bildschirm der Rahmen, nicht das Fenster des Browsers. */
+.geraet-innen .app-navigation {
+  height: 100%;
+}
+.geraet-innen { overflow: hidden; }
 
 .schrittzeile {
   margin: 0;

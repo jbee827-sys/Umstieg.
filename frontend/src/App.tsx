@@ -705,7 +705,9 @@ function App() {
   if (bildschirm === 'navigation' && route && werte) {
     const position = schrittPosition(versatz, route.schritte.length)
     return (
-      <main className="app">
+      // `app-navigation`: Diese Seite rollt nicht. Kopf oben, Bild im festen
+      // Bereich, Schritt-Box und Leiste unten am Rand - siehe App.css.
+      <main className="app app-navigation">
         {meldung}
         <div className="routen-kopf">
           <div>
@@ -732,16 +734,23 @@ function App() {
           onZurueck={() => setVersatz((v) => v - 1)}
           onWeiter={() => setVersatz((v) => v + 1)}
           onAngekommen={bestaetigeAnkunft}
+          // Die Streckenhinweise standen bis zum 19.09.2026 lose unter der
+          // Schritt-Box. Im festen Bildschirm ist dort kein Platz mehr; sie
+          // bleiben im Aufklapper erreichbar, statt zu verschwinden.
+          {...(route.hinweise.length > 0
+            ? {
+                zusatz: (
+                  <ul className="hinweisliste">
+                    {route.hinweise.map((hinweis) => (
+                      <li key={hinweis}>{hinweis}</li>
+                    ))}
+                  </ul>
+                ),
+              }
+            : {})}
         />
         {ankunftVorschlag && (
           <StandortStreifen gleis={werte.gleisAb} onBestaetigen={bestaetigeAnkunft} />
-        )}
-        {route.hinweise.length > 0 && (
-          <ul className="hinweisliste">
-            {route.hinweise.map((hinweis) => (
-              <li key={hinweis}>{hinweis}</li>
-            ))}
-          </ul>
         )}
         <Navileiste
           aktuell={bildschirm}
