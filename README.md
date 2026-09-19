@@ -16,7 +16,103 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 15./16.09.2026, nachts)
+## Hier weitermachen (Stand 19.09.2026)
+
+> **Die Navigationsseite rollt nicht mehr.** Sie war eine lange Seite: Zum
+> „Weiter" musste man hinunterrollen, und dabei rollte das Ebenenbild oben weg
+> — genau das Bild, nach dem man gerade schaut. Jetzt sitzt alles fest: Kopf
+> oben, Schema im dehnbaren Bereich dazwischen, Schritt-Box und Navileiste
+> unten am Rand (`.app-navigation` in `App.css`, `height: 100dvh`,
+> `overflow: hidden`; das Schema ist das einzige Kind mit `flex: 1`).
+>
+> **Das aktive Band steht still.** Es beginnt immer `ANKER_H` = 56 px unter der
+> Oberkante des Bildbereichs; die Nachbarebenen wandern darum herum aus dem
+> Fenster (`stapelVersatz()` in `schema/masse.ts`, als `translateY` auf dem
+> Stapel). Die Rechnung kommt ohne Messen im Browser aus, weil vor dem aktiven
+> Band genau `index` ruhige Zeilen zu je 34 + 22 px liegen — es ist immer
+> **ein** Band aktiv. Vorher wanderte das große Band mit dem Fortschritt nach
+> unten aus dem Sichtfeld.
+>
+> **Die Entscheidung des Tages: `aktivHoehe` hängt nicht mehr an der Zahl der
+> Besuche.** Im festen Bildschirm blieben für das Bild noch rund 180 px statt
+> 356 — das Band wurde unten abgeschnitten, samt seinem Fußtext („Treppe
+> hinunter bei 32 m · 2 Treppen"). Herunterskalieren hätte auch die
+> Beschriftung halbiert; im Abzug gemessen schrumpfte das SVG auf 287 × 103 px
+> und war unlesbar. Stattdessen wird das Bild für **180 px neu gezeichnet**
+> (`AKTIV_H` in `masse.ts`): Die Bahnsteige rücken zusammen, die Schrift bleibt
+> in voller Größe. Damit ist nicht mehr der Stapel der feste Rahmen, sondern
+> das Sichtfeld — `STAPEL_H = 468` ist ersatzlos entfallen. Auf höheren
+> Geräten bleibt das Bild bei 180 px und es werden dafür **mehr Nachbarebenen**
+> sichtbar; das ist die nützlichere Verwendung des Platzes als ein gedehntes
+> Bild derselben Ebene.
+>
+> **Die Bildsimulation trägt die neue Fläche:** 2082 Routen an 111 Bahnhöfen,
+> 5630 Bänder, **0 Befunde** — jeder Wegpunkt, jede Marke, jeder Start- und
+> Zielpunkt und jedes Symbol liegt weiterhin im Bild, 0 sich überdeckende
+> Symbolschilder. Das ist der Grund, warum `masse.ts` EINE Quelle für
+> Komponente und Simulation ist: Eine Flächenänderung lässt sich sofort gegen
+> die ganze Ablage prüfen.
+>
+> **Weiter auf der Seite:**
+>
+> - **Legende und Hinweiszeilen unter dem Bild sind weg** — Bahnhofname +
+>   Vorbehalt, der Kreuzungswinkelsatz und `modell.vorbehalte` (daher
+>   „Bahnsteigabschnitte (A–G) sind in den Quellen nicht verortet",
+>   `core/schema.ts`). Im Rückfallbild `ErsatzSchema` ebenso. Der Bahnhofname
+>   bleibt im `aria-label` des Bildes — sonst hätte es keine Ortsangabe mehr.
+>   **Die Vorbehalte stehen damit nirgends mehr sichtbar** (ToDo 38).
+> - **Beim letzten Schritt tritt ein grünes „Angekommen" an die Stelle des
+>   ausgegrauten „Weiter"** (`--color-gruen`, dieselbe Farbe wie die
+>   Angekommen-Fläche). Der lose Knopf unter dem Sheet ist gefallen — er stand
+>   dort auf **jedem** Schritt, auch mitten im Bahnhof. „Zurück" und
+>   „Weiter"/„Angekommen" sind ein Paar: gleiche Höhe, gleiche ovale Form.
+> - **Karte und Streckenhinweise stehen im Aufklapper „Alle Schritte"**
+>   (`Schrittsheet` nimmt dafür ein `zusatz?: ReactNode`). Sie wären im festen
+>   Bildschirm kein Platz mehr, sollen aber nicht verschwinden — ein Hinweis
+>   wie „Aufzug außer Betrieb" gehört nicht gelöscht. Der Aufklapper rollt in
+>   sich (`max-height: 40dvh`), damit er die Spalte nicht doch wieder sprengt.
+>
+> **`scripts/abzug.tsx` zeichnet jetzt Kopf und Navileiste mit.** Bis heute
+> zeichnete er `<Navigation>` allein. Seit die Seite ihre Höhe unter Kopf,
+> Bild, Schritt-Box und Leiste aufteilt, beweist ein Abzug ohne die Nachbarn
+> nichts mehr — die Sichtprüfung unten wäre sonst wertlos gewesen. Dazu die
+> fehlende Zeichensatzangabe ergänzt; die Mappe zeigte „ZurÃ¼ck".
+>
+> **Zum ersten Mal seit dem 16.09. wieder im Browser angesehen** (Chrome-
+> Erweiterung, vier Geräte aus echten Routendaten über
+> `frontend/scripts/abzug.tsx`, Rahmen 360 × 740):
+>
+> | Geprüft | Ergebnis |
+> |---|---|
+> | Rollt die Seite? | `scrollHeight == clientHeight` in allen vier — nein |
+> | Steht das Bild still? | Oberkante des aktiven Bandes **y = 178** bei Schritt 1, 5 und 9 und in Berlin |
+> | Wird das Band abgeschnitten? | Überstand 1 px bzw. −33 px — der Fußtext ist in allen vier sichtbar |
+> | Grüner Knopf | nur im letzten Schritt; davor „Weiter" |
+> | Legende / Hinweiszeilen | nicht mehr im DOM |
+>
+> ```bash
+> cd frontend && npm test && npm run lint    # 395 von 395, Lint sauber
+> cd backend  && npm test && npm run lint    # 438 von 438, Lint sauber
+> # Bildsimulation: 2082 Routen, 5630 Bänder, 0 Befunde
+> cd frontend && npx tsx --tsconfig tsconfig.app.json scripts/simulation-bild.ts ../backend/osm-ablage/laeufe/lauf5-ablage.jsonl
+> ```
+>
+> Sichtprüfungen aus `scripts/abzug.tsx` liegen in `frontend/.abzug/`
+> (gitignored). Aufruf:
+> `npx tsx --tsconfig tsconfig.app.json scripts/abzug.tsx <ziel.html> "<Titel|Untertitel|Bahnhof|an|ab|pos>=<route.json>" …`
+>
+> **Ausgeliefert am 19.09.2026.** Commit `f1475b7`, `feat/mvp` und `main`
+> stehen gleichauf bei GitHub, Vercel liefert die Produktion unter
+> <https://www.umstieg.online>. Gegen die Live-Seite geprüft, dass der neue
+> Stilbaustein drin ist (`app-navigation`, `schema-fenster`,
+> `knopf-angekommen`, keine `schema-legende`). **Fly.io wurde nicht neu
+> ausgeliefert** — die Änderung ist rein im Frontend, das Backend ist
+> unberührt.
+>
+> **Nächster Schritt: M9 und M10 am Gerät** (ToDo 3 und 30) — jetzt mit der
+> zusätzlichen Frage, ob 180 px Bildhöhe in der Halle reichen (ToDo 37).
+
+### Davor (15./16.09.2026, nachts)
 
 > **„Anfang" heißt jetzt etwas (ToDo 31, entschieden und umgesetzt).** Der
 > Anfang eines Bahnsteigs ist das **Nord- bzw. Westende** – für alle
@@ -552,8 +648,10 @@ Nach Gewicht:
 6. **Der Rot-Konflikt ist ungelöst.** `#ec3013` ist Route, Aktion und Ampelrot
    zugleich. Die Artboards weichen aus, indem sie grüne und gelbe Ampeln
    zeigen.
-7. **Wie Vorbehalte sichtbar werden**, ohne die Seite zu belasten – derzeit
-   eine Fußzeile unter dem Bild.
+7. **Wie Vorbehalte sichtbar werden**, ohne die Seite zu belasten – seit dem
+   19.09.2026 **gar nicht mehr**. Die Fußzeile unter dem Bild ist mit der
+   Legende gefallen, weil der feste Bildschirm den Platz nicht mehr hergibt.
+   Die Frage ist damit offen wie zuvor, nur ohne Zwischenlösung: ToDo 38.
 8. **„Anzeige" als Orientierungspunkt ist gestrichen.** 25 von 26
    OSM-Treffern auf `information=board` sind Fremdtafeln („Wildbienen").
    Ersatz offen.
@@ -954,6 +1052,8 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | 26 | **Zwei Simulationen lesen den Schlüssel-Tresor ohne Not** | `simulation-schema.ts` und `simulation-standort.ts` rufen `ladeSecrets()` beim Start immer auf – auch mit `ABLAGE_NUR=1`, wo kein Netz gebraucht wird. Nach `D:\Claude-code\CLAUDE.md` starten sie deshalb nur nach Rückfrage. Nur laden, wenn wirklich abgerufen wird; dann laufen beide ohne. |
 | 36 | **Augsburg 6 → 12 barrierefrei: 1 m kürzer als vor ToDo 31** | Lauf 5 gegen Lauf 4, ab Anfang: 266 statt 267 m, 386 statt 387 s, gleiche Ebenenfolge. Die einzige Route von 672 unterscheidbaren Kombinationen, die weder gleich blieb noch nur die Seiten tauschte. Vermutlich ein Nebeneffekt der jetzt umgedrehten Bahnsteigkette (`verdichteBahnsteigketten` arbeitet vom Anfang aus) – **nicht untersucht**. Klein, aber es zeigt eine Reihenfolgeabhängigkeit, die es nicht geben sollte. |
 | 27 | **Düsseldorf Hbf 1 → 20: Wegzerlegung 236 statt 231 m** | Der einzige Routing-Befund von Lauf 4 (`pruefeSchema`, ab Mitte, schnellste). Die Linienzüge der Besuche sind 5 m länger als der Pfad ohne Ebenenwechsel. Douglas-Peucker kann nicht verlängern – die Ursache liegt woanders (Besuchsgrenzen, doppelte Punkte an einem Wechsel?). Nicht aus dem Symbolumbau. |
+| 37 | **Die 180 px Bildhöhe sind an EIN Gerät angepasst** | `AKTIV_H = 180` in `schema/masse.ts` ist aus einem Rahmen von 360 × 740 abgeleitet: Was Kopf, Schritt-Box und Leiste dort übrig lassen, sind 179 px. Auf einem kürzeren Gerät (iPhone SE, 667 px) wird das Band unten angeschnitten, auf einem längeren bleibt Platz – der füllt sich immerhin nützlich mit Nachbarebenen. Dazu kommt, dass die Höhe der Schritt-Box mit der Länge des Schritttextes um ±34 px schwankt (ein- gegen zweizeilig), das Fenster also ohnehin atmet. **Richtig wäre, die Bildhöhe zu messen statt zu setzen** – dann müsste aber auch die Simulation auf einer gemessenen Fläche zeichnen, sonst beweist sie nichts mehr (siehe Kopf von `masse.ts`). Deshalb bewusst als Zahl belassen. Erst am Gerät entscheiden (ToDo 30). |
+| 38 | **Die Datenvorbehalte stehen nirgends mehr** | Mit der Fußzeile unter dem Bild sind am 19.09.2026 drei Auskünfte verschwunden: dass das Bild ein Schema und nicht maßstäblich ist, der Kreuzungswinkel zweier Ebenen, und `modell.vorbehalte` („Bahnsteigabschnitte (A–G) sind in den Quellen nicht verortet", `core/schema.ts:787`). Sie waren auf Wunsch zu entfernen, weil sie den festen Bildschirm füllten, ohne sich je zu ändern. Sie sind damit aber nicht falsch geworden. Naheliegender Ort: der Aufklapper „Alle Schritte", wo seit heute schon Karte und Streckenhinweise liegen – `Schrittsheet` nimmt dafür ein `zusatz`. Siehe „Offen am Design", Punkt 7. |
 
 ### Als Nächstes (der Hauptstrang)
 
@@ -970,7 +1070,7 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | ~~9c~~ | ~~**Variante „Mit Stopp: WC & Kiosk“**~~ ✅ **erledigt 05.09.2026** | Gebaut und ausgeliefert. Die Spec-Annahme „die Daten sind bereits da“ stimmte nicht – die Overpass-Abfrage holte WC und Kiosk nie. Siehe „Mit Stopp: WC & Kiosk“. |
 | 28 | **Stumme Treppen und Rampen** | Lauf 4: 195 Routen an 19 Bahnhöfen nehmen eine Treppe oder Rampe, ohne dass der Graph einen Ebenenwechsel kennt (35 Treppen-, 769 Rampenkanten) – etwa eine Unterführung ohne `level`. Im Bild steht dort keine Scheibe, im Text schon. Je Fall zu klären: Fehlt `level` in OSM, oder liest der Graph `incline`/`ramp` nicht? |
 | 29 | **Umwege zu einem Zugang an 6 Bahnhöfen** | `pruefeBahnsteigwege`, Lauf 4: Bielefeld (Gleis 5, zwei Treppen), Bonn (Gleis 4), Gütersloh (Gleis 2 und 3), Schwerin (Gleis 1: Treppe über 258 statt 120 m, zwei Aufzüge), Wittenberge (Gleis 1, Aufzug), Berlin-Spandau (Gleis 3: Treppe bei 397 m unerreichbar). Nach der Kettenkorrektur eine andere Ursache – je Bahnhof am Graphen nachsehen. |
-| 30 | **M10: das neue Schema am Gerät** | Mit M9 nach dem Deployment (ToDo 25). Tragen die 11-px-Symbole in der Halle bei Gegenlicht? Reicht auf dem Ankunftsband der Punkt ohne Linie – auch am Kopfbahnhof, wo die U-Form nur noch im Text steht (154 Routen an 18 Bahnhöfen)? Stimmen die geglätteten Schritte im Gehen (`GLAETTUNG_M = 6` ist begründet, nicht gemessen)? |
+| 30 | **M10: das neue Schema am Gerät** | Mit M9 nach dem Deployment (ToDo 25). Tragen die 11-px-Symbole in der Halle bei Gegenlicht? Reicht auf dem Ankunftsband der Punkt ohne Linie – auch am Kopfbahnhof, wo die U-Form nur noch im Text steht (154 Routen an 18 Bahnhöfen)? Stimmen die geglätteten Schritte im Gehen (`GLAETTUNG_M = 6` ist begründet, nicht gemessen)? **Seit dem 19.09. dazu:** Bleibt das verankerte Bild beim Durchklicken wirklich ruhig, oder wirkt das Springen der Nachbarebenen darum herum unruhig? Und findet die Hand den „Weiter"-Knopf unten am Rand mit Koffer in der anderen? |
 | ~~31~~ | ~~**Was „Anfang" im Bahnhof heißt**~~ ✅ **entschieden und umgesetzt 15.09.2026** | **Anfang = Nord- bzw. Westende**, für alle Bahnsteige einer Ebene an derselben Achse ausgerichtet (`core/richtung.ts`, angewandt in `baueGraph`). Die Knöpfe und die Standortmarken im Bild sagen es: „Nordende · Mitte · Südende" oder „Westende · Mitte · Ostende" – vergleichend, also „das nördlichere der beiden Enden". Warum die Himmelsrichtung: Sie ist die einzige Orientierung, die an **jedem** Bahnhof aus den Daten belegt ist. Kopf und Empfangsgebäude kennt die Overpass-Abfrage nicht, und die Fahrtrichtung ließe sich nur aus dem Laufweg schätzen – an Brücken und Kurven das falsche Ende. Ohne gemessene Achse (Standardmodell) bleibt es bei „Anfang/Ende". Vorher: die zufällige Zeichenrichtung in OSM, an Nachbarbahnsteigen oft entgegengesetzt. Siehe „Hier weitermachen". |
 
 Der Umbau nach dem Entwurf ist am 31.08. erfolgt (Spec und Plan unter
