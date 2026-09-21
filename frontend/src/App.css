@@ -44,15 +44,22 @@
   overflow: hidden;
 }
 
+/*
+ * Normale Schreibweise statt Versalien, dafuer eine Stufe groesser.
+ * Grossbuchstaben in kleiner, gesperrter Schrift kosten die Wortform, an der
+ * man Woerter erkennt - fuer aeltere Leser der schwerste Fall, und genau die
+ * gehoeren zur Zielgruppe. Versalien bleiben nur dort, wo sie die
+ * Bahnsteigbeschilderung zitieren: `.schema-bandrechts`, `.schema-wechsel`.
+ */
 .kicker {
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: var(--schrift-label);
+  font-weight: 600;
+  letter-spacing: 0.01em;
   color: var(--color-accent);
 }
 
 .kopf h1 {
-  font-size: 30px;
+  font-size: 1.667rem;
   margin-top: 6px;
 }
 
@@ -76,7 +83,7 @@
 
 .kopf p {
   margin: 4px 0 0;
-  font-size: 14px;
+  font-size: var(--schrift-label);
   color: var(--color-neutral-700);
 }
 
@@ -92,7 +99,7 @@
 
 .feld label {
   display: block;
-  font-size: 12px;
+  font-size: var(--schrift-label);
   margin-bottom: 5px;
   color: color-mix(in srgb, var(--color-text) 70%, transparent);
 }
@@ -102,12 +109,12 @@
   min-height: 48px;
   padding: 10px 14px;
   font: inherit;
-  font-size: 16px;
+  font-size: 0.889rem;
   color: var(--color-text);
   caret-color: var(--color-accent);
   background: var(--color-neutral-100);
   border: 1px solid var(--color-divider);
-  border-radius: 14px;
+  border-radius: var(--radius-klein);
 }
 
 .eingabefeld:focus-visible {
@@ -134,14 +141,14 @@
   margin: 0;
   padding: 14px 16px;
   border: 1px solid var(--color-neutral-300);
-  border-radius: 18px;
+  border-radius: var(--radius-mittel);
   background: var(--color-surface);
   min-width: 0; /* sonst sprengt ein fieldset das Grid darin auf Handybreite */
 }
 
 .reiseblock > legend {
   padding: 0 6px;
-  font-size: 15px;
+  font-size: var(--schrift-label);
   font-weight: 600;
 }
 
@@ -150,7 +157,7 @@
   margin: 6px 0 0;
   padding: 0;
   border: 1px solid var(--color-neutral-300);
-  border-radius: 14px;
+  border-radius: var(--radius-klein);
   overflow: hidden;
   background: var(--color-neutral-100);
 }
@@ -162,7 +169,7 @@
   padding: 12px 14px;
   min-height: 44px;
   font: inherit;
-  font-size: 15px;
+  font-size: var(--schrift-label);
   background: transparent;
   border: 0;
   border-bottom: 1px solid var(--color-neutral-300);
@@ -183,10 +190,10 @@
   gap: 8px;
   margin-top: 8px;
   padding: 7px 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-pille);
   background: var(--color-accent-100);
   color: var(--color-accent-700);
-  font-size: 13px;
+  font-size: var(--schrift-label);
   font-weight: 600;
 }
 
@@ -202,10 +209,10 @@
   min-height: 52px;
   padding: 8px 6px;
   font: inherit;
-  font-size: 14px;
+  font-size: var(--schrift-label);
   font-weight: 600;
   border: 1px solid var(--color-neutral-300);
-  border-radius: 14px;
+  border-radius: var(--radius-klein);
   background: var(--color-neutral-100);
   color: var(--color-text);
   cursor: pointer;
@@ -217,9 +224,9 @@
 }
 
 .wahl-knopf[aria-pressed='true'] {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-bg);
+  background: var(--color-akzent-tief);
+  border-color: var(--color-akzent-tief);
+  color: var(--color-auf-akzent);
 }
 
 /* — Primär-/Sekundärknöpfe — */
@@ -234,11 +241,11 @@
   padding: 0 26px;
   font-family: var(--font-heading);
   font-weight: 800;
-  font-size: 17px;
-  color: var(--color-bg);
+  font-size: var(--schrift-anweisung);
+  color: var(--color-auf-akzent);
   background: var(--color-accent);
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pille);
   cursor: pointer;
   box-shadow: var(--shadow-lg);
   transition: background 0.18s ease, transform 0.12s ease;
@@ -272,11 +279,11 @@
   padding: 0 26px;
   font-family: var(--font-heading);
   font-weight: 800;
-  font-size: 17px;
+  font-size: 0.944rem;
   color: var(--color-bg);
   background: var(--color-gruen);
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pille);
   cursor: pointer;
   box-shadow: var(--shadow-lg);
   transition: background 0.18s ease, transform 0.12s ease;
@@ -298,12 +305,12 @@
   min-height: 48px;
   padding: 0 20px;
   font: inherit;
-  font-size: 15px;
+  font-size: var(--schrift-label);
   font-weight: 600;
   color: var(--color-text);
   background: transparent;
   border: 1px solid var(--color-divider);
-  border-radius: 14px;
+  border-radius: var(--radius-klein);
   cursor: pointer;
 }
 
@@ -315,18 +322,18 @@
 
 .hinweis-box {
   padding: 14px 16px;
-  border-radius: 18px;
+  border-radius: var(--radius-mittel);
   background: var(--color-surface);
-  font-size: 14px;
+  font-size: var(--schrift-label);
 }
 
 .fehler-box {
   padding: 14px 16px;
-  border-radius: 18px;
+  border-radius: var(--radius-mittel);
   background: var(--color-accent-100);
   border: 1px solid var(--color-accent-300);
   color: var(--color-accent-700);
-  font-size: 14px;
+  font-size: var(--schrift-label);
 }
 
 /* — Live-Banner (Gleiswechsel, Verspätung) — */
@@ -338,7 +345,7 @@
   gap: 12px;
   flex-wrap: wrap;
   padding: 14px 16px;
-  border-radius: 18px;
+  border-radius: var(--radius-mittel);
   background: var(--color-surface);
   border: 1px solid var(--color-neutral-300);
 }
@@ -354,8 +361,8 @@
   flex-direction: column;
   gap: 2px;
   padding: 12px 16px;
-  border-radius: 18px;
-  font-size: 15px;
+  border-radius: var(--radius-mittel);
+  font-size: var(--schrift-label);
   background: var(--color-neutral-100);
   border: 1px solid var(--color-neutral-300);
   color: var(--color-neutral-800);
@@ -372,12 +379,12 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: 15px;
+  font-size: var(--schrift-label);
 }
 
 .live-banner-stand,
 .live-stand {
-  font-size: 12px;
+  font-size: var(--schrift-label);
   color: var(--color-neutral-800);
 }
 
@@ -402,7 +409,7 @@
   gap: 5px;
   padding: 6px 9px;
   background: #201e1d;
-  border-radius: 999px;
+  border-radius: var(--radius-pille);
   flex: none;
 }
 
@@ -412,6 +419,37 @@
   border-radius: 50%;
   background: #4a4443;
   transition: background 0.5s ease, box-shadow 0.5s ease;
+}
+
+/*
+ * Der Alarmzustand: helle rote Toenung als Flaeche, darauf Rotschrift
+ * (7,2:1), und an der Unterkante der schraeg gestreifte Saum in Rot und Gelb
+ * - dieselbe Konvention wie an einer Warnbake. Kein anderes Element der App
+ * hat Streifen, deshalb ist der Zustand ohne ein Wort Erklaerung
+ * unterscheidbar, obwohl Rot sonst ueberall vorkommt.
+ *
+ * Die Schrift steht NICHT auf den Streifen, sondern darueber: Lesbarkeit geht
+ * vor Dramatik. Der Saum sitzt im zusaetzlichen Bodenpolster.
+ */
+.ampel-leiste.ampel-rot {
+  background: var(--color-accent-100);
+  border-radius: var(--radius-mittel);
+  padding: 12px 14px 20px;
+}
+
+.ampel-leiste.ampel-rot::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 6px;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--color-rot) 0 8px,
+    var(--color-warngelb) 8px 16px
+  );
+  border-radius: 0 0 var(--radius-mittel) var(--radius-mittel);
 }
 
 .ampel-lampe.an-gruen {
@@ -424,20 +462,23 @@
   box-shadow: 0 0 10px color-mix(in srgb, var(--color-gelb) 85%, transparent);
 }
 
+/*
+ * Die Alarmlampe ist zweigeteilt: rote Haelfte, gelbe Haelfte. Seit dem
+ * 20.09.2026 ist Rot die Sekundaerfarbe der App und steht auf Knoepfen,
+ * Auswahlmarken und der Zielkarte - allein kann es den Alarm deshalb nicht
+ * mehr kennzeichnen. Die Kombination Rot+Gelb tut es, wie an einer Warnbake.
+ *
+ * Das Pulsieren ist hier am 20.09.2026 entfernt worden. Blinken unter
+ * Zeitdruck erhoeht die Anspannung und ist fuer einen Teil der Nutzenden ein
+ * koerperlicher Ausloeser; die Farbe reicht zusammen mit Saum und Satz.
+ */
 .ampel-lampe.an-rot {
-  background: var(--color-rot);
+  background: linear-gradient(
+    135deg,
+    var(--color-rot) 0 50%,
+    var(--color-warngelb) 50% 100%
+  );
   box-shadow: 0 0 10px color-mix(in srgb, var(--color-rot) 85%, transparent);
-  animation: ampelPuls 1.2s ease-in-out infinite;
-}
-
-@keyframes ampelPuls {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.4;
-  }
 }
 
 .ampel-text {
@@ -448,7 +489,7 @@
 .ampel-status {
   font-family: var(--font-heading);
   font-weight: 800;
-  font-size: 19px;
+  font-size: 1.056rem;
   line-height: 1.15;
 }
 
@@ -457,7 +498,7 @@
 }
 
 .ampel-untertitel {
-  font-size: 12px;
+  font-size: var(--schrift-label);
   color: var(--color-neutral-700);
 }
 
@@ -478,7 +519,7 @@
   align-items: flex-start;
   padding: 14px 16px;
   border: 1px solid var(--color-neutral-300);
-  border-radius: 18px;
+  border-radius: var(--radius-mittel);
   background: var(--color-neutral-100);
 }
 
@@ -490,10 +531,10 @@
   place-items: center;
   background: var(--color-accent);
   color: var(--color-bg);
-  border-radius: 12px;
+  border-radius: var(--radius-klein);
   font-family: var(--font-heading);
   font-weight: 800;
-  font-size: 17px;
+  font-size: 0.944rem;
 }
 
 .schritt-nummer.ebenenwechsel {
@@ -501,7 +542,7 @@
 }
 
 .schritt-text {
-  font-size: 18px;
+  font-size: var(--schrift-text);
   line-height: 1.35;
   font-weight: 600;
   text-wrap: pretty;
@@ -518,15 +559,15 @@
 }
 
 .routen-kopf h2 {
-  font-size: 26px;
+  font-size: 1.444rem;
 }
 
 .stufen-tag {
   flex: none;
-  font-size: 11px;
+  font-size: var(--schrift-label);
   letter-spacing: 0.02em;
   padding: 4px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pille);
   background: var(--color-surface);
   color: var(--color-neutral-800);
   white-space: nowrap;
@@ -543,9 +584,9 @@
 
 .hinweisliste li {
   padding: 12px 14px;
-  border-radius: 14px;
+  border-radius: var(--radius-klein);
   background: var(--color-surface);
-  font-size: 13px;
+  font-size: var(--schrift-label);
   color: var(--color-neutral-800);
 }
 
@@ -564,7 +605,7 @@
  */
 .tafel-bloecke {
   border: 1px solid var(--color-neutral-300);
-  border-radius: 14px;
+  border-radius: var(--radius-klein);
   overflow: hidden;
   background: var(--color-neutral-100);
 }
@@ -577,10 +618,9 @@
   margin: 0;
   padding: 10px 14px 6px;
   font-family: var(--font-heading);
-  font-size: 12px;
+  font-size: var(--schrift-label);
   font-weight: 700;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--color-neutral-500);
   background: var(--color-neutral-100);
   /* Bleibt beim Rollen der eigenen Kategorie stehen: Wer mitten in einer
@@ -611,7 +651,7 @@
   min-height: 52px;
   padding: 10px 14px;
   font: inherit;
-  font-size: 14px;
+  font-size: var(--schrift-label);
   text-align: left;
   background: transparent;
   border: 0;
@@ -646,7 +686,7 @@
 .tafel-alt {
   color: var(--color-neutral-500);
   font-weight: 400;
-  font-size: 12px;
+  font-size: var(--schrift-label);
 }
 
 .tafel-zug {
@@ -673,7 +713,7 @@
   gap: 10px;
   padding: 10px 14px;
   border: 1px solid var(--color-accent-300);
-  border-radius: 14px;
+  border-radius: var(--radius-klein);
   background: var(--color-accent-100);
 }
 
@@ -682,7 +722,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  font-size: 14px;
+  font-size: var(--schrift-label);
 }
 
 .zug-gewaehlt .knopf-sekundaer {
@@ -701,7 +741,7 @@
 
 .karte-rahmen {
   border: 1px solid var(--color-neutral-300);
-  border-radius: 18px;
+  border-radius: var(--radius-gross);
   overflow: hidden;
   background: var(--color-neutral-100);
 }
@@ -718,10 +758,10 @@
   min-height: 44px;
   padding: 6px 14px;
   font: inherit;
-  font-size: 13px;
+  font-size: var(--schrift-label);
   font-weight: 600;
   border: 1px solid var(--color-neutral-300);
-  border-radius: 999px;
+  border-radius: var(--radius-pille);
   background: var(--color-bg);
   cursor: pointer;
 }
@@ -741,7 +781,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 14px;
+  font-size: var(--schrift-label);
   color: var(--color-neutral-700);
 }
 
@@ -876,7 +916,7 @@
   width: 100%;
   height: auto;
   background: var(--color-neutral-100);
-  border-radius: 12px;
+  border-radius: var(--radius-mittel);
 }
 
 /* Untere Navigationsleiste. sticky statt fixed: Der Inhalt darueber soll
@@ -911,10 +951,10 @@
   flex: 1;
   min-height: 52px;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-klein);
   background: transparent;
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--schrift-label);
   font-weight: 700;
   color: var(--color-text);
   cursor: pointer;
@@ -942,6 +982,52 @@
   opacity: 0.35;
   cursor: default;
 }
+
+/*
+ * Der Nordstern. „Uebersicht" traegt die Zwei-Gleise-Marke auf einer roten
+ * Scheibe, die ueber die Leiste hinausragt - sie ist groesser als die
+ * uebrigen Eintraege, weil dort der Kern der App sitzt.
+ *
+ * Die Scheibe ragt ueber `margin-top` nach oben heraus, nicht ueber
+ * `position: absolute`. Absolut positioniert waere sie aus dem Textfluss
+ * gefallen und die Beschriftung darunter haette ihre Hoehe verloren; so
+ * bleibt der Knopf so hoch wie seine Nachbarn und das Bild steht trotzdem
+ * darueber. Die Leiste hat bewusst kein `overflow: hidden`.
+ */
+.navileiste-knopf.nordstern {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.navileiste-scheibe {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-top: -20px;
+  border-radius: var(--radius-pille);
+  background: var(--color-accent);
+  color: var(--color-auf-akzent);
+  box-shadow: var(--shadow-md);
+  /* Ein Saum in der Leistenfarbe setzt die Scheibe von der Trennlinie ab,
+     ueber der sie sitzt. */
+  border: 3px solid var(--color-bg);
+  transition: transform var(--dauer-schnell) var(--verlauf-ein);
+}
+
+.navileiste-knopf.nordstern:active .navileiste-scheibe {
+  transform: scale(0.94);
+}
+
+/* Gesperrt heisst: sichtbar, aber ohne Signalwirkung. Sonst lockt eine
+   leuchtend rote Scheibe zu einem Knopf, der nichts tut. */
+.navileiste-knopf.nordstern[aria-disabled='true'] .navileiste-scheibe {
+  background: var(--color-neutral-500);
+  box-shadow: none;
+}
 .navileiste-abzeichen {
   position: absolute;
   top: 5px;
@@ -950,10 +1036,10 @@
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
-  border-radius: 9px;
+  border-radius: var(--radius-pille);
   background: var(--color-rot);
   color: #fff;
-  font-size: 11px;
+  font-size: 0.611rem;
   font-weight: 800;
   line-height: 18px;
   text-align: center;
@@ -997,7 +1083,7 @@
   justify-content: center;
   padding: 0 12px;
   border: 1px solid #e0dcdc;
-  border-radius: 11px;
+  border-radius: var(--radius-gross);
   background: #edebeb;
   overflow: hidden;
 }
@@ -1008,7 +1094,7 @@
   justify-content: flex-start;
   padding: 12px;
   border: 1.5px solid var(--color-accent);
-  border-radius: 16px;
+  border-radius: var(--radius-gross);
   background: var(--color-neutral-100);
 }
 .schema-bandkopf {
@@ -1019,7 +1105,7 @@
 }
 .schema-bandname,
 .schema-bandrechts {
-  font-size: 10px;
+  font-size: 0.556rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -1055,7 +1141,7 @@
 /* accent-700 statt accent: dunkel genug für 12 px auf hellem Grund. */
 .schema-bandfuss {
   margin: 6px 0 0;
-  font-size: 12px;
+  font-size: 0.667rem;
   font-weight: 700;
   color: var(--color-accent-700);
   white-space: nowrap;
@@ -1067,7 +1153,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-size: 9px;
+  font-size: 0.5rem;
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -1076,7 +1162,7 @@
 
 /* — Im Bild: Bahnsteige — */
 .schema-gleisname {
-  font-size: 10px;
+  font-size: 0.556rem;
   font-weight: 600;
   fill: var(--color-neutral-600);
 }
@@ -1105,12 +1191,12 @@
   fill: var(--color-neutral-100);
 }
 .schema-notiz {
-  font-size: 10px;
+  font-size: 0.556rem;
   font-weight: 700;
   fill: var(--color-accent-700);
 }
 .schema-standort {
-  font-size: 9px;
+  font-size: 0.5rem;
   font-weight: 600;
   fill: var(--color-neutral-600);
 }
@@ -1188,7 +1274,7 @@
 /* Ein Saum aus der Grundfarbe hinter der Schrift: Die Anweisung liegt oft
    über einem Balken oder dem Netz und muss trotzdem lesbar bleiben. */
 .schema-wechseltext {
-  font-size: 10px;
+  font-size: 0.556rem;
   font-weight: 800;
   fill: var(--color-accent-700);
   paint-order: stroke;
@@ -1256,7 +1342,7 @@
   background: var(--color-text);
   color: var(--color-bg);
   font-weight: 700;
-  font-size: 13px;
+  font-size: 0.722rem;
   text-align: center;
 }
 .schema-band-grob.aktiv .schema-grobgleis {
@@ -1274,7 +1360,7 @@
 .schrittsheet {
   margin-top: 20px;
   padding: 16px;
-  border-radius: 16px;
+  border-radius: var(--radius-gross);
   background: var(--color-bg);
   border: 2px solid var(--color-text);
 }
@@ -1287,19 +1373,18 @@
   margin-top: 0;
 }
 .schrittsheet-zaehler {
-  font-size: 10px;
+  font-size: var(--schrift-label);
   letter-spacing: 0.14em;
-  text-transform: uppercase;
   color: var(--color-accent);
 }
 .schrittsheet-text {
-  font-size: 22px;
+  font-size: var(--schrift-anweisung);
   font-weight: 800;
   letter-spacing: -0.02em;
   margin: 8px 0 0;
 }
 .schrittsheet-detail {
-  font-size: 13px;
+  font-size: var(--schrift-label);
   color: var(--color-neutral-600, #6b6767);
   margin: 4px 0 0;
 }
@@ -1314,14 +1399,14 @@
 .schrittsheet-knoepfe > * {
   flex: 1;
   min-height: 56px;
-  border-radius: 999px;
+  border-radius: var(--radius-pille);
   justify-content: center;
 }
 .schrittsheet-liste > summary {
   cursor: pointer;
   padding: 12px 0 0;
   min-height: 44px;
-  font-size: 14px;
+  font-size: var(--schrift-label);
   font-weight: 700;
 }
 /*
@@ -1344,23 +1429,36 @@
 .dashboard-block {
   flex: 1;
   padding: 14px;
-  border-radius: 14px;
+  border-radius: var(--radius-mittel);
   border: 2px solid var(--color-divider);
 }
+
+/* Die Zielkarte darf rot sein: Rot ist Sekundaerfarbe der App, kein Alarm.
+   Der Alarm unterscheidet sich stattdessen durch den gelb-roten Saum an der
+   Ampel - siehe `.ampel-alarm`. */
+.dashboard-block.ziel {
+  border-color: var(--color-accent);
+  background: var(--color-accent-100);
+}
+.dashboard-block.ziel .dashboard-gleis {
+  color: var(--color-accent-700);
+}
 .dashboard-zug {
-  font-size: 15px;
+  font-size: var(--schrift-label);
   font-weight: 700;
   margin-top: 4px;
 }
 .dashboard-gleis {
-  font-size: 26px;
+  font-size: 1.444rem;
   font-weight: 800;
   letter-spacing: -0.03em;
   margin-top: 2px;
 }
 .dashboard-zeit {
-  font-size: 13px;
-  color: var(--color-neutral-600, #6b6767);
+  /* Vorher 13px in neutral-600 (3,9:1) - unter der Grenze fuer Text und
+     unter der Mindestgroesse der Schriftstaffel. */
+  font-size: var(--schrift-label);
+  color: var(--color-neutral-700);
 }
 .wahl-gruppe-spalte {
   flex-direction: column;
@@ -1373,7 +1471,7 @@
   min-height: 33dvh;
   background: var(--color-gruen);
   color: var(--color-bg);
-  border-radius: 18px;
+  border-radius: var(--radius-mittel);
   padding: 26px 20px;
   display: flex;
   flex-direction: column;
@@ -1381,13 +1479,13 @@
   gap: 4px;
 }
 .angekommen-flaeche h1 {
-  font-size: 34px;
+  font-size: 1.889rem;
   font-weight: 800;
   letter-spacing: -0.03em;
   margin: 10px 0 0;
 }
 .angekommen-satz {
-  font-size: 16px;
+  font-size: 0.889rem;
   margin: 0;
   opacity: 0.92;
 }
@@ -1399,17 +1497,16 @@
 .angekommen-kachel {
   flex: 1;
   padding: 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-mittel);
   border: 2px solid var(--color-divider);
 }
 .angekommen-kachel-label {
-  font-size: 10px;
+  font-size: var(--schrift-label);
   letter-spacing: 0.12em;
-  text-transform: uppercase;
   color: var(--color-neutral-600, #6b6767);
 }
 .angekommen-kachel-wert {
-  font-size: 22px;
+  font-size: var(--schrift-anweisung);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   margin-top: 2px;
@@ -1417,10 +1514,10 @@
 .angekommen-wagenkasten {
   margin-top: 12px;
   padding: 14px;
-  border-radius: 12px;
+  border-radius: var(--radius-klein);
   background: var(--color-text);
   color: var(--color-bg);
-  font-size: 15px;
+  font-size: var(--schrift-label);
 }
 
 /* Globale Stoermeldung (Punkt 5): faehrt von oben ein, bedeckt ein Drittel. */
@@ -1442,18 +1539,18 @@
   padding: 20px 20px 22px;
 }
 .stoermeldung h2 {
-  font-size: 30px;
+  font-size: 1.667rem;
   font-weight: 800;
   letter-spacing: -0.03em;
   margin: 6px 0 4px;
 }
 .stoermeldung p {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--schrift-label);
 }
 .stoermeldung-stand {
   margin-top: 6px !important;
-  font-size: 12px;
+  font-size: var(--schrift-label);
   opacity: 0.8;
 }
 .stoermeldung-knoepfe {
@@ -1465,11 +1562,11 @@
 .knopf-durchsichtig {
   min-height: 52px;
   border: 2px solid currentColor;
-  border-radius: 999px;
+  border-radius: var(--radius-pille);
   background: transparent;
   color: inherit;
   font-family: inherit;
-  font-size: 15px;
+  font-size: var(--schrift-label);
   font-weight: 700;
   cursor: pointer;
 }
@@ -1478,11 +1575,11 @@
 .knopf-hell {
   min-height: 58px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pille);
   background: var(--color-bg);
   color: var(--color-text);
   font-family: inherit;
-  font-size: 17px;
+  font-size: 0.944rem;
   font-weight: 700;
   cursor: pointer;
 }
@@ -1496,20 +1593,20 @@
 /* Der alte Wert nutzt dieselbe Durchstreichung wie die Zugtafel, muss hier
    aber neben einem 26px-Wert bestehen - in 12px sieht das nach Fehler aus. */
 .stoerung-gleis .tafel-alt {
-  font-size: 22px;
+  font-size: var(--schrift-anweisung);
   font-weight: 700;
 }
 .meldung-ohne-route,
 .meldung-uebernommen {
   margin: 18px 0 0;
   padding: 14px;
-  border-radius: 12px;
+  border-radius: var(--radius-mittel);
   border: 2px solid var(--color-divider);
-  font-size: 14px;
+  font-size: var(--schrift-label);
   color: var(--color-neutral-700);
 }
 .meldungen-verlauf-titel {
-  font-size: 13px;
+  font-size: var(--schrift-label);
   font-weight: 800;
   margin: 26px 0 8px;
 }
@@ -1526,9 +1623,9 @@
   align-items: baseline;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-klein);
   background: color-mix(in srgb, var(--color-text) 6%, transparent);
-  font-size: 14px;
+  font-size: var(--schrift-label);
 }
 .meldungen-zeit {
   flex: none;
@@ -1550,13 +1647,13 @@
 
 /* Stoerung / Gleiswechsel (Screen 4) */
 .stoerung-titel {
-  font-size: 32px;
+  font-size: 1.778rem;
   font-weight: 800;
   letter-spacing: -0.03em;
   margin: 6px 0 4px;
 }
 .stoerung-satz {
-  font-size: 15px;
+  font-size: var(--schrift-label);
   color: var(--color-neutral-600, #6b6767);
   margin: 0 0 18px;
 }
@@ -1568,7 +1665,7 @@
 .stoerung-seite {
   flex: 1;
   padding: 14px;
-  border-radius: 14px;
+  border-radius: var(--radius-klein);
   border: 2px solid var(--color-divider);
 }
 .stoerung-neu {
@@ -1576,16 +1673,16 @@
   background: color-mix(in srgb, #ec3013 8%, transparent);
 }
 .stoerung-gleis {
-  font-size: 26px;
+  font-size: 1.444rem;
   font-weight: 800;
   letter-spacing: -0.03em;
 }
 .stoerung-detail {
-  font-size: 13px;
+  font-size: var(--schrift-label);
   color: var(--color-neutral-600, #6b6767);
 }
 .stoerung-pfeil {
-  font-size: 22px;
+  font-size: var(--schrift-anweisung);
   font-weight: 800;
 }
 .stoerung-werte {
@@ -1593,7 +1690,7 @@
   grid-template-columns: auto 1fr;
   gap: 4px 14px;
   margin: 18px 0 0;
-  font-size: 15px;
+  font-size: var(--schrift-label);
 }
 .stoerung-werte dt {
   color: var(--color-neutral-600, #6b6767);
@@ -1605,10 +1702,10 @@
 .stoerung-ampel {
   margin: 18px 0;
   padding: 14px;
-  border-radius: 12px;
+  border-radius: var(--radius-klein);
   background: var(--color-text);
   color: var(--color-bg);
-  font-size: 15px;
+  font-size: var(--schrift-label);
   line-height: 1.4;
 }
 
@@ -1616,7 +1713,7 @@
   cursor: pointer;
   min-height: 44px;
   padding: 12px 0;
-  font-size: 14px;
+  font-size: var(--schrift-label);
   font-weight: 700;
 }
 
@@ -1628,7 +1725,7 @@
 }
 .ampel-rest {
   font-family: var(--font-heading, inherit);
-  font-size: 40px;
+  font-size: 2.222rem;
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.03em;
@@ -1637,40 +1734,42 @@
 .ampel-gehzeit {
   flex: 1;
   min-width: 0;
-  font-size: 12px;
+  font-size: var(--schrift-label);
   text-align: right;
   color: var(--color-neutral-600, #6b6767);
 }
 .ampel-zeitleiste {
   margin-top: 10px;
   height: 4px;
-  border-radius: 999px;
+  border-radius: var(--radius-pille);
   background: var(--color-neutral-300, #cdc9c9);
   overflow: hidden;
 }
 .ampel-zeitleiste-fuellung {
   height: 4px;
-  border-radius: 999px;
+  border-radius: var(--radius-pille);
   background: currentColor;
   transition: width 0.9s cubic-bezier(0.22, 0.7, 0.2, 1);
 }
 .ampel-status {
   margin-top: 7px;
-  font-size: 12px;
+  /* Vorher 12px - unter der Mindestgroesse der Schriftstaffel. Das ist der
+     Satz, der den Ampelzustand in Worte fasst; er traegt die Aussage
+     genauso wie die Farbe. */
+  font-size: var(--schrift-label);
   font-weight: 600;
 }
+/*
+ * Diese vier Regeln setzen die Textfarbe der ganzen Ampel (der Status erbt
+ * sie ueber currentColor). Bis zum 20.09.2026 standen hier die FLAECHEN-Werte
+ * und waren als Schrift unlesbar: Bernstein #e08a00 erreicht 2,4:1, Signalrot
+ * 4,2:1, neutral-600 3,9:1 - alle unter der Grenze von 4,5:1. Jetzt die
+ * Schrift-Varianten derselben Rollen.
+ */
 .ampel-gruen { color: var(--color-gruen); }
-.ampel-gelb { color: var(--color-gelb, #e08a00); }
-.ampel-rot { color: var(--color-accent); }
-.ampel-grau { color: var(--color-neutral-600, #6b6767); }
-.ampel-lampen {
-  display: flex;
-  gap: 5px;
-  padding: 6px 9px;
-  background: #201e1d;
-  border-radius: 999px;
-  flex: none;
-}
+.ampel-gelb { color: var(--color-gelb-text); }
+.ampel-rot { color: var(--color-accent-700); }
+.ampel-grau { color: var(--color-neutral-700); }
 
 /* Routenwahl als Zeilen mit Radio-Punkt (Screen 2) */
 .routenwahl {
@@ -1687,10 +1786,10 @@
   padding: 13px 14px;
   min-height: 56px;
   border: 1px solid var(--color-divider);
-  border-radius: 14px;
+  border-radius: var(--radius-klein);
   background: transparent;
   font-family: inherit;
-  font-size: 15px;
+  font-size: var(--schrift-label);
   font-weight: 600;
   color: var(--color-text);
   cursor: pointer;
@@ -1707,9 +1806,9 @@
   transform: scale(0.985);
 }
 .routenwahl-zeile.gewaehlt {
-  border-color: var(--color-text);
-  background: var(--color-text);
-  color: var(--color-bg);
+  border-color: var(--color-akzent-tief);
+  background: var(--color-akzent-tief);
+  color: var(--color-auf-akzent);
 }
 .routenwahl-punkt {
   width: 20px;
@@ -1769,7 +1868,7 @@
   gap: 2px;
   padding: 8px 6px;
   border: 1px solid var(--color-divider);
-  border-radius: 14px;
+  border-radius: var(--radius-klein);
   background: transparent;
   font-family: inherit;
   color: var(--color-text);
@@ -1780,16 +1879,16 @@
   transform: scale(0.985);
 }
 .standortwahl-knopf.gewaehlt {
-  border-color: var(--color-text);
-  background: var(--color-text);
-  color: var(--color-bg);
+  border-color: var(--color-akzent-tief);
+  background: var(--color-akzent-tief);
+  color: var(--color-auf-akzent);
 }
 .standortwahl-name {
-  font-size: 15px;
+  font-size: var(--schrift-label);
   font-weight: 600;
 }
 .standortwahl-min {
-  font-size: 13px;
+  font-size: var(--schrift-label);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   opacity: 0.85;
@@ -1807,7 +1906,7 @@
 }
 .standortwahl-hinweis {
   margin: 8px 0 0;
-  font-size: 13px;
+  font-size: var(--schrift-label);
   line-height: 1.4;
   color: var(--color-neutral-700);
 }
@@ -1815,10 +1914,10 @@
 .routenwahl-fehler {
   margin: 10px 0 0;
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-klein);
   background: var(--color-neutral-100);
   border-left: 3px solid var(--color-accent);
-  font-size: 14px;
+  font-size: var(--schrift-label);
   line-height: 1.4;
   color: var(--color-text);
 }
@@ -1894,13 +1993,13 @@
   flex-direction: column;
   gap: 14px;
   padding: 20px;
-  border-radius: 22px;
+  border-radius: var(--radius-gross);
   background: var(--color-bg);
 }
 
 .dialog h2 {
   margin: 0;
-  font-size: 20px;
+  font-size: 1.111rem;
 }
 
 .anleitung {
@@ -1909,7 +2008,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 15px;
+  font-size: var(--schrift-label);
 }
 
 .reisetext {
@@ -1941,7 +2040,7 @@
   color: var(--color-text);
   background: var(--color-surface);
   border: 1px solid transparent;
-  border-radius: 16px;
+  border-radius: var(--radius-mittel);
   cursor: pointer;
 }
 
@@ -1951,7 +2050,7 @@
 }
 
 .umstieg-zeile {
-  font-size: 13px;
+  font-size: var(--schrift-label);
   color: var(--color-neutral-700);
 }
 

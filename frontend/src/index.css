@@ -35,30 +35,126 @@
 }
 
 :root {
-  --color-bg: #f3f2f2;
-  --color-surface: #eae9e9;
-  --color-text: #201e1d;
+  /* Rangfolge der Grundfarben: Weiss primaer, Rot sekundaer, Grau tertiaer.
+     Siehe BRIEF.md Abschnitt 5. Alle Kontrastwerte sind gemessen, nicht
+     geschaetzt - nachzurechnen mit frontend/.entwurf/design-audit/kontrast.py */
+
+  /* Primaer - Weiss */
+  --color-bg: #ffffff;
+  --color-papier: #faf9f9;
+
+  /* Sekundaer - Rot. Traegt Hauptknopf, Auswahlmarke, Marke.
+     WICHTIG: Rot allein ist KEIN Alarm mehr. Der Alarm ist Rot UND Gelb,
+     siehe --color-warngelb. */
   --color-accent: #ec3013;
   --color-accent-100: #fff2ef;
   --color-accent-300: #ffc4b8;
   --color-accent-600: #dd2b0f;
+  /* Weiss auf --color-accent erreicht nur 4,2:1 und ist damit ausschliesslich
+     fuer grosse, fette Schrift ab 22px/600 erlaubt. Kleinere weisse Schrift
+     braucht Druckrot (5,9:1). Druckrot ist zugleich der gedrueckte Zustand. */
+  --color-druckrot: #c42207;
+  /* Rote Flaeche, die KLEINE Schrift traegt (unter 22px). Weiss darauf
+     erreicht 5,9:1, auf --color-accent waeren es nur 4,2:1. */
+  --color-akzent-tief: #c42207;
+  /* Schriftfarbe auf roten Flaechen. Hell: weiss. Dunkel: tintenschwarz,
+     weil Nachtrot hell ist - weiss darauf waere 3,2:1. */
+  --color-auf-akzent: #ffffff;
+  /* Rote Schrift auf hellem Grund: 7,2:1 */
   --color-accent-700: #ae1800;
+
+  /* Tertiaer - Grau */
+  --color-surface: #eae9e9;
+  --color-text: #201e1d;
   --color-neutral-100: #f8f4f4;
   --color-neutral-300: #d7d3d3;
+  /* neutral-500 erreicht 2,6:1 und ist als TEXTFARBE unbrauchbar.
+     Nur noch fuer Linien und deaktivierte Flaechen. Text nimmt neutral-700. */
   --color-neutral-500: #9b9797;
   --color-neutral-600: #7d7979;
   --color-neutral-700: #605d5d;
   --color-neutral-800: #444141;
-  --color-gruen: #0f7a4f;
-  --color-gelb: #e08a00;
-  --color-rot: #ec3013;
   --color-divider: color-mix(in srgb, #201e1d 40%, transparent);
+
+  /* Status */
+  --color-gruen: #0f7a4f;
+  /* Bernstein ist eine FLAECHE (mit --color-text darauf, 6,2:1).
+     Als Schrift auf hellem Grund erreicht es 2,4:1 - dafuer gibt es
+     --color-gelb-text (5,4:1). */
+  --color-gelb: #e08a00;
+  --color-gelb-text: #9a5b00;
+  --color-rot: #ec3013;
+  /* Der gelbe Anteil des Alarmsaums. Traegt NUR tintenschwarze Schrift
+     (11,6:1); weiss darauf waere 1,4:1. */
+  --color-warngelb: #ffd400;
 
   --font-heading: 'Archivo', system-ui, sans-serif;
   --font-body: 'Archivo', system-ui, sans-serif;
 
+  /* Schriftstaffel. Bezugsgroessen bei unveraenderter Systemeinstellung;
+     gesetzt wird in rem, damit sie mitwaechst, wenn jemand am Geraet grosse
+     Schrift eingestellt hat. Grundgroesse 18px = 1rem bei Standard. */
+  --schrift-gleis: 3.111rem; /* 56px / 800 */
+  --schrift-titel: 1.556rem; /* 28px / 700 */
+  --schrift-anweisung: 1.222rem; /* 22px / 600 */
+  --schrift-text: 1rem; /* 18px / 400 */
+  --schrift-label: 0.833rem; /* 15px / 500 - die Untergrenze */
+
+  /* Rundung. Die App hat keine spitzen Ecken; rechte Winkel gibt es nur bei
+     Trennlinien, die keine Flaeche sind. Verschachtelte Flaechen nehmen nach
+     innen die naechstkleinere Stufe. */
+  --radius-klein: 14px; /* Felder, Vervollstaendigungszeilen, Abzeichen */
+  --radius-mittel: 20px; /* Karten, Bloecke, Hinweisflaechen, Banner */
+  --radius-gross: 28px; /* Bahnsteigstreifen, Ebenenbaender, Sheets, Dialoge */
+  --radius-pille: 9999px; /* Hauptknopf, Routenzeilen, Chips, Marken, Lampen */
+
+  /* Bewegung. Nur als Antwort auf eine Handlung - nie von selbst.
+     Siehe BRIEF.md Abschnitt 5 "Bewegung". */
+  --dauer-schnell: 120ms; /* Druckgefuehl, Fokus */
+  --dauer-normal: 200ms; /* Auswahlwechsel, Aufklappen, Farbwechsel */
+  --dauer-ruhig: 320ms; /* Seitenwechsel, Schrittwechsel */
+  --verlauf-ein: cubic-bezier(0.2, 0, 0, 1);
+  --verlauf-aus: cubic-bezier(0.4, 0, 1, 1);
+
   --shadow-md: 0 3px 10px color-mix(in srgb, #2d2b2b 16%, transparent);
   --shadow-lg: 0 12px 32px color-mix(in srgb, #2d2b2b 22%, transparent);
+}
+
+/* Dunkle Palette. Nachts im Bahnhof ist ein weisser Bildschirm eine
+   Blendgranate - deshalb Pflicht, nicht Kuer. Die Rangfolge Weiss-Rot-Grau
+   bleibt erkennbar: der Hauptknopf bleibt rot, nur aufgehellt. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #17161a;
+    --color-papier: #1c1b20;
+    --color-surface: #221f24;
+    --color-text: #f3f2f2;
+
+    --color-accent: #ff5233; /* 5,6:1 auf Nachtgrund */
+    --color-accent-100: #2a1a17;
+    --color-accent-700: #ff8a73;
+    --color-druckrot: #e03d20;
+    /* Nachtrot ist hell genug, um kleine Schrift zu tragen - aber
+       tintenschwarze (5,6:1), nicht weisse (3,2:1). */
+    --color-akzent-tief: #ff5233;
+    --color-auf-akzent: #17161a;
+
+    --color-neutral-300: #3a3740;
+    --color-neutral-500: #6f6b74;
+    --color-neutral-600: #8d8990;
+    --color-neutral-700: #b4b0ae; /* 8,4:1 - Nebentext */
+    --color-neutral-800: #d5d1cf;
+    --color-divider: color-mix(in srgb, #f3f2f2 30%, transparent);
+
+    --color-gruen: #3cc98a; /* 8,5:1 */
+    --color-gelb: #f0a832; /* 8,9:1 */
+    --color-gelb-text: #f0a832;
+    --color-rot: #ff5233;
+    --color-warngelb: #ffd400; /* 12,6:1 */
+
+    --shadow-md: 0 3px 10px color-mix(in srgb, #000000 50%, transparent);
+    --shadow-lg: 0 12px 32px color-mix(in srgb, #000000 60%, transparent);
+  }
 }
 
 *,
@@ -77,9 +173,12 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-body);
-  font-size: 16px;
+  /* 18px statt 16px: gelesen wird im Gehen, mit Koffer, bei Sonne und oft mit
+     aelteren Augen. 16px ist dafuer die Untergrenze, nicht der Normalfall. */
+  font-size: 18px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  color-scheme: light dark;
 }
 
 h1,
