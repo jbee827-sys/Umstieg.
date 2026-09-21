@@ -125,7 +125,13 @@ export function Dashboard({
           <div className="dashboard-gleis">Gl. {werte.gleisAn}</div>
           {werte.ankunftZeit && <div className="dashboard-zeit">an {werte.ankunftZeit}</div>}
         </section>
-        <section className="dashboard-block">
+        {/*
+          * `ziel` faerbt die Karte rot. Das ist seit dem 20.09.2026 erlaubt:
+          * Rot ist Sekundaerfarbe der App, nicht mehr allein die Alarmfarbe.
+          * Unterscheidbar bleibt der Alarm ueber den gelb-roten Saum an der
+          * Ampel, nicht ueber die Farbe allein.
+          */}
+        <section className="dashboard-block ziel">
           <div className="kicker">Dein Anschluss</div>
           {werte.zugAbName && <div className="dashboard-zug">{werte.zugAbName}</div>}
           <div className="dashboard-gleis">Gl. {werte.gleisAb}</div>
