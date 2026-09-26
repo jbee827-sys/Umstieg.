@@ -76,6 +76,19 @@
   --color-neutral-800: #444141;
   --color-divider: color-mix(in srgb, #201e1d 40%, transparent);
 
+  /* Ebenenschema. Eigene Token, weil die Baender und Balken in beiden
+     Paletten eigene Stufen brauchen - aus neutral-* abgeleitet stimmte die
+     Reihenfolge nachts nicht mehr. */
+  --color-schema-band: #edebeb;
+  --color-schema-band-besucht: #e2dfdf;
+  --color-schema-band-rand: #e0dcdc;
+  --color-schema-bahnsteig: #c4bfbf;
+  --color-schema-netz: #c9c4c4;
+
+  /* Das Gehaeuse der Ampellampen - ein Ding, keine Flaeche der App. */
+  --color-ampel-gehaeuse: #201e1d;
+  --color-ampel-lampe-aus: #4a4443;
+
   /* Status */
   --color-gruen: #0f7a4f;
   /* Bernstein ist eine FLAECHE (mit --color-text darauf, 6,2:1).
@@ -132,6 +145,8 @@
 
     --color-accent: #ff5233; /* 5,6:1 auf Nachtgrund */
     --color-accent-100: #2a1a17;
+    --color-accent-300: #7a2c1f;
+    --color-accent-600: #ff6a4f;
     --color-accent-700: #ff8a73;
     --color-druckrot: #e03d20;
     /* Nachtrot ist hell genug, um kleine Schrift zu tragen - aber
@@ -139,12 +154,28 @@
     --color-akzent-tief: #ff5233;
     --color-auf-akzent: #17161a;
 
+    /* Felder, Schritt-Box, Tafel, aktives Band. Fehlte bis 26.09. - die
+       Flaechen blieben nachts #f8f4f4 unter Lichtschrift (1,1:1). */
+    --color-neutral-100: #27242b; /* Lichtschrift darauf 13,7:1 */
     --color-neutral-300: #3a3740;
     --color-neutral-500: #6f6b74;
     --color-neutral-600: #8d8990;
     --color-neutral-700: #b4b0ae; /* 8,4:1 - Nebentext */
     --color-neutral-800: #d5d1cf;
     --color-divider: color-mix(in srgb, #f3f2f2 30%, transparent);
+
+    /* Nachts liegt das Band ueber dem Grund, das besuchte heller als das
+       offene; die Balken halten 3:1 auf beiden (3,5 bzw. 3,2:1), die
+       Symbole darauf ebenso. Gemessen mit kontrast-dunkel.py. */
+    --color-schema-band: #1f1d23;
+    --color-schema-band-besucht: #2b2830;
+    --color-schema-band-rand: #34313a;
+    --color-schema-bahnsteig: #75717c;
+    --color-schema-netz: #57535e;
+
+    /* Tintenschwarz verschwaende auf dem Nachtgrund (1,1:1). */
+    --color-ampel-gehaeuse: #2f2c34;
+    --color-ampel-lampe-aus: #534e59;
 
     --color-gruen: #3cc98a; /* 8,5:1 */
     --color-gelb: #f0a832; /* 8,9:1 */
