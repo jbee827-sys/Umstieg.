@@ -2,14 +2,15 @@ import { describe, expect, it } from 'vitest'
 import type { RouteErgebnis, SchemaEbene } from '../api/typen'
 import { baueBandmodell } from './bandmodell'
 import type { Bandmodell } from './bandmodell'
-import { bildlageFuer, zeichneBand } from './bandbild'
+import { bildBedarf, bildlageFuer, zeichneBand } from './bandbild'
 import type { Bandbild, Bildpunkt, Gleisbild, Uebergangsbild } from './bandbild'
-import { bildflaeche } from './masse'
+import { AKTIV_KLEIN, bildflaeche, aktivHoehe } from './masse'
 import { SYMBOL_PX } from './symbole'
 import leipzigAnfang from './testdaten/leipzig-6-16-anfang.json'
 import leipzigMitte from './testdaten/leipzig-6-16-mitte.json'
 import leipzigEnde from './testdaten/leipzig-6-16-ende.json'
 import berlin from './testdaten/berlin-14-6-mitte.json'
+import muenchenDicht from './testdaten/muenchen-dicht.json'
 
 // Echte Antworten aus `backend/scripts/routenabzug.ts`, nicht erfunden: Ein
 // erfundener Datensatz zeigt genau die Fälle nicht, an denen ein Bild
@@ -24,7 +25,7 @@ const ROUTEN = {
 /** Jedes Band einer Route so, wie es aktiv auf dem Telefon stünde. */
 function alleBilder(route: RouteErgebnis): { modell: Bandmodell; bilder: Bandbild[] } {
   const modell = baueBandmodell(route.schema, route.schritte, 0)!
-  const { breite, hoehe } = bildflaeche(modell.baender.length)
+  const { breite, hoehe } = bildflaeche(aktivHoehe(Infinity, AKTIV_KLEIN))
   const bilder = modell.baender.map(
     (band) =>
       zeichneBand(band.ebene, breite, hoehe, {
@@ -263,8 +264,8 @@ describe('Übergangsebene: Anlagen als Symbole, der Weg als Linie', () => {
 
 describe('Alles liegt in der Zeichenfläche', () => {
   it.each(Object.entries(ROUTEN))('%s', (_name, route) => {
-    const { modell, bilder } = alleBilder(route)
-    const { breite, hoehe } = bildflaeche(modell.baender.length)
+    const { bilder } = alleBilder(route)
+    const { breite, hoehe } = bildflaeche(AKTIV_KLEIN)
     const punkte: Bildpunkt[] = []
     for (const bild of bilder) {
       punkte.push(...bild.weg, ...bild.wechsel)
@@ -354,5 +355,90 @@ describe('Berlin Hbf 14 → 6: fünf Besuche, eine gekreuzte Ebene', () => {
     const i22 = reihe.indexOf('22')
     const i78 = reihe.indexOf('7/8')
     expect(Math.abs(i22 - i78)).toBe(1)
+  })
+})
+
+describe('Die Bildhöhe folgt der Bahnsteigdichte', () => {
+  // München Hbf 5 → 82 (Lauf 6, 02.10.2026): 17 Bahnsteige auf Ebene 0. Bei
+  // der festen Fläche von 112 px lagen Gleisnamen und Balken übereinander.
+  const muenchen = muenchenDicht as unknown as RouteErgebnis
+  const optionen = (route: RouteErgebnis, nr: number) => {
+    const modell = baueBandmodell(route.schema, route.schritte, 0)!
+    const band = modell.baender[nr]
+    return {
+      ebene: band.ebene,
+      opt: {
+        lage: modell.lage,
+        erster: band.erster,
+        letzter: band.letzter,
+        ...(band.wechselVorher ? { wechselVorher: band.wechselVorher } : {}),
+        ...(band.wechselNachher ? { wechselNachher: band.wechselNachher } : {}),
+      },
+    }
+  }
+  const BREITE = bildflaeche(AKTIV_KLEIN).breite
+  const abstaende = (bild: Gleisbild) => {
+    const ys = bild.balken.map((b) => b.y).sort((a, b) => a - b)
+    return ys.slice(1).map((y, i) => y - ys[i])
+  }
+
+  it('braucht für 17 Bahnsteige mehr Höhe als für zwei', () => {
+    const dicht = optionen(muenchen, 0)
+    const duenn = optionen(ROUTEN.leipzigAnfang, 0)
+    expect(bildBedarf(dicht.ebene, BREITE, dicht.opt)).toBeGreaterThan(bildBedarf(duenn.ebene, BREITE, duenn.opt))
+  })
+
+  it('staucht nichts, wenn die Fläche den Bedarf hergibt', () => {
+    const { ebene, opt } = optionen(muenchen, 0)
+    const bild = gleisbild(zeichneBand(ebene, BREITE, bildBedarf(ebene, BREITE, opt), opt)!)
+    expect(Math.min(...abstaende(bild))).toBeGreaterThanOrEqual(23.5)
+  })
+
+  it('hält Ankunfts- und Abfahrtsbalken frei, wenn doch gestaucht werden muss', () => {
+    const { ebene, opt } = optionen(muenchen, 0)
+    const bild = gleisbild(zeichneBand(ebene, BREITE, bildflaeche(AKTIV_KLEIN).hoehe, opt)!)
+    const reihe = [...bild.balken].sort((a, b) => a.y - b.y)
+    for (let i = 1; i < reihe.length; i++) {
+      if (!reihe[i].rolle && !reihe[i - 1].rolle) continue
+      // 15 px Strich halb + 3 px Strich halb + 1 px Luft
+      expect(reihe[i].y - reihe[i - 1].y).toBeGreaterThanOrEqual(10)
+    }
+  })
+
+  it('lässt Gleisnamen aus, die sich überdecken würden – nie den von Ankunft und Abfahrt', () => {
+    const { ebene, opt } = optionen(muenchen, 0)
+    const bild = gleisbild(zeichneBand(ebene, BREITE, bildflaeche(AKTIV_KLEIN).hoehe, opt)!)
+    const gezeigt = bild.balken.filter((b) => b.beschriftet).map((b) => b.ly).sort((a, b) => a - b)
+    for (let i = 1; i < gezeigt.length; i++) expect(gezeigt[i] - gezeigt[i - 1]).toBeGreaterThanOrEqual(10)
+    for (const k of bild.balken.filter((b) => b.rolle)) expect(k.beschriftet).toBe(true)
+  })
+})
+
+describe('Ankunft und Abfahrt nebeneinander', () => {
+  // Nürnberg Hbf 1 → 30 (Simulation 02.10.2026): beide 15-px-Balken direkt
+  // benachbart. 12 px Luft genügen einem dünnen Nachbarn, nicht einem dicken.
+  const ebene: SchemaEbene = {
+    level: 0,
+    art: 'gleise',
+    bahnsteige: Array.from({ length: 16 }, (_, i) => ({
+      bahnsteigId: `bs${i}`,
+      gleise: [String(i + 1)],
+      laengeM: 300,
+      von: { x: 0, y: i * 12 },
+      bis: { x: 300, y: i * 12 },
+      ...(i === 7 ? { rolle: 'start' as const } : i === 8 ? { rolle: 'ziel' as const } : {}),
+    })),
+  }
+
+  it('hält zwischen zwei dicken Balken genug Luft für beide', () => {
+    const bild = gleisbild(
+      zeichneBand(ebene, bildflaeche(AKTIV_KLEIN).breite, bildflaeche(AKTIV_KLEIN).hoehe, {
+        lage: { gedreht180: false },
+        erster: true,
+        letzter: false,
+      })!,
+    )
+    const [a, b] = bild.balken.filter((k) => k.rolle).sort((p, q) => p.y - q.y)
+    expect(b.y - a.y).toBeGreaterThanOrEqual(16)
   })
 })

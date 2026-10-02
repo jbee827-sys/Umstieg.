@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ANKER_H, RUHIG_H, WECHSEL_H, aktivHoehe, stapelVersatz } from './masse'
+import { AKTIV_KLEIN, ANKER_H, CHROME_H, MIN_BILD_H, RUHIG_H, WECHSEL_H, aktivHoehe, bildflaeche, stapelVersatz } from './masse'
 
 describe('stapelVersatz', () => {
   it('haelt das aktive Band bei jedem Schritt auf derselben Hoehe', () => {
@@ -24,12 +24,31 @@ describe('stapelVersatz', () => {
     expect(ANKER_H).toBe(RUHIG_H + WECHSEL_H)
   })
 
-  it('bleibt mit aktivHoehe vertraeglich: Stapel und Fenster passen zusammen', () => {
-    // Beim letzten Band muss unter dem aktiven Band nichts mehr stehen; die
-    // Fensterhoehe ist also ANKER_H + aktivHoehe.
-    const anzahl = 3
-    const letzter = anzahl - 1
-    const unterkante = ANKER_H + stapelVersatz(letzter) + letzter * (RUHIG_H + WECHSEL_H) + aktivHoehe(anzahl)
-    expect(unterkante).toBe(ANKER_H + aktivHoehe(anzahl))
+  it('haengt nicht von der Hoehe des aktiven Bandes ab – das Bild darf wachsen, ohne zu wandern', () => {
+    // Die Oberkante des aktiven Bandes rechnet nur mit den ruhigen Baendern
+    // DAVOR. Wie hoch es selbst ist, verschiebt nichts nach oben.
+    expect(stapelVersatz(2)).toBe(-2 * (RUHIG_H + WECHSEL_H))
+  })
+})
+
+describe('aktivHoehe: so hoch, wie das Bild es braucht – nicht mehr, als Platz ist', () => {
+  it('gibt dem Bild seinen Bedarf samt Kopf- und Fusszeile', () => {
+    expect(aktivHoehe(200, 400)).toBe(200 + CHROME_H)
+  })
+
+  it('kappt am verfuegbaren Platz', () => {
+    expect(aktivHoehe(500, 300)).toBe(300)
+  })
+
+  it('wird nie kleiner als ein lesbares Bild', () => {
+    expect(aktivHoehe(10, 400)).toBe(MIN_BILD_H + CHROME_H)
+  })
+
+  it('ohne gemessenen Platz: der Bedarf', () => {
+    expect(aktivHoehe(300)).toBe(300 + CHROME_H)
+  })
+
+  it('die Zeichenflaeche ist das Band ohne Kopf, Fuss und Polster', () => {
+    expect(bildflaeche(AKTIV_KLEIN).hoehe).toBe(AKTIV_KLEIN - CHROME_H)
   })
 })

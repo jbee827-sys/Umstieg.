@@ -17,6 +17,10 @@
 //   - Symbole: überlappen sie, ragen sie über den Balken, liegen sie auf einem
 //     Punkt?
 //   - Ergeben die Schritte genau so viele Besuche wie das Schema?
+//   - Proportionen (seit 02.10.2026): Überdecken sich gezeigte Gleisnamen?
+//     Berührt ein Ankunfts- oder Abfahrtsbalken seinen Nachbarn? Gezeichnet
+//     wird jedes Band so hoch, wie es braucht, höchstens `VERFUEGBAR` px
+//     (Standard: ein kleines Telefon, `AKTIV_KLEIN`).
 //
 // Dazu Zählungen ohne Urteil: Wege, die als U-Form um einen Kopf führen (im
 // Bild nicht mehr gezeichnet), Stellen, an denen die gezeichnete Linie
@@ -24,12 +28,15 @@
 // Bahnsteige und Symbolschilder im Grundriss, die sich überdecken.
 //
 // Aufruf: npx tsx --tsconfig tsconfig.app.json scripts/simulation-bild.ts <routen.jsonl>
+//   VERFUEGBAR=400  Platz unter dem Anker in px (Standard AKTIV_KLEIN)
 import { readFileSync } from 'node:fs'
 import type { BahnhofSchema, Schritt } from '../src/api/typen'
 import { baueBandmodell, besuchJeSchritt } from '../src/schema/bandmodell'
-import { zeichneBand } from '../src/schema/bandbild'
+import { bildBedarf, zeichneBand } from '../src/schema/bandbild'
 import type { Bandbild, Bildpunkt } from '../src/schema/bandbild'
-import { bildflaeche } from '../src/schema/masse'
+import { AKTIV_KLEIN, BREITE, POLSTER, aktivHoehe, bildflaeche } from '../src/schema/masse'
+
+const VERFUEGBAR = Number(process.env.VERFUEGBAR ?? AKTIV_KLEIN)
 import { schildBreite, SYMBOL_PX } from '../src/schema/symbole'
 
 interface Zeile {
@@ -57,6 +64,8 @@ interface Ergebnis {
   scheibenAbseits: number
   schilder: number
   schilderUeberdeckt: number
+  /** Gleisbänder, die nicht in ihren Bedarf passten. Gezählt, nicht verurteilt. */
+  gestaucht: number
 }
 
 function punkteVon(bild: Bandbild): Bildpunkt[] {
@@ -87,6 +96,7 @@ function pruefe(z: Zeile): Ergebnis {
     scheibenAbseits: 0,
     schilder: 0,
     schilderUeberdeckt: 0,
+    gestaucht: 0,
   }
   const { fehler } = e
 
@@ -100,17 +110,20 @@ function pruefe(z: Zeile): Ergebnis {
     fehler.push(`Schritte ergeben ${besuche} Besuche, das Schema ${z.schema.ebenen.length} – das aktive Band wäre falsch`)
   }
 
-  const { breite, hoehe } = bildflaeche(modell.baender.length)
   let verlassen = 0
   let ankommen = 0
   for (const band of modell.baender) {
-    const bild = zeichneBand(band.ebene, breite, hoehe, {
+    const opt = {
       lage: modell.lage,
       erster: band.erster,
       letzter: band.letzter,
       ...(band.wechselVorher ? { wechselVorher: band.wechselVorher } : {}),
       ...(band.wechselNachher ? { wechselNachher: band.wechselNachher } : {}),
-    })
+    }
+    // Wie in Ebenenschema.tsx: so hoch, wie das Band braucht, höchstens der Platz.
+    const bedarf = bildBedarf(band.ebene, BREITE - POLSTER * 2, opt)
+    const { breite, hoehe } = bildflaeche(aktivHoehe(bedarf, VERFUEGBAR))
+    const bild = zeichneBand(band.ebene, breite, hoehe, opt)
     const wo = `Band ${band.nr + 1} (Ebene ${band.level})`
     if (!bild) {
       fehler.push(`${wo} ohne Bild`)
@@ -171,6 +184,21 @@ function pruefe(z: Zeile): Ergebnis {
         fehler.push(`${wo}: Startpunkt ${Math.round(Math.abs(bild.start.x - hier.x))} px neben „${hier.name}"`)
       }
     }
+
+    // Proportionen: gezeigte Namen nie übereinander, Ankunft und Abfahrt nie am Nachbarn.
+    const namen = bild.balken.filter((b) => b.beschriftet).map((b) => b.ly).sort((p, q) => p - q)
+    for (let i = 1; i < namen.length; i++) {
+      if (namen[i] - namen[i - 1] < 10) fehler.push(`${wo}: Gleisnamen überdecken sich`)
+    }
+    if (bild.balken.some((b) => b.rolle && !b.beschriftet)) fehler.push(`${wo}: Ankunfts- oder Abfahrtsgleis ohne Namen`)
+    const stapel = [...bild.balken].sort((p, q) => p.y - q.y)
+    for (let i = 1; i < stapel.length; i++) {
+      const halb = (b: (typeof stapel)[number]) => (b.rolle ? 7.5 : 1.5)
+      if ((stapel[i].rolle || stapel[i - 1].rolle) && stapel[i].y - stapel[i - 1].y - halb(stapel[i]) - halb(stapel[i - 1]) < 1) {
+        fehler.push(`${wo}: Ankunfts- oder Abfahrtsbalken berührt ${stapel[i].rolle ? stapel[i - 1].gleise.join('/') : stapel[i].gleise.join('/')}`)
+      }
+    }
+    e.gestaucht += stapel.length > 1 && hoehe < bedarf - 0.5 ? 1 : 0
 
     // Symbole im Balken: nie übereinander, nie über das Ende, nie auf einem Punkt.
     for (const b of bild.balken) {
@@ -249,6 +277,7 @@ function main(): void {
   let abseits = 0
   let schilder = 0
   let ueberdeckt = 0
+  let gestaucht = 0
   const mitFehler: { z: Zeile; fehler: string[] }[] = []
   const queren = new Map<string, Set<string>>()
   const uformen = new Map<string, string[]>()
@@ -262,6 +291,7 @@ function main(): void {
     abseits += e.scheibenAbseits
     schilder += e.schilder
     ueberdeckt += e.schilderUeberdeckt
+    gestaucht += e.gestaucht
     verteilung.set(e.baender, (verteilung.get(e.baender) ?? 0) + 1)
     if (e.fehler.length > 0) mitFehler.push({ z, fehler: e.fehler })
     for (const q of e.queren) {
@@ -282,6 +312,7 @@ function main(): void {
   )
   console.log(`Symbole in Balken: ${symbole} · Scheiben auf dem Balken: ${aufBalken}, abseits: ${abseits}`)
   console.log(`Symbolschilder im Grundriss: ${schilder}, davon überdecken sich ${ueberdeckt} Paare`)
+  console.log(`Gleisbänder gestaucht bei ${VERFUEGBAR} px Platz: ${gestaucht}`)
 
   console.log(`\nBEFUNDE: ${mitFehler.length} Routen an ${new Set(mitFehler.map((m) => m.z.bahnhof)).size} Bahnhöfen`)
   const nachArt = new Map<string, number>()

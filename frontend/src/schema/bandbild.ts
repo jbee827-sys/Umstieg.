@@ -86,6 +86,12 @@ export interface Bildbalken {
   /** Position der Beschriftung links. */
   lx: number
   ly: number
+  /**
+   * Steht der Gleisname da? Nein, wenn er den eines Nachbarn überdeckte –
+   * dann ist ein fehlender Name lesbarer als zwei übereinander. Ankunft und
+   * Abfahrt stehen immer.
+   */
+  beschriftet: boolean
 }
 
 /** Anlagen im Grundriss einer Übergangsebene, die der Weg NICHT nimmt. */
@@ -185,6 +191,12 @@ const PUNKT_R = 7.5
 const SCHEIBE_R = 9.5
 /** So nah an einem Balken liegt ein Ebenenwechsel AUF ihm. */
 const AUF_BALKEN_PX = 8
+/** Halbe Strichstärke: 15 px für Ankunft und Abfahrt, 3 px für die Nachbarn. */
+const halberStrich = (rolle: boolean): number => (rolle ? 7.5 : 1.5)
+/** Luft zwischen zwei Balkenkanten, wenn einer davon Ankunft oder Abfahrt ist. */
+const ROLLE_LUFT = 3
+/** Höhe eines Gleisnamens (.schema-gleisname: 0.556rem bei 18 px). */
+const NAME_H = 10
 
 const BOGEN = Math.PI / 180
 
@@ -408,6 +420,96 @@ function legeAufBalken(marke: Wechselmarke, balken: Bildbalken[]): Wechselmarke 
 }
 
 /**
+ * Welche Bahnsteige in welcher Reihenfolge, mit welchem Abstand quer –
+ * ungestaucht. EINE Rechnung für `bildBedarf` und `zeichneGleisebene`.
+ */
+function querreihe(ebene: SchemaEbene, opt: Bandoptionen) {
+  const drehe = ausrichtung(ebene, opt.lage)
+
+  const platziert = ebene.bahnsteige
+    .filter((b) => b.von && b.bis)
+    .map((b) => {
+      const a = drehe(b.von!)
+      const e = drehe(b.bis!)
+      return { b, a, e, yM: (a.y + e.y) / 2 }
+    })
+    .sort((p, q) => p.yM - q.yM)
+  // Ohne Achse keine Lage: unten angehängt, in voller Breite, als ungemessen.
+  const frei = ebene.bahnsteige.filter((b) => !(b.von && b.bis))
+
+  const startBs = platziert.find((p) => p.b.rolle === 'start')
+  const mitStandorten = opt.erster && startBs !== undefined
+
+  // --- quer: Balkenlagen ---
+  const roh = [
+    ...platziert.map((p, i) => (i === 0 ? 0 : gasseZwischen(p.yM - platziert[i - 1].yM))),
+    ...frei.map((_, i) => (i === 0 && platziert.length === 0 ? 0 : 34)),
+  ]
+  const rollen = [...platziert.map((p) => p.b.rolle !== undefined), ...frei.map((b) => b.rolle !== undefined)]
+  return { drehe, platziert, frei, startBs, mitStandorten, roh, rollen }
+}
+
+/**
+ * Wie hoch die Zeichenfläche dieses Bandes UNGESTAUCHT wäre.
+ *
+ * Gleisebene: die Bahnsteige in ihren gedeckelten echten Abständen
+ * (`gasseZwischen`), dazu Rand und Standortzeile – 17 Bahnsteige brauchen
+ * mehr als zwei. Übergangsebene: der Grundriss in voller Breite, so hoch,
+ * wie sein Seitenverhältnis es verlangt.
+ */
+export function bildBedarf(ebene: SchemaEbene, breite: number, opt: Bandoptionen): number {
+  if (ebene.art === 'gleise') {
+    if (ebene.bahnsteige.length === 0) return 0
+    const { roh, mitStandorten } = querreihe(ebene, opt)
+    return RAND * 2 + roh.reduce((a, b) => a + b, 0) + (mitStandorten ? STANDORT_ZEILE : 0)
+  }
+  const drehe = ausrichtung(ebene, opt.lage)
+  const punkte = punkteVon(ebene).map(drehe)
+  if (punkte.length < 2) return 0
+  const dx = Math.max(...punkte.map((p) => p.x)) - Math.min(...punkte.map((p) => p.x))
+  const dy = Math.max(...punkte.map((p) => p.y)) - Math.min(...punkte.map((p) => p.y))
+  const skala = Math.min((breite - RAND * 2) / Math.max(dx, 1), MAX_SKALA)
+  return RAND * 2 + dy * skala
+}
+
+/**
+ * Abstände in die Höhe pressen, die da ist – Ankunft und Abfahrt zuletzt.
+ *
+ * Gleichmäßig gestaucht legte München Hbf (17 Bahnsteige auf 84 px) den
+ * 15-px-Ankunftsbalken auf seine Nachbarn. Die Nachbarn sagen nur „hier
+ * liegen noch Gleise"; das geht auch dicht an dicht. Die beiden Balken, um
+ * die es geht, behalten ihre Luft (`ROLLE_LUFT` zwischen den Strichkanten).
+ */
+function stauche(roh: number[], rollen: boolean[], verfuegbar: number): number[] {
+  const gesamt = roh.reduce((a, b) => a + b, 0)
+  if (gesamt <= verfuegbar) return roh
+  const gleichmaessig = roh.map((a) => (a * verfuegbar) / gesamt)
+  const geschuetzt = roh.map((_, i) => i > 0 && (rollen[i] || rollen[i - 1]))
+  // Halbe Striche beider Nachbarn plus Luft: 12 px neben einem dünnen, 18 neben einem dicken.
+  const boden = (i: number): number => halberStrich(rollen[i]) + halberStrich(rollen[i - 1]) + ROLLE_LUFT
+  const fest = roh.map((a, i) => (geschuetzt[i] ? Math.max(gleichmaessig[i], Math.min(a, boden(i))) : 0))
+  const festSumme = fest.reduce((a, b) => a + b, 0)
+  const freiRoh = roh.reduce((s, a, i) => (geschuetzt[i] ? s : s + a), 0)
+  // Reicht es nicht einmal für die geschützten Lücken, bleibt nur gleichmäßig.
+  if (festSumme > verfuegbar || (freiRoh === 0 && festSumme !== verfuegbar)) return gleichmaessig
+  const faktor = freiRoh > 0 ? (verfuegbar - festSumme) / freiRoh : 0
+  return roh.map((a, i) => (geschuetzt[i] ? fest[i] : a * faktor))
+}
+
+/** Welche Gleisnamen stehen: Ankunft und Abfahrt zuerst, dann von oben, ohne Überdeckung. */
+function namenOhneUeberdeckung(bildY: number[], rollen: boolean[]): boolean[] {
+  const reihenfolge = bildY.map((_, i) => i).sort((a, b) => Number(rollen[b]) - Number(rollen[a]) || a - b)
+  const gesetzt: number[] = []
+  const ergebnis = bildY.map(() => false)
+  for (const i of reihenfolge) {
+    if (!rollen[i] && gesetzt.some((y) => Math.abs(y - bildY[i]) < NAME_H)) continue
+    gesetzt.push(bildY[i])
+    ergebnis[i] = true
+  }
+  return ergebnis
+}
+
+/**
  * Eine Gleisebene: waagerechte Balken in echter Reihenfolge und echter Lage.
  *
  * Längs maßstäblich – samt Versatz der Bahnsteige zueinander, denn `von` und
@@ -424,41 +526,21 @@ export function zeichneGleisebene(
   opt: Bandoptionen,
 ): Gleisbild | null {
   if (ebene.bahnsteige.length === 0) return null
-  const drehe = ausrichtung(ebene, opt.lage)
-
-  const platziert = ebene.bahnsteige
-    .filter((b) => b.von && b.bis)
-    .map((b) => {
-      const a = drehe(b.von!)
-      const e = drehe(b.bis!)
-      return { b, a, e, yM: (a.y + e.y) / 2 }
-    })
-    .sort((p, q) => p.yM - q.yM)
-  // Ohne Achse keine Lage: unten angehängt, in voller Breite, als ungemessen.
-  const frei = ebene.bahnsteige.filter((b) => !(b.von && b.bis))
-
-  const startBs = platziert.find((p) => p.b.rolle === 'start')
-  const mitStandorten = opt.erster && startBs !== undefined
+  const { drehe, platziert, frei, startBs, mitStandorten, roh, rollen } = querreihe(ebene, opt)
   const nutzH = hoehe - (mitStandorten ? STANDORT_ZEILE : 0)
 
-  // --- quer: Balkenlagen ---
-  const roh = [
-    ...platziert.map((p, i) => (i === 0 ? 0 : gasseZwischen(p.yM - platziert[i - 1].yM))),
-    ...frei.map((_, i) => (i === 0 && platziert.length === 0 ? 0 : 34)),
-  ]
-  // Eingepasst, nicht abgeschnitten: München Hbf trägt auf Ebene 0 über
-  // fünfzehn Bahnsteige, und ungestaucht liefe der Stapel unten aus dem Bild
-  // – gemessen von der Simulation am 14.09.2026, an 126 Routen.
+  // Eingepasst, nicht abgeschnitten – aber erst, wenn der Platz nicht reicht:
+  // Seit dem 02.10.2026 richtet sich die Höhe nach `bildBedarf`, gestaucht
+  // wird nur noch, wo das Telefon zu klein ist (siehe `stauche`).
   const verfuegbar = Math.max(1, nutzH - RAND * 2)
-  const rohGesamt = roh.reduce((a, b) => a + b, 0)
-  const stauchung = rohGesamt > verfuegbar ? verfuegbar / rohGesamt : 1
-  const abstaende = roh.map((a) => a * stauchung)
-  const gesamt = rohGesamt * stauchung
+  const abstaende = stauche(roh, rollen, verfuegbar)
+  const gesamt = abstaende.reduce((a, b) => a + b, 0)
   let y = RAND + (verfuegbar - gesamt) / 2
   const bildY = abstaende.map((abstand) => {
     y += abstand
     return kante(y)
   })
+  const beschriftet = namenOhneUeberdeckung(bildY, rollen)
 
   /**
    * Quer gemessen an den BAHNSTEIGLINIEN, nicht am y des Bezugsrahmens.
@@ -586,6 +668,7 @@ export function zeichneGleisebene(
           : {}),
         lx: GASSE_LINKS - 8,
         ly: bildY[i] + 4,
+        beschriftet: beschriftet[i],
       }
     }),
     ...frei.map((b, k) => {
@@ -600,6 +683,7 @@ export function zeichneGleisebene(
         symbole: [],
         lx: GASSE_LINKS - 8,
         ly: balkenY + 4,
+        beschriftet: beschriftet[platziert.length + k],
       }
       if (b.rolle) ungemessen.rolle = b.rolle
       return ungemessen
