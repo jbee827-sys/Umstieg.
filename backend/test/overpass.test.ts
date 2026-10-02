@@ -13,6 +13,8 @@ describe('baueOverpassQL', () => {
     const ql = baueOverpassQL(52.5, 13.4, 400);
     expect(ql).toContain('way["railway"="platform"]');
     expect(ql).toContain('relation["railway"="platform"]');
+    // Stuttgart, Karlsruhe, Mannheim: Die Gleisnummer steht an der Kante.
+    expect(ql).toContain('way["railway"="platform_edge"]');
     expect(ql).toContain('footway|steps|corridor');
     expect(ql).toContain('"highway"="elevator"');
     expect(ql).toContain('conveying');

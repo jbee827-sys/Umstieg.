@@ -193,6 +193,27 @@ describe('GET /api/route', () => {
     expect(ergebnis.hinweise.some((h) => h.includes('1A-D'))).toBe(true);
   });
 
+  it('Bahnsteig ohne Gleisnummer in OSM → über die IFOPT der DB gefunden, nicht Standardmodell', async () => {
+    // Hamburg-Altona, 02.10.2026: Die S-Bahnsteige tragen in OSM nur `ref:IFOPT`.
+    const clients = macheClients();
+    const ohneNummer = structuredClone(miniOsm);
+    for (const el of ohneNummer.elements) {
+      if (el.tags?.ref === '2;3') el.tags = { railway: 'platform', level: '0', 'ref:IFOPT': 'de:00000:1:2' };
+    }
+    clients.overpass = vi.fn(async () => ohneNummer);
+    clients.stations.holeStationsInfo = vi.fn(async () => ({
+      ...ministadt,
+      gleise: [
+        { gleis: '1', ris: { name: '1' } },
+        { gleis: '2', ris: { name: '2', ifopt: 'de:00000:1:2:2' } },
+      ],
+    }));
+    const app = buildApp(clients);
+    const res = await app.inject({ method: 'GET', url: ROUTE_URL });
+    expect(res.statusCode).toBe(200);
+    expect((res.json() as RouteErgebnis).stufe).toBe(1);
+  });
+
   it('zweiter Aufruf trifft den Graph-Cache (Clients nur 1× befragt)', async () => {
     const clients = macheClients();
     const app = buildApp(clients);

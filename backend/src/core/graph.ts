@@ -7,6 +7,7 @@ import type {
   OverpassAntwort,
   RoutenPfad,
   StationGraph,
+  StationsInfo,
 } from './typen.js';
 
 const ERDRADIUS_M = 6_371_000;
@@ -40,6 +41,44 @@ const VERWAIST_MAX_M = 10;
  * nie an zweien.
  */
 const BAHNSTEIG_NAEHE_M = 12;
+
+/**
+ * So nah am Umriss eines Bahnsteigs liegt JEDER Punkt seiner Kante.
+ *
+ * Eine `platform_edge` ist der Rand des Bahnsteigs; gezeichnet liegt sie auf
+ * dem Umriss oder knapp daneben. 3 m sind weniger als ein Gleisabstand
+ * (4,5 m) - die Kante kann nicht an den Bahnsteig jenseits des Gleises
+ * fallen.
+ */
+const KANTE_AM_BAHNSTEIG_M = 3;
+
+/** Kleinster Abstand eines Punktes zum Umriss (allen Segmenten) eines Bahnsteigs, in Metern. */
+function abstandZumUmriss(
+  p: { lat: number; lon: number },
+  nodeListen: number[][],
+  osmKnoten: Map<number, OsmElement>,
+): number {
+  const mLat = 111_320;
+  const mLon = mLat * Math.cos((p.lat * Math.PI) / 180);
+  let min = Number.POSITIVE_INFINITY;
+  for (const liste of nodeListen) {
+    for (let i = 0; i < liste.length - 1; i++) {
+      const a = osmKnoten.get(liste[i]);
+      const b = osmKnoten.get(liste[i + 1]);
+      if (a?.lat === undefined || b?.lat === undefined) continue;
+      const ax = (a.lon! - p.lon) * mLon;
+      const ay = (a.lat - p.lat) * mLat;
+      const bx = (b.lon! - p.lon) * mLon;
+      const by = (b.lat - p.lat) * mLat;
+      const dx = bx - ax;
+      const dy = by - ay;
+      const l2 = dx * dx + dy * dy;
+      const t = l2 === 0 ? 0 : Math.max(0, Math.min(1, -(ax * dx + ay * dy) / l2));
+      min = Math.min(min, Math.hypot(ax + t * dx, ay + t * dy));
+    }
+  }
+  return min;
+}
 
 export function haversineM(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const rad = Math.PI / 180;
@@ -140,7 +179,7 @@ function knotenId(osmId: number, level: number): string {
   return `n${osmId}@${level}`;
 }
 
-export function baueGraph(osm: OverpassAntwort): StationGraph {
+export function baueGraph(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise']): StationGraph {
   const osmKnoten = new Map<number, OsmElement>();
   const ways: OsmElement[] = [];
   const waysNachId = new Map<number, OsmElement>();
@@ -314,6 +353,26 @@ export function baueGraph(osm: OverpassAntwort): StationGraph {
   }
 
   /**
+   * Alle Gleisnummern eines Bahnsteigs – in jeder Schreibweise, die OSM kennt.
+   *
+   * Bis zum 02.10.2026 nur `ref`. Das ÖPNV-Schema von OSM schreibt die
+   * Gleisnummer aber als `local_ref` (Singen, Offenburg, Iserlohn), manche
+   * Bahnsteige als `railway:track_ref` (Karlsruhe). Im Abgleich mit dem
+   * echten Fahrplan fehlten dadurch an 16 von 116 Bahnhöfen Gleise, die in
+   * OSM stehen.
+   *
+   * `local_ref` geht vor `ref`. Gemessen über die Ablage: 170 Bahnsteige
+   * tragen beide gleich, 9 verschieden – und dort ist `ref` die
+   * Bahnsteigbezeichnung (Ostkreuz „Rn1", „F") oder schlicht falsch (Halle,
+   * „Bahnsteig 4/5" mit ref=5;6; die DB verbindet 4 mit 5).
+   */
+  function gleisnummern(tags: Record<string, string>): string[] {
+    const haupt = tags.local_ref !== undefined ? tags.local_ref : tags.ref;
+    const alle = [haupt, tags['railway:track_ref']].flatMap(parseRefs);
+    return [...new Set(alle)];
+  }
+
+  /**
    * Ist das ein EISENBAHNsteig?
    *
    * `railway=platform` traegt in OSM auch Strassenbahnsteige: Frankfurts
@@ -336,11 +395,18 @@ export function baueGraph(osm: OverpassAntwort): StationGraph {
 
   const bahnsteige: BahnsteigDaten[] = [];
   const relationsMitgliedWays = new Set<number>();
+  /** Strassenbahnsteige – draussen, ausser die DB fuehrt dort per IFOPT ein Gleis. */
+  const strassenbahnsteige: BahnsteigDaten[] = [];
+  /** Die DELFI-Kennungen (`ref:IFOPT`) je Bahnsteig, auch die seiner Kanten. */
+  const kennungen = new Map<BahnsteigDaten, string[]>();
+  const merkeKennungen = (bahnsteig: BahnsteigDaten, tags: Record<string, string>): void => {
+    const neu = (tags['ref:IFOPT'] ?? '').split(';').map((k) => k.trim()).filter(Boolean);
+    kennungen.set(bahnsteig, [...(kennungen.get(bahnsteig) ?? []), ...neu]);
+  };
 
   for (const rel of relationen) {
     const tags = rel.tags ?? {};
     if (tags.railway !== 'platform') continue;
-    if (!istEisenbahnsteig(tags)) continue;
     const nodeListen: number[][] = [];
     for (const member of rel.members ?? []) {
       if (member.type !== 'way' || member.role === 'inner') continue;
@@ -351,28 +417,98 @@ export function baueGraph(osm: OverpassAntwort): StationGraph {
       }
     }
     if (nodeListen.length > 0) {
-      bahnsteige.push({
-        bahnsteigId: `r${rel.id}`,
-        refs: parseRefs(tags.ref),
-        ...wayEbeneMitBeleg(tags),
-        tags,
-        nodeListen,
-      });
+      nimmAuf({ bahnsteigId: `r${rel.id}`, refs: [], ...wayEbeneMitBeleg(tags), tags, nodeListen });
     }
   }
 
   for (const way of ways) {
     const tags = way.tags ?? {};
     if (tags.railway !== 'platform') continue;
-    if (!istEisenbahnsteig(tags)) continue;
     if (relationsMitgliedWays.has(way.id)) continue; // schon über Relation erfasst
-    bahnsteige.push({
-      bahnsteigId: `w${way.id}`,
-      refs: parseRefs(tags.ref),
-      ...wayEbeneMitBeleg(tags),
-      tags,
-      nodeListen: [way.nodes!],
-    });
+    nimmAuf({ bahnsteigId: `w${way.id}`, refs: [], ...wayEbeneMitBeleg(tags), tags, nodeListen: [way.nodes!] });
+  }
+
+  /** Eisenbahnsteig mit seinen Gleisnummern – Strassenbahnsteig ohne. */
+  function nimmAuf(bahnsteig: BahnsteigDaten): void {
+    merkeKennungen(bahnsteig, bahnsteig.tags);
+    if (istEisenbahnsteig(bahnsteig.tags)) {
+      bahnsteig.refs = gleisnummern(bahnsteig.tags);
+      bahnsteige.push(bahnsteig);
+    } else {
+      strassenbahnsteige.push(bahnsteig);
+    }
+  }
+
+  // --- Bahnsteigkanten (`railway=platform_edge`) ---
+  //
+  // Stuttgart, Karlsruhe und Mannheim Hbf tragen die Gleisnummer nicht am
+  // Bahnsteig, sondern an seinen Kanten - je Gleis eine Linie entlang des
+  // Umrisses. Die Nummer gehoert dem Bahnsteig, an dessen Umriss die Kante
+  // liegt: So bleiben beide Kanten eines Inselbahnsteigs EIN Bahnsteig, und
+  // "gegenueber" stimmt. Ohne Bahnsteig daneben ist die Kante selbst der
+  // Bahnsteig - ihre Linie ist seine Lage.
+  for (const way of ways) {
+    const tags = way.tags ?? {};
+    if (tags.railway !== 'platform_edge' || !istEisenbahnsteig(tags)) continue;
+    const refs = gleisnummern(tags);
+    if (refs.length === 0 && !tags['ref:IFOPT']) continue;
+    const punkte = way.nodes!
+      .map((id) => osmKnoten.get(id))
+      .filter((n): n is OsmElement & { lat: number; lon: number } => n?.lat !== undefined && n?.lon !== undefined);
+    if (punkte.length < 2) continue;
+    const kante = wayEbeneMitBeleg(tags);
+    let bester: BahnsteigDaten | undefined;
+    let besterAbstand = Number.POSITIVE_INFINITY;
+    for (const bahnsteig of bahnsteige) {
+      // Zwei belegte, verschiedene Stockwerke: nicht derselbe Bahnsteig.
+      if (bahnsteig.ebeneBelegt && kante.ebeneBelegt && bahnsteig.ebene !== kante.ebene) continue;
+      // Der GROESSTE Abstand eines Kantenpunkts: Die Kante folgt dem Umriss
+      // ihres Bahnsteigs auf ganzer Laenge. An Berlin Hbf, einem
+      // Kreuzungsbahnhof, lag die Mitte der Kante von Gleis 3 (Ebene -2) auf
+      // dem Umriss eines Bahnsteigs von Ebene 2 – sie kreuzt ihn nur.
+      const abstand = Math.max(...punkte.map((q) => abstandZumUmriss(q, bahnsteig.nodeListen, osmKnoten)));
+      if (abstand < besterAbstand) {
+        besterAbstand = abstand;
+        bester = bahnsteig;
+      }
+    }
+    if (bester && besterAbstand <= KANTE_AM_BAHNSTEIG_M) {
+      for (const r of refs) if (!bester.refs.includes(r)) bester.refs.push(r);
+      if (!bester.ebeneBelegt && kante.ebeneBelegt) Object.assign(bester, kante);
+      merkeKennungen(bester, tags);
+    } else {
+      const eigener: BahnsteigDaten = { bahnsteigId: `w${way.id}`, refs, ...kante, tags, nodeListen: [way.nodes!] };
+      bahnsteige.push(eigener);
+      merkeKennungen(eigener, tags);
+    }
+  }
+
+  // --- DB-Gleise ueber die IFOPT-Kennung ---
+  //
+  // RIS::Stations nennt je Gleis die DELFI-Kennung, OSM traegt sie am
+  // Bahnsteig. Wo OSM die Gleisnummer nicht schreibt (Hamburg-Altonas
+  // S-Bahnsteige, Muenchen Hbf tief), verbindet die Kennung beide Quellen –
+  // belegt, nicht aus Namen geraten. Exakt vor Bereich: "de:09162:6:40" ist
+  // der Bereich, in dem das Gleis "de:09162:6:40:81" liegt. Treffen zwei
+  // Bahnsteige gleich gut, wird nicht gewaehlt.
+  //
+  // Ein Strassenbahnsteig gilt, wenn die DB dort ein Gleis fuehrt: Chemnitz
+  // Hbf faehrt seine Citybahn ueber die Bahnsteige des Vorplatzes.
+  if (dbGleise) {
+    const bekannt = new Set(bahnsteige.flatMap((b) => b.refs));
+    const alle = [...bahnsteige, ...strassenbahnsteige];
+    for (const g of dbGleise) {
+      const kennung = g.ris?.ifopt;
+      if (!kennung || bekannt.has(g.gleis) || g.ris?.parentPlatform) continue;
+      const exakt = alle.filter((b) => (kennungen.get(b) ?? []).includes(kennung));
+      const bereich = alle.filter((b) => (kennungen.get(b) ?? []).some((k) => kennung.startsWith(`${k}:`)));
+      const treffer = exakt.length > 0 ? exakt : bereich;
+      if (treffer.length !== 1) continue;
+      const ziel = treffer[0];
+      ziel.refs.push(g.gleis);
+      if (!bahnsteige.includes(ziel)) bahnsteige.push(ziel);
+      bekannt.add(g.gleis);
+    }
   }
 
   /**

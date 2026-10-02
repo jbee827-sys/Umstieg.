@@ -20,10 +20,14 @@ export function baueOverpassQL(lat: number, lon: number, radiusM: number): strin
   // Variante. Vier Zeilen mehr gegen zwei parallele Cachevarianten war die
   // günstigere Seite des Tauschs. Beide Formen, weil grössere Anlagen als
   // Fläche erfasst sind und kleinere als Punkt.
+  //
+  // `platform_edge`: Viele grosse Bahnhoefe (Stuttgart, Karlsruhe, Mannheim
+  // Hbf) tragen die Gleisnummer nicht am Bahnsteig, sondern an seiner Kante.
   return `[out:json][timeout:25];
 (
   way["railway"="platform"](${um});
   relation["railway"="platform"](${um});
+  way["railway"="platform_edge"](${um});
   way["highway"~"footway|steps|corridor"](${um});
   node["highway"="elevator"](${um});
   way["highway"="elevator"](${um});
