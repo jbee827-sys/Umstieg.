@@ -369,3 +369,173 @@ describe('Bahnsteig als begehbare Linie', () => {
     expect(d).toBeGreaterThan(40);
   });
 });
+
+/**
+ * Gleisnummern, wie OSM sie tatsächlich schreibt (Abgleich 02.10.2026).
+ *
+ * Gelesen wurde nur `ref` an `railway=platform`. Dadurch fehlten an 16 von
+ * 116 Bahnhöfen Fahrplangleise – darunter Stuttgart, Karlsruhe und Mannheim
+ * Hbf, die in OSM vollständig erfasst sind, nur eben in einer anderen
+ * Schreibweise.
+ */
+describe('Gleisnummern in allen OSM-Schreibweisen', () => {
+  // Ein Bahnsteig, ~205 m lang, ~11 m breit, ohne eigene Gleisnummer.
+  const rechteck = (id: number, tags: Record<string, string>): OverpassAntwort['elements'] => [
+    { type: 'node', id: 1, lat: 52.0, lon: 13.0 },
+    { type: 'node', id: 2, lat: 52.0, lon: 13.003 },
+    { type: 'node', id: 3, lat: 52.0001, lon: 13.003 },
+    { type: 'node', id: 4, lat: 52.0001, lon: 13.0 },
+    { type: 'way', id, nodes: [1, 2, 3, 4, 1], tags: { railway: 'platform', public_transport: 'platform', ...tags } },
+  ];
+  const bahnsteigVon = (graph: StationGraph, gleis: string) => graph.knoten.get(`gleis${gleis}:mitte`)?.bahnsteigId;
+
+  it('liest local_ref – die Gleisnummer des ÖPNV-Schemas (Singen, Offenburg)', () => {
+    const graph = baueGraph({ elements: rechteck(100, { local_ref: '4;5', train: 'yes' }) });
+    expect(graph.gleise).toEqual(['4', '5']);
+    expect(bahnsteigVon(graph, '4')).toBe(bahnsteigVon(graph, '5'));
+  });
+
+  it('nimmt local_ref vor ref – ref ist dort die Bahnsteigbezeichnung (Ostkreuz „Rn1")', () => {
+    const graph = baueGraph({ elements: rechteck(100, { ref: 'Rn1', local_ref: '8' }) });
+    expect(graph.gleise).toEqual(['8']);
+  });
+
+  it('nimmt local_ref vor ref, wenn beide sich widersprechen (Halle, „Bahnsteig 4/5")', () => {
+    // ref=5;6 ist dort falsch: Der Bahnsteig heisst 4/5, die DB verbindet 4 mit 5.
+    const graph = baueGraph({ elements: rechteck(100, { ref: '5;6', local_ref: '4;5', name: 'Bahnsteig 4/5' }) });
+    expect(graph.gleise).toEqual(['4', '5']);
+  });
+
+  it('liest railway:track_ref (Karlsruhe, „Poststraße")', () => {
+    const graph = baueGraph({ elements: rechteck(100, { 'railway:track_ref': '2' }) });
+    expect(graph.gleise).toEqual(['2']);
+  });
+
+  it('hängt die Gleisnummern der Bahnsteigkanten an ihren Bahnsteig (Stuttgart, Mannheim)', () => {
+    const graph = baueGraph({
+      elements: [
+        ...rechteck(100, {}),
+        { type: 'node', id: 11, lat: 52.0001, lon: 13.0002 },
+        { type: 'node', id: 12, lat: 52.0001, lon: 13.0028 },
+        { type: 'node', id: 13, lat: 52.0, lon: 13.0002 },
+        { type: 'node', id: 14, lat: 52.0, lon: 13.0028 },
+        { type: 'way', id: 201, nodes: [11, 12], tags: { railway: 'platform_edge', ref: '7' } },
+        { type: 'way', id: 202, nodes: [13, 14], tags: { railway: 'platform_edge', ref: '8' } },
+      ],
+    });
+    expect(graph.gleise).toEqual(['7', '8']);
+    expect(bahnsteigVon(graph, '7')).toBe('w100');
+    expect(bahnsteigVon(graph, '8')).toBe('w100');
+  });
+
+  it('hängt eine Kante nicht an einen Bahnsteig, den sie nur kreuzt (Berlin Hbf, Gleis 3)', () => {
+    // Kreuzungsbahnhof: Die Kante von Gleis 3 (ohne level) liegt unten,
+    // nord-süd. Oben, auf Ebene 2, quert ein Bahnsteig ost-west genau ihre Mitte.
+    const graph = baueGraph({
+      elements: [
+        // oben, Ebene 2, ost-west, mit eigenen Gleisen
+        { type: 'node', id: 1, lat: 52.0, lon: 12.999 },
+        { type: 'node', id: 2, lat: 52.0, lon: 13.001 },
+        { type: 'node', id: 3, lat: 52.0001, lon: 13.001 },
+        { type: 'node', id: 4, lat: 52.0001, lon: 12.999 },
+        { type: 'way', id: 100, nodes: [1, 2, 3, 4, 1], tags: { railway: 'platform', ref: '11;12', level: '2' } },
+        // unten, Ebene -2, nord-süd, die Kante liegt auf seinem Westrand
+        { type: 'node', id: 5, lat: 51.999, lon: 13.0 },
+        { type: 'node', id: 6, lat: 52.001, lon: 13.0 },
+        { type: 'node', id: 7, lat: 52.001, lon: 13.00015 },
+        { type: 'node', id: 8, lat: 51.999, lon: 13.00015 },
+        { type: 'way', id: 200, nodes: [5, 6, 7, 8, 5], tags: { railway: 'platform', ref: '4', level: '-2' } },
+        { type: 'node', id: 11, lat: 51.999, lon: 13.0 },
+        { type: 'node', id: 12, lat: 52.00005, lon: 13.0 },
+        { type: 'node', id: 13, lat: 52.001, lon: 13.0 },
+        { type: 'way', id: 300, nodes: [11, 12, 13], tags: { railway: 'platform_edge', ref: '3' } },
+      ],
+    });
+    expect(graph.knoten.get('gleis3:mitte')?.bahnsteigId).toBe('w200');
+    expect(graph.knoten.get('gleis3:mitte')?.level).toBe(-2);
+  });
+
+  it('nimmt eine Bahnsteigkante ohne Bahnsteig als eigenen Bahnsteig', () => {
+    const graph = baueGraph({
+      elements: [
+        { type: 'node', id: 11, lat: 52.0, lon: 13.0 },
+        { type: 'node', id: 12, lat: 52.0, lon: 13.003 },
+        { type: 'way', id: 201, nodes: [11, 12], tags: { railway: 'platform_edge', ref: '3', level: '1' } },
+      ],
+    });
+    expect(graph.gleise).toEqual(['3']);
+    expect(graph.knoten.get('gleis3:mitte')?.level).toBe(1);
+  });
+});
+
+/**
+ * Zuordnung über die IFOPT-Kennung (Abgleich 02.10.2026).
+ *
+ * RIS::Stations nennt je Gleis die DELFI-Kennung (`ifopt`), OSM trägt sie
+ * am Bahnsteig (`ref:IFOPT`). Wo OSM die Gleisnummer nicht schreibt –
+ * Hamburg-Altonas S-Bahnsteige, München Hbf tief –, verbindet sie die beiden
+ * Quellen, ohne dass ein Name geraten wird.
+ */
+describe('Gleise über die IFOPT-Kennung', () => {
+  const steig = (id: number, lat: number, tags: Record<string, string>): OverpassAntwort['elements'] => [
+    { type: 'node', id: id * 10 + 1, lat, lon: 13.0 },
+    { type: 'node', id: id * 10 + 2, lat, lon: 13.003 },
+    { type: 'way', id, nodes: [id * 10 + 1, id * 10 + 2], tags: { railway: 'platform', ...tags } },
+  ];
+  const db = (gleis: string, ifopt: string) => ({ gleis, ris: { name: gleis, ifopt } });
+
+  it('gibt einem Bahnsteig ohne Gleisnummer das Gleis, dessen Kennung er trägt (Altona)', () => {
+    const graph = baueGraph({ elements: steig(1, 52.0, { 'ref:IFOPT': 'de:02000:80953:1:809109' }) }, [
+      db('1', 'de:02000:80953:1:809109'),
+    ]);
+    expect(graph.gleise).toEqual(['1']);
+  });
+
+  it('nimmt den übergeordneten Bereich, wenn OSM nur ihn kennt (München tief, Gleis 1)', () => {
+    const graph = baueGraph({ elements: steig(1, 52.0, { 'ref:IFOPT': 'de:09162:6:40' }) }, [
+      db('1', 'de:09162:6:40:81'),
+    ]);
+    expect(graph.gleise).toEqual(['1']);
+  });
+
+  it('zieht den exakten Treffer dem Bereich vor (München tief, Gleis 2)', () => {
+    const graph = baueGraph(
+      {
+        elements: [
+          ...steig(1, 52.0, { 'ref:IFOPT': 'de:09162:6:40' }),
+          ...steig(2, 52.001, { 'ref:IFOPT': 'de:09162:6:40:82' }),
+        ],
+      },
+      [db('2', 'de:09162:6:40:82')],
+    );
+    expect(graph.knoten.get('gleis2:mitte')?.bahnsteigId).toBe('w2');
+  });
+
+  it('wählt nicht, wenn zwei Bahnsteige dieselbe Kennung tragen', () => {
+    const graph = baueGraph(
+      {
+        elements: [
+          ...steig(1, 52.0, { 'ref:IFOPT': 'de:08335:6554:2:2' }),
+          ...steig(2, 52.001, { 'ref:IFOPT': 'de:08335:6554:2:2' }),
+        ],
+      },
+      [db('2', 'de:08335:6554:2:2')],
+    );
+    expect(graph.gleise).toEqual([]);
+  });
+
+  it('nimmt einen Straßenbahnsteig auf, wenn die DB dort ein Gleis führt (Chemnitz)', () => {
+    const graph = baueGraph(
+      { elements: steig(1, 52.0, { tram: 'yes', local_ref: '4', 'ref:IFOPT': 'de:14511:30062:3:4' }) },
+      [db('4', 'de:14511:30062:3:4')],
+    );
+    expect(graph.gleise).toEqual(['4']);
+  });
+
+  it('lässt Straßenbahnsteige ohne DB-Beleg draussen', () => {
+    const graph = baueGraph({ elements: steig(1, 52.0, { tram: 'yes', local_ref: '4' }) }, [
+      db('4', 'de:14511:30062:3:4'),
+    ]);
+    expect(graph.gleise).toEqual([]);
+  });
+});

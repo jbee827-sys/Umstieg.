@@ -558,7 +558,9 @@ async function baueGraphEintrag(
   if (info.lat !== undefined && info.lon !== undefined) {
     try {
       const osm = await overpass(info.lat, info.lon, OVERPASS_RADIUS_M);
-      const graph = baueGraph(osm);
+      // Die DB-Gleisliste als zweite Quelle: Ueber ihre IFOPT-Kennungen findet der
+      // Graph Bahnsteige, an denen OSM keine Gleisnummer schreibt.
+      const graph = baueGraph(osm, info.gleise);
       graph.stufe = klassifiziere(graph);
       if (graph.stufe !== 3) {
         return { graph, info, hinweise: [] };
