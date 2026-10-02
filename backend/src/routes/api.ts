@@ -11,7 +11,7 @@ import { berlinTeile } from '../core/zeit.js';
 import { baueGraph, graphZuGeoJSON, kopiereGraph } from '../core/graph.js';
 import { klassifiziere } from '../core/klassifikation.js';
 import { baueBahnhofSchema } from '../core/schema.js';
-import { berechneRoute, findeStartknoten, istGleicherBahnsteig } from '../core/routing.js';
+import { berechneRoute, findeStartknoten, istGleicherBahnsteig, loeseGleis } from '../core/routing.js';
 import { gleicherBahnsteigErgebnis, syntheseGraph, wendeFastaAn } from '../core/synthmodell.js';
 import { generiereSchritte } from '../core/textgen.js';
 import type {
@@ -423,9 +423,22 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
     // getauscht. Unvollstaendig ist sie, wie ueberall sonst auch,
     // ausschliesslich nach `gleislisteUnvollstaendig`.
     const dbGleise = gleislisteUnvollstaendig(eintrag.info) ? undefined : eintrag.info.gleise;
-    if (istGleicherBahnsteig(graph, gleisAn, gleisAb, dbGleise)) {
+
+    // Teilgleise („7A-D") auf das Gleis des Graphen („7") – nach der Angabe
+    // von RIS::Stations selbst (`parentPlatform`). Die Angabe gilt auch aus
+    // einer lückenhaften Liste: Sie ist ein Beleg, kein Schluss aus Fehlendem.
+    // Neu aufgelöst, sobald der Graph wechselt.
+    const loese = (): { an: { gleis: string; hinweis?: string }; ab: { gleis: string; hinweis?: string } } => ({
+      an: loeseGleis(graph, gleisAn, eintrag.info.gleise),
+      ab: loeseGleis(graph, gleisAb, eintrag.info.gleise),
+    });
+    let { an, ab } = loese();
+    const teilgleisHinweise = (): string[] =>
+      [an.hinweis, ab.hinweis].filter((h): h is string => h !== undefined);
+
+    if (istGleicherBahnsteig(graph, an.gleis, ab.gleis, dbGleise)) {
       const ergebnis = gleicherBahnsteigErgebnis(gleisAb, graph.stufe);
-      return { ...ergebnis, hinweise: [...hinweise, ...ergebnis.hinweise] };
+      return { ...ergebnis, hinweise: [...hinweise, ...teilgleisHinweise(), ...ergebnis.hinweise] };
     }
 
     /**
@@ -463,15 +476,20 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
     let start: { knoten: GraphKnoten; hinweis?: string };
     let ziel: { knoten: GraphKnoten; hinweis?: string };
     try {
-      start = findeStartknoten(graph, gleisAn, abschnittEffektiv);
-      ziel = findeStartknoten(graph, gleisAb);
+      start = findeStartknoten(graph, an.gleis, abschnittEffektiv);
+      ziel = findeStartknoten(graph, ab.gleis);
     } catch {
       if (graph.stufe !== 3) {
         // Welches Gleis fehlt, gehört in den Hinweis: Der Nutzer hat ZWEI
         // eingegeben und erfährt sonst nicht, welches von beiden die Route
         // ungenau macht. Gefragt wird den OSM-Graphen VOR dem Austausch –
         // danach kennt das Standardmodell beide.
-        const fehlend = [gleisAn, gleisAb].filter((g) => !graph.gleise.includes(g));
+        const fehlend = [
+          [gleisAn, an.gleis],
+          [gleisAb, ab.gleis],
+        ]
+          .filter(([, aufgeloest]) => !graph.gleise.includes(aufgeloest))
+          .map(([angefragt]) => angefragt);
         // Anlagen weiterreichen, damit auch der Rueckfallgraph verankert ist.
         // Den Status legt wendeFastaAn oben schon auf der Kopie nach.
         graph = syntheseGraph(eintrag.info, fastaAnlagen);
@@ -480,9 +498,10 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
             ? `Gleis ${fehlend[0]} ist nicht im Kartenmaterial – Standardmodell mit ungefähren Angaben.`
             : 'Gleis nicht im Kartenmaterial gefunden – Standardmodell mit ungefähren Angaben.',
         );
+        ({ an, ab } = loese());
         try {
-          start = findeStartknoten(graph, gleisAn, abschnittEffektiv);
-          ziel = findeStartknoten(graph, gleisAb);
+          start = findeStartknoten(graph, an.gleis, abschnittEffektiv);
+          ziel = findeStartknoten(graph, ab.gleis);
         } catch {
           return gleisNichtGefunden();
         }
@@ -490,6 +509,7 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
         return gleisNichtGefunden();
       }
     }
+    hinweise.push(...teilgleisHinweise());
     if (start.hinweis) hinweise.push(start.hinweis);
 
     // Profil mitgeben: Die schnellste Route fuer einen Zuegigen ist nicht

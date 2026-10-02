@@ -4,7 +4,7 @@ import {
   epStopPlacesByName,
   epStopPlacesByPosition,
 } from './db-endpunkte.js';
-import type { BahnhofTreffer, StationsInfo } from '../core/typen.js';
+import type { BahnhofTreffer, RisPlatform, StationsInfo } from '../core/typen.js';
 
 /** DB-Zugangsdaten fehlen – Aufrufer degradiert transparent (Fixtures/Synthese). */
 export class FehlendeZugangsdatenError extends Error {
@@ -197,7 +197,7 @@ export async function holeStationsInfo(
     evas.map(async (mitglied) => {
       try {
         const body = (await dbGet(epPlatforms(mitglied), fetchFn)) as {
-          platforms?: { name?: string }[];
+          platforms?: Partial<RisPlatform>[];
         };
         return body.platforms ?? [];
       } catch {
@@ -214,7 +214,8 @@ export async function holeStationsInfo(
   // Welche Verkehrsstelle ein Gleis fuehrt, ist der Trenner, mit dem das
   // Routing den Tiefbahnhof von der Halle unterscheidet (Konzeptluecke §4.3).
   // `listen` laeuft parallel zu `evas`, die Zuordnung ist also der Index.
-  const nachGleis = new Map<string, { gleis: string; evas: string[] }>();
+  // Der ganze Eintrag reist mit (`ris`), nicht nur der Name – siehe RisPlatform.
+  const nachGleis = new Map<string, { gleis: string; evas: string[]; ris: RisPlatform }>();
   for (const [i, liste] of listen.entries()) {
     const mitglied = evas[i];
     for (const p of liste) {
@@ -223,7 +224,7 @@ export async function holeStationsInfo(
       if (vorhanden) {
         if (!vorhanden.evas.includes(mitglied)) vorhanden.evas.push(mitglied);
       } else {
-        nachGleis.set(p.name, { gleis: p.name, evas: [mitglied] });
+        nachGleis.set(p.name, { gleis: p.name, evas: [mitglied], ris: p as RisPlatform });
       }
     }
   }

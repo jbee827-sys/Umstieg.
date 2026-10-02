@@ -9,6 +9,34 @@ import type { FastaAnlage, StationsInfo } from '../src/core/typen.js';
 // ~15 m in Grad Länge bei 51° N
 const M15_LON = 0.000214;
 
+describe('syntheseGraph mit der vollständigen RIS-Gleisliste', () => {
+  // Echte Antwort Hamburg Hbf (Halle), 02.10.2026: 8 Gleise, 15 Teilgleise.
+  const roh = JSON.parse(
+    readFileSync(fileURLToPath(new URL('./fixtures/db/platforms-hamburg-8002549.json', import.meta.url)), 'utf8'),
+  ) as { platforms: { name: string }[] };
+  const hamburg: StationsInfo = {
+    eva: '8002549',
+    evas: ['8002549'],
+    name: 'Hamburg Hbf',
+    gleise: roh.platforms.map((p) => ({ gleis: p.name, ris: p })),
+  };
+
+  it('Teilgleise sind keine eigenen Gleise – sie gehören zu ihrem parentPlatform', () => {
+    const graph = syntheseGraph(hamburg);
+    expect(graph.gleise).toEqual(['5', '6', '7', '8', '11', '12', '13', '14']);
+  });
+
+  it('linkedPlatforms bildet die Bahnsteige: 5/6, 7/8, 11/12, 13/14', () => {
+    const graph = syntheseGraph(hamburg);
+    const bahnsteigVon = (gleis: string) => graph.knoten.get(`gleis${gleis}:mitte`)!.bahnsteigId;
+    expect(bahnsteigVon('5')).toBe(bahnsteigVon('6'));
+    expect(bahnsteigVon('7')).toBe(bahnsteigVon('8'));
+    expect(bahnsteigVon('11')).toBe(bahnsteigVon('12'));
+    expect(bahnsteigVon('13')).toBe(bahnsteigVon('14'));
+    expect(new Set(graph.gleise.map(bahnsteigVon)).size).toBe(4);
+  });
+});
+
 describe('syntheseGraph', () => {
   it('4-Gleis-Station ohne Koordinaten: Querung vorhanden, jede Gleis-zu-Gleis-Route existiert', () => {
     const info: StationsInfo = {

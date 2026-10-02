@@ -1,0 +1,543 @@
+{
+ "_hinweis": "ECHTE Antwort RIS::Stations GET /platforms/8002549 (Hamburg Hbf, Halle), abgerufen 02.10.2026.",
+ "platforms": [
+  {
+   "name": "5",
+   "heights": [
+    {
+     "start": 0.2,
+     "end": 430.75,
+     "height": 76
+    }
+   ],
+   "end": 430.75,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:3:254905",
+   "length": 441,
+   "linkedPlatforms": [
+    "6",
+    "5A-C",
+    "5D-F",
+    "6A-C",
+    "6D-F"
+   ],
+   "sectors": [],
+   "start": 0.2
+  },
+  {
+   "name": "5A-C",
+   "heights": [
+    {
+     "start": 0,
+     "end": 0,
+     "height": 76
+    }
+   ],
+   "end": 0,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:3:2549053",
+   "length": 0,
+   "linkedPlatforms": [
+    "5",
+    "6",
+    "5D-F",
+    "6A-C",
+    "6D-F"
+   ],
+   "parentPlatform": "5",
+   "sectors": [],
+   "start": 0
+  },
+  {
+   "name": "5D-F",
+   "heights": [
+    {
+     "start": 0,
+     "end": 0,
+     "height": 76
+    }
+   ],
+   "end": 0,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:3:2549052",
+   "length": 0,
+   "linkedPlatforms": [
+    "5",
+    "6",
+    "5A-C",
+    "6A-C",
+    "6D-F"
+   ],
+   "parentPlatform": "5",
+   "sectors": [],
+   "start": 0
+  },
+  {
+   "name": "6",
+   "heights": [
+    {
+     "start": 0.2,
+     "end": 428.9,
+     "height": 76
+    }
+   ],
+   "end": 428.9,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:3:254906",
+   "length": 439.2,
+   "linkedPlatforms": [
+    "5",
+    "5A-C",
+    "5D-F",
+    "6A-C",
+    "6D-F"
+   ],
+   "sectors": [],
+   "start": 0.2
+  },
+  {
+   "name": "6A-C",
+   "heights": [
+    {
+     "start": 0.2,
+     "end": 428.9,
+     "height": 76
+    }
+   ],
+   "end": 428.9,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:3:2549063",
+   "length": 439.2,
+   "linkedPlatforms": [
+    "5",
+    "6",
+    "5A-C",
+    "5D-F",
+    "6D-F"
+   ],
+   "parentPlatform": "6",
+   "sectors": [],
+   "start": 0.2
+  },
+  {
+   "name": "6D-F",
+   "heights": [
+    {
+     "start": 0.2,
+     "end": 428.9,
+     "height": 76
+    }
+   ],
+   "end": 428.9,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:3:2549062",
+   "length": 439.2,
+   "linkedPlatforms": [
+    "5",
+    "6",
+    "5A-C",
+    "5D-F",
+    "6A-C"
+   ],
+   "parentPlatform": "6",
+   "sectors": [],
+   "start": 0.2
+  },
+  {
+   "name": "7",
+   "heights": [
+    {
+     "start": 0,
+     "end": 603.95,
+     "height": 76
+    }
+   ],
+   "end": 603.95,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:4:254907",
+   "length": 603.95,
+   "linkedPlatforms": [
+    "8A-F",
+    "8",
+    "7A-D",
+    "7G-I"
+   ],
+   "sectors": [],
+   "start": 0
+  },
+  {
+   "name": "7A-D",
+   "heights": [
+    {
+     "start": 0,
+     "end": 0,
+     "height": 76
+    }
+   ],
+   "end": 0,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:4:2549073",
+   "length": 0,
+   "linkedPlatforms": [
+    "8A-F",
+    "7",
+    "8",
+    "7G-I"
+   ],
+   "parentPlatform": "7",
+   "sectors": [],
+   "start": 0
+  },
+  {
+   "name": "7G-I",
+   "heights": [
+    {
+     "start": 0,
+     "end": 0,
+     "height": 76
+    }
+   ],
+   "end": 0,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:4:2549072",
+   "length": 0,
+   "linkedPlatforms": [
+    "8A-F",
+    "7",
+    "8",
+    "7A-D"
+   ],
+   "parentPlatform": "7",
+   "sectors": [],
+   "start": 0
+  },
+  {
+   "name": "8",
+   "heights": [
+    {
+     "start": 0,
+     "end": 602.9,
+     "height": 76
+    }
+   ],
+   "end": 602.9,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:4:254908",
+   "length": 602.9,
+   "linkedPlatforms": [
+    "8A-F",
+    "7",
+    "7A-D",
+    "7G-I"
+   ],
+   "sectors": [],
+   "start": 0
+  },
+  {
+   "name": "8A-F",
+   "heights": [
+    {
+     "start": 0,
+     "end": 0,
+     "height": 76
+    }
+   ],
+   "end": 0,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:4:2549082",
+   "linkedPlatforms": [
+    "7",
+    "8",
+    "7A-D",
+    "7G-I"
+   ],
+   "parentPlatform": "8",
+   "sectors": [],
+   "start": 0
+  },
+  {
+   "name": "11",
+   "heights": [
+    {
+     "start": 0,
+     "end": 478.9,
+     "height": 76
+    }
+   ],
+   "end": 478.9,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:5:2549011",
+   "length": 478.9,
+   "linkedPlatforms": [
+    "12",
+    "11A-C",
+    "11D-F",
+    "12A-B",
+    "12C-F"
+   ],
+   "sectors": [],
+   "start": 0
+  },
+  {
+   "name": "11A-C",
+   "heights": [
+    {
+     "start": 0,
+     "end": 0,
+     "height": 76
+    }
+   ],
+   "end": 0,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:5:25490113",
+   "length": 0,
+   "linkedPlatforms": [
+    "12",
+    "11",
+    "11D-F",
+    "12A-B",
+    "12C-F"
+   ],
+   "parentPlatform": "11",
+   "sectors": [],
+   "start": 0
+  },
+  {
+   "name": "11D-F",
+   "heights": [
+    {
+     "start": 0,
+     "end": 0,
+     "height": 76
+    }
+   ],
+   "end": 0,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:5:25490112",
+   "length": 0,
+   "linkedPlatforms": [
+    "12",
+    "11",
+    "11A-C",
+    "12A-B",
+    "12C-F"
+   ],
+   "parentPlatform": "11",
+   "sectors": [],
+   "start": 0
+  },
+  {
+   "name": "12",
+   "heights": [
+    {
+     "start": 0,
+     "end": 475.65,
+     "height": 76
+    }
+   ],
+   "end": 475.65,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:5:2549012",
+   "length": 475.65,
+   "linkedPlatforms": [
+    "11",
+    "11A-C",
+    "11D-F",
+    "12A-B",
+    "12C-F"
+   ],
+   "sectors": [],
+   "start": 0
+  },
+  {
+   "name": "12A-B",
+   "heights": [
+    {
+     "start": 0,
+     "end": 0,
+     "height": 76
+    }
+   ],
+   "end": 0,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:5:25490123",
+   "length": 0,
+   "linkedPlatforms": [
+    "12",
+    "11",
+    "11A-C",
+    "11D-F",
+    "12C-F"
+   ],
+   "parentPlatform": "12",
+   "sectors": [],
+   "start": 0
+  },
+  {
+   "name": "12C-F",
+   "heights": [
+    {
+     "start": 0,
+     "end": 0,
+     "height": 76
+    }
+   ],
+   "end": 0,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:5:25490122",
+   "length": 0,
+   "linkedPlatforms": [
+    "12",
+    "11",
+    "11A-C",
+    "11D-F",
+    "12A-B"
+   ],
+   "parentPlatform": "12",
+   "sectors": [],
+   "start": 0
+  },
+  {
+   "name": "13",
+   "heights": [
+    {
+     "start": 0,
+     "end": 441.4,
+     "height": 76
+    }
+   ],
+   "end": 441.4,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:6:2549013",
+   "length": 441.5,
+   "linkedPlatforms": [
+    "14",
+    "13A-C",
+    "13D-F",
+    "14A-C",
+    "14D-F"
+   ],
+   "sectors": [],
+   "start": 0
+  },
+  {
+   "name": "13A-C",
+   "heights": [
+    {
+     "start": 0,
+     "end": 0,
+     "height": 76
+    }
+   ],
+   "end": 0,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:6:25490133",
+   "length": 0,
+   "linkedPlatforms": [
+    "13",
+    "14",
+    "13D-F",
+    "14A-C",
+    "14D-F"
+   ],
+   "parentPlatform": "13",
+   "sectors": [],
+   "start": 0
+  },
+  {
+   "name": "13D-F",
+   "heights": [
+    {
+     "start": 0,
+     "end": 0,
+     "height": 76
+    }
+   ],
+   "end": 0,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:6:25490132",
+   "length": 0,
+   "linkedPlatforms": [
+    "13",
+    "14",
+    "13A-C",
+    "14A-C",
+    "14D-F"
+   ],
+   "parentPlatform": "13",
+   "sectors": [],
+   "start": 0
+  },
+  {
+   "name": "14",
+   "heights": [
+    {
+     "start": 0,
+     "end": 439.75,
+     "height": 76
+    }
+   ],
+   "end": 439.75,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:6:2549014",
+   "length": 439.85,
+   "linkedPlatforms": [
+    "13",
+    "13A-C",
+    "13D-F",
+    "14A-C",
+    "14D-F"
+   ],
+   "sectors": [],
+   "start": 0
+  },
+  {
+   "name": "14A-C",
+   "heights": [
+    {
+     "start": 0,
+     "end": 0,
+     "height": 76
+    }
+   ],
+   "end": 0,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:6:25490143",
+   "length": 0,
+   "linkedPlatforms": [
+    "13",
+    "14",
+    "13A-C",
+    "13D-F",
+    "14D-F"
+   ],
+   "parentPlatform": "14",
+   "sectors": [],
+   "start": 0
+  },
+  {
+   "name": "14D-F",
+   "heights": [
+    {
+     "start": 0,
+     "end": 0,
+     "height": 76
+    }
+   ],
+   "end": 0,
+   "headPlatform": false,
+   "ifopt": "de:02000:10950:6:25490142",
+   "length": 0,
+   "linkedPlatforms": [
+    "13",
+    "14",
+    "13A-C",
+    "13D-F",
+    "14A-C"
+   ],
+   "parentPlatform": "14",
+   "sectors": [],
+   "start": 0
+  }
+ ]
+}

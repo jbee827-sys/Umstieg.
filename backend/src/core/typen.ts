@@ -356,7 +356,35 @@ export interface StationsInfo {
    * OSM, wie vor dem 04.09.2026. Das ist der sichere Rueckfall, nicht der
    * Ausnahmefall.
    */
-  gleise: { gleis: string; evas?: string[]; lat?: number; lon?: number }[];
+  gleise: { gleis: string; evas?: string[]; lat?: number; lon?: number; ris?: RisPlatform }[];
+}
+
+/**
+ * Ein Eintrag aus RIS::Stations `GET /platforms/{eva}` – UNVERÄNDERT, so wie
+ * er kommt. Schema verifiziert gegen echte Antworten vom 02.10.2026 (Hamburg
+ * Hbf, Köln Hbf, siehe `test/fixtures/db/platforms-hamburg-8002549.json`).
+ *
+ * Bis dahin las der Client nur `name` und warf den Rest weg – darunter
+ * `parentPlatform`. Genau das braucht die Route: Der Fahrplan nennt
+ * Teilgleise („7A-D", „2 D-G"), OSM bildet nur die physische Bahnsteigkante
+ * „7" ab. Ein Teilgleis ist ein betrieblicher Abschnitt desselben Gleises,
+ * damit zwei Züge hintereinander dort halten können.
+ */
+export interface RisPlatform {
+  name: string;
+  /** Das physische Gleis, zu dem ein Teilgleis gehört. Fehlt bei Hauptgleisen. */
+  parentPlatform?: string;
+  /** Gleise und Teilgleise am selben Bahnsteig – auch die gegenüberliegende Kante. */
+  linkedPlatforms?: string[];
+  /** Bahnsteiglänge in Metern; 0 heißt: nicht erfasst. */
+  length?: number;
+  /** Lage entlang des Bahnsteigs in Metern; bei Teilgleisen bisher stets 0. */
+  start?: number;
+  end?: number;
+  headPlatform?: boolean;
+  heights?: { start?: number; end?: number; height?: number }[];
+  sectors?: unknown[];
+  ifopt?: string;
 }
 
 export interface FastaAnlage {

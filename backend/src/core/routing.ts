@@ -48,6 +48,45 @@ export function findeStartknoten(
 }
 
 /**
+ * Welches Gleis des Graphen ist mit dem angefragten gemeint?
+ *
+ * Der Fahrplan nennt Teilgleise – „7A-D", „2 D-G" –, OSM bildet nur die
+ * physische Bahnsteigkante „7" ab. Bis zum 02.10.2026 fiel jede solche Route
+ * ganz ins Standardmodell, weil `findeStartknoten` den Namen nicht fand.
+ * RIS::Stations sagt selbst, wozu ein Teilgleis gehört (`parentPlatform`);
+ * nur diese Angabe wird verwendet, kein Zerlegen von Namen.
+ */
+export function loeseGleis(
+  graph: StationGraph,
+  gleis: string,
+  dbGleise?: { gleis: string; ris?: { parentPlatform?: string; linkedPlatforms?: string[] } }[],
+): { gleis: string; hinweis?: string } {
+  if (graph.gleise.includes(gleis)) return { gleis };
+  const ris = dbGleise?.find((g) => g.gleis === gleis)?.ris;
+  const haupt = ris?.parentPlatform;
+  if (haupt && graph.gleise.includes(haupt)) {
+    return {
+      gleis: haupt,
+      hinweis: `Gleis ${gleis} ist ein Abschnitt von Gleis ${haupt} – wo er am Bahnsteig liegt, nennen die Quellen nicht.`,
+    };
+  }
+  // Sammelbezeichnungen ohne parentPlatform (Mainz „3a/b"): `linkedPlatforms`
+  // nennt die Gleise daneben. Liegen alle, die der Graph kennt, an EINEM
+  // Bahnsteig, ist es dieser. Liegen sie an zweien, wird nicht gewählt.
+  // (Hagen „5/6" nennt 3, 4, 5 und 6 – OSM führt die vier als EINEN
+  // Bahnsteig, also gilt er.)
+  const nachbarn = (ris?.linkedPlatforms ?? []).filter((g) => graph.gleise.includes(g));
+  const bahnsteige = new Set(
+    nachbarn.map((g) => [...graph.knoten.values()].find((k) => k.gleis === g && k.bahnsteigId)?.bahnsteigId),
+  );
+  if (nachbarn.length === 0 || bahnsteige.size !== 1 || bahnsteige.has(undefined)) return { gleis };
+  return {
+    gleis: nachbarn[0],
+    hinweis: `Gleis ${gleis} liegt laut DB am Bahnsteig von Gleis ${nachbarn.join('/')}.`,
+  };
+}
+
+/**
  * Zwei Gleise liegen am selben physischen Bahnsteig (bahnsteigId der Bahnsteigpunkte).
  *
  * `dbGleise` ist die Gleisliste aus RIS::Stations, wenn sie tragfähig ist –
