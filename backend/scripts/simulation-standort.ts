@@ -24,7 +24,6 @@
 //
 // Aufruf: npx tsx scripts/simulation-standort.ts
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { overpassQuery } from '../src/clients/overpass.js';
 import { sucheBahnhoefe } from '../src/clients/stations.js';
@@ -40,17 +39,7 @@ import type {
   StationGraph,
 } from '../src/core/typen.js';
 import { ABLAGE } from './osm-ablage-fuellen.js';
-
-function ladeSecrets(): void {
-  const pfad = join(homedir(), '.secrets', 'umstieg.env');
-  for (const zeile of readFileSync(pfad, 'utf8').split('\n')) {
-    const sauber = zeile.replace(/\r$/, '').trim();
-    if (!sauber || sauber.startsWith('#')) continue;
-    const trenner = sauber.indexOf('=');
-    if (trenner < 0) continue;
-    process.env[sauber.slice(0, trenner).trim()] = sauber.slice(trenner + 1).trim();
-  }
-}
+import { ladeSecrets } from './secrets.js';
 
 // Dieselbe Ablage wie der Schemalauf - was dort geholt wurde, wird hier nicht
 // noch einmal geholt.

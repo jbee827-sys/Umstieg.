@@ -17,7 +17,6 @@
 //
 // Aufruf: npx tsx scripts/simulation-schema.ts
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { overpassQuery } from '../src/clients/overpass.js';
 import { sucheBahnhoefe } from '../src/clients/stations.js';
@@ -27,17 +26,7 @@ import { berechneRoute } from '../src/core/routing.js';
 import { baueBahnhofSchema } from '../src/core/schema.js';
 import type { BahnhofSchema, OverpassAntwort } from '../src/core/typen.js';
 import { ABLAGE as CACHE } from './osm-ablage-fuellen.js';
-
-function ladeSecrets(): void {
-  const pfad = join(homedir(), '.secrets', 'umstieg.env');
-  for (const zeile of readFileSync(pfad, 'utf8').split('\n')) {
-    const sauber = zeile.replace(/\r$/, '').trim();
-    if (!sauber || sauber.startsWith('#')) continue;
-    const trenner = sauber.indexOf('=');
-    if (trenner < 0) continue;
-    process.env[sauber.slice(0, trenner).trim()] = sauber.slice(trenner + 1).trim();
-  }
-}
+import { ladeSecrets } from './secrets.js';
 
 /**
  * Zweiter Durchgang (13.09.2026): die drei Metropolknoten als Pflicht, sonst
