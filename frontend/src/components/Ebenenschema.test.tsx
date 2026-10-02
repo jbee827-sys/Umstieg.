@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import type { RouteErgebnis } from '../api/typen'
 import { Ebenenschema } from './Ebenenschema'
@@ -7,9 +7,11 @@ import { leiteSchemaAb } from '../schema/ableitung'
 import { ANKER_H, RUHIG_H, WECHSEL_H } from '../schema/masse'
 import leipzigMitte from '../schema/testdaten/leipzig-6-16-mitte.json'
 import leipzigEnde from '../schema/testdaten/leipzig-6-16-ende.json'
+import muenchenDicht from '../schema/testdaten/muenchen-dicht.json'
 
 const MITTE = leipzigMitte as unknown as RouteErgebnis
 const ENDE = leipzigEnde as unknown as RouteErgebnis
+const MUENCHEN = muenchenDicht as unknown as RouteErgebnis
 
 function zeige(route: RouteErgebnis, position: number) {
   return render(
@@ -124,6 +126,34 @@ describe('Ebenenschema mit echter Geometrie', () => {
     // im Fenster stünden sie über dem Kopf und unter der Schritt-Box.
     const { container } = zeige(MITTE, 0)
     expect(container.querySelector('.schema-fenster .schema-stapel')).not.toBeNull()
+  })
+})
+
+describe('Die Höhe des aktiven Bandes folgt der Bahnsteigdichte', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  const aktivH = (route: RouteErgebnis) => {
+    const { container, unmount } = zeige(route, 0)
+    const h = parseFloat(container.querySelector<HTMLElement>('.schema-band.aktiv')!.style.height)
+    unmount()
+    return h
+  }
+
+  it('gibt 17 Bahnsteigen mehr Höhe als zwei', () => {
+    expect(aktivH(MUENCHEN)).toBeGreaterThan(aktivH(MITTE))
+  })
+
+  it('wächst nie über den Platz unter dem Anker hinaus', () => {
+    // jsdom rechnet kein Layout – die Fensterhöhe wird gestellt.
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(300)
+    expect(aktivH(MUENCHEN)).toBeLessThanOrEqual(300 - ANKER_H)
+  })
+
+  it('schreibt keinen Gleisnamen über einen anderen', () => {
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(236)
+    const { container } = zeige(MUENCHEN, 0)
+    const ys = [...container.querySelectorAll('.schema-gleisname')].map((t) => Number(t.getAttribute('y'))).sort((a, b) => a - b)
+    for (let i = 1; i < ys.length; i++) expect(ys[i] - ys[i - 1]).toBeGreaterThanOrEqual(10)
   })
 })
 

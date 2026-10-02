@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Navigation } from './Navigation'
 import type { RouteErgebnis, Schritt } from '../api/typen'
+import leipzigAnfang from '../schema/testdaten/leipzig-6-16-anfang.json'
 
 const schritte: Schritt[] = [
   { text: 'Start an Gleis 6', typ: 'start', level: -2 },
@@ -58,6 +59,21 @@ describe('Navigation', () => {
     // Stufe-3-Koordinaten sind konstruiert - eine Karte darueber waere gelogen.
     zeige(route(3, false), 0)
     expect(screen.queryByText(/Echte Karte anzeigen/)).toBeNull()
+  })
+
+  it('zeichnet das Standardmodell NICHT als Grundriss, auch wenn die Antwort ein Schema trägt', () => {
+    // Das Standardmodell kennt keine Bahnsteigachsen. Als Grundriss gezeichnet,
+    // stapelte es am 02.10.2026 17 ungemessene Balken im Abstand von 5 px
+    // übereinander und setzte den Startpunkt in die Bildmitte.
+    const geschaetzt = { ...(leipzigAnfang as unknown as RouteErgebnis), stufe: 3 as const }
+    const { container } = zeige(geschaetzt, 0)
+    expect(container.querySelector('.schema-bild')).toBeNull()
+    expect(container.querySelectorAll('.schema-grobgleis').length).toBeGreaterThan(0)
+  })
+
+  it('zeichnet bei Stufe 1 mit Schema den Grundriss', () => {
+    const { container } = zeige(leipzigAnfang as unknown as RouteErgebnis, 0)
+    expect(container.querySelector('.schema-bild')).not.toBeNull()
   })
 
   it('legt die Karte in den Aufklapper der Schritt-Box', () => {

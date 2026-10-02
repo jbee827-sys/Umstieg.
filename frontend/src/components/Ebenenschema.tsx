@@ -1,8 +1,9 @@
+import { useLayoutEffect, useRef, useState } from 'react'
 import type { SchemaModell } from '../schema/ableitung'
 import type { Bandmodell } from '../schema/bandmodell'
 import { wechselAnweisung, wechselName } from '../schema/bandmodell'
 import { bandTitel, fusstext, wegBeschreibung } from '../schema/bandtext'
-import { zeichneBand } from '../schema/bandbild'
+import { bildBedarf, zeichneBand } from '../schema/bandbild'
 import type {
   Bildbalken,
   Bildpunkt,
@@ -12,7 +13,7 @@ import type {
   Wechselmarke,
   Zielpunkt,
 } from '../schema/bandbild'
-import { ANKER_H, RUHIG_H, WECHSEL_H, aktivHoehe, bildflaeche, stapelVersatz } from '../schema/masse'
+import { ANKER_H, BREITE, POLSTER, RUHIG_H, WECHSEL_H, aktivHoehe, bildflaeche, stapelVersatz } from '../schema/masse'
 import { istSymboltyp, SYMBOL_PX } from '../schema/symbole'
 import { AnlagenSymbol, Glyphe } from './AnlagenSymbol'
 
@@ -115,14 +116,16 @@ function Balken({ balken }: { balken: Bildbalken[] }) {
         const wichtig = b.rolle !== undefined
         return (
           <g key={b.gleise.join('/') + b.y}>
-            <text
-              className={`schema-gleisname${wichtig ? ' wichtig' : ''}`}
-              x={b.lx}
-              y={b.ly}
-              textAnchor="end"
-            >
-              {b.gleise.join('/')}
-            </text>
+            {b.beschriftet && (
+              <text
+                className={`schema-gleisname${wichtig ? ' wichtig' : ''}`}
+                x={b.lx}
+                y={b.ly}
+                textAnchor="end"
+              >
+                {b.gleise.join('/')}
+              </text>
+            )}
             <line
               className={`schema-bahnsteig${b.rolle ? ` ${b.rolle}` : ''}${
                 b.massstaeblich ? '' : ' ungemessen'
@@ -254,15 +257,56 @@ function Uebergangsband({ bild, breite }: { bild: Uebergangsbild; breite: number
  */
 export function Ebenenschema({ modell, ersatz, bahnhofName }: EbenenschemaProps) {
   if (!modell) return <ErsatzSchema modell={ersatz} bahnhofName={bahnhofName} />
+  return <Bandstapel modell={modell} bahnhofName={bahnhofName} />
+}
 
+/**
+ * Die Höhe des Fensters, gemessen – 0, solange nichts gemessen ist.
+ *
+ * Gemessen vor dem Zeichnen (`useLayoutEffect`), damit das Bild nicht erst
+ * zu hoch erscheint und dann springt. Ein ResizeObserver folgt dem Drehen
+ * des Telefons und der einklappenden Adressleiste.
+ */
+function useFensterhoehe(): [React.RefObject<HTMLDivElement | null>, number] {
+  const ref = useRef<HTMLDivElement>(null)
+  const [hoehe, setHoehe] = useState(0)
+  useLayoutEffect(() => {
+    const fenster = ref.current
+    if (!fenster) return
+    const miss = (): void => setHoehe(fenster.clientHeight)
+    miss()
+    if (typeof ResizeObserver === 'undefined') return
+    const beobachter = new ResizeObserver(miss)
+    beobachter.observe(fenster)
+    return () => beobachter.disconnect()
+  }, [])
+  return [ref, hoehe]
+}
+
+function Bandstapel({ modell, bahnhofName }: { modell: Bandmodell; bahnhofName: string }) {
+  const [fensterRef, fensterH] = useFensterhoehe()
   const anzahl = modell.baender.length
-  const aktivH = aktivHoehe(anzahl)
-  const flaeche = bildflaeche(anzahl)
   const aktiverIndex = modell.baender.findIndex((b) => b.aktiv)
+  const aktiverBand = modell.baender[aktiverIndex]
+  const optionen = (band: (typeof modell.baender)[number]) => ({
+    lage: modell.lage,
+    erster: band.erster,
+    letzter: band.letzter,
+    ...(band.wechselVorher ? { wechselVorher: band.wechselVorher } : {}),
+    ...(band.wechselNachher ? { wechselNachher: band.wechselNachher } : {}),
+  })
+
+  // Das aktive Band ist so hoch, wie sein Bild es braucht, und höchstens so
+  // hoch wie der Platz unter dem Anker. Seine OBERKANTE bleibt stehen; was
+  // darunter liegt, rückt aus dem Fenster.
+  const verfuegbar = fensterH > 0 ? fensterH - ANKER_H : Infinity
+  const bedarf = aktiverBand ? bildBedarf(aktiverBand.ebene, BREITE - POLSTER * 2, optionen(aktiverBand)) : 0
+  const aktivH = aktivHoehe(bedarf, verfuegbar)
+  const flaeche = bildflaeche(aktivH)
 
   return (
     <section className="schema-bereich">
-      <div className="schema-fenster" style={{ paddingTop: ANKER_H }}>
+      <div className="schema-fenster" ref={fensterRef} style={{ paddingTop: ANKER_H }}>
         <div
           className="schema-stapel"
           role="img"
@@ -271,13 +315,7 @@ export function Ebenenschema({ modell, ersatz, bahnhofName }: EbenenschemaProps)
         >
           {modell.baender.map((band, i) => {
             const bild = band.aktiv
-              ? zeichneBand(band.ebene, flaeche.breite, flaeche.hoehe, {
-                  lage: modell.lage,
-                  erster: band.erster,
-                  letzter: band.letzter,
-                  ...(band.wechselVorher ? { wechselVorher: band.wechselVorher } : {}),
-                  ...(band.wechselNachher ? { wechselNachher: band.wechselNachher } : {}),
-                })
+              ? zeichneBand(band.ebene, flaeche.breite, flaeche.hoehe, optionen(band))
               : null
             const fuss = band.aktiv ? fusstext(band) : null
             const w = band.wechselNachher

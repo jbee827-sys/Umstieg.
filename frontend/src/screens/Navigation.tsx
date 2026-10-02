@@ -47,7 +47,12 @@ export function Navigation({
   // Die echte Geometrie, wenn die Antwort sie traegt - sonst das grobe Bild
   // aus den Schritttexten. Beides wird gebaut: `leiteSchemaAb` ist billig,
   // und der Rueckfall muss dastehen, bevor er gebraucht wird.
-  const bandmodell = baueBandmodell(route.schema, route.schritte, position)
+  //
+  // Das Standardmodell (Stufe 3) traegt seit dem 13.09.2026 ebenfalls ein
+  // Schema, aber ohne eine einzige Bahnsteigachse. Als Grundriss gezeichnet
+  // behauptet es Lage und Reihenfolge, die niemand gemessen hat - dort gilt
+  // das grobe Bild.
+  const bandmodell = route.stufe === 3 ? null : baueBandmodell(route.schema, route.schritte, position)
   const grob = leiteSchemaAb(route.schritte, position, gleisAn, gleisAb)
   return (
     <>

@@ -19,36 +19,46 @@ export const KOPF_H = 18
 /** Fußzeile im aktiven Band: die Auskunft, die dort zählt. */
 export const FUSS_H = 20
 
-/**
- * Höhe des aktiven Bandes — fest, unabhängig von der Zahl der Besuche.
- *
- * Bis zum 19.09.2026 war das `STAPEL_H - (anzahl - 1) * (RUHIG_H + WECHSEL_H)`:
- * Der Stapel hatte eine feste Gesamthöhe von 468 px, und das aktive Band bekam
- * davon, was die ruhigen Zeilen übrig ließen. Das passte, solange die Seite
- * rollte. Seit sie das nicht mehr tut, ist nicht der Stapel der feste Rahmen,
- * sondern das Sichtfeld: Kopf, Schritt-Box und Leiste nehmen sich ihre Höhe,
- * das Bild bekommt den Rest — rund 180 px auf einem Telefon mit 740 px.
- *
- * 180 statt der alten 356: Das Bild wird für diese Höhe NEU GEZEICHNET, nicht
- * kleingerechnet. Die Bahnsteige rücken zusammen, die Beschriftung bleibt
- * lesbar. Ein auf 180 px skaliertes 356er Bild hätte auch die Schrift halbiert.
- *
- * Auf höheren Geräten bleibt das Bild bei 180 px und es werden dafür mehr
- * Nachbarebenen sichtbar — das ist die nützlichere Verwendung des Platzes als
- * ein gedehntes Bild derselben Ebene.
- */
-export const AKTIV_H = 180
+/** Kopf, Fuß und Polster des aktiven Bandes – alles außer der Zeichenfläche. */
+export const CHROME_H = POLSTER * 2 + KOPF_H + FUSS_H + 6
 
-/** Höhe des aktiven Bandes. `anzahl` spielt keine Rolle mehr — siehe AKTIV_H. */
-export function aktivHoehe(_anzahl: number): number {
-  return AKTIV_H
+/** Kleinste Zeichenfläche, auf der ein Band noch etwas sagt. */
+export const MIN_BILD_H = 60
+
+/**
+ * Höhe des aktiven Bandes auf einem kleinen Telefon (740 px): Kopf,
+ * Schritt-Box und Leiste lassen dem Band rund 180 px. Bezugsgröße für Tests
+ * und Simulation – die Komponente misst den echten Platz.
+ */
+export const AKTIV_KLEIN = 180
+
+/**
+ * Höhe des aktiven Bandes: so hoch, wie sein Bild es braucht, höchstens so
+ * hoch, wie Platz ist.
+ *
+ * Bis zum 02.10.2026 war das eine feste Zahl (180, davor 356). Fest heißt:
+ * Zwei Bahnsteige bekamen dieselbe Fläche wie siebzehn. München Hbf stapelte
+ * so 17 Balken in 84 px, Gleisnamen und Balken lagen übereinander – in der
+ * Simulation an 203 von 2082 Routen.
+ *
+ * Fest bleibt nur die Oberkante (`ANKER_H`, `stapelVersatz`): Das Bild
+ * wächst nach unten, und was unter ihm liegt, rückt aus dem Fenster. Es
+ * wandert nicht.
+ *
+ * `bildBedarf` ist die Zeichenfläche, die das Band ungestaucht braucht
+ * (`bildBedarf` in bandbild.ts); `verfuegbar` der Platz unter dem Anker,
+ * ungemessen unbegrenzt.
+ */
+export function aktivHoehe(bildBedarf: number, verfuegbar = Infinity): number {
+  const gewuenscht = Math.max(bildBedarf, MIN_BILD_H) + CHROME_H
+  return Math.max(MIN_BILD_H + CHROME_H, Math.min(gewuenscht, verfuegbar))
 }
 
-/** Die Zeichenfläche im aktiven Band. */
-export function bildflaeche(anzahl: number): { breite: number; hoehe: number } {
+/** Die Zeichenfläche in einem aktiven Band dieser Höhe. */
+export function bildflaeche(aktivH: number): { breite: number; hoehe: number } {
   return {
     breite: BREITE - POLSTER * 2,
-    hoehe: Math.max(60, aktivHoehe(anzahl) - POLSTER * 2 - KOPF_H - FUSS_H - 6),
+    hoehe: Math.max(MIN_BILD_H, aktivH - CHROME_H),
   }
 }
 
