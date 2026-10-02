@@ -87,6 +87,23 @@ describe('stations-Client', () => {
       expect(info.lon).toBeCloseTo(13.369629, 5);
     });
 
+    it('übernimmt jeden /platforms-Eintrag vollständig – auch Teilgleise mit parentPlatform', async () => {
+      // Echte Antwort vom 02.10.2026: Der Fahrplan nennt „7A-D", OSM kennt nur
+      // „7". Die Zuordnung steht in `parentPlatform` – sie darf nicht verloren gehen.
+      const hamburg = ladeFixture('platforms-hamburg-8002549') as { platforms: { name: string }[] };
+      const mock = vi.fn(async (eingabe: RequestInfo | URL) => {
+        const url = String(eingabe);
+        const body = url.includes('/platforms/') ? hamburg : ladeFixture('stations-stopplace');
+        return new Response(JSON.stringify(body), { status: 200 });
+      }) as unknown as typeof fetch;
+      const info = await holeStationsInfo('8002549', mock);
+      expect(info.gleise.map((g) => g.gleis)).toEqual(hamburg.platforms.map((p) => p.name));
+      const teil = info.gleise.find((g) => g.gleis === '7A-D')!;
+      expect(teil.ris).toEqual(hamburg.platforms.find((p) => p.name === '7A-D'));
+      expect(teil.ris?.parentPlatform).toBe('7');
+      expect(info.gleise.find((g) => g.gleis === '7')!.ris?.length).toBe(603.95);
+    });
+
     it('ohne Zugangsdaten → FehlendeZugangsdatenError', async () => {
       vi.stubEnv('DB_CLIENT_ID', '');
       await expect(holeStationsInfo('8011160', fetchMock())).rejects.toBeInstanceOf(

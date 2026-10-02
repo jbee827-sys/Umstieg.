@@ -56,6 +56,21 @@ interface SynthBahnsteig {
  * Anschein von Genauigkeit. Die relativen Abstaende bleiben unveraendert
  * geschaetzt („ca."-Angaben); richtig ist nur, WO der Bahnhof liegt.
  */
+/**
+ * Ein Teilgleis („7A-D") ist kein eigenes Gleis, sondern ein Abschnitt von
+ * `parentPlatform` – sofern die Liste dieses Hauptgleis auch führt. Sonst
+ * bleibt es, wie es kommt: Aus einer Lücke wird nichts geschlossen.
+ */
+function istTeilgleis(eintrag: StationsInfo['gleise'][number], info: StationsInfo): boolean {
+  const haupt = eintrag.ris?.parentPlatform;
+  return haupt !== undefined && info.gleise.some((g) => g.gleis === haupt);
+}
+
+/** RIS::Stations nennt die Gleise am selben Bahnsteig (`linkedPlatforms`). */
+function liegenZusammen(a: StationsInfo['gleise'][number], b: StationsInfo['gleise'][number]): boolean {
+  return (a.ris?.linkedPlatforms ?? []).includes(b.gleis) || (b.ris?.linkedPlatforms ?? []).includes(a.gleis);
+}
+
 function gruppiereBahnsteige(info: StationsInfo, anlagen: FastaAnlage[]): SynthBahnsteig[] {
   // Schritt 1: Verankerungen aus den Beschreibungen sammeln.
   const verankert = new Map<string, FastaAnlage[]>();
@@ -94,7 +109,14 @@ function gruppiereBahnsteige(info: StationsInfo, anlagen: FastaAnlage[]): SynthB
   const echte = [...bahnsteige].sort((a, b) => a.lon - b.lon || a.lat - b.lat);
   const ohneAnker: SynthBahnsteig[] = [];
   for (const eintrag of info.gleise) {
-    if (vergeben.has(eintrag.gleis)) continue;
+    if (vergeben.has(eintrag.gleis) || istTeilgleis(eintrag, info)) continue;
+    // Was RIS::Stations als gemeinsamen Bahnsteig nennt, ist einer – belegt,
+    // nicht aus der Lage geschätzt.
+    const verbunden = ohneAnker.find((b) => b.gleise.some((g) => liegenZusammen(g, eintrag)));
+    if (verbunden) {
+      verbunden.gleise.push(eintrag);
+      continue;
+    }
     if (eintrag.lat !== undefined && eintrag.lon !== undefined) {
       const passend = ohneAnker.find(
         (b) =>
@@ -267,7 +289,7 @@ export function syntheseGraph(info: StationsInfo, anlagen: FastaAnlage[] = []): 
     });
   }
 
-  const gleise = [...new Set(info.gleise.map((g) => g.gleis))].sort((a, b) =>
+  const gleise = [...new Set(info.gleise.filter((g) => !istTeilgleis(g, info)).map((g) => g.gleis))].sort((a, b) =>
     a.localeCompare(b, 'de', { numeric: true }),
   );
   return { knoten, adjazenz, stufe: 3, gleise };

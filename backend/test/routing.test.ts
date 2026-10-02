@@ -4,6 +4,7 @@ import {
   berechneRoute,
   findeStartknoten,
   istGleicherBahnsteig,
+  loeseGleis,
 } from '../src/core/routing.js';
 import { baueGraph } from '../src/core/graph.js';
 import { gehzeitSekunden, kantenZeitSekunden } from '../src/core/gehzeit.js';
@@ -236,6 +237,48 @@ describe('findeStartknoten', () => {
 
   it('unbekanntes Gleis → wirft', () => {
     expect(() => findeStartknoten(treppeVsAufzugGraph(), '99')).toThrow(/99/);
+  });
+});
+
+describe('loeseGleis – Teilgleise aus RIS::Stations', () => {
+  // Wie die echte Antwort für Hamburg Hbf (02.10.2026): „1A-D" gehört zu „1".
+  const db = [
+    { gleis: '1', ris: { name: '1', linkedPlatforms: ['1A-D', '2'] } },
+    { gleis: '1A-D', ris: { name: '1A-D', parentPlatform: '1' } },
+    { gleis: '9A-B', ris: { name: '9A-B', parentPlatform: '9' } },
+  ];
+
+  it('ein Gleis, das der Graph kennt, bleibt, wie es ist', () => {
+    expect(loeseGleis(treppeVsAufzugGraph(), '2', db)).toEqual({ gleis: '2' });
+  });
+
+  it('ein Teilgleis wird über parentPlatform zum Gleis des Graphen – mit Hinweis', () => {
+    const { gleis, hinweis } = loeseGleis(treppeVsAufzugGraph(), '1A-D', db);
+    expect(gleis).toBe('1');
+    expect(hinweis).toMatch(/1A-D.*Gleis 1/);
+  });
+
+  it('kennt der Graph auch das Hauptgleis nicht, bleibt der Name – der Aufrufer entscheidet', () => {
+    expect(loeseGleis(treppeVsAufzugGraph(), '9A-B', db)).toEqual({ gleis: '9A-B' });
+  });
+
+  // Mainz Hbf „3a/b" (02.10.2026): kein parentPlatform, aber linkedPlatforms
+  // nennt 3a und 3b – Gleise, die OSM kennt, am selben Bahnsteig.
+  it('eine Sammelbezeichnung wird zum Bahnsteig, den linkedPlatforms belegt', () => {
+    const sammel = [{ gleis: '2/3', ris: { name: '2/3', linkedPlatforms: ['2', '3'] } }]
+    const { gleis, hinweis } = loeseGleis(treppeVsAufzugGraph(), '2/3', sammel);
+    expect(['2', '3']).toContain(gleis);
+    expect(hinweis).toMatch(/2\/3/);
+  });
+
+  it('nennt linkedPlatforms zwei verschiedene Bahnsteige, wird nichts gewählt', () => {
+    // Gleis 1 und 2 liegen im Testgraphen an verschiedenen Bahnsteigen.
+    const sammel = [{ gleis: '1/2', ris: { name: '1/2', linkedPlatforms: ['1', '2'] } }]
+    expect(loeseGleis(treppeVsAufzugGraph(), '1/2', sammel)).toEqual({ gleis: '1/2' });
+  });
+
+  it('ohne DB-Eintrag wird nichts geraten', () => {
+    expect(loeseGleis(treppeVsAufzugGraph(), '1 A-D', db)).toEqual({ gleis: '1 A-D' });
   });
 });
 

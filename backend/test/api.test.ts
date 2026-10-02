@@ -145,6 +145,54 @@ describe('GET /api/route', () => {
     expect(ergebnis.schritte.some((s) => s.text.includes('gegenüber'))).toBe(true);
   });
 
+  /**
+   * Hamburg Hbf, 02.10.2026: Der Fahrplan nennt „7A-D", OSM nur „7". Die
+   * Route fiel deshalb ganz ins Standardmodell. RIS::Stations nennt das
+   * Hauptgleis selbst (`parentPlatform`).
+   */
+  function macheTeilgleise() {
+    const clients = macheClients();
+    const mitTeilgleis: StationsInfo = {
+      ...ministadt,
+      gleise: [
+        { gleis: '1', ris: { name: '1', linkedPlatforms: ['1A-D'] } },
+        { gleis: '1A-D', ris: { name: '1A-D', parentPlatform: '1' } },
+        { gleis: '2', ris: { name: '2' } },
+      ],
+    };
+    clients.stations.holeStationsInfo = vi.fn(async () => mitTeilgleis);
+    return clients;
+  }
+
+  it('Teilgleis aus dem Fahrplan → Route auf dem Hauptgleis aus OSM, nicht Standardmodell', async () => {
+    const app = buildApp(macheTeilgleise());
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/route?eva=8000001&gleisAn=1A-D&gleisAb=2&profil=normal&variante=schnellste',
+    });
+    expect(res.statusCode).toBe(200);
+    const ergebnis = res.json() as RouteErgebnis;
+    expect(ergebnis.stufe).toBe(1);
+    expect(ergebnis.hinweise.some((h) => h.includes('1A-D') && h.includes('Gleis 1'))).toBe(true);
+    expect(ergebnis.schema!.ebenen[0].bahnsteige.find((b) => b.rolle === 'start')!.gleise).toContain('1');
+  });
+
+  it('Teilgleis bei Overpass-Ausfall → Standardmodell findet es über sein Hauptgleis', async () => {
+    const clients = macheTeilgleise();
+    clients.overpass = vi.fn(async (): Promise<OverpassAntwort> => {
+      throw new Error('Overpass nicht erreichbar (Test)');
+    });
+    const app = buildApp(clients);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/route?eva=8000001&gleisAn=1A-D&gleisAb=2&profil=normal&variante=schnellste',
+    });
+    expect(res.statusCode).toBe(200);
+    const ergebnis = res.json() as RouteErgebnis;
+    expect(ergebnis.stufe).toBe(3);
+    expect(ergebnis.hinweise.some((h) => h.includes('1A-D'))).toBe(true);
+  });
+
   it('zweiter Aufruf trifft den Graph-Cache (Clients nur 1× befragt)', async () => {
     const clients = macheClients();
     const app = buildApp(clients);
