@@ -17,11 +17,11 @@
 // Aufruf: npx tsx scripts/osm-ablage-fuellen.ts [Name ...]
 //         ohne Namen: die Liste LAUF_3 unten
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { overpassQuery } from '../src/clients/overpass.js';
 import { sucheBahnhoefe } from '../src/clients/stations.js';
+import { ladeSecrets } from './secrets.js';
 
 /**
  * Die EINE Stelle, an der die Ablage liegt – alle Skripte importieren sie.
@@ -80,17 +80,6 @@ interface Eintrag {
 
 export function ladeNamen(): Record<string, Eintrag> {
   return existsSync(NAMEN) ? (JSON.parse(readFileSync(NAMEN, 'utf8')) as Record<string, Eintrag>) : {};
-}
-
-function ladeSecrets(): void {
-  const pfad = join(homedir(), '.secrets', 'umstieg.env');
-  for (const zeile of readFileSync(pfad, 'utf8').split('\n')) {
-    const sauber = zeile.replace(/\r$/, '').trim();
-    if (!sauber || sauber.startsWith('#')) continue;
-    const trenner = sauber.indexOf('=');
-    if (trenner < 0) continue;
-    process.env[sauber.slice(0, trenner).trim()] = sauber.slice(trenner + 1).trim();
-  }
 }
 
 const warte = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));

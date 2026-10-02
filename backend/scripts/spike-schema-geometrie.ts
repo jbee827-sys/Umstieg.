@@ -18,19 +18,7 @@ import { holeStationsInfo } from '../src/clients/stations.js';
 import { holeTafel } from '../src/clients/timetables.js';
 import { baueGraph, haversineM } from '../src/core/graph.js';
 import type { OsmElement, OverpassAntwort, StationGraph } from '../src/core/typen.js';
-
-// Zugangsdaten aus dem Tresor. CRLF-Strip noetig, sonst landet ein
-// Wagenruecklauf im Secret und der Auth-Header ist still falsch.
-function ladeSecrets(): void {
-  const pfad = join(homedir(), '.secrets', 'umstieg.env');
-  for (const zeile of readFileSync(pfad, 'utf8').split('\n')) {
-    const sauber = zeile.replace(/\r$/, '').trim();
-    if (!sauber || sauber.startsWith('#')) continue;
-    const trenner = sauber.indexOf('=');
-    if (trenner < 0) continue;
-    process.env[sauber.slice(0, trenner).trim()] = sauber.slice(trenner + 1).trim();
-  }
-}
+import { ladeSecrets } from './secrets.js';
 
 const HIER = dirname(fileURLToPath(import.meta.url));
 const AUSGABE = join(

@@ -41,20 +41,25 @@ Die DB-Schluessel liegen **nicht im Repo**, sondern in einem Tresor ausserhalb
 jedes Projektordners:
 
 ```
-C:\Users\jbeer\.secrets\umstieg.env      # Quelle der Wahrheit
-C:\Users\jbeer\.secrets\README.md        # Konvention, eine Datei je Projekt
+E:\jbeer\.secrets\umstieg.env      # Quelle der Wahrheit (seit 02.10.2026, vorher C:\Users\jbeer\.secrets)
+E:\jbeer\.secrets\README.md        # Konvention, eine Datei je Projekt
 ```
 
-Rechte sind eng gesetzt (nur der Benutzer, Vererbung entfernt):
+Skripte lesen den Tresor über `backend/scripts/secrets.ts`; der Pfad steht nur
+dort.
+
+Rechte: Auf C: war die Vererbung entfernt, nur der Benutzer hatte Zugriff. Auf
+E: erbt der Ordner (Stand 02.10.2026: SYSTEM, Administratoren, Benutzer). So
+wird er wieder so eng wie zuvor:
 
 ```powershell
-icacls "C:\Users\jbeer\.secrets" /inheritance:r /grant:r "MATEBOOK-JULIAN\jbeer:(OI)(CI)F"
+icacls "E:\jbeer\.secrets" /inheritance:r /grant:r "MATEBOOK-JULIAN\jbeer:(OI)(CI)F"
 ```
 
 Lokal starten (Git Bash, aus `backend/`):
 
 ```bash
-npx tsx watch --env-file="$HOME/.secrets/umstieg.env" src/server.ts
+npx tsx watch --env-file="E:/jbeer/.secrets/umstieg.env" src/server.ts
 ```
 
 Produktion liest keine Datei – Fly gibt die Werte direkt als

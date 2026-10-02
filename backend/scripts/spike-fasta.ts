@@ -10,25 +10,12 @@
 //      nicht-geratene Bruecke Cluster -> Bahnsteig.
 //
 // Aufruf: npx tsx scripts/spike-fasta.ts
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { epFastaFacilities, epStopPlace } from '../src/clients/db-endpunkte.js';
 import { dbAuthHeader } from '../src/clients/stations.js';
 import { haversineM } from '../src/core/graph.js';
-
-// Zugangsdaten aus dem Tresor. Die Datei hat CRLF - ohne \r-Strip landet ein
-// Wagenruecklauf im Secret und der Auth-Header ist still falsch.
-function ladeSecrets(): void {
-  const pfad = join(homedir(), '.secrets', 'umstieg.env');
-  for (const zeile of readFileSync(pfad, 'utf8').split('\n')) {
-    const sauber = zeile.replace(/\r$/, '').trim();
-    if (!sauber || sauber.startsWith('#')) continue;
-    const trenner = sauber.indexOf('=');
-    if (trenner < 0) continue;
-    process.env[sauber.slice(0, trenner).trim()] = sauber.slice(trenner + 1).trim();
-  }
-}
+import { ladeSecrets } from './secrets.js';
 
 interface RohAnlage {
   equipmentnumber?: number;

@@ -1226,7 +1226,8 @@ echtem IRIS-XML korrekt erkannt.
 ### Zugangsdaten
 
 Die Schlüssel liegen **nicht im Repo**, sondern im Tresor
-`C:\Users\jbeer\.secrets\` (Vererbung entfernt, nur der Benutzer hat Zugriff).
+`E:\jbeer\.secrets\` (seit 02.10.2026; vorher `C:\Users\jbeer\.secrets\`).
+Skripte lesen ihn über `backend/scripts/secrets.ts` – der Pfad steht nur dort.
 Konvention und Fallstricke stehen dort in `README.md`; `.env.example` verweist
 darauf und bleibt leer. Einzelheiten: [`docs/deployment.md`](./docs/deployment.md).
 
@@ -1391,7 +1392,7 @@ npx tsx scripts/record-fixture.ts <name> <lat> <lon>  # neues Overpass-Fixture
 **Dev MIT DB-Zugang:** Die Schlüssel liegen im Tresor ausserhalb des Repos. In Git Bash, aus `backend/`:
 
 ```bash
-npx tsx watch --env-file="$HOME/.secrets/umstieg.env" src/server.ts
+npx tsx watch --env-file="E:/jbeer/.secrets/umstieg.env" src/server.ts
 ```
 
 `npm run dev` allein lädt **keine** `.env` – es gibt weder `dotenv` noch `--env-file` in den Skripten. Ohne die Variablen läuft das Backend im degradierten Modus.

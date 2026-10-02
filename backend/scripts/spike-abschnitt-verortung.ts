@@ -14,24 +14,13 @@
 //
 // Aufruf: npx tsx scripts/spike-abschnitt-verortung.ts
 import { readFileSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { holeAnlagen } from '../src/clients/fasta.js';
 import { bahnsteigSchluessel } from '../src/core/fasta-gleisbezug.js';
 import { haversineM } from '../src/core/graph.js';
 import type { FastaAnlage, OsmElement, OverpassAntwort } from '../src/core/typen.js';
-
-function ladeSecrets(): void {
-  const pfad = join(homedir(), '.secrets', 'umstieg.env');
-  for (const zeile of readFileSync(pfad, 'utf8').split('\n')) {
-    const sauber = zeile.replace(/\r$/, '').trim();
-    if (!sauber || sauber.startsWith('#')) continue;
-    const trenner = sauber.indexOf('=');
-    if (trenner < 0) continue;
-    process.env[sauber.slice(0, trenner).trim()] = sauber.slice(trenner + 1).trim();
-  }
-}
+import { ladeSecrets } from './secrets.js';
 
 const HIER = dirname(fileURLToPath(import.meta.url));
 const STATION_ID = '1071'; // Berlin Hbf, StaDa-Nummer

@@ -6,22 +6,9 @@
 // Frage ist, ob andere Bahnhoefe Nennungen abseits der Mitte liefern.
 //
 // Aufruf: npx tsx scripts/spike-abschnitt-breite.ts
-import { readFileSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
 import { holeAnlagen } from '../src/clients/fasta.js';
 import { holeStationsInfo } from '../src/clients/stations.js';
-
-function ladeSecrets(): void {
-  const pfad = join(homedir(), '.secrets', 'umstieg.env');
-  for (const zeile of readFileSync(pfad, 'utf8').split('\n')) {
-    const sauber = zeile.replace(/\r$/, '').trim();
-    if (!sauber || sauber.startsWith('#')) continue;
-    const trenner = sauber.indexOf('=');
-    if (trenner < 0) continue;
-    process.env[sauber.slice(0, trenner).trim()] = sauber.slice(trenner + 1).trim();
-  }
-}
+import { ladeSecrets } from './secrets.js';
 
 const BAHNHOEFE = [
   { eva: '8011160', label: 'Berlin Hbf' },
