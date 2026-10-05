@@ -9,6 +9,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 **Spec Schrittnavigation:** [`docs/superpowers/specs/2026-08-30-schrittnavigation-design.md`](./docs/superpowers/specs/2026-08-30-schrittnavigation-design.md)
 **Plan Schrittnavigation (8 Tasks):** [`docs/superpowers/plans/2026-08-30-schrittnavigation.md`](./docs/superpowers/plans/2026-08-30-schrittnavigation.md)
 **UI-Design (Claude Design Import):** [`design/Umstieg.dc.html`](./design/Umstieg.dc.html)
+**Designregeln (Farben, Schrift, Bauteile):** [`design/DESIGN.md`](./design/DESIGN.md), Begründungen in [`BRIEF.md`](./BRIEF.md)
 
 ## Architektur
 
@@ -16,7 +17,137 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 19.09.2026)
+## Hier weitermachen (Stand 05.10.2026)
+
+> **Seit dem 19.09. sind acht Commits dazugekommen.** Die ersten sechs stammen
+> vom 21.09. bis 02.10., die letzten beiden vom 05.10.:
+>
+> | Commit | Was |
+> |---|---|
+> | `682a43e` | Neues Farb- und Formsystem (`BRIEF.md`, `design/DESIGN.md`): Weiß–Rot–Grau, Alarm = Rot **und** Gelb (zweigeteilte Lampe, gestreifter Saum), Rundungsstaffel, Schrift in `rem`, Nordstern in der Navileiste |
+> | `1054c36` | Dunkelmodus über Token statt fester Farbwerte |
+> | `662b8c7` | Teilgleise aus dem Fahrplan („7A-D", „2 D-G") auf das OSM-Gleis abbilden – `loeseGleis` über `parentPlatform` und `linkedPlatforms` |
+> | `f3d4485` | Bildhöhe nach Bahnsteigdichte statt fester 180 px (**erledigt ToDo 37**), grobes Ersatzbild für das Standardmodell |
+> | `9d74685` | Schlüssel-Tresor liegt auf `E:\jbeer\.secrets`, der Pfad steht nur noch in `backend/scripts/secrets.ts` |
+> | `32292fb` | Gleisnummern in jeder OSM-Schreibweise (`local_ref`, `railway:track_ref`, `platform_edge`) und DB-Gleise über `ref:IFOPT` |
+> | *(05.10.)* | Sichtprüfung im Browser und alles, was sie gefunden hat – siehe unten |
+> | *(05.10.)* | dieses README |
+>
+> **Der Gleisabgleich trägt.** Im echten Abgleich vom 02.10. (116 Bahnhöfe,
+> 884 Fahrplangleise einer Stunde) fanden sich vorher 22,4 % der Gleise nicht
+> im OSM-Graphen, und jede dieser Routen fiel ins Standardmodell. Jetzt sind es
+> **1,1 %**: Neun Fahrplanzeilen nennen gar kein Gleis (`pp=""`), und eine
+> trifft zwei Bahnsteighälften (Konstanz: „2" gegen OSM `2a`/`2b`, ToDo 39).
+> Stuttgart, Karlsruhe, Mannheim, Singen, Iserlohn und Zwickau haben jetzt
+> Gleise; Altonas und Münchens S-Bahnsteige kommen über die IFOPT-Kennung.
+>
+> ### Geprüft am 05.10.2026
+>
+> **Jeder Commit einzeln** (ausgecheckt, Tests, Lint, Build – Protokolle in
+> `.superpowers/pruefung-2026-10-05/`, gitignored):
+>
+> | Commit | Backend | Frontend | Lint | Build |
+> |---|---|---|---|---|
+> | `682a43e` | 438/438 | 395/395 | sauber | grün |
+> | `1054c36` | 438/438 | 395/395 | sauber | grün |
+> | `662b8c7` | 449/449 | 395/395 | sauber | grün |
+> | `f3d4485` | 449/449 | 410/410 | sauber | grün |
+> | `9d74685` | 449/449 | 410/410 | sauber | grün |
+> | `32292fb` | 463/463 | 410/410 | sauber | grün |
+>
+> Einzige Build-Meldung, in allen sechs gleich: Der nachgeladene Kartenbaustein
+> (MapLibre) ist 944 kB groß – bekannt und gewollt, er lädt erst beim Aufklappen.
+>
+> **Simulationen auf dem Stand `32292fb`**, alle offline über die Ablage:
+>
+> | Lauf | Ergebnis |
+> |---|---|
+> | Routen (`simulation-lauf3.ts`, Lauf 9) | 2253 Routen an 120 Bahnhöfen, 1 Befund – Düsseldorf 1 → 20 (ToDo 27), unverändert; Auswertung identisch mit Lauf 8 vom 02.10. |
+> | Bild bei 180 und bei 400 px Platz | 0 Befunde, 0 sich überdeckende Symbolschilder (3551 geprüft) |
+> | Anfragetest (`anfragen-pruefung.ts`) | 3446 Anfragen, 0 Befunde |
+>
+> **Sichtprüfung in Chrome** gegen den lokalen Server mit echten DB-Daten,
+> Rahmen 360 × 740 (dazu 320, 375, 390 und 412 px Breite gemessen), hell und
+> dunkel: Eingabe, Live-Zugtafel, Übersicht mit grüner und roter Ampel, Weg in
+> München 5 → 82 (12 Schritte, echtes Schema mit 17 Bahnsteigen) und
+> Stuttgart 8 → 16 (Standardmodell mit Ersatzbild), Meldungen, Angekommen.
+>
+> | Geprüft | Ergebnis |
+> |---|---|
+> | Rollt die Wegseite? | nein, in keinem der 12 Schritte |
+> | Steht das aktive Band still? | Oberkante bei allen 12 Schritten auf derselben Höhe |
+> | Fußtext im Bild? | in allen Schritten innerhalb des Fensters |
+> | Letzter Schritt | grünes „Angekommen" statt „Weiter" |
+> | Dichtes Bild (München, 17 Balken) | Gleisnamen und Balken überdecken sich nicht mehr (`f3d4485`) |
+> | Standardmodell | grobes Ersatzbild statt 17 Balken im Abstand von 5 px (`f3d4485`) |
+>
+> ### Was die Sichtprüfung gefunden hat – und behoben ist
+>
+> 1. **Die Grundschrift 18 px hatte nie gegriffen.** Sie stand an `body`,
+>    `rem` rechnet aber mit `html` (16 px). Die ganze Staffel aus `682a43e` lag
+>    damit 11 % unter Plan: die Beschriftung bei 13,3 statt 15 px – unter der
+>    eigenen Untergrenze –, der Hauptknopf bei 19,6 statt 22 px. Und eine am
+>    Gerät eingestellte große Schrift schlug nicht durch. Jetzt
+>    `html { font-size: 112.5% }`; `bandbild.ts` rechnete schon immer mit 18 px.
+> 2. **13 Schriftfarben unter 4,5:1.** `neutral-500` und `neutral-600` als
+>    Schrift, obwohl `index.css` das ausschließt – darunter die Gehzeit neben
+>    der Ampel (auf der roten Fläche 3,9:1), die Gruppentitel der Zugtafel
+>    (2,6:1) und die Detailzeile unter jedem Schritt. Alle auf `neutral-700`
+>    (hell ab 5,4:1); `src/schriftfarben.test.ts` hält es fest.
+> 3. **Das Lockup war nachts unsichtbar** – ein PNG mit dunkler Wortmarke auf
+>    dem Nachtgrund. Jetzt kehrt ein Filter es im Dunkelmodus um
+>    (`--lockup-filter`), das Rot landet nahe am Nachtrot.
+> 4. **Die Gehzeit neben der Ampel wurde zerquetscht** (gemeldet). Bei
+>    „Abfahrt jetzt" auf roter Ampel blieben ihr 0 px in drei Zeilen, bei
+>    „125:00" zwei Zeilen, auf 320 px schon bei „4:16". Jetzt bleibt sie
+>    einzeilig und rutscht, wenn neben der Restzeit kein Platz ist, als eigene
+>    Zeile darunter.
+> 5. **Mit dem Echtzeit-Banner blieb dem Bild auf der Wegseite nichts.**
+>    Banner in voller Länge, „Live-Daten · Stand" und ein zweizeiliger Titel
+>    ließen 56 px – genau den Ankerabstand. Auf dieser Seite sagt das Banner
+>    jetzt nur noch, dass und seit wann die Echtzeit fehlt; der Stand-Satz
+>    entfällt dann; der Titel nimmt die Größe der Anweisung und die volle
+>    Breite (das Stufen-Abzeichen steht neben dem Bahnhofsnamen). Ergebnis:
+>    190 px, das ganze Band ist zu sehen. Die Störmeldung ist ein Overlay und
+>    war nie betroffen.
+> 6. Kleinere: „Ankunft: Wagen (optional)" bricht um – die Felder stehen jetzt
+>    trotzdem auf einer Höhe; „Route wird berechnet …" brach im Knopf um, jetzt
+>    „Wird berechnet …".
+>
+> **Auf Wunsch geändert:**
+>
+> - **Die Marke über „Übersicht" ist weg** (der „Nordstern" aus `682a43e`).
+>   Die vier Einträge der Navileiste sind wieder gleichrangig.
+> - **„Mehr einstellen" heißt „Einstellungen"** und trägt neben dem Gehtempo
+>   die **Darstellung: System · Hell · Dunkel**. Ohne Wahl folgt die App dem
+>   Gerät. Die Wahl liegt im `localStorage` – als einziger Eintrag dort, nur
+>   bei ausdrücklich Hell oder Dunkel, „System" löscht ihn. Die
+>   Datenschutzerklärung sagt das jetzt; ihre alte Zusage „localStorage wird
+>   nicht verwendet" ist gefallen, ein Test verhindert ihre Rückkehr. Die
+>   dunkle Palette steht dafür zweimal in `index.css` (Systemwahl und eigene
+>   Wahl); `einstellungen/darstellung-css.test.ts` hält beide gleich.
+>
+> ```bash
+> cd frontend && npm test && npm run lint && npm run build   # 427 von 427, Lint sauber, Build grün
+> cd backend  && npm test && npm run lint                    # 463 von 463, Lint sauber
+> ```
+>
+> **Nicht geprüft:** Hell auf einem Gerät mit dunklem System ist gesehen,
+> Dunkel auf einem hellen System nicht (der Rechner steht auf dunkel) – die
+> Palette ist dort dieselbe, der Test vergleicht sie. Und Overpass antwortete
+> am Abend schleppend: Stuttgart und Berlin kamen im Browser nur als
+> Standardmodell, München als Stufe 1.
+>
+> **Zwei Arbeitskopien.** `D:\Claude-code\Umstieg` ist die ältere Kopie
+> desselben Repos (Stand `32292fb`), gearbeitet wird in
+> `E:\jbeer\Claude-code\Umstieg`. Dort liefen noch die Dev-Server vom 02.10.;
+> sie sind beendet und aus `E:` neu gestartet. Nach dem Push steht `D:`
+> zurück.
+>
+> **Nächster Schritt: ausliefern** (Fly.io mit `--ha=false` und Vercel – beide
+> Seiten haben sich geändert), **danach M9 und M10 am Gerät** (ToDo 3 und 30).
+
+### Davor (19.09.2026)
 
 > **Die Navigationsseite rollt nicht mehr.** Sie war eine lange Seite: Zum
 > „Weiter" musste man hinunterrollen, und dabei rollte das Ebenenbild oben weg
@@ -645,7 +776,7 @@ Nach Gewicht:
 5. ~~**Der Längsversatz der Bahnsteige zueinander fehlt im Vertrag.**~~ ✅
    **erledigt mit D4 (14.09.2026)** – `von` und `bis` liegen im Bezugsrahmen,
    die Balken stehen längs maßstäblich samt Versatz.
-6. **Der Rot-Konflikt ist ungelöst.** `#ec3013` ist Route, Aktion und Ampelrot
+6. ~~**Der Rot-Konflikt ist ungelöst.**~~ ✅ **gelöst mit `682a43e` (21.09.2026):** Rot ist Sekundärfarbe, der Alarm ist Rot **und** Gelb – zweigeteilte Lampe, gestreifter Saum (`design/DESIGN.md`). Ursprünglich: `#ec3013` ist Route, Aktion und Ampelrot
    zugleich. Die Artboards weichen aus, indem sie grüne und gelbe Ampeln
    zeigen.
 7. **Wie Vorbehalte sichtbar werden**, ohne die Seite zu belasten – seit dem
@@ -664,14 +795,18 @@ Nach Gewicht:
   DB-Gleisliste entscheiden kann: Kaiserslautern führt ein Gleis „120" aus
   `ref="1;120"` (Ebene 1, ohne Tram- oder Bus-Merkmal), und Hof Hbf ein
   Gleis „10". Beide Bahnhöfe fallen deshalb in der Simulation mit „keine
-  Route" aus. `/api/route` holt die DB-Gleisliste ohnehin (als Trenner in
+  Route" aus – Kaiserslautern (EVA 8000189) auch in Lauf 9 noch mit 12 von 12
+  Routen ohne Weg; `baueGraph` kennt die DB-Gleisliste seit `32292fb`, nutzt
+  sie aber nur zum Zuordnen über IFOPT, nicht als Filter. `/api/route` holt die DB-Gleisliste ohnehin (als Trenner in
   `istGleicherBahnsteig`) – sie auch als **Filter** zu benutzen, verbietet
   sich nach bisheriger Regel („aus einer lückenhaften Liste darf nichts
   geschlossen werden"), wäre aber zu messen wert.
-- **Vier Bahnhöfe der Stichprobe haben in OSM keinen einzigen Bahnsteig mit
-  Gleisnummer** – Singen, Zwickau, Husum, Iserlohn; seit dem 13.09. kommt
-  Mannheim Hbf dazu, wo die echten DB-Bahnsteige nur `name` tragen. Dort
-  greift das Standardmodell, wie vorgesehen.
+- ~~**Vier Bahnhöfe der Stichprobe haben in OSM keinen einzigen Bahnsteig mit
+  Gleisnummer**~~ – **großteils erledigt mit `32292fb` (02.10.2026):** Die
+  Nummern standen in OSM, nur in Schreibweisen, die nicht gelesen wurden
+  (`local_ref`, `railway:track_ref`, `platform_edge`). Singen, Zwickau und
+  Iserlohn rechnen in Lauf 9 echte Routen (Stufe 1), Mannheim laut Abgleich
+  vom 02.10. ebenso. Husum ist in der Ablage nicht enthalten und ungeprüft.
 - **Drei Bahnhöfe der Stichprobe tragen keinen einzigen Zugang** –
   Hamburg-Altona, Chemnitz Hbf, Jena Paradies. Ungeprüft, ob das die Daten
   sind oder die Ableitung.
@@ -1052,8 +1187,10 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | 26 | **Zwei Simulationen lesen den Schlüssel-Tresor ohne Not** | `simulation-schema.ts` und `simulation-standort.ts` rufen `ladeSecrets()` beim Start immer auf – auch mit `ABLAGE_NUR=1`, wo kein Netz gebraucht wird. Nach `D:\Claude-code\CLAUDE.md` starten sie deshalb nur nach Rückfrage. Nur laden, wenn wirklich abgerufen wird; dann laufen beide ohne. |
 | 36 | **Augsburg 6 → 12 barrierefrei: 1 m kürzer als vor ToDo 31** | Lauf 5 gegen Lauf 4, ab Anfang: 266 statt 267 m, 386 statt 387 s, gleiche Ebenenfolge. Die einzige Route von 672 unterscheidbaren Kombinationen, die weder gleich blieb noch nur die Seiten tauschte. Vermutlich ein Nebeneffekt der jetzt umgedrehten Bahnsteigkette (`verdichteBahnsteigketten` arbeitet vom Anfang aus) – **nicht untersucht**. Klein, aber es zeigt eine Reihenfolgeabhängigkeit, die es nicht geben sollte. |
 | 27 | **Düsseldorf Hbf 1 → 20: Wegzerlegung 236 statt 231 m** | Der einzige Routing-Befund von Lauf 4 (`pruefeSchema`, ab Mitte, schnellste). Die Linienzüge der Besuche sind 5 m länger als der Pfad ohne Ebenenwechsel. Douglas-Peucker kann nicht verlängern – die Ursache liegt woanders (Besuchsgrenzen, doppelte Punkte an einem Wechsel?). Nicht aus dem Symbolumbau. |
-| 37 | **Die 180 px Bildhöhe sind an EIN Gerät angepasst** | `AKTIV_H = 180` in `schema/masse.ts` ist aus einem Rahmen von 360 × 740 abgeleitet: Was Kopf, Schritt-Box und Leiste dort übrig lassen, sind 179 px. Auf einem kürzeren Gerät (iPhone SE, 667 px) wird das Band unten angeschnitten, auf einem längeren bleibt Platz – der füllt sich immerhin nützlich mit Nachbarebenen. Dazu kommt, dass die Höhe der Schritt-Box mit der Länge des Schritttextes um ±34 px schwankt (ein- gegen zweizeilig), das Fenster also ohnehin atmet. **Richtig wäre, die Bildhöhe zu messen statt zu setzen** – dann müsste aber auch die Simulation auf einer gemessenen Fläche zeichnen, sonst beweist sie nichts mehr (siehe Kopf von `masse.ts`). Deshalb bewusst als Zahl belassen. Erst am Gerät entscheiden (ToDo 30). |
+| ~~37~~ | ~~**Die 180 px Bildhöhe sind an EIN Gerät angepasst**~~ ✅ **erledigt 02.10.2026** (`f3d4485`) | Die Bildhöhe wird jetzt gemessen (`ResizeObserver` in `Ebenenschema.tsx`) und richtet sich nach der Dichte der Bahnsteige (`aktivHoehe(bildBedarf, verfuegbar)` in `masse.ts`); die Simulation zeichnet bei wählbarem Platz (`VERFUEGBAR`). Am 05.10. im Browser bestätigt: München mit 17 Balken ohne Überdeckung. Ursprünglich: `AKTIV_H = 180` war aus einem Rahmen von 360 × 740 abgeleitet und nur dort richtig. |
 | 38 | **Die Datenvorbehalte stehen nirgends mehr** | Mit der Fußzeile unter dem Bild sind am 19.09.2026 drei Auskünfte verschwunden: dass das Bild ein Schema und nicht maßstäblich ist, der Kreuzungswinkel zweier Ebenen, und `modell.vorbehalte` („Bahnsteigabschnitte (A–G) sind in den Quellen nicht verortet", `core/schema.ts:787`). Sie waren auf Wunsch zu entfernen, weil sie den festen Bildschirm füllten, ohne sich je zu ändern. Sie sind damit aber nicht falsch geworden. Naheliegender Ort: der Aufklapper „Alle Schritte", wo seit heute schon Karte und Streckenhinweise liegen – `Schrittsheet` nimmt dafür ein `zusatz`. Siehe „Offen am Design", Punkt 7. |
+| 39 | **Der letzte echte Rest des Gleisabgleichs: Konstanz „2"** | Abgleich vom 02.10.2026 (`osm-ablage/laeufe/db-auswertung-5.log`): Der Fahrplan nennt Gleis „2", OSM führt nur die Hälften `2a` und `2b` als eigene Bahnsteigpolygone. `linkedPlatforms` nennt beide, sie liegen aber an zwei `bahnsteigId` – `loeseGleis` wählt dann bewusst nicht. Welche Hälfte gemeint ist, sagt keine Quelle; die Mitte zwischen beiden wäre eine Annahme. Ein Fall von 884, die Route fällt ins Standardmodell. Die übrigen neun Restfälle nennen im Fahrplan gar kein Gleis. |
+| 40 | **Acht Beschriftungen im Ebenenschema unter 15 px** | Die belegte Ausnahme aus `design/DESIGN.md` Abschnitt 3 (`schema-gleisname`, `schema-standort`, `schema-bandrechts` u. a., 0,5 bis 0,72 rem = 9 bis 13 px). Seit dem 05.10. rechnet `rem` wirklich mit 18 px, damit stimmen sie mit `NAME_H` in `bandbild.ts` überein. Zu lösen über die Maße des Schemas, nicht über die Schriftgröße – erst am Gerät entscheiden, ob sie in der Halle reichen (ToDo 30). |
 
 ### Als Nächstes (der Hauptstrang)
 
@@ -1069,7 +1206,7 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | **20** | **Reise-Import: das VMV-Format** | Der Parser erkennt es **gar nicht** – `parseReise` gibt `null` zurück, kein einziger Abschnitt. Am 06.09.2026 an einem echten Text isoliert, drei voneinander unabhängige Blocker, alle im Parser: (1) `istRahmen` wirft jede Zeile mit ` -> ` weg – der Pfeil ist als Kopfzeilen-Trenner gedacht, die VMV benutzt ihn mitten in der Fahrtzeile; (2) `von` ist kein Rollenwort, und die Ankunft wird gar nicht durch ein Wort markiert, sondern durch den Pfeil; (3) Abfahrt und Ankunft stehen **auf einer Zeile**, das Modell des Parsers ist ein Halt je Zeile. **Zuschnitt entschieden 06.09.2026: Bus-Etappen bleiben draußen, der Anspruch endet am letzten Bahnhalt** – die Form „Haltestelle, Ort (Zusatz)" (`Seebad Heringsdorf, Heringsdorf (Seebad)`, `Ahlbeck, Bahnhof (UBB), Ahlbeck (Seebad)`) muss damit **nicht** gelöst werden. Vorläufig: „erstmal". |
 | ~~9c~~ | ~~**Variante „Mit Stopp: WC & Kiosk“**~~ ✅ **erledigt 05.09.2026** | Gebaut und ausgeliefert. Die Spec-Annahme „die Daten sind bereits da“ stimmte nicht – die Overpass-Abfrage holte WC und Kiosk nie. Siehe „Mit Stopp: WC & Kiosk“. |
 | 28 | **Stumme Treppen und Rampen** | Lauf 4: 195 Routen an 19 Bahnhöfen nehmen eine Treppe oder Rampe, ohne dass der Graph einen Ebenenwechsel kennt (35 Treppen-, 769 Rampenkanten) – etwa eine Unterführung ohne `level`. Im Bild steht dort keine Scheibe, im Text schon. Je Fall zu klären: Fehlt `level` in OSM, oder liest der Graph `incline`/`ramp` nicht? |
-| 29 | **Umwege zu einem Zugang an 6 Bahnhöfen** | `pruefeBahnsteigwege`, Lauf 4: Bielefeld (Gleis 5, zwei Treppen), Bonn (Gleis 4), Gütersloh (Gleis 2 und 3), Schwerin (Gleis 1: Treppe über 258 statt 120 m, zwei Aufzüge), Wittenberge (Gleis 1, Aufzug), Berlin-Spandau (Gleis 3: Treppe bei 397 m unerreichbar). Nach der Kettenkorrektur eine andere Ursache – je Bahnhof am Graphen nachsehen. |
+| 29 | **Umwege zu einem Zugang an 7 Bahnhöfen** | `pruefeBahnsteigwege`, Lauf 4: Bielefeld (Gleis 5, zwei Treppen), Bonn (Gleis 4), Gütersloh (Gleis 2 und 3), Schwerin (Gleis 1: Treppe über 258 statt 120 m, zwei Aufzüge), Wittenberge (Gleis 1, Aufzug), Berlin-Spandau (Gleis 3: Treppe bei 397 m unerreichbar). **Seit Lauf 8 (02.10.) dazu Berlin Ostkreuz** (Gleis 5: Treppe bei 21 m über 236 statt 28 m) – Ostkreuz hat erst seit `32292fb` Gleise, der Fall war vorher unsichtbar. Nach der Kettenkorrektur eine andere Ursache – je Bahnhof am Graphen nachsehen. |
 | 30 | **M10: das neue Schema am Gerät** | Mit M9 nach dem Deployment (ToDo 25). Tragen die 11-px-Symbole in der Halle bei Gegenlicht? Reicht auf dem Ankunftsband der Punkt ohne Linie – auch am Kopfbahnhof, wo die U-Form nur noch im Text steht (154 Routen an 18 Bahnhöfen)? Stimmen die geglätteten Schritte im Gehen (`GLAETTUNG_M = 6` ist begründet, nicht gemessen)? **Seit dem 19.09. dazu:** Bleibt das verankerte Bild beim Durchklicken wirklich ruhig, oder wirkt das Springen der Nachbarebenen darum herum unruhig? Und findet die Hand den „Weiter"-Knopf unten am Rand mit Koffer in der anderen? |
 | ~~31~~ | ~~**Was „Anfang" im Bahnhof heißt**~~ ✅ **entschieden und umgesetzt 15.09.2026** | **Anfang = Nord- bzw. Westende**, für alle Bahnsteige einer Ebene an derselben Achse ausgerichtet (`core/richtung.ts`, angewandt in `baueGraph`). Die Knöpfe und die Standortmarken im Bild sagen es: „Nordende · Mitte · Südende" oder „Westende · Mitte · Ostende" – vergleichend, also „das nördlichere der beiden Enden". Warum die Himmelsrichtung: Sie ist die einzige Orientierung, die an **jedem** Bahnhof aus den Daten belegt ist. Kopf und Empfangsgebäude kennt die Overpass-Abfrage nicht, und die Fahrtrichtung ließe sich nur aus dem Laufweg schätzen – an Brücken und Kurven das falsche Ende. Ohne gemessene Achse (Standardmodell) bleibt es bei „Anfang/Ende". Vorher: die zufällige Zeichenrichtung in OSM, an Nachbarbahnsteigen oft entgegengesetzt. Siehe „Hier weitermachen". |
 
@@ -1156,7 +1293,7 @@ will. **Deploys brauchen deshalb `--ha=false`**, festgehalten in `fly.toml` und
 `docs/deployment.md`:
 
 ```powershell
-flyctl deploy D:\Claude-code\Umstieg\backend --ha=false
+flyctl deploy E:\jbeer\Claude-code\Umstieg\backend --ha=false
 flyctl machines list                     # es darf genau eine geben
 ```
 
@@ -1259,11 +1396,14 @@ Arbeitsverzeichnisses hoch, unabhängig davon, wo HEAD gerade steht.
 ### Eigenheiten dieses Rechners
 
 1. **`!`-Befehle laufen in Git Bash, nicht in PowerShell.** Also Unix-Syntax:
-   `/d/Claude-code/...` statt `D:\Claude-code\...`, `&&` statt `;`, und keine
-   Cmdlets wie `iwr`/`iex` (daran scheiterte das Fly-Install-Skript).
-2. **Jeder Aufruf startet in `D:\Claude-code`, nicht im Projektordner.**
-   Deshalb in jedem Befehl `cd /d/Claude-code/Umstieg/...` voranstellen –
-   sonst „fatal: not a git repository".
+   `/e/jbeer/Claude-code/...` statt `E:\jbeer\Claude-code\...`, `&&` statt
+   `;`, und keine Cmdlets wie `iwr`/`iex` (daran scheiterte das
+   Fly-Install-Skript).
+2. **Jeder Aufruf startet im Arbeitsbereich, nicht im Projektordner.**
+   Deshalb in jedem Befehl `cd /e/jbeer/Claude-code/Umstieg/...` voranstellen –
+   sonst „fatal: not a git repository". Der Arbeitsbereich liegt inzwischen auf
+   `E:\jbeer\Claude-code`; `D:\Claude-code\Umstieg` ist eine ältere Kopie
+   desselben Repos und wird nicht mehr nachgezogen.
 3. **Der Befehl heisst `flyctl`, nicht `fly`.** Der Windows-Installer (winget)
    legt ausschliesslich `flyctl.exe` an; die Kurzform `fly` erzeugt nur das
    Unix-Installskript. `fly deploy` quittiert PowerShell deshalb mit
@@ -1347,7 +1487,7 @@ Spec und Plan unter `docs/superpowers/`.
 
 | Bildschirm | Inhalt |
 |---|---|
-| Eingabe | Bahnhofssuche, Gleise, Zugauswahl; Gehtempo hinter „Mehr einstellen" |
+| Eingabe | Bahnhofssuche, Gleise, Zugauswahl; Gehtempo und Darstellung unter „Einstellungen" (bis 05.10.2026 „Mehr einstellen") |
 | Dashboard | Ampel **ab der Gleiseingabe**, Ankunfts-/Anschlussblock, zwei Routenknöpfe mit Minuten |
 | Navigation | Ebenenschema, ein Schritt zur Zeit, echte Karte hinter „Mehr" |
 | Störung | Gleiswechsel als **Vorschlag** – alt gegen neu, „Route übernehmen" |
