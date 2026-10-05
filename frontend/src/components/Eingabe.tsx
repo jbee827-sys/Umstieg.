@@ -12,6 +12,7 @@ import { Zugauswahl } from './Zugauswahl'
 import { ReiseImport } from './ReiseImport'
 import type { Umstieg } from '../reise/reisetext'
 import type { EingabeEntwurf } from '../sitzung/eingabespeicher'
+import { ladeDarstellung, waehleDarstellung, type Darstellung } from '../einstellungen/darstellung'
 
 export interface EingabeWerte {
   eva: string
@@ -76,6 +77,12 @@ const PROFILE: { wert: Gehprofil; label: string }[] = [
   { wert: 'langsam', label: 'Langsam / Gepäck' },
 ]
 
+const DARSTELLUNGEN: { wert: Darstellung; label: string }[] = [
+  { wert: 'system', label: 'System' },
+  { wert: 'hell', label: 'Hell' },
+  { wert: 'dunkel', label: 'Dunkel' },
+]
+
 // Eingabemaske nach dem Onboarding-Screen des Designs: Bahnhofssuche mit
 // Vervollständigung, Gleis an/ab (Pflicht), Wagennummer optional, große
 // Auswahlflächen für Gehprofil und Routenvariante.
@@ -95,6 +102,9 @@ export function Eingabe({ laden, fehler, erkannt, entwurf, onBerechnen }: Eingab
   const [wagenAn, setWagenAn] = useState(entwurf?.wagenAn ?? '')
   const [wagenAb, setWagenAb] = useState(entwurf?.wagenAb ?? '')
   const [profil, setProfil] = useState<Gehprofil>(entwurf?.profil ?? 'normal')
+  // Keine Reiseangabe, sondern eine Geraeteeinstellung: Sie steht nicht im
+  // Entwurf, sondern im eigenen Speicher (einstellungen/darstellung.ts).
+  const [darstellung, setDarstellung] = useState<Darstellung>(ladeDarstellung)
   const [zugAnkunft, setZugAnkunft] = useState<TafelEintrag | null>(entwurf?.zugAnkunft ?? null)
   const [zugAbfahrt, setZugAbfahrt] = useState<TafelEintrag | null>(entwurf?.zugAbfahrt ?? null)
   const suchTimer = useRef<number | undefined>(undefined)
@@ -448,9 +458,11 @@ export function Eingabe({ laden, fehler, erkannt, entwurf, onBerechnen }: Eingab
       )}
 
       {/* Im Entwurf kommt das Gehtempo nicht vor. Ersatzlos streichen waere
-          fuer langsame Gehende aber ein Rueckschritt - deshalb eingeklappt. */}
-      <details className="mehr-einstellen">
-        <summary>Mehr einstellen</summary>
+          fuer langsame Gehende aber ein Rueckschritt - deshalb eingeklappt.
+          Seit dem 05.10.2026 steht hier auch die Darstellung; der Aufklapper
+          hiess bis dahin „Mehr einstellen". */}
+      <details className="einstellungen">
+        <summary>Einstellungen</summary>
         <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
           <label>Gehtempo</label>
           <div className="wahl-gruppe" role="group" aria-label="Gehtempo">
@@ -467,12 +479,33 @@ export function Eingabe({ laden, fehler, erkannt, entwurf, onBerechnen }: Eingab
             ))}
           </div>
         </fieldset>
+        <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
+          <label>Darstellung</label>
+          <div className="wahl-gruppe" role="group" aria-label="Darstellung">
+            {DARSTELLUNGEN.map((d) => (
+              <button
+                key={d.wert}
+                type="button"
+                className="wahl-knopf"
+                aria-pressed={darstellung === d.wert}
+                onClick={() => {
+                  waehleDarstellung(d.wert)
+                  setDarstellung(d.wert)
+                }}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+        </fieldset>
       </details>
 
       {fehler && <div className="fehler-box">{fehler}</div>}
 
       <button className="knopf-primaer" type="submit" disabled={!bereit}>
-        <span>{laden ? 'Route wird berechnet …' : 'Umstieg starten'}</span>
+        {/* „Wird berechnet", nicht „Route wird berechnet": Das brach im
+            Knopf auf 360 px in zwei Zeilen um. */}
+        <span>{laden ? 'Wird berechnet …' : 'Umstieg starten'}</span>
         {laden ? (
           <span className="lade-kreisel" aria-hidden="true" />
         ) : (

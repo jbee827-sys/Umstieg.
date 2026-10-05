@@ -56,6 +56,19 @@ describe('Navileiste', () => {
     expect(screen.queryByLabelText(/ungelesene Meldung/)).toBeNull()
   })
 
+  it('fuehrt vier gleichrangige Eintraege ohne Bild - die Marke ueber „Übersicht" ist entfallen', () => {
+    const { container } = render(
+      <Navileiste aktuell="dashboard" hatRoute ungelesen={0} hervorgehoben={false} onWechsel={() => {}} />,
+    )
+    expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual([
+      'Eingabe',
+      'Übersicht',
+      'Weg',
+      'Meldungen',
+    ])
+    expect(container.querySelector('svg')).toBeNull()
+  })
+
   it('nennt eine einzelne Meldung in der Einzahl', () => {
     render(<Navileiste aktuell="dashboard" hatRoute ungelesen={1} hervorgehoben onWechsel={() => {}} />)
     expect(screen.getByLabelText('1 ungelesene Meldung')).toBeDefined()

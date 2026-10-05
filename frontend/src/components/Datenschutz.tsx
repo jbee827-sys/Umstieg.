@@ -6,6 +6,10 @@ import { BETREIBER } from '../rechtliches/betreiber'
 // - Eingabe im sessionStorage: sitzung/eingabespeicher.ts, abgesichert in
 //   sitzung/eingabespeicher.test.ts ("fasst localStorage nicht an") und
 //   components/Datenschutz.test.tsx
+// - Darstellung (Hell/Dunkel) im localStorage, seit 05.10.2026:
+//   einstellungen/darstellung.ts, abgesichert in
+//   einstellungen/darstellung.test.ts ("schreibt nichts, solange niemand
+//   waehlt", "loescht den Eintrag, wenn wieder System gewaehlt wird")
 // - Kartenkacheln: components/Karte.tsx
 // - Schriften: index.css (lokale @font-face, KEIN Google Fonts)
 // - Reichweitenmessung: main.tsx (<Analytics>), analytik/ereignis.ts
@@ -193,8 +197,7 @@ export function Datenschutz({ onZurueck }: { onZurueck: () => void }) {
         </p>
         <p>
           Es findet <strong>kein Profiling</strong> und keine automatisierte
-          Entscheidungsfindung statt. <code>localStorage</code> wird nach wie vor
-          nicht verwendet.
+          Entscheidungsfindung statt.
         </p>
 
         <h2>Deine Eingabe im Browser</h2>
@@ -212,6 +215,21 @@ export function Datenschutz({ onZurueck }: { onZurueck: () => void }) {
           von dir ausdrücklich gewünschten Dienst erforderlich ist
           (§ 25 Abs. 2 Nr. 2 TTDSG) – eine Einwilligung ist dafür nicht nötig,
           und ein Zustimmungsbanner gibt es deshalb bewusst nicht.
+        </p>
+
+        <h2>Deine Wahl der Darstellung</h2>
+        <p>
+          Wählst du unter „Einstellungen“ ausdrücklich <em>Hell</em> oder{' '}
+          <em>Dunkel</em>, merkt sich dein Browser diese eine Angabe im{' '}
+          <code>localStorage</code>, damit die App beim nächsten Öffnen gleich
+          so aussieht. Gespeichert wird nur das Wort „hell“ oder „dunkel“ –
+          nichts über dich und nichts über deine Reise. Stellst du wieder auf{' '}
+          <em>System</em>, wird der Eintrag gelöscht. Solange du nichts wählst,
+          legt die App dort nichts ab.
+        </p>
+        <p>
+          Auch diese Angabe verlässt dein Gerät nicht und ist für die von dir
+          gewünschte Einstellung erforderlich (§ 25 Abs. 2 Nr. 2 TTDSG).
         </p>
 
         <h2>Deine Rechte</h2>

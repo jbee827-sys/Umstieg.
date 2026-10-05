@@ -108,10 +108,14 @@ const karten = faelle
           createElement(
             'div',
             null,
-            createElement('div', { className: 'kicker' }, f.bahnhofName),
+            createElement(
+              'div',
+              { className: 'routen-kopf-zeile' },
+              createElement('div', { className: 'kicker' }, f.bahnhofName),
+              createElement('span', { className: 'stufen-tag' }, STUFEN_TEXT[f.route.stufe]),
+            ),
             createElement('h2', null, `Gleis ${f.gleisAn} → Gleis ${f.gleisAb}`),
           ),
-          createElement('span', { className: 'stufen-tag' }, STUFEN_TEXT[f.route.stufe]),
         ),
         createElement(Navigation, {
           key: 'navi',

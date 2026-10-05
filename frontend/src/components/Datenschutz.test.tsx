@@ -33,10 +33,19 @@ describe('Datenschutzerklaerung sagt, was die App wirklich tut', () => {
     expect(text).not.toMatch(/weder\s+localStorage\s+noch\s+sessionStorage/)
   })
 
-  it('haelt an der Zusage zu localStorage fest', () => {
-    // Die gilt weiterhin - und wird auf der Codeseite von
-    // sitzung/eingabespeicher.test.ts nachgewiesen, nicht nur behauptet.
-    expect(zeige()).toContain('localStorage')
+  // Bis zum 05.10.2026 stand hier die Zusage „localStorage wird nicht
+  // verwendet". Mit der Darstellungswahl (Hell/Dunkel) ist sie nicht mehr
+  // wahr - die Seite muss benennen, was dort liegt, und wann nicht.
+  it('benennt die Darstellungswahl im localStorage - und nur sie', () => {
+    const text = zeige()
+    expect(text).toContain('localStorage')
+    expect(text).toMatch(/Hell\s+oder\s+Dunkel/)
+    expect(text).toMatch(/wieder auf\s+System, wird der Eintrag gelöscht/)
+    expect(text).toMatch(/Solange du nichts wählst/)
+  })
+
+  it('behauptet nicht mehr, localStorage gar nicht zu verwenden', () => {
+    expect(zeige()).not.toMatch(/localStorage\s+wird\s+nach\s+wie\s+vor\s+nicht\s+verwendet/)
   })
 
   // Am 03.09.2026 kam Vercel Web Analytics dazu. Damit wurden drei Saetze

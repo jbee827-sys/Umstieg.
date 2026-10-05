@@ -45,6 +45,48 @@
 }
 
 /*
+ * Was oben steht, nimmt dem Bild den Platz. Am 05.10.2026 im Browser
+ * gemessen (360 × 740): Mit dem Echtzeit-Banner in voller Laenge, dem
+ * Stand-Satz und einem zweizeiligen Titel blieben dem Bild 56 px - genau der
+ * Ankerabstand, vom Band selbst war nichts mehr zu sehen. Drei Regeln, nur
+ * fuer diese Seite, geben ihm 190 px zurueck:
+ *
+ * - Das Banner sagt hier nur, DASS die Echtzeit fehlt und seit wann. Die
+ *   Erklaerung steht auf den anderen Seiten.
+ * - „Live-Daten · Stand" entfaellt, solange das Banner steht - es
+ *   widerspraeche ihm ohnehin.
+ * - Der Titel nimmt die Groesse der Anweisung und die volle Breite - das
+ *   Stufen-Abzeichen steht in der Zeile des Bahnhofsnamens (App.tsx). So
+ *   passt auch „Gleis 1 B-C → Gleis 15 E-G" in eine Zeile.
+ */
+.app-navigation .quelle-weg {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 8px;
+  padding: 8px 14px;
+}
+.app-navigation .quelle-weg > span:not(.live-banner-stand) {
+  display: none;
+}
+.app-navigation .quelle-weg ~ .live-stand {
+  display: none;
+}
+.app-navigation .routen-kopf > div {
+  flex: 1;
+  min-width: 0;
+}
+.app-navigation .routen-kopf h2 {
+  font-size: var(--schrift-anweisung);
+}
+.routen-kopf-zeile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/*
  * Normale Schreibweise statt Versalien, dafuer eine Stufe groesser.
  * Grossbuchstaben in kleiner, gesperrter Schrift kosten die Wortform, an der
  * man Woerter erkennt - fuer aeltere Leser der schwerste Fall, und genau die
@@ -79,6 +121,7 @@
   width: 200px;
   max-width: 70%;
   height: auto;
+  filter: var(--lockup-filter);
 }
 
 .kopf p {
@@ -126,6 +169,9 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+  /* „Wagen (optional)" bricht auf schmalen Geraeten in zwei Zeilen um. Unten
+     ausgerichtet bleiben die beiden Felder trotzdem auf einer Hoehe. */
+  align-items: end;
 }
 
 /*
@@ -494,7 +540,7 @@
 }
 
 .ampel-status.grau {
-  color: var(--color-neutral-600);
+  color: var(--color-neutral-700);
 }
 
 .ampel-untertitel {
@@ -621,7 +667,7 @@
   font-size: var(--schrift-label);
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: var(--color-neutral-500);
+  color: var(--color-neutral-700);
   background: var(--color-neutral-100);
   /* Bleibt beim Rollen der eigenen Kategorie stehen: Wer mitten in einer
      langen S-Bahn-Liste steht, soll noch sehen, worin er blaettert. */
@@ -684,7 +730,7 @@
 }
 
 .tafel-alt {
-  color: var(--color-neutral-500);
+  color: var(--color-neutral-700);
   font-weight: 400;
   font-size: var(--schrift-label);
 }
@@ -848,7 +894,7 @@
   padding-top: 16px;
   border-top: 1px solid var(--color-neutral-300);
   font-size: 0.85rem;
-  color: var(--color-neutral-600);
+  color: var(--color-neutral-700);
 }
 
 .fusszeile a {
@@ -889,7 +935,7 @@
 .schritt-zaehler {
   flex: 0 0 auto;
   font-size: 0.85rem;
-  color: var(--color-neutral-600);
+  color: var(--color-neutral-700);
   text-align: center;
   min-width: 96px;
 }
@@ -983,51 +1029,6 @@
   cursor: default;
 }
 
-/*
- * Der Nordstern. „Uebersicht" traegt die Zwei-Gleise-Marke auf einer roten
- * Scheibe, die ueber die Leiste hinausragt - sie ist groesser als die
- * uebrigen Eintraege, weil dort der Kern der App sitzt.
- *
- * Die Scheibe ragt ueber `margin-top` nach oben heraus, nicht ueber
- * `position: absolute`. Absolut positioniert waere sie aus dem Textfluss
- * gefallen und die Beschriftung darunter haette ihre Hoehe verloren; so
- * bleibt der Knopf so hoch wie seine Nachbarn und das Bild steht trotzdem
- * darueber. Die Leiste hat bewusst kein `overflow: hidden`.
- */
-.navileiste-knopf.nordstern {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 4px;
-}
-
-.navileiste-scheibe {
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  margin-top: -20px;
-  border-radius: var(--radius-pille);
-  background: var(--color-accent);
-  color: var(--color-auf-akzent);
-  box-shadow: var(--shadow-md);
-  /* Ein Saum in der Leistenfarbe setzt die Scheibe von der Trennlinie ab,
-     ueber der sie sitzt. */
-  border: 3px solid var(--color-bg);
-  transition: transform var(--dauer-schnell) var(--verlauf-ein);
-}
-
-.navileiste-knopf.nordstern:active .navileiste-scheibe {
-  transform: scale(0.94);
-}
-
-/* Gesperrt heisst: sichtbar, aber ohne Signalwirkung. Sonst lockt eine
-   leuchtend rote Scheibe zu einem Knopf, der nichts tut. */
-.navileiste-knopf.nordstern[aria-disabled='true'] .navileiste-scheibe {
-  background: var(--color-neutral-500);
-  box-shadow: none;
-}
 .navileiste-abzeichen {
   position: absolute;
   top: 5px;
@@ -1125,7 +1126,7 @@
 .schema-bandrechts {
   flex: none;
   font-weight: 500;
-  color: var(--color-neutral-600);
+  color: var(--color-neutral-700);
   font-variant-numeric: tabular-nums;
 }
 .schema-bild {
@@ -1385,7 +1386,7 @@
 }
 .schrittsheet-detail {
   font-size: var(--schrift-label);
-  color: var(--color-neutral-600, #6b6767);
+  color: var(--color-neutral-700);
   margin: 4px 0 0;
 }
 .schrittsheet-knoepfe {
@@ -1503,7 +1504,7 @@
 .angekommen-kachel-label {
   font-size: var(--schrift-label);
   letter-spacing: 0.12em;
-  color: var(--color-neutral-600, #6b6767);
+  color: var(--color-neutral-700);
 }
 .angekommen-kachel-wert {
   font-size: var(--schrift-anweisung);
@@ -1654,7 +1655,7 @@
 }
 .stoerung-satz {
   font-size: var(--schrift-label);
-  color: var(--color-neutral-600, #6b6767);
+  color: var(--color-neutral-700);
   margin: 0 0 18px;
 }
 .stoerung-gegenueber {
@@ -1679,7 +1680,7 @@
 }
 .stoerung-detail {
   font-size: var(--schrift-label);
-  color: var(--color-neutral-600, #6b6767);
+  color: var(--color-neutral-700);
 }
 .stoerung-pfeil {
   font-size: var(--schrift-anweisung);
@@ -1693,7 +1694,7 @@
   font-size: var(--schrift-label);
 }
 .stoerung-werte dt {
-  color: var(--color-neutral-600, #6b6767);
+  color: var(--color-neutral-700);
 }
 .stoerung-werte dd {
   margin: 0;
@@ -1709,7 +1710,7 @@
   line-height: 1.4;
 }
 
-.mehr-einstellen > summary {
+.einstellungen > summary {
   cursor: pointer;
   min-height: 44px;
   padding: 12px 0;
@@ -1717,11 +1718,17 @@
   font-weight: 700;
 }
 
+/* Gehtempo und Darstellung: zwei Gruppen, nicht eine lange. */
+.einstellungen > .feld + .feld {
+  margin-top: 16px;
+}
+
 /* Ampel mit Zeitleiste (Screen 2) */
 .ampel-kopf {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: 4px 12px;
 }
 .ampel-rest {
   font-family: var(--font-heading, inherit);
@@ -1731,12 +1738,19 @@
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
 }
+/*
+ * Die Gehzeit schrumpft nie. Bis zum 05.10.2026 stand hier `flex: 1;
+ * min-width: 0` - neben der grossen Restzeit blieb ihr dann, was uebrig war:
+ * Bei „Abfahrt jetzt" (rote Ampel, 28 px mehr Polster) waren das 0 px und drei
+ * Zeilen, bei „125:00" zwei. Jetzt bleibt sie einzeilig und rutscht, wenn
+ * neben der Restzeit kein Platz ist, als ganze Zeile darunter.
+ */
 .ampel-gehzeit {
-  flex: 1;
-  min-width: 0;
+  flex: 1 0 auto;
+  white-space: nowrap;
   font-size: var(--schrift-label);
   text-align: right;
-  color: var(--color-neutral-600, #6b6767);
+  color: var(--color-neutral-700);
 }
 .ampel-zeitleiste {
   margin-top: 10px;
@@ -2055,7 +2069,7 @@
 }
 
 .umstieg-zeile.schwach {
-  color: var(--color-neutral-600);
+  color: var(--color-neutral-700);
 }
 
 .knopf-breit {

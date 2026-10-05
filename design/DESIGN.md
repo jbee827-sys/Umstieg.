@@ -200,14 +200,13 @@ auch seine Bahnsteige und Wegstücke mit runden Enden (`stroke-linecap: round`).
 - **Ampel:** Drei Lampen **und** ein Satz. Der Zustand ist nie allein über die
   Farbe erkennbar. Die Alarmlampe ist zweigeteilt rot/gelb, die Alarmfläche
   trägt den schräg gestreiften Saum. Die Ampel blinkt nicht.
-- **Navileiste:** Vier Einträge — Eingabe · Übersicht · Weg · Meldungen. Der
-  Eintrag **„Übersicht" trägt die Zwei-Gleise-Marke der App und sticht hervor**:
-  Er sitzt als runde, rote Scheibe leicht über der Leiste, größer als die
-  übrigen Einträge, mit der Marke in Weiß darin. Er ist der Nordstern der App —
-  von dort aus geht jede Reise weiter, und dorthin kehrt man zurück. Die
-  anderen drei Einträge bleiben schlicht: Symbol in Nebelgrau plus Beschriftung,
-  im aktuellen Zustand in Tintenschwarz. Gesperrte Einträge sind gedämpft,
-  bleiben aber sichtbar.
+- **Navileiste:** Vier gleichrangige Einträge — Eingabe · Übersicht · Weg ·
+  Meldungen, schlicht als Beschriftung, im aktuellen Zustand in Tintenschwarz.
+  Gesperrte Einträge sind gedämpft, bleiben aber sichtbar. *(Vom 21.09. bis
+  05.10.2026 trug „Übersicht" die Zwei-Gleise-Marke auf einer roten Scheibe
+  über der Leiste — auf Wunsch entfernt. Kein Entwurf zeigt sie wieder.)*
+- **Darstellung:** Ohne Wahl folgt die App dem Gerät (hell/dunkel). Unter
+  „Einstellungen" lässt sich Hell oder Dunkel fest wählen.
 
 ---
 

@@ -709,14 +709,19 @@ function App() {
       // Bereich, Schritt-Box und Leiste unten am Rand - siehe App.css.
       <main className="app app-navigation">
         {meldung}
+        {/* Das Stufen-Abzeichen steht in der Zeile des Bahnhofsnamens, nicht
+            neben dem Titel: Dort bricht „Gleis 12 → Gleis 104" auf 360 px
+            sonst in zwei Zeilen um, und die nimmt das feste Bild. */}
         <div className="routen-kopf">
           <div>
-            <div className="kicker">{werte.bahnhofName || 'Umstieg'}</div>
+            <div className="routen-kopf-zeile">
+              <div className="kicker">{werte.bahnhofName || 'Umstieg'}</div>
+              <span className="stufen-tag">{STUFEN_TEXT[route.stufe]}</span>
+            </div>
             <h2>
               Gleis {werte.gleisAn} → Gleis {werte.gleisAb}
             </h2>
           </div>
-          <span className="stufen-tag">{STUFEN_TEXT[route.stufe]}</span>
         </div>
         {stand && (
           <p className="live-stand">

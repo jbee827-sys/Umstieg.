@@ -301,3 +301,50 @@ describe('Eingabe: Reise importieren', () => {
     expect(text).toMatch(/11:40/)
   })
 })
+
+describe('Eingabe: Einstellungen', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    delete document.documentElement.dataset.darstellung
+  })
+
+  it('heisst „Einstellungen" und traegt Gehtempo und Darstellung', () => {
+    zeige()
+    expect(screen.getByText('Einstellungen')).toBeDefined()
+    expect(screen.queryByText('Mehr einstellen')).toBeNull()
+    expect(screen.getByRole('group', { name: 'Gehtempo' })).toBeDefined()
+    const darstellung = screen.getByRole('group', { name: 'Darstellung' })
+    expect(within(darstellung).getAllByRole('button').map((b) => b.textContent)).toEqual([
+      'System',
+      'Hell',
+      'Dunkel',
+    ])
+  })
+
+  it('folgt ohne Wahl dem System', () => {
+    zeige()
+    const darstellung = screen.getByRole('group', { name: 'Darstellung' })
+    expect(within(darstellung).getByRole('button', { name: 'System' }).getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('schaltet beim Antippen sofort um und merkt sich die Wahl', async () => {
+    zeige()
+    const darstellung = screen.getByRole('group', { name: 'Darstellung' })
+    await userEvent.click(within(darstellung).getByRole('button', { name: 'Dunkel' }))
+
+    expect(document.documentElement.dataset.darstellung).toBe('dunkel')
+    expect(within(darstellung).getByRole('button', { name: 'Dunkel' }).getAttribute('aria-pressed')).toBe('true')
+    expect(localStorage.getItem('umstieg.darstellung')).toBe('dunkel')
+
+    await userEvent.click(within(darstellung).getByRole('button', { name: 'System' }))
+    expect(document.documentElement.dataset.darstellung).toBeUndefined()
+    expect(localStorage.getItem('umstieg.darstellung')).toBeNull()
+  })
+
+  it('zeigt eine frueher getroffene Wahl', () => {
+    localStorage.setItem('umstieg.darstellung', 'hell')
+    zeige()
+    const darstellung = screen.getByRole('group', { name: 'Darstellung' })
+    expect(within(darstellung).getByRole('button', { name: 'Hell' }).getAttribute('aria-pressed')).toBe('true')
+  })
+})
