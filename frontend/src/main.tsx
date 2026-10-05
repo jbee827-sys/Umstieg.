@@ -4,6 +4,11 @@ import { Analytics } from '@vercel/analytics/react'
 import './index.css'
 import App from './App.tsx'
 import { ohneAbfrage } from './analytik/ereignis'
+import { ladeDarstellung, wendeDarstellungAn } from './einstellungen/darstellung'
+
+// Vor dem ersten Zeichnen: Wer Dunkel gewaehlt hat, soll nicht erst einen
+// weissen Bildschirm sehen.
+wendeDarstellungAn(ladeDarstellung())
 
 // Die Reichweitenmessung haengt hier und nicht in App.tsx: Sie gehoert nicht
 // zur Anwendung, sondern zur Auslieferung, und die Komponententests sollen

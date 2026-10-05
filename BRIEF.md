@@ -581,14 +581,15 @@ Frontend-Suite grün.
 | Rot als Sekundärfarbe | **fertig** | Weiße Schrift auf Rot stand bei 17 px (4,2:1) — jetzt 22 px; Auswahlmarken waren schwarz |
 | Alarm aus Rot und Gelb | **fertig** | Die Alarmlampe **pulsierte** entgegen der eigenen Regel; drei Ampelfarben waren als Schrift unlesbar (Bernstein 2,4:1) |
 | Schriftstaffel in `rem` | **fertig** | 81 Pixelgrößen ersetzt, 32 davon unter der Mindestgröße; vier Versalien-Regeln entfernt |
-| Nordstern in der Navileiste | **fertig** | Marke als Inline-SVG über `currentColor`, damit sie im Dunkelmodus ohne zweite Datei trägt |
-| Dunkelmodus-Durchgang | **offen** | `App.css` enthält feste Farbwerte, die die Token umgehen (`#201e1d` an der Ampelpille, `#4a4443` an erloschenen Lampen) |
+| Nordstern in der Navileiste | **entfernt 05.10.2026** | Am 21.09. gebaut (Inline-SVG über `currentColor`), am 05.10. auf Wunsch wieder herausgenommen – die vier Einträge sind gleichrangig |
+| Dunkelmodus-Durchgang | **fertig 26.09., ergänzt 05.10.2026** | 26.09.: zwölf feste Farbwerte in `App.css` über Token. 05.10.: Die Wortmarke im Lockup blieb nachts dunkel; dazu die Wahl Hell/Dunkel unter „Einstellungen“ |
 | Bewegung anschließen | **offen** | Die Token stehen, `App.css` nutzt noch eigene `transition`-Werte; Seitenübergänge brauchen die Pfad-Adressen |
 
-**Noch nicht im Browser angesehen.** Die Tests prüfen Verhalten, nicht Aussehen;
-größere Grundschrift und größere Kleinbeschriftungen können Umbrüche
-verschieben. Der Versuch am 20.09. scheiterte an der Browsersteuerung, nicht am
-Code.
+**Am 05.10.2026 im Browser angesehen** (Chrome, Rahmen 360 × 740, hell und
+dunkel). Dabei kam heraus, dass die Grundgröße 18 px nie gegriffen hatte: Sie
+stand an `body`, `rem` rechnet aber mit `html` – die ganze Staffel lag 11 %
+unter Plan, die Beschriftung bei 13,3 statt 15 px. Dazu 13 Schriftfarben in
+`neutral-500/600` unter 4,5:1. Beides behoben, Einzelheiten im README.
 
 **Bekannte Abweichung:** Acht Beschriftungen im Ebenenschema bleiben unter der
 Mindestgröße von 15 px, weil die Geometrie des Schemas sonst bricht. Das ist in

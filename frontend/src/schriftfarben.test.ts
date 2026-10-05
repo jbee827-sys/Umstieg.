@@ -1,0 +1,27 @@
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { describe, expect, it } from 'vitest'
+
+/**
+ * index.css legt fest: neutral-500 (2,4 bis 2,9:1) und neutral-600 (hell 3,6
+ * bis 4,3:1) sind als SCHRIFTFARBE unbrauchbar, Text nimmt neutral-700
+ * (hell ab 5,4:1, dunkel ab 7,1:1).
+ *
+ * Der Farbdurchgang vom 20.09.2026 hat das an 13 Stellen nicht erreicht -
+ * darunter die Gehzeit neben der Ampel, die Gruppentitel der Zugtafel und
+ * die Detailzeile unter jedem Schritt. Gefunden bei der Sichtpruefung am
+ * 05.10.2026. Linien, Flaechen und Raender duerfen die hellen Stufen weiter
+ * tragen - nur `color:` nicht.
+ */
+const css = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), 'App.css'), 'utf8')
+
+describe('App.css: Schriftfarben', () => {
+  it('setzt keine Schrift in neutral-500 oder neutral-600', () => {
+    const treffer = css
+      .split('\n')
+      .map((zeile, i) => ({ zeile: zeile.trim(), nr: i + 1 }))
+      .filter(({ zeile }) => /^color:\s*var\(--color-neutral-[56]00/.test(zeile))
+    expect(treffer).toEqual([])
+  })
+})
