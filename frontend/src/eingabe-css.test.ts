@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { bloeckeAb, cssVon, deklarationenVon } from './testhilfen/css'
+import { BREIT_ABFRAGE } from './aufbau/breite'
 
 /**
  * Die Eingabe hat seit dem 11.10.2026 den Aufbau der Uebersicht: Spalte auf
@@ -32,8 +33,20 @@ describe('App.css: die Eingabe', () => {
 })
 
 describe('App.css: breites Layout der Eingabe', () => {
-  const ab700 = bloeckeAb(css, '@media (min-width: 700px)').join(' ')
-  const ab900 = bloeckeAb(css, '@media (min-width: 900px)').join(' ')
+  const ab700 = bloeckeAb(css, `@media ${BREIT_ABFRAGE}`).join(' ')
+  const ab900 = bloeckeAb(css, '@media (min-width: 900px) and (min-height: 600px)').join(' ')
+
+  it('nimmt dieselbe Abfrage wie der Hook, der die Tafeln laden laesst', () => {
+    // Liefen CSS und Hook auseinander, stuenden Tafeln in der Telefonspalte
+    // oder Platzhalter ohne Tafeln im breiten Raster.
+    expect(css).toContain(`@media ${BREIT_ABFRAGE} {`)
+  })
+
+  it('gibt den Tafeln gestapelt hoechstens 420 px, bei wenig Hoehe weniger', () => {
+    expect(deklarationenVon(ab700, '.eingabe-flaeche')).toContain(
+      'grid-template-rows: minmax(0, 1fr) clamp(240px, 36dvh, 420px) auto',
+    )
+  })
 
   it('wird ab 700 px breiter als die Telefonspalte', () => {
     expect(deklarationenVon(ab700, '.app-eingabe')).toContain('max-width: 1280px')
@@ -79,7 +92,7 @@ describe('App.css: die Tafeln klappen nach rechts auf', () => {
  */
 describe('App.css: der Rollbereich bleibt in seiner Spalte', () => {
   it('reicht ab 900 px rechts nur in den Abstand, nicht in die Tafel', () => {
-    const ab900 = bloeckeAb(css, '@media (min-width: 900px)').join(' ')
+    const ab900 = bloeckeAb(css, '@media (min-width: 900px) and (min-height: 600px)').join(' ')
     const regel = deklarationenVon(ab900, '.eingabe-rollbereich')
     expect(regel).toContain('margin-right: -8px')
     expect(regel).toContain('padding-right: 8px')
