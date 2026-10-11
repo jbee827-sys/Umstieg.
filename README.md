@@ -75,9 +75,9 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > Vercel, wie am 05.10. notiert (heute kam nur Frontend dazu, das Backend
 > trägt aber noch `662b8c7` und `32292fb`), danach M9/M10 am Gerät.
 >
-> **Weiter offen am Design:** Bewegung an die Token anschließen,
-> Seitenübergänge mit Pfad-Adressen, Eingabe-Bildschirm und iPad (beide warten
-> auf einen Entwurf).
+> **Weiter offen am Design:** Seitenübergänge mit Pfad-Adressen und der
+> Rest der Bewegung aus `DESIGN.md` §6 (siehe `BRIEF.md` §11),
+> Eingabe-Bildschirm und iPad (beide warten auf einen Entwurf).
 >
 > **Nachtrag 11.10.2026 – ToDo 38 erledigt** (`176935d`): Die Datenvorbehalte
 > stehen wieder sichtbar, zuletzt im Aufklapper „Alle Schritte" (Schema-Satz,
@@ -88,6 +88,16 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > `gleis-unbekannt` – Overpass lieferte München nicht, und das
 > Standardmodell kennt Gleis 82 nicht. Am 07.10. kam dieselbe Route in
 > Stufe 1; das Backend ist seitdem unverändert.
+>
+> **Nachtrag 11.10.2026 – Bewegung an die Token angeschlossen:** Kein
+> Übergang in `App.css` nennt noch eine eigene Dauer oder einen eigenen
+> Verlauf; Druckgefühl `scale(0.97)` an allen fünf Knopfarten (der
+> Sekundärknopf hatte keines – „Zurück" fühlte sich anders an als „Weiter");
+> Hover nur hinter `@media (hover: hover)`; reduzierte Bewegung setzt jetzt
+> **jeden** Übergang auf sofort – die Einzelliste davor ließ Routenzeile und
+> Angekommen-Knopf gleiten. Der Kreisel dreht weiter. Festgehalten in
+> `src/bewegung-css.test.ts`. Frontend 459/459. Im Browser **nicht** gesehen
+> (Tab verdeckt).
 
 ### Davor (05.10.2026)
 

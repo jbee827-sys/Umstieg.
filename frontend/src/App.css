@@ -260,8 +260,13 @@
   border-bottom: 0;
 }
 
-.vorschlaege button:hover {
-  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+/* Hover nur, wo es einen Zeiger gibt (DESIGN.md 6: keine Hover-Zustaende,
+   das Geraet hat keinen Mauszeiger). Auf dem Handy blieb `:hover` nach dem
+   Antippen stehen. */
+@media (hover: hover) {
+  .vorschlaege button:hover {
+    background: color-mix(in srgb, var(--color-text) 6%, transparent);
+  }
 }
 
 /* Das Abzeichen „✓ Bahnhof" unter dem Suchfeld. Bis zum 07.10.2026 hiess die
@@ -299,11 +304,13 @@
   background: var(--color-neutral-100);
   color: var(--color-text);
   cursor: pointer;
-  transition: background 0.18s ease, color 0.18s ease, transform 0.12s ease;
+  transition: background var(--dauer-normal) var(--verlauf-ein), color var(--dauer-normal) var(--verlauf-ein),
+    transform var(--dauer-schnell) var(--verlauf-ein);
 }
 
+/* Druckgefuehl (DESIGN.md 6): 0.97 in 120 ms, zurueck ebenso. */
 .wahl-knopf:active {
-  transform: scale(0.985);
+  transform: scale(0.97);
 }
 
 .wahl-knopf[aria-pressed='true'] {
@@ -331,15 +338,21 @@
   border-radius: var(--radius-pille);
   cursor: pointer;
   box-shadow: var(--shadow-lg);
-  transition: background 0.18s ease, transform 0.12s ease;
+  transition: background var(--dauer-normal) var(--verlauf-ein),
+    transform var(--dauer-schnell) var(--verlauf-ein), box-shadow var(--dauer-schnell) var(--verlauf-ein);
 }
 
-.knopf-primaer:hover {
-  background: var(--color-accent-600);
+@media (hover: hover) {
+  .knopf-primaer:hover {
+    background: var(--color-accent-600);
+  }
 }
 
+/* Der Hauptknopf gibt nach UND senkt seinen Schatten - er wird gedrueckt,
+   nicht nur kleiner. */
 .knopf-primaer:active {
-  transform: scale(0.985);
+  transform: scale(0.97);
+  box-shadow: var(--shadow-md);
 }
 
 .knopf-primaer:disabled {
@@ -369,15 +382,19 @@
   border-radius: var(--radius-pille);
   cursor: pointer;
   box-shadow: var(--shadow-lg);
-  transition: background 0.18s ease, transform 0.12s ease;
+  transition: background var(--dauer-normal) var(--verlauf-ein),
+    transform var(--dauer-schnell) var(--verlauf-ein), box-shadow var(--dauer-schnell) var(--verlauf-ein);
 }
 
-.knopf-angekommen:hover {
-  background: color-mix(in srgb, var(--color-gruen) 88%, #000);
+@media (hover: hover) {
+  .knopf-angekommen:hover {
+    background: color-mix(in srgb, var(--color-gruen) 88%, #000);
+  }
 }
 
 .knopf-angekommen:active {
-  transform: scale(0.985);
+  transform: scale(0.97);
+  box-shadow: var(--shadow-md);
 }
 
 .knopf-sekundaer {
@@ -395,10 +412,20 @@
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-klein);
   cursor: pointer;
+  transition: background var(--dauer-normal) var(--verlauf-ein),
+    transform var(--dauer-schnell) var(--verlauf-ein);
 }
 
-.knopf-sekundaer:hover {
-  background: color-mix(in srgb, var(--color-text) 7%, transparent);
+/* Hatte als einziger Knopf kein Druckgefuehl - „Zurueck" auf der Wegseite
+   fuehlte sich deshalb anders an als „Weiter" daneben. */
+.knopf-sekundaer:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) {
+  .knopf-sekundaer:hover {
+    background: color-mix(in srgb, var(--color-text) 7%, transparent);
+  }
 }
 
 /* — Hinweis-/Fehlerflächen — */
@@ -501,7 +528,8 @@
   height: 11px;
   border-radius: 50%;
   background: var(--color-ampel-lampe-aus);
-  transition: background 0.5s ease, box-shadow 0.5s ease;
+  /* Farbe wandert, Licht springt nicht (DESIGN.md 6) - 320 ms. */
+  transition: background var(--dauer-ruhig) var(--verlauf-ein), box-shadow var(--dauer-ruhig) var(--verlauf-ein);
 }
 
 /*
@@ -756,8 +784,10 @@
   border-radius: 3px;
 }
 
-.tafel button:hover {
-  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+@media (hover: hover) {
+  .tafel button:hover {
+    background: color-mix(in srgb, var(--color-text) 6%, transparent);
+  }
 }
 
 .tafel-zeit {
@@ -1820,7 +1850,8 @@
   height: 4px;
   border-radius: var(--radius-pille);
   background: currentColor;
-  transition: width 0.9s cubic-bezier(0.22, 0.7, 0.2, 1);
+  /* Schrumpft im selben Takt wie der Farbwechsel der Lampe. */
+  transition: width var(--dauer-ruhig) var(--verlauf-ein);
 }
 .ampel-status {
   margin-top: 7px;
@@ -1871,10 +1902,11 @@
    * Hover. In der Mobilabnahme am 07.09.2026 war das der Grund, warum die
    * Zeile sich tot anfuehlte: Der Tipp feuerte, nur sagte nichts es.
    */
-  transition: background 0.18s ease, color 0.18s ease, transform 0.12s ease;
+  transition: background var(--dauer-normal) var(--verlauf-ein), color var(--dauer-normal) var(--verlauf-ein),
+    transform var(--dauer-schnell) var(--verlauf-ein);
 }
 .routenwahl-zeile:active {
-  transform: scale(0.985);
+  transform: scale(0.97);
 }
 .routenwahl-zeile.gewaehlt {
   border-color: var(--color-akzent-tief);
@@ -2076,30 +2108,24 @@
  * Migraene, Uebelkeit bei bewegten Flaechen. Diese App trifft damit Leute,
  * die ohnehin unter Zeitdruck stehen.
  *
- * Bewusst KEINE pauschale `*`-Regel. Zwei Bewegungen in dieser App tragen
- * Information statt Schmuck, und beide bleiben:
+ * UEBERGAENGE pauschal auf sofort (seit dem 11.10.2026). Bis dahin stand
+ * hier eine Liste einzelner Bauteile, und sie hatte Luecken: Routenzeile und
+ * Angekommen-Knopf glitten weiter. Jeder neue Uebergang haette sich selbst
+ * eintragen muessen.
  *
- * 1. Der KREISEL. Er ist das einzige Zeichen, dass gerade geladen wird. Ein
- *    stehender Kreisel sieht aus wie ein haengender - und ein haengender
- *    Ladezustand ist laut eigenem Befund vom 02.09.2026 "die unehrlichste
- *    aller Anzeigen". Er dreht langsamer, aber er dreht.
- * 2. Nichts sonst. Der Ampel-Puls ist Aufmerksamkeitsschmuck; Farbe und
- *    Klartext daneben sagen dasselbe und bleiben.
+ * ANIMATIONEN dagegen bewusst NICHT pauschal. Eine traegt Information statt
+ * Schmuck und bleibt: der KREISEL. Er ist das einzige Zeichen, dass gerade
+ * geladen wird. Ein stehender Kreisel sieht aus wie ein haengender - und ein
+ * haengender Ladezustand ist laut eigenem Befund vom 02.09.2026 "die
+ * unehrlichste aller Anzeigen". Er dreht langsamer, aber er dreht. (Der
+ * Puls der roten Lampe, gegen den hier frueher eine Regel stand, ist seit
+ * dem 21.09.2026 ganz entfallen.)
  */
 @media (prefers-reduced-motion: reduce) {
-  /* Der Puls der roten Lampe. Farbe und Klartext daneben sagen dasselbe. */
-  .ampel-lampe.an-rot {
-    animation: none;
-  }
-
-  /* Die Uebergaenge der App: Knoepfe, Lampenfarbe, Zeitleiste, Standortpunkt. */
-  .wahl-knopf,
-  .knopf-primaer,
-  .ampel-lampe,
-  .ampel-zeitleiste-fuellung,
-  .bahnsteigstreifen-ring,
-  .standortpunkt {
-    transition-duration: 0.01ms;
+  *,
+  ::before,
+  ::after {
+    transition-duration: 0.01ms !important;
   }
 
   /* Bleibt in Bewegung - siehe Begruendung oben. */
@@ -2192,9 +2218,14 @@
   cursor: pointer;
 }
 
-.umstieg-wahl:hover,
 .umstieg-wahl:focus-visible {
   border-color: var(--color-divider);
+}
+
+@media (hover: hover) {
+  .umstieg-wahl:hover {
+    border-color: var(--color-divider);
+  }
 }
 
 .umstieg-zeile {
