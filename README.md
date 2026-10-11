@@ -103,8 +103,40 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > Endzustand geprüft (`inset(0)`, Deckkraft 1). **Ob die Animation sich gut
 > anfühlt, hat niemand gesehen.** Und das echte iPad nicht.
 >
-> **Nächster Schritt:** pushen und ausliefern (nur Vercel – das Backend ist
-> unverändert), dann am iPad ansehen. Danach wie vereinbart: **die
+> **Verträglichkeit geprüft (11.10.2026, abends)** – jeder Code-Commit seit dem
+> 05.10. einzeln ausgecheckt (eigener Arbeitsbaum), Tests, Lint, Build;
+> Protokolle in `.superpowers/pruefung-2026-10-11/` (gitignored):
+>
+> | Commit | Frontend | Lint | Build |
+> |---|---|---|---|
+> | `620bd71` Übersicht | 443/443 | sauber | grün |
+> | `176935d` Vorbehalte | 448/448 | sauber | grün |
+> | `da3f9fe` Bewegung | 459/459 | sauber | grün |
+> | `462ae18` Tafelfenster | 461/462 – der erste App-Test riss im kalten Lauf die 1-s-Frist; dreimal wiederholt 10/10 | sauber | grün |
+> | `6f6f9ff` Zugauswahl offen | 468/468 | sauber | grün |
+> | `7459d7e` Hook | 471/471 | sauber | grün |
+> | `8ed6ed0` Handy-Eingabe | 481/481 | sauber | grün |
+> | `46217de` breites Layout | 488/488 | sauber | grün |
+> | `53a1eef` Animation | 495/495 | sauber | grün |
+> | `945832b` Rotschrift | 497/497 | sauber | grün |
+> | `35d1559` Höhe 600 px | 499/499 | sauber | grün |
+> | `b1689eb` Kacheln gleich groß | 500/500 | sauber | grün |
+>
+> Backend am Endstand 463/463 (unverändert seit `32292fb`). Im CSS setzen die
+> Commits vom 07.10. und vom 11.10. keinem Selektor widersprüchliche Werte;
+> der einzige doppelte, `.ampel-status`, ist alt (25.08./21.09., die spätere
+> Regel gilt). Im Browser zusammen durchgespielt (Desktop, dunkel, Berlin
+> Hbf): Eingabe mit Tafeln → Übersicht mit Bahnsteigstreifen → Weg mit
+> Vorbehalt im Aufklapper → Angekommen.
+>
+> **Gleiskacheln danach angeglichen** (`b1689eb`): beide Nummern 28 px, die
+> Anschlussnummer bleibt rot.
+>
+> **Unterwegs lief C: voll** (0 GB von 120 GB) – nicht durch diese Arbeit
+> (Temp, npm-Ablage, Chrome zusammen unter 1,2 GB). Der Prüflauf schrieb
+> danach seinen Temp-Ordner nach E:.
+>
+> **Nächster Schritt:** am iPad ansehen. Danach wie vereinbart: **die
 > Seitenübergänge – vorher fragen, was genau** –, dann der Rest der Bewegung
 > aus `DESIGN.md` 6.
 
