@@ -74,6 +74,13 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 >   Test in `schriftfarben.test.ts` hält Signalrot von Text fern.
 > - **Der Rollbereich ragte in drei Spalten 2 px in die Ankunftstafel** –
 >   jetzt 10 px Luft.
+> - **Schlussprüfung: Ein Handy quer (844 × 390) hätte den breiten Aufbau
+>   bekommen** – es ist breiter als 700 px –, und die Formularzeile fiel auf
+>   0 px. Breit heißt jetzt **ab 700 px Breite und 600 px Höhe**
+>   (`BREIT_ABFRAGE`, dieselbe Abfrage in Hook und CSS, ein Test hält sie
+>   gleich); gestapelt sind die Tafeln `clamp(240px, 36dvh, 420px)` hoch.
+>   Nachgemessen: 844 × 390 Telefonspalte, 800 × 700 gestapelt (Formular
+>   242 px), 1133 × 744 drei Spalten.
 >
 > | Gemessen | Ergebnis |
 > |---|---|
@@ -85,7 +92,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > | Kleinster Kontrast neuer Schrift | hell 5,96:1, dunkel 7,11:1 |
 >
 > ```bash
-> cd frontend && npm test && npm run lint && npm run build   # 497 von 497, Lint sauber, Build grün
+> cd frontend && npm test && npm run lint && npm run build   # 499 von 499, Lint sauber, Build grün
 > ```
 >
 > **Nicht gesehen:** Kein einziges Bild – der Chrome-Tab war während der

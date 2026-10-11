@@ -2517,14 +2517,18 @@
   }
 }
 
-@media (min-width: 700px) {
+/* Dieselbe Abfrage wie `BREIT_ABFRAGE` in `aufbau/breite.ts`: Breite UND
+   Hoehe - ein Handy quer bleibt bei der Telefonspalte. */
+@media (min-width: 700px) and (min-height: 600px) {
   .app-eingabe {
     max-width: 1280px;
   }
   .eingabe-flaeche {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: minmax(0, 1fr) 420px auto;
+    /* Die Tafeln hoechstens 420 px; bei wenig Hoehe (Desktop-Fenster)
+       weniger, sonst bliebe dem Formular nichts. */
+    grid-template-rows: minmax(0, 1fr) clamp(240px, 36dvh, 420px) auto;
     grid-template-areas:
       'formular formular'
       'ankunft abfahrt'
@@ -2548,7 +2552,7 @@
   }
 }
 
-@media (min-width: 900px) {
+@media (min-width: 900px) and (min-height: 600px) {
   /* Rechts nur in den Spaltenabstand: Mit den -20 px des Handys ragte die
      Rollleiste 2 px in die Ankunftstafel (Sichtpruefung 11.10.2026). */
   .eingabe-rollbereich {
