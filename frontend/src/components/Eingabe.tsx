@@ -508,7 +508,7 @@ export function Eingabe({
             </label>
             <input
               id="gleisAn"
-              className={`eingabefeld gleiskachel-feld${gleisAn.length > 3 ? ' lang' : ''}`}
+              className="eingabefeld gleiskachel-feld"
               type="text"
               required
               value={gleisAn}
@@ -523,7 +523,7 @@ export function Eingabe({
             </label>
             <input
               id="gleisAb"
-              className={`eingabefeld gleiskachel-feld${gleisAb.length > 3 ? ' lang' : ''}`}
+              className="eingabefeld gleiskachel-feld"
               type="text"
               required
               value={gleisAb}

@@ -46,8 +46,10 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 >
 > 1. **Handy:** „Wo steigst du um?", Bahnhof, zwei **Gleiskacheln** mit den
 >    Wörtern der Übersicht („Du kommst an" / „Dein Anschluss", die
->    Anschlusskachel rot gerandet), Gleisnummer in 56 px, ab vier Zeichen
->    28 px („7A-D" passt auf 320 px genau). Züge und Wagennummer stehen
+>    Anschlusskachel rot gerandet). Gleisnummer in **beiden Kacheln 28 px** –
+>    zuerst 56 px mit 28 px für lange Teilgleise, im Browser sah „2 A - D"
+>    neben „1" ungleich aus; auf Wunsch angeglichen, die Anschlussnummer
+>    bleibt rot („7A-D" passt auf 320 px genau). Züge und Wagennummer stehen
 >    eingeklappt, „Verbindung einfügen" (vorher „Reise importieren") ist ein
 >    Textknopf am Rand, „Umstieg starten" steht fest über der Leiste – ohne
 >    den Pfeil, den `DESIGN.md` verbietet.
