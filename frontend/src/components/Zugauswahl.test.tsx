@@ -160,3 +160,85 @@ describe('Zugauswahl: die Tafel bleibt nicht ewig am Laden', () => {
     expect(screen.getByText(/nicht erreichbar/i)).toBeTruthy()
   })
 })
+
+/**
+ * Breites Layout (Spec 2026-10-11): Die Tafel steht offen neben dem Formular,
+ * laedt von selbst, reicht weiter und bleibt nach der Wahl stehen.
+ */
+describe('Zugauswahl: immer offen (breites Layout)', () => {
+  beforeEach(() => {
+    holeTafelMock.mockReset()
+    holeTafelMock.mockResolvedValue({ ok: true, eintraege: [ICE] })
+  })
+
+  function zeigeOffen(auswahl: TafelEintrag | null = null, onAuswahl = vi.fn()) {
+    const r = render(
+      <Zugauswahl
+        eva="8011160"
+        typ="dep"
+        label="Abfahrt · Berlin Hbf"
+        auswahl={auswahl}
+        onAuswahl={onAuswahl}
+        immerOffen
+      />,
+    )
+    return { ...r, onAuswahl }
+  }
+
+  it('laedt ohne Klick und hat keinen Knopf zum Aufklappen', async () => {
+    zeigeOffen()
+    expect(document.querySelector('[aria-expanded]')).toBeNull()
+    expect(holeTafelMock).toHaveBeenCalledWith('8011160', 'dep')
+    expect(await screen.findByText(/ICE 1006/)).toBeDefined()
+    expect(screen.getByRole('heading', { name: 'Abfahrt · Berlin Hbf' })).toBeDefined()
+  })
+
+  it('zeigt beim Laden Skelettzeilen statt eines Satzes', () => {
+    holeTafelMock.mockReturnValue(new Promise(() => {}))
+    zeigeOffen()
+    expect(screen.getByRole('status', { name: 'Tafel wird geladen' })).toBeDefined()
+    expect(screen.queryByText(/Tafel wird geladen …/)).toBeNull()
+  })
+
+  it('reicht weiter als 45 Minuten', async () => {
+    // 55 Minuten: ausserhalb des kurzen Fensters, aber immer vor dem Ende
+    // der naechsten Stunde (das liegt mindestens 60 Minuten voraus).
+    holeTafelMock.mockResolvedValue({ ok: true, eintraege: [zug('RE 9', 55)] })
+    zeigeOffen()
+    expect(await screen.findByText(/RE 9/)).toBeDefined()
+  })
+
+  it('markiert den gewaehlten Zug und laesst die Tafel stehen', async () => {
+    zeigeOffen(ICE)
+    const zeile = await screen.findByRole('button', { name: /ICE 1006/ })
+    expect(zeile.getAttribute('aria-pressed')).toBe('true')
+    expect(screen.queryByRole('button', { name: 'Ändern' })).toBeNull()
+  })
+
+  it('hebt die Wahl mit einem zweiten Tipp auf', async () => {
+    const { onAuswahl } = zeigeOffen(ICE)
+    await userEvent.click(await screen.findByRole('button', { name: /ICE 1006/ }))
+    expect(onAuswahl).toHaveBeenCalledWith(null)
+  })
+
+  it('laedt neu, wenn der Bahnhof wechselt, und verwirft die alte Antwort', async () => {
+    let loese!: (wert: Awaited<ReturnType<typeof holeTafel>>) => void
+    holeTafelMock.mockReturnValueOnce(new Promise((r) => (loese = r)))
+    holeTafelMock.mockResolvedValueOnce({ ok: true, eintraege: [zug('RE 7', 10)] })
+    const { rerender } = zeigeOffen()
+    rerender(
+      <Zugauswahl
+        eva="8000105"
+        typ="dep"
+        label="Abfahrt · Frankfurt"
+        auswahl={null}
+        onAuswahl={vi.fn()}
+        immerOffen
+      />,
+    )
+    expect(await screen.findByText(/RE 7/)).toBeDefined()
+    loese({ ok: true, eintraege: [ICE] })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.queryByText(/ICE 1006/)).toBeNull()
+  })
+})

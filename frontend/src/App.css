@@ -816,6 +816,68 @@
   font-weight: 800;
 }
 
+/*
+ * Die offene Tafel im breiten Layout (Spec 2026-10-11): Kopf mit Titel und
+ * Stand, darunter die Kategorien, die als Ganzes rollen. Die Kappung je
+ * Kategorie (216 px) bleibt dem Handy - in einer bildschirmhohen Spalte
+ * schnitte sie nur ab.
+ */
+.zugauswahl.offen {
+  height: 100%;
+  min-height: 0;
+  gap: 0;
+}
+.zugauswahl.offen > .tafel-bloecke {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 0;
+  border-radius: 0;
+}
+.zugauswahl.offen .tafel {
+  max-height: none;
+  overflow: visible;
+}
+.zugauswahl.offen > .hinweis-box {
+  margin: 0 14px 14px;
+}
+.tafel-spalte-kopf {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 14px 8px;
+}
+.tafel-spalte-titel {
+  margin: 0;
+  font-size: var(--schrift-text);
+  font-weight: 700;
+}
+.tafel-stand {
+  font-size: var(--schrift-label);
+  color: var(--color-neutral-700);
+  white-space: nowrap;
+}
+/* Skelett in Zeilenhoehe, ohne Schimmern (DESIGN.md 6). */
+.tafel-skelett {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 14px 14px;
+}
+.tafel-skelett span {
+  display: block;
+  height: 44px;
+  border-radius: var(--radius-klein);
+  background: var(--color-neutral-300);
+}
+/* Die gewaehlte Zeile: Rotschleier und ein Saum links - nicht allein Farbe. */
+.tafel button[aria-pressed='true'] {
+  background: var(--color-accent-100);
+  box-shadow: inset 4px 0 0 var(--color-accent);
+}
+
 .gleiswechsel {
   color: var(--color-accent-700);
 }
