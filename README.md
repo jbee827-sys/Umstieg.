@@ -17,7 +17,89 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 07.10.2026)
+## Hier weitermachen (Stand 11.10.2026)
+
+> **Ausgeliefert am 11.10.2026, vormittags:** `feat/mvp` und `main` auf
+> `da3f9fe` (Übersicht, ToDo 38, Bewegung an den Token). Vercel baute die
+> Produktion selbst aus dem Push auf `main` – kein `vercel deploy` nötig,
+> `vercel.json` unverändert, gegen <https://www.umstieg.online> geprüft (neue
+> Klassen im CSS, Sicherheits-Header da). Fly.io mit `--ha=false`: **genau eine
+> Maschine**, Health und CORS grün.
+>
+> - **Fly-Anmeldung:** Die alte lag in `E:\jbeer\.fly\config.yml` (vom
+>   16.09.) und wird von `flyctl` nicht gelesen; nach `flyctl auth login` im
+>   eigenen Terminal ging es.
+> - **Backend-Suite einmal rot:** 10 von 463, jeweils der **erste** Test einer
+>   Datei (der baut die Fastify-App, warm 460–850 ms). Fünf Läufe danach
+>   grün, auch mit leerem Cache; der Code ist seit `32292fb` unverändert.
+>   Gedeutet als Anlauf über der 5-s-Grenze im ersten kalten Lauf – **nicht
+>   bewiesen**, der Fehlertext des ersten Laufs fehlt.
+> - **Overpass ist ausgefallen** (`overpass-api.de` 504 mit User-Agent,
+>   `kumi.systems` 500). Alle Routen kommen in Produktion und lokal als
+>   **Stufe 3**; München 5 → 82 als `gleis-unbekannt`, weil das Standardmodell
+>   Gleis 82 nicht kennt. Kein Fehler bei uns – aber dass das Standardmodell
+>   S-Bahn-Gleise vergisst, wäre ein eigener Blick wert.
+>
+> **Danach: die Eingabe neu und das breite Layout für iPad und Desktop**
+> (Spec und Plan unter `docs/superpowers/`, Commits `b0d049c` bis `945832b`,
+> **nicht gepusht**):
+>
+> 1. **Handy:** „Wo steigst du um?", Bahnhof, zwei **Gleiskacheln** mit den
+>    Wörtern der Übersicht („Du kommst an" / „Dein Anschluss", die
+>    Anschlusskachel rot gerandet), Gleisnummer in 56 px, ab vier Zeichen
+>    28 px („7A-D" passt auf 320 px genau). Züge und Wagennummer stehen
+>    eingeklappt, „Verbindung einfügen" (vorher „Reise importieren") ist ein
+>    Textknopf am Rand, „Umstieg starten" steht fest über der Leiste – ohne
+>    den Pfeil, den `DESIGN.md` verbietet.
+> 2. **Breit (ab 700 px, iPad wie Desktop):** Formular oben, Ankunfts- und
+>    Abfahrtstafel darunter; **ab 900 px drei Spalten**. Die Tafeln stehen
+>    **offen**, laden von selbst, reichen bis zum **Ende der nächsten Stunde**
+>    (das Backend liefert die zwei Stunden ohnehin) und bleiben nach der Wahl
+>    stehen – der gewählte Zug ist markiert, ein zweiter Tipp hebt die Wahl
+>    auf. Laden als ruhige Skelettzeilen.
+> 3. **Die Tafeln klappen nach rechts auf**, wenn man einen Bahnhof antippt:
+>    von der linken Kante her (`clip-path`), erst Ankunft, Abfahrt 120 ms
+>    später, je 200 ms – über `@starting-style`, damit auch das erste
+>    Erscheinen läuft. Zu in umgekehrter Folge. **Nicht** bei der
+>    Standorterkennung (das wäre Bewegung von selbst, `DESIGN.md` 6), nicht
+>    bei reduzierter Bewegung (auch die Verzögerung fällt dann weg).
+>
+> **Was die Sichtprüfung gefunden hat** (fünf Rahmen gleicher Herkunft:
+> 360 × 740, 320 × 740, 820 × 1180, 1180 × 820, 1440 × 900; echte Tafeln
+> Berlin Hbf, 89 Ankünfte und 92 Abfahrten):
+>
+> - **Signalrot als Schrift** – die Kicker („Du kommst an", auch auf der
+>   Übersicht), der Schrittzähler und „Meldungen" in der Leiste standen bei
+>   4,2:1, auf der Anschlusskachel bei 3,8:1. Jetzt Rotschrift (7,2:1); ein
+>   Test in `schriftfarben.test.ts` hält Signalrot von Text fern.
+> - **Der Rollbereich ragte in drei Spalten 2 px in die Ankunftstafel** –
+>   jetzt 10 px Luft.
+>
+> | Gemessen | Ergebnis |
+> |---|---|
+> | Waagerechtes Rollen / Seite rollt | in keinem der fünf Rahmen |
+> | Knopf über der Leiste | in allen fünf |
+> | Spaltenbreiten vor und nach dem Aufklappen | identisch (1180: 400 · 352 · 352) |
+> | Leiste breit | Knopfgruppe 560 px, mittig |
+> | Übergang | `clip-path, transform, opacity` · 0,2 s · Abfahrt +0,12 s; zu mit Verlauf „aus", Ankunft +0,12 s; zugeklappt `inert` |
+> | Kleinster Kontrast neuer Schrift | hell 5,96:1, dunkel 7,11:1 |
+>
+> ```bash
+> cd frontend && npm test && npm run lint && npm run build   # 497 von 497, Lint sauber, Build grün
+> ```
+>
+> **Nicht gesehen:** Kein einziges Bild – der Chrome-Tab war während der
+> ganzen Prüfung verdeckt. Alle Maße kommen aus den Rahmen; die Übergänge
+> standen im verdeckten Tab bei Zeit 0 und wurden per `finish()` auf ihren
+> Endzustand geprüft (`inset(0)`, Deckkraft 1). **Ob die Animation sich gut
+> anfühlt, hat niemand gesehen.** Und das echte iPad nicht.
+>
+> **Nächster Schritt:** pushen und ausliefern (nur Vercel – das Backend ist
+> unverändert), dann am iPad ansehen. Danach wie vereinbart: **die
+> Seitenübergänge – vorher fragen, was genau** –, dann der Rest der Bewegung
+> aus `DESIGN.md` 6.
+
+### Davor (07.10.2026)
 
 > **Die Übersicht ist umgebaut** – die drei Anforderungen aus `BRIEF.md`,
 > Abschnitt 2 („Dashboard — hier liegt das eigentliche Problem"). Nicht
