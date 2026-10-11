@@ -139,6 +139,13 @@ export function Eingabe({
   const suchTimer = useRef<number | undefined>(undefined)
   const [erkennungVerworfen, setErkennungVerworfen] = useState(false)
   const [importOffen, setImportOffen] = useState(false)
+  /*
+   * Bewegung nur auf eine Handlung hin (DESIGN.md 6): eine Wahl oder ihr
+   * Aufheben durch den Nutzer. Setzt die Standorterkennung oder der Entwurf
+   * den Bahnhof, stehen die Tafeln ohne Uebergang da - die Erkennung trifft
+   * verzoegert ein, eine Tafel, die dann aufklappt, bewegte sich von selbst.
+   */
+  const [bewegung, setBewegung] = useState(false)
 
   /**
    * Uebernimmt einen Umstieg aus dem DB-Navigator-Export.
@@ -152,6 +159,7 @@ export function Eingabe({
    * anderen Reise und waere nach dem Import stillschweigend falsch.
    */
   function uebernimmUmstieg(u: Umstieg) {
+    setBewegung(true)
     setGewaehlt(null)
     setSuchtext(u.bahnhof)
     setGleisAn(u.anGleis ?? '')
@@ -209,6 +217,15 @@ export function Eingabe({
       setSuchtext(erkannt[0].name)
     }
   }
+
+  /*
+   * Die Tafeln zeigen den zuletzt gewaehlten Bahnhof - auch noch, waehrend
+   * sie zuklappen. Sonst verschwaende ihr Inhalt, bevor die Bewegung ihn
+   * zeigen kann. Angepasst beim Rendern, wie die Erkennung oben.
+   */
+  const [tafelBahnhof, setTafelBahnhof] = useState<BahnhofTreffer | null>(gewaehlt)
+  if (gewaehlt && gewaehlt.eva !== tafelBahnhof?.eva) setTafelBahnhof(gewaehlt)
+  const tafelnOffen = gewaehlt !== null
 
   // Bahnhofssuche mit Entprellung; 503 → Freitext-Fallback (EVA direkt eingeben)
   useEffect(() => {
@@ -304,7 +321,9 @@ export function Eingabe({
 
   // Eine Tafelspalte des breiten Layouts. Sie haengt am GEWAEHLTEN Bahnhof,
   // nicht an der EVA-Ersatzeingabe: Die gibt es nur ohne DB-Zugang, und dort
-  // kann auch die Tafel nicht laden.
+  // kann auch die Tafel nicht laden. Platzhalter und Tafel liegen
+  // uebereinander; die Tafel klappt ueber dem Platzhalter nach rechts auf
+  // (Spec 2026-10-11, Abschnitt 6 - die Bewegung selbst steht in App.css).
   function tafelSpalte(
     art: 'ankunft' | 'abfahrt',
     titel: string,
@@ -313,22 +332,27 @@ export function Eingabe({
     onAuswahl: (e: TafelEintrag | null) => void,
   ) {
     return (
-      <section className={`tafel-spalte ${art}`} aria-label={titel}>
-        {gewaehlt ? (
-          <div className="tafel-spalte-inhalt">
+      <section
+        className={`tafel-spalte ${art}`}
+        aria-label={titel}
+        data-offen={tafelnOffen ? 'ja' : 'nein'}
+      >
+        <div className="tafel-platzhalter" aria-hidden={tafelnOffen || undefined}>
+          <h3 className="tafel-spalte-titel">{titel}</h3>
+          <p>{platzhaltertext}</p>
+        </div>
+        {tafelBahnhof && (
+          // Zugeklappt nicht bedienbar und fuer Vorleser weg - verdeckt ist
+          // sie sonst nur fuers Auge.
+          <div className="tafel-spalte-inhalt" inert={!tafelnOffen}>
             <Zugauswahl
-              eva={gewaehlt.eva}
+              eva={tafelBahnhof.eva}
               typ={typ}
-              label={`${titel} · ${gewaehlt.name}`}
+              label={`${titel} · ${tafelBahnhof.name}`}
               auswahl={auswahl}
               onAuswahl={onAuswahl}
               immerOffen
             />
-          </div>
-        ) : (
-          <div className="tafel-platzhalter">
-            <h3 className="tafel-spalte-titel">{titel}</h3>
-            <p>{platzhaltertext}</p>
           </div>
         )}
       </section>
@@ -366,7 +390,7 @@ export function Eingabe({
 
   return (
     <form
-      className="eingabe-flaeche"
+      className={`eingabe-flaeche${bewegung ? ' mit-bewegung' : ''}`}
       onSubmit={(e) => {
         e.preventDefault()
         absenden()
@@ -388,6 +412,7 @@ export function Eingabe({
               setSuchtext(e.target.value)
               setGewaehlt(null)
               setErkennungVerworfen(true)
+              setBewegung(true)
             }}
           />
           {sichtbareVorschlaege.length > 0 && (
@@ -397,6 +422,7 @@ export function Eingabe({
                   <button
                     type="button"
                     onClick={() => {
+                      setBewegung(true)
                       setGewaehlt(treffer)
                       setSuchtext(treffer.name)
                       setVorschlaege([])
@@ -417,6 +443,7 @@ export function Eingabe({
                     <button
                       type="button"
                       onClick={() => {
+                        setBewegung(true)
                         setGewaehlt(treffer)
                         setSuchtext(treffer.name)
                       }}

@@ -2184,10 +2184,13 @@
  * dem 21.09.2026 ganz entfallen.)
  */
 @media (prefers-reduced-motion: reduce) {
+  /* Auch die Verzoegerung: Sonst kaeme die Abfahrtstafel ruckartig 120 ms
+     nach der Ankunft. */
   *,
   ::before,
   ::after {
     transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
   }
 
   /* Bleibt in Bewegung - siehe Begruendung oben. */
@@ -2466,6 +2469,47 @@
 }
 .tafel-platzhalter p {
   margin: 0;
+}
+
+/*
+ * Die Tafeln klappen nach rechts auf (Spec 2026-10-11, Abschnitt 6): von der
+ * linken Kante her, wie ein Leporello - erst die Ankunft, die Abfahrt
+ * --dauer-schnell spaeter; zu in umgekehrter Folge. Die Spalten sind
+ * reserviert, nichts verschiebt sich. Nur mit `.mit-bewegung`, also nur auf
+ * eine Handlung hin.
+ */
+.tafel-spalte-inhalt {
+  clip-path: inset(0 0 0 0);
+  transform: none;
+  opacity: 1;
+}
+.tafel-spalte[data-offen='nein'] .tafel-spalte-inhalt {
+  clip-path: inset(0 100% 0 0);
+  transform: translateX(-16px);
+  opacity: 0;
+}
+.mit-bewegung .tafel-spalte-inhalt {
+  transition:
+    clip-path var(--dauer-normal) var(--verlauf-ein),
+    transform var(--dauer-normal) var(--verlauf-ein),
+    opacity var(--dauer-normal) var(--verlauf-ein);
+}
+.mit-bewegung .tafel-spalte[data-offen='nein'] .tafel-spalte-inhalt {
+  transition-timing-function: var(--verlauf-aus);
+}
+.mit-bewegung .tafel-spalte.abfahrt[data-offen='ja'] .tafel-spalte-inhalt {
+  transition-delay: var(--dauer-schnell);
+}
+.mit-bewegung .tafel-spalte.ankunft[data-offen='nein'] .tafel-spalte-inhalt {
+  transition-delay: var(--dauer-schnell);
+}
+/* Beim ersten Erscheinen gibt es keinen Vorzustand - hier steht er. */
+@starting-style {
+  .mit-bewegung .tafel-spalte[data-offen='ja'] .tafel-spalte-inhalt {
+    clip-path: inset(0 100% 0 0);
+    transform: translateX(-16px);
+    opacity: 0;
+  }
 }
 
 @media (min-width: 700px) {
