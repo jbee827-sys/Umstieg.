@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { sucheStationen } from '../api/client'
 import type {
   BahnhofTreffer,
@@ -69,6 +69,24 @@ interface EingabeProps {
    * dort sind Bahnhof und Zugauswahl bereits eingedampft.
    */
   onBerechnen: (werte: EingabeWerte, entwurf: EingabeEntwurf) => void
+  /**
+   * Was ueber dem Formular im Rollbereich steht - Lockup und Standorthinweise.
+   * Wie `zusatz` am `Schrittsheet`: Es gehoert in den Rollbereich, kommt aber
+   * aus `App`, die den Standort kennt.
+   */
+  kopf?: ReactNode
+  /** Was am Ende des Rollbereichs steht - die Fusszeile mit Impressum. */
+  fuss?: ReactNode
+}
+
+/** „RE 3 · an 14:22" - bei einem Gleiswechsel mit Zusatz. */
+function zugzeile(e: TafelEintrag, richtung: 'an' | 'ab'): ReactNode {
+  return (
+    <>
+      {e.zug} · {richtung} {e.zeitIst ?? e.zeitSoll}
+      {e.gleisIst && <strong className="gleiswechsel"> · Gleis {e.gleisIst} (geändert!)</strong>}
+    </>
+  )
 }
 
 const PROFILE: { wert: Gehprofil; label: string }[] = [
@@ -83,10 +101,20 @@ const DARSTELLUNGEN: { wert: Darstellung; label: string }[] = [
   { wert: 'dunkel', label: 'Dunkel' },
 ]
 
-// Eingabemaske nach dem Onboarding-Screen des Designs: Bahnhofssuche mit
-// Vervollständigung, Gleis an/ab (Pflicht), Wagennummer optional, große
-// Auswahlflächen für Gehprofil und Routenvariante.
-export function Eingabe({ laden, fehler, erkannt, entwurf, onBerechnen }: EingabeProps) {
+// Eingabe nach Spec 2026-10-11 („kuerzer, nicht schoener", BRIEF.md 4): Pflicht
+// sind Bahnhof und die beiden Gleise - als Kacheln mit denselben Woertern wie
+// die Karten der Uebersicht. Zuege und Wagennummer stehen eingeklappt, der
+// Import ist eine Abkuerzung am Rand. Der Inhalt rollt, „Umstieg starten"
+// steht fest darunter.
+export function Eingabe({
+  laden,
+  fehler,
+  erkannt,
+  entwurf,
+  onBerechnen,
+  kopf,
+  fuss,
+}: EingabeProps) {
   // Anfangswerte aus dem Entwurf. Nur beim ERSTEN Rendern - danach gehoert
   // das Formular dem Nutzer. Ein spaeter eintreffender Entwurf duerfte eine
   // laufende Eingabe nicht ueberschreiben, und einen solchen gibt es nicht:
@@ -217,6 +245,16 @@ export function Eingabe({ laden, fehler, erkannt, entwurf, onBerechnen }: Eingab
   const eva = gewaehlt?.eva ?? (dbFehlt ? evaManuell.trim() : '')
   const bereit = eva !== '' && gleisAn.trim() !== '' && gleisAb.trim() !== '' && !laden
 
+  // Eine Wahl aus der Tafel setzt auch das Gleis; das Aufheben laesst es stehen.
+  const waehleAnkunft = (e: TafelEintrag | null) => {
+    setZugAnkunft(e)
+    if (e) setGleisAn(e.gleisIst ?? e.gleisSoll)
+  }
+  const waehleAbfahrt = (e: TafelEintrag | null) => {
+    setZugAbfahrt(e)
+    if (e) setGleisAb(e.gleisIst ?? e.gleisSoll)
+  }
+
   function absenden() {
     if (!bereit) return
     // Der Entwurf ist das Formular selbst, ungetrimmt und ungedeutet - er
@@ -254,58 +292,71 @@ export function Eingabe({ laden, fehler, erkannt, entwurf, onBerechnen }: Eingab
     )
   }
 
+  const wagenAnFeld = (
+    <div className="feld">
+      <label htmlFor="wagenAn">Ankunft: Wagen (optional)</label>
+      <input
+        id="wagenAn"
+        className="eingabefeld"
+        type="text"
+        inputMode="numeric"
+        placeholder="z. B. 26 – genauer Startpunkt"
+        value={wagenAn}
+        onChange={(e) => setWagenAn(e.target.value)}
+      />
+    </div>
+  )
+  const wagenAbFeld = (
+    <div className="feld">
+      <label htmlFor="wagenAb">Anschluss: Wagen (optional)</label>
+      <input
+        id="wagenAb"
+        className="eingabefeld"
+        type="text"
+        inputMode="numeric"
+        placeholder="z. B. 7 – wo du einsteigst"
+        value={wagenAb}
+        onChange={(e) => setWagenAb(e.target.value)}
+      />
+    </div>
+  )
+
   return (
     <form
-      style={{ display: 'flex', flexDirection: 'column', gap: 18 }}
+      className="eingabe-flaeche"
       onSubmit={(e) => {
         e.preventDefault()
         absenden()
       }}
     >
-      <div className="feld">
-        <label htmlFor="bahnhof">Umstiegsbahnhof</label>
-        <input
-          id="bahnhof"
-          className="eingabefeld"
-          type="text"
-          autoComplete="off"
-          placeholder="z. B. Berlin Hbf"
-          value={suchtext}
-          onChange={(e) => {
-            setSuchtext(e.target.value)
-            setGewaehlt(null)
-            setErkennungVerworfen(true)
-          }}
-        />
-        {sichtbareVorschlaege.length > 0 && (
-          <ul className="vorschlaege">
-            {sichtbareVorschlaege.map((treffer) => (
-              <li key={treffer.eva}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGewaehlt(treffer)
-                    setSuchtext(treffer.name)
-                    setVorschlaege([])
-                  }}
-                >
-                  {treffer.name}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        {!gewaehlt && !erkennungVerworfen && erkannt && erkannt.length > 1 && (
-          <div style={{ marginTop: 8 }}>
-            <div className="hinweis-box">Bahnhöfe in deiner Nähe:</div>
+      <div className="eingabe-rollbereich">
+        {kopf}
+        <h2 className="eingabe-titel">Wo steigst du um?</h2>
+        <div className="feld">
+          <label htmlFor="bahnhof">Umstiegsbahnhof</label>
+          <input
+            id="bahnhof"
+            className="eingabefeld"
+            type="text"
+            autoComplete="off"
+            placeholder="z. B. Berlin Hbf"
+            value={suchtext}
+            onChange={(e) => {
+              setSuchtext(e.target.value)
+              setGewaehlt(null)
+              setErkennungVerworfen(true)
+            }}
+          />
+          {sichtbareVorschlaege.length > 0 && (
             <ul className="vorschlaege">
-              {erkannt.map((treffer) => (
+              {sichtbareVorschlaege.map((treffer) => (
                 <li key={treffer.eva}>
                   <button
                     type="button"
                     onClick={() => {
                       setGewaehlt(treffer)
                       setSuchtext(treffer.name)
+                      setVorschlaege([])
                     }}
                   >
                     {treffer.name}
@@ -313,216 +364,198 @@ export function Eingabe({ laden, fehler, erkannt, entwurf, onBerechnen }: Eingab
                 </li>
               ))}
             </ul>
-          </div>
-        )}
-        {gewaehlt && (
-          <span className="bahnhof-gewaehlt">
-            ✓ {gewaehlt.name}
-            {erkannt?.some((t) => t.eva === gewaehlt.eva) && ' · automatisch erkannt'}
-          </span>
-        )}
-        {netzFehlt && !dbFehlt && (
-          <div className="hinweis-box" style={{ marginTop: 8 }}>
-            Die Bahnhofssuche erreicht den Server nicht. Prüfe deine Verbindung. Läuft die App
-            unter einer Vorschau-Adresse, weist der Server die Anfrage ab – dann bitte die
-            reguläre Adresse verwenden.
-          </div>
-        )}
-        {dbFehlt && (
-          <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div className="hinweis-box">
-              Bahnhofssuche derzeit nicht verfügbar (kein DB-Zugang). Gib die EVA-Nummer des
-              Bahnhofs direkt ein – z. B. 8011160 für Berlin Hbf.
+          )}
+          {!gewaehlt && !erkennungVerworfen && erkannt && erkannt.length > 1 && (
+            <div style={{ marginTop: 8 }}>
+              <div className="hinweis-box">Bahnhöfe in deiner Nähe:</div>
+              <ul className="vorschlaege">
+                {erkannt.map((treffer) => (
+                  <li key={treffer.eva}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGewaehlt(treffer)
+                        setSuchtext(treffer.name)
+                      }}
+                    >
+                      {treffer.name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <input
-              className="eingabefeld"
-              type="text"
-              inputMode="numeric"
-              placeholder="EVA-Nummer"
-              aria-label="EVA-Nummer"
-              value={evaManuell}
-              onChange={(e) => setEvaManuell(e.target.value)}
-            />
+          )}
+          {gewaehlt && (
+            <span className="bahnhof-gewaehlt">
+              ✓ {gewaehlt.name}
+              {erkannt?.some((t) => t.eva === gewaehlt.eva) && ' · automatisch erkannt'}
+            </span>
+          )}
+          {netzFehlt && !dbFehlt && (
+            <div className="hinweis-box" style={{ marginTop: 8 }}>
+              Die Bahnhofssuche erreicht den Server nicht. Prüfe deine Verbindung. Läuft die App
+              unter einer Vorschau-Adresse, weist der Server die Anfrage ab – dann bitte die
+              reguläre Adresse verwenden.
+            </div>
+          )}
+          {dbFehlt && (
+            <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div className="hinweis-box">
+                Bahnhofssuche derzeit nicht verfügbar (kein DB-Zugang). Gib die EVA-Nummer des
+                Bahnhofs direkt ein – z. B. 8011160 für Berlin Hbf.
+              </div>
+              <input
+                className="eingabefeld"
+                type="text"
+                inputMode="numeric"
+                placeholder="EVA-Nummer"
+                aria-label="EVA-Nummer"
+                value={evaManuell}
+                onChange={(e) => setEvaManuell(e.target.value)}
+              />
+            </div>
+          )}
+          {/* Abkuerzung am Rand (BRIEF.md 4), nicht der Einstieg: Statt Bahnhof
+              und zwei Gleise zu tippen, den Text aus „Verbindung teilen"
+              einfuegen. Hiess bis zum 11.10.2026 „Reise importieren". */}
+          <div className="feld-rand">
+            <button type="button" className="textknopf" onClick={() => setImportOffen(true)}>
+              Verbindung einfügen
+            </button>
           </div>
-        )}
-      </div>
+        </div>
 
-      {/*
-        Zwei Bloecke statt einer flachen Maske (Konzept §9). Gruppiert wird
-        nach REISEABSCHNITT, nicht nach Feldart: Der Nutzer denkt "mein
-        ankommender Zug: Gleis 6, ICE 1006, Wagen 26" - nicht "alle Gleise,
-        dann alle Zuege". Vorher standen die beiden Zugauswahlen zusammen in
-        einer Gruppe und die beiden Gleise in einer zweiten.
-      */}
-      <fieldset className="reiseblock">
-        <legend>Ankunft</legend>
-        {eva !== '' && (
-          <Zugauswahl
-            eva={eva}
-            typ="arr"
-            label="Ankunftszug wählen"
-            auswahl={zugAnkunft}
-            onAuswahl={(eintrag) => {
-              setZugAnkunft(eintrag)
-              if (eintrag) setGleisAn(eintrag.gleisIst ?? eintrag.gleisSoll)
-            }}
-          />
-        )}
-        <div className="gleis-zeile">
-          <div className="feld">
-            <label htmlFor="gleisAn">Ankunft: Gleis</label>
+        {/*
+          Die Pflichtangaben als Kacheln, mit den Woertern der Uebersicht - die
+          Kachel WIRD dort zur Karte. Der zugaengliche Name bleibt „Ankunft:
+          Gleis"; er enthaelt die sichtbare Beschriftung „Gleis" (WCAG 2.5.3).
+        */}
+        <div className="gleiskacheln">
+          <div className="gleiskachel">
+            <div className="kicker">Du kommst an</div>
+            <label htmlFor="gleisAn" className="gleiskachel-label">
+              <span className="nur-vorlesen">Ankunft: </span>Gleis
+            </label>
             <input
               id="gleisAn"
-              className="eingabefeld"
+              className={`eingabefeld gleiskachel-feld${gleisAn.length > 3 ? ' lang' : ''}`}
               type="text"
               required
-              placeholder="z. B. 6"
               value={gleisAn}
               onChange={(e) => setGleisAn(e.target.value)}
             />
+            {zugAnkunft && <p className="gleiskachel-zug">{zugzeile(zugAnkunft, 'an')}</p>}
           </div>
-          <div className="feld">
-            <label htmlFor="wagenAn">Ankunft: Wagen (optional)</label>
-            <input
-              id="wagenAn"
-              className="eingabefeld"
-              type="text"
-              inputMode="numeric"
-              placeholder="z. B. 26 – genauer Startpunkt"
-              value={wagenAn}
-              onChange={(e) => setWagenAn(e.target.value)}
-            />
-          </div>
-        </div>
-      </fieldset>
-
-      <fieldset className="reiseblock">
-        <legend>Abfahrt</legend>
-        {eva !== '' && (
-          <Zugauswahl
-            eva={eva}
-            typ="dep"
-            label="Anschlusszug wählen"
-            auswahl={zugAbfahrt}
-            onAuswahl={(eintrag) => {
-              setZugAbfahrt(eintrag)
-              if (eintrag) setGleisAb(eintrag.gleisIst ?? eintrag.gleisSoll)
-            }}
-          />
-        )}
-        <div className="gleis-zeile">
-          <div className="feld">
-            <label htmlFor="gleisAb">Anschluss: Gleis</label>
+          <div className="gleiskachel ziel">
+            <div className="kicker">Dein Anschluss</div>
+            <label htmlFor="gleisAb" className="gleiskachel-label">
+              <span className="nur-vorlesen">Anschluss: </span>Gleis
+            </label>
             <input
               id="gleisAb"
-              className="eingabefeld"
+              className={`eingabefeld gleiskachel-feld${gleisAb.length > 3 ? ' lang' : ''}`}
               type="text"
               required
-              placeholder="z. B. 14"
               value={gleisAb}
               onChange={(e) => setGleisAb(e.target.value)}
             />
-          </div>
-          <div className="feld">
-            <label htmlFor="wagenAb">Anschluss: Wagen (optional)</label>
-            <input
-              id="wagenAb"
-              className="eingabefeld"
-              type="text"
-              inputMode="numeric"
-              placeholder="z. B. 7 – wo du einsteigst"
-              value={wagenAb}
-              onChange={(e) => setWagenAb(e.target.value)}
-            />
+            {zugAbfahrt && <p className="gleiskachel-zug">{zugzeile(zugAbfahrt, 'ab')}</p>}
           </div>
         </div>
-      </fieldset>
 
-      {/* Der schnelle Weg an denselben Feldern vorbei: Statt Bahnhof und zwei
-          Gleise zu tippen, den Text aus „Verbindung teilen" einfuegen. */}
-      <div className="feld">
-        <button
-          type="button"
-          className="knopf-sekundaer knopf-breit"
-          onClick={() => setImportOffen(true)}
-        >
-          Reise importieren
-        </button>
+        {/*
+          Optional und eingeklappt (BRIEF.md 4). Gruppiert nach
+          REISEABSCHNITT, nicht nach Feldart (Konzept §9): „mein ankommender
+          Zug, Wagen 26" - nicht „alle Zuege, dann alle Wagen".
+        */}
+        <details className="zuege-wagen">
+          <summary>
+            Züge und Wagennummer <span className="zuege-wagen-optional">· optional</span>
+          </summary>
+          <fieldset className="reiseblock">
+            <legend>Ankunft</legend>
+            {eva !== '' && (
+              <Zugauswahl
+                eva={eva}
+                typ="arr"
+                label="Ankunftszug wählen"
+                auswahl={zugAnkunft}
+                onAuswahl={waehleAnkunft}
+              />
+            )}
+            {wagenAnFeld}
+          </fieldset>
+          <fieldset className="reiseblock">
+            <legend>Abfahrt</legend>
+            {eva !== '' && (
+              <Zugauswahl
+                eva={eva}
+                typ="dep"
+                label="Anschlusszug wählen"
+                auswahl={zugAbfahrt}
+                onAuswahl={waehleAbfahrt}
+              />
+            )}
+            {wagenAbFeld}
+          </fieldset>
+        </details>
+
+        {importOffen && (
+          <ReiseImport
+            onSchliessen={() => setImportOffen(false)}
+            onUebernehmen={uebernimmUmstieg}
+          />
+        )}
+
+        <details className="einstellungen">
+          <summary>Einstellungen</summary>
+          <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
+            <label>Gehtempo</label>
+            <div className="wahl-gruppe" role="group" aria-label="Gehtempo">
+              {PROFILE.map((p) => (
+                <button
+                  key={p.wert}
+                  type="button"
+                  className="wahl-knopf"
+                  aria-pressed={profil === p.wert}
+                  onClick={() => setProfil(p.wert)}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+          <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
+            <label>Darstellung</label>
+            <div className="wahl-gruppe" role="group" aria-label="Darstellung">
+              {DARSTELLUNGEN.map((d) => (
+                <button
+                  key={d.wert}
+                  type="button"
+                  className="wahl-knopf"
+                  aria-pressed={darstellung === d.wert}
+                  onClick={() => {
+                    waehleDarstellung(d.wert)
+                    setDarstellung(d.wert)
+                  }}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+        </details>
+
+        {fehler && <div className="fehler-box">{fehler}</div>}
+        {fuss}
       </div>
 
-      {importOffen && (
-        <ReiseImport
-          onSchliessen={() => setImportOffen(false)}
-          onUebernehmen={uebernimmUmstieg}
-        />
-      )}
-
-      {/* Im Entwurf kommt das Gehtempo nicht vor. Ersatzlos streichen waere
-          fuer langsame Gehende aber ein Rueckschritt - deshalb eingeklappt.
-          Seit dem 05.10.2026 steht hier auch die Darstellung; der Aufklapper
-          hiess bis dahin „Mehr einstellen". */}
-      <details className="einstellungen">
-        <summary>Einstellungen</summary>
-        <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
-          <label>Gehtempo</label>
-          <div className="wahl-gruppe" role="group" aria-label="Gehtempo">
-            {PROFILE.map((p) => (
-              <button
-                key={p.wert}
-                type="button"
-                className="wahl-knopf"
-                aria-pressed={profil === p.wert}
-                onClick={() => setProfil(p.wert)}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </fieldset>
-        <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
-          <label>Darstellung</label>
-          <div className="wahl-gruppe" role="group" aria-label="Darstellung">
-            {DARSTELLUNGEN.map((d) => (
-              <button
-                key={d.wert}
-                type="button"
-                className="wahl-knopf"
-                aria-pressed={darstellung === d.wert}
-                onClick={() => {
-                  waehleDarstellung(d.wert)
-                  setDarstellung(d.wert)
-                }}
-              >
-                {d.label}
-              </button>
-            ))}
-          </div>
-        </fieldset>
-      </details>
-
-      {fehler && <div className="fehler-box">{fehler}</div>}
-
+      {/* Fest unter dem Rollbereich, wie auf der Uebersicht. Ohne Pfeil:
+          DESIGN.md 4, „Kein Pfeil hinter dem Text". „Wird berechnet",
+          nicht „Route wird berechnet": Das brach auf 360 px in zwei Zeilen. */}
       <button className="knopf-primaer" type="submit" disabled={!bereit}>
-        {/* „Wird berechnet", nicht „Route wird berechnet": Das brach im
-            Knopf auf 360 px in zwei Zeilen um. */}
         <span>{laden ? 'Wird berechnet …' : 'Umstieg starten'}</span>
-        {laden ? (
-          <span className="lade-kreisel" aria-hidden="true" />
-        ) : (
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M5 12h14M13 6l6 6-6 6" />
-          </svg>
-        )}
+        {laden && <span className="lade-kreisel" aria-hidden="true" />}
       </button>
     </form>
   )

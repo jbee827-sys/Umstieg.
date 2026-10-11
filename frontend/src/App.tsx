@@ -768,43 +768,51 @@ function App() {
     )
   }
 
+  // Die Eingabe baut ihren Aufbau selbst (Rollbereich, fester Knopf, im
+  // breiten Layout die Tafeln). Kopf und Fusszeile stehen IN ihrem
+  // Rollbereich, kommen aber von hier - nur App kennt den Standort.
   return (
-    <main className="app">
+    <main className="app app-eingabe">
       {meldung}
-      <header className="kopf">
-        {/* Das Lockup traegt die Wortmarke selbst, darum steht hier kein
-            Text mehr. Die h1 bleibt als Huelle: Ohne sie haette die Seite
-            keine Ueberschrift mehr - alt geht an Screenreader, width/height
-            halten den Platz frei, bevor das Bild geladen ist. */}
-        <h1 className="lockup">
-          <img src="/lockup-zwei-gleise.png" alt="Umstieg." width={1003} height={181} />
-        </h1>
-        <p>Vom Ankunftsgleis zum Anschlusszug – Schritt für Schritt.</p>
-      </header>
-      {standortStatus === 'verweigert' && (
-        <div className="hinweis-box">
-          Ohne Standortfreigabe suchst du den Bahnhof von Hand. Du kannst sie in den
-          Browsereinstellungen für diese Seite wieder erlauben.
-        </div>
-      )}
-      {standortStatus === 'nicht-verfuegbar' && (
-        <div className="hinweis-box">
-          Die Standortbestimmung braucht eine sichere Verbindung (HTTPS).
-        </div>
-      )}
-      {standortZuUngenau && standort && (
-        <div className="hinweis-box">
-          Dein Standort ist nur auf ± {Math.round(standort.genauigkeitM)} m genau – zu grob, um
-          daraus einen Bahnhof zu bestimmen. Ohne GPS, etwa an einem Rechner, ist das normal.
-          Such den Bahnhof bitte von Hand.
-        </div>
-      )}
-      <hr className="trennlinie" />
       <Eingabe
         laden={laden}
         fehler={fehler}
         erkannt={erkannt}
         entwurf={liesEntwurf()}
+        kopf={
+          <>
+            <header className="kopf">
+              {/* Das Lockup traegt die Wortmarke selbst, darum steht hier kein
+                  Text mehr. Die h1 bleibt als Huelle: Ohne sie haette die Seite
+                  keine Ueberschrift mehr - alt geht an Screenreader, width/height
+                  halten den Platz frei, bevor das Bild geladen ist. */}
+              <h1 className="lockup">
+                <img src="/lockup-zwei-gleise.png" alt="Umstieg." width={1003} height={181} />
+              </h1>
+              <p>Vom Ankunftsgleis zum Anschlusszug – Schritt für Schritt.</p>
+            </header>
+            {standortStatus === 'verweigert' && (
+              <div className="hinweis-box">
+                Ohne Standortfreigabe suchst du den Bahnhof von Hand. Du kannst sie in den
+                Browsereinstellungen für diese Seite wieder erlauben.
+              </div>
+            )}
+            {standortStatus === 'nicht-verfuegbar' && (
+              <div className="hinweis-box">
+                Die Standortbestimmung braucht eine sichere Verbindung (HTTPS).
+              </div>
+            )}
+            {standortZuUngenau && standort && (
+              <div className="hinweis-box">
+                Dein Standort ist nur auf ± {Math.round(standort.genauigkeitM)} m genau – zu grob, um
+                daraus einen Bahnhof zu bestimmen. Ohne GPS, etwa an einem Rechner, ist das normal.
+                Such den Bahnhof bitte von Hand.
+              </div>
+            )}
+            <hr className="trennlinie" />
+          </>
+        }
+        fuss={<Fusszeile />}
         onBerechnen={(neueWerte, entwurf) => {
           // Erst sichern, dann rechnen: Scheitert der Abruf, steht die
           // Eingabe trotzdem noch da. Sie ist die Arbeit des Nutzers, nicht
@@ -813,14 +821,13 @@ function App() {
           void berechne(neueWerte)
         }}
       />
-      <Fusszeile />
-        <Navileiste
-          aktuell={bildschirm}
-          hatRoute={route !== null}
-          ungelesen={ungelesen(meldungen)}
-          hervorgehoben={hervorgehoben(meldungen)}
-          onWechsel={setBildschirm}
-        />
+      <Navileiste
+        aktuell={bildschirm}
+        hatRoute={route !== null}
+        ungelesen={ungelesen(meldungen)}
+        hervorgehoben={hervorgehoben(meldungen)}
+        onWechsel={setBildschirm}
+      />
     </main>
   )
 }
