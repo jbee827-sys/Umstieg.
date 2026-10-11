@@ -102,6 +102,26 @@ export function gleisEbenen(route: RouteErgebnis): { an: number; ab: number } | 
   return { an: ebenen[0].level, ab: ebenen[ebenen.length - 1].level }
 }
 
+/**
+ * Was das Bild NICHT belegt – für den Aufklapper „Alle Schritte" (ToDo 38).
+ *
+ * Bis zum 19.09.2026 stand das als Fußzeile unter dem Bild. Im festen
+ * Bildschirm war dafür kein Platz mehr, und die Sätze ändern sich beim
+ * Durchklicken nicht – falsch geworden sind sie damit aber nicht. Ohne
+ * Bandmodell zeichnet die Wegseite das grobe Bild aus den Schritttexten;
+ * dort gilt nur der eine Satz, der Rest beschriebe ein Bild, das nicht da ist.
+ */
+export function bildVorbehalte(modell: Bandmodell | null): string[] {
+  if (!modell) return ['Schema, keine Karte – die Abstände sind nicht maßstäblich.']
+  return [
+    'Schema, keine Karte: Die Bahnsteige stehen maßstäblich in der Länge; quer stimmt die Reihenfolge, nicht der Maßstab.',
+    ...(modell.kreuzungswinkelGrad !== undefined
+      ? [`Die Ebenen kreuzen sich um ${modell.kreuzungswinkelGrad}° – im Bild liegen sie parallel.`]
+      : []),
+    ...modell.vorbehalte,
+  ]
+}
+
 /** Länge eines Linienzugs in Metern — die Punkte stehen in Metern. */
 export function wegLaengeM(punkte: { x: number; y: number }[] | undefined): number {
   if (!punkte || punkte.length < 2) return 0

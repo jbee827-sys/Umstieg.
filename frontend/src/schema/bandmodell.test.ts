@@ -3,6 +3,7 @@ import type { RouteErgebnis } from '../api/typen'
 import {
   baueBandmodell,
   besuchJeSchritt,
+  bildVorbehalte,
   ebenenZahl,
   gleisEbenen,
   massgeblicherBahnsteig,
@@ -109,5 +110,34 @@ describe('ebenenZahl', () => {
 
   it('schreibt Zwischenebenen mit Komma', () => {
     expect(ebenenZahl(-0.3)).toBe('−0,3')
+  })
+})
+
+/**
+ * ToDo 38: Mit der Fußzeile unter dem Bild verschwanden am 19.09.2026 drei
+ * Auskünfte – dass das Bild ein Schema ist, der Kreuzungswinkel und
+ * `schema.vorbehalte`. Falsch geworden sind sie nicht. Sie stehen jetzt im
+ * Aufklapper „Alle Schritte".
+ */
+describe('Was das Bild nicht belegt', () => {
+  it('nennt Schema, Kreuzungswinkel und die Vorbehalte der Quellen', () => {
+    // Berlin 14 → 6: die Ebenen kreuzen sich um 81°.
+    const modell = baueBandmodell(ROUTEN.berlin.schema, ROUTEN.berlin.schritte, 0)!
+    expect(bildVorbehalte(modell)).toEqual([
+      'Schema, keine Karte: Die Bahnsteige stehen maßstäblich in der Länge; quer stimmt die Reihenfolge, nicht der Maßstab.',
+      'Die Ebenen kreuzen sich um 81° – im Bild liegen sie parallel.',
+      'Bahnsteigabschnitte (A–G) sind in den Quellen nicht verortet.',
+    ])
+  })
+
+  it('schweigt zum Winkel, wo die Ebenen parallel liegen', () => {
+    const modell = baueBandmodell(ROUTEN.leipzigMitte.schema, ROUTEN.leipzigMitte.schritte, 0)!
+    expect(bildVorbehalte(modell).some((v) => v.includes('kreuzen'))).toBe(false)
+  })
+
+  it('sagt beim groben Bild nur, dass es nicht maßstäblich ist', () => {
+    expect(bildVorbehalte(null)).toEqual([
+      'Schema, keine Karte – die Abstände sind nicht maßstäblich.',
+    ])
   })
 })

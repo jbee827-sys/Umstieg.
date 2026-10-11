@@ -1457,6 +1457,19 @@
   overflow-y: auto;
   overscroll-behavior: contain;
 }
+/* Was das Bild nicht belegt (ToDo 38) - zuletzt im Aufklapper, leiser als die
+   Streckenhinweise: keine Flaeche, nur Text. */
+.schema-vorbehalte {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--schrift-label);
+  line-height: 1.4;
+  color: var(--color-neutral-700);
+}
 
 /* Dashboard-Bloecke (Screen 2) */
 .dashboard-bloecke {
