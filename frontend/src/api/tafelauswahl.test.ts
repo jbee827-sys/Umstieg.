@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { gruppiereTafel, kategorieVon, FENSTER_NACH_MIN, FENSTER_VOR_MIN } from './tafelauswahl'
+import {
+  endeNaechsteStunde,
+  gruppiereTafel,
+  kategorieVon,
+  FENSTER_NACH_MIN,
+  FENSTER_VOR_MIN,
+} from './tafelauswahl'
 import type { TafelEintrag } from './typen'
 
 function zug(name: string, zeit: string, zeitIst?: string): TafelEintrag {
@@ -106,5 +112,33 @@ describe('gruppiereTafel: Kategorien', () => {
 
   it('liefert bei leerer Tafel keine Bloecke', () => {
     expect(gruppiereTafel([], jetzt)).toEqual([])
+  })
+})
+
+describe('endeNaechsteStunde', () => {
+  it('reicht bis zum Ende der naechsten vollen Stunde', () => {
+    expect(endeNaechsteStunde(um('14:20'))).toEqual(um('16:00'))
+    expect(endeNaechsteStunde(um('14:00'))).toEqual(um('16:00'))
+  })
+
+  it('geht ueber Mitternacht in den Folgetag', () => {
+    expect(endeNaechsteStunde(new Date('2026-09-01T23:40:00'))).toEqual(
+      new Date('2026-09-02T01:00:00'),
+    )
+  })
+})
+
+/**
+ * Im breiten Layout plant man im Zug vorab (Spec 2026-10-11). Wer eine Stunde
+ * vor der Ankunft sucht, fand seinen Zug im Fenster -5/+45 nicht.
+ */
+describe('gruppiereTafel: langes Fenster', () => {
+  it('nimmt mit Fensterende auch Zuege nach 45 Minuten mit', () => {
+    const jetzt = um('14:20')
+    const eintraege = [zug('RE 1', '15:50'), zug('RE 2', '16:01')]
+    const namen = (bis?: Date) =>
+      gruppiereTafel(eintraege, jetzt, bis).flatMap((b) => b.eintraege.map((e) => e.zug))
+    expect(namen()).toEqual([])
+    expect(namen(endeNaechsteStunde(jetzt))).toEqual(['RE 1'])
   })
 })

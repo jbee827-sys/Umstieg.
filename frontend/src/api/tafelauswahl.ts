@@ -14,6 +14,19 @@ export const FENSTER_VOR_MIN = 5
 /** Weiter voraus zu planen ist Sache des Fahrplans, nicht des Umstiegs. */
 export const FENSTER_NACH_MIN = 45
 
+/**
+ * Ende der NAECHSTEN vollen Stunde: 14:20 -> 16:00.
+ *
+ * So weit reicht, was das Backend ohnehin holt - die laufende und die
+ * naechste Stunde (`backend/src/clients/timetables.ts`). Im breiten Layout
+ * plant man im Zug vorab; dort reicht das kurze Fenster nicht.
+ */
+export function endeNaechsteStunde(jetzt: Date): Date {
+  const ende = new Date(jetzt)
+  ende.setHours(jetzt.getHours() + 2, 0, 0, 0)
+  return ende
+}
+
 export type Zugkategorie = 'regional' | 'fern' | 'sbahn' | 'ubahn'
 
 export interface Kategorieblock {
@@ -88,14 +101,20 @@ function effektiveZeit(eintrag: TafelEintrag): string {
  * Filtert die Tafel auf das Zeitfenster um `jetzt` und gruppiert sie in
  * Kategorien. Leere Kategorien fallen weg, jede ist nach Zeit sortiert.
  */
-export function gruppiereTafel(eintraege: TafelEintrag[], jetzt: Date): Kategorieblock[] {
+export function gruppiereTafel(
+  eintraege: TafelEintrag[],
+  jetzt: Date,
+  /** Fensterende; ohne Angabe die 45 Minuten des Handys. */
+  bis?: Date,
+): Kategorieblock[] {
   const jetztMinuten = jetzt.getHours() * 60 + jetzt.getMinutes()
+  const nachMin = bis ? Math.round((bis.getTime() - jetzt.getTime()) / 60_000) : FENSTER_NACH_MIN
 
   const imFenster: { eintrag: TafelEintrag; abstand: number }[] = []
   for (const eintrag of eintraege) {
     const abstand = abstandMinuten(effektiveZeit(eintrag), jetztMinuten)
     if (abstand === null) continue
-    if (abstand < -FENSTER_VOR_MIN || abstand > FENSTER_NACH_MIN) continue
+    if (abstand < -FENSTER_VOR_MIN || abstand > nachMin) continue
     imFenster.push({ eintrag, abstand })
   }
   // Nach Abstand sortieren, nicht nach der Zeichenkette: ueber Mitternacht
