@@ -6,13 +6,17 @@ import { sucheStationen } from '../api/client'
 import type { BahnhofTreffer } from '../api/typen'
 import type { EingabeEntwurf } from '../sitzung/eingabespeicher'
 
-vi.mock('../api/client', () => ({ sucheStationen: vi.fn() }))
+vi.mock('../api/client', () => ({ sucheStationen: vi.fn(), holeTafel: vi.fn() }))
 const sucheMock = vi.mocked(sucheStationen)
 
 const BERLIN: BahnhofTreffer = { name: 'Berlin Hbf', eva: '8011160', lat: 52.525, lon: 13.369 }
 const BERNAU: BahnhofTreffer = { name: 'Bernau (b Berlin)', eva: '8010036', lat: 52.68, lon: 13.59 }
 
-function zeige(erkannt?: BahnhofTreffer[], entwurf?: EingabeEntwurf | null) {
+function zeige(
+  erkannt?: BahnhofTreffer[],
+  entwurf?: EingabeEntwurf | null,
+  extra: { kopf?: React.ReactNode; fuss?: React.ReactNode } = {},
+) {
   const onBerechnen = vi.fn()
   render(
     <Eingabe
@@ -21,6 +25,7 @@ function zeige(erkannt?: BahnhofTreffer[], entwurf?: EingabeEntwurf | null) {
       erkannt={erkannt}
       entwurf={entwurf}
       onBerechnen={onBerechnen}
+      {...extra}
     />,
   )
   return onBerechnen
@@ -195,15 +200,15 @@ describe('Eingabe: Reise importieren', () => {
     'An 16:01 Eberswalde Hbf, Gleis 3',
   ].join('\n')
 
-  it('bietet den Knopf unter der Wagennummer an', () => {
+  it('bietet „Verbindung einfügen" am Bahnhofsfeld an', () => {
     zeige()
-    expect(screen.getByRole('button', { name: 'Reise importieren' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Verbindung einfügen' })).toBeTruthy()
   })
 
   it('oeffnet ein Fenster, keine Seite', async () => {
     zeige()
     expect(screen.queryByRole('dialog')).toBeNull()
-    await userEvent.click(screen.getByRole('button', { name: 'Reise importieren' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Verbindung einfügen' }))
     expect(screen.getByRole('dialog')).toBeTruthy()
   })
 
@@ -213,7 +218,7 @@ describe('Eingabe: Reise importieren', () => {
    */
   it('uebernimmt Bahnhof und beide Gleise und schliesst das Fenster', async () => {
     zeige()
-    await userEvent.click(screen.getByRole('button', { name: 'Reise importieren' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Verbindung einfügen' }))
     await userEvent.click(screen.getByRole('textbox', { name: /Text der Verbindung/i }))
     await userEvent.paste(REISE)
 
@@ -241,7 +246,7 @@ describe('Eingabe: Reise importieren', () => {
     zeige(undefined, ENTWURF) // ENTWURF traegt Wagen 26 / 7
     expect((screen.getByLabelText('Ankunft: Wagen (optional)') as HTMLInputElement).value).toBe('26')
 
-    await userEvent.click(screen.getByRole('button', { name: 'Reise importieren' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Verbindung einfügen' }))
     await userEvent.click(screen.getByRole('textbox', { name: /Text der Verbindung/i }))
     await userEvent.paste(REISE)
     await userEvent.click(
@@ -261,7 +266,7 @@ describe('Eingabe: Reise importieren', () => {
    */
   it('laesst die Verkehrsstelle weiterhin von der Bahnhofssuche bestimmen', async () => {
     zeige()
-    await userEvent.click(screen.getByRole('button', { name: 'Reise importieren' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Verbindung einfügen' }))
     await userEvent.click(screen.getByRole('textbox', { name: /Text der Verbindung/i }))
     await userEvent.paste(REISE)
     await userEvent.click(
@@ -283,7 +288,7 @@ describe('Eingabe: Reise importieren', () => {
    */
   it('belegt auch Ankunfts- und Anschlusszug', async () => {
     zeige()
-    await userEvent.click(screen.getByRole('button', { name: 'Reise importieren' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Verbindung einfügen' }))
     await userEvent.click(screen.getByRole('textbox', { name: /Text der Verbindung/i }))
     await userEvent.paste(REISE)
     await userEvent.click(
@@ -346,5 +351,72 @@ describe('Eingabe: Einstellungen', () => {
     zeige()
     const darstellung = screen.getByRole('group', { name: 'Darstellung' })
     expect(within(darstellung).getByRole('button', { name: 'Hell' }).getAttribute('aria-pressed')).toBe('true')
+  })
+})
+
+/** Spec 2026-10-11, Abschnitt 4: die neue Handy-Eingabe. */
+describe('Eingabe: der neue Aufbau', () => {
+  beforeEach(() => {
+    sucheMock.mockReset()
+    sucheMock.mockResolvedValue({ ok: true, treffer: [BERLIN] })
+  })
+
+  const kachel = (feldname: string) =>
+    (screen.getByLabelText(feldname) as HTMLElement).closest('.gleiskachel') as HTMLElement
+
+  it('fragt „Wo steigst du um?"', () => {
+    zeige()
+    expect(screen.getByRole('heading', { level: 2, name: 'Wo steigst du um?' })).toBeDefined()
+  })
+
+  it('traegt die Gleise in zwei Kacheln mit den Woertern der Uebersicht', () => {
+    zeige()
+    expect(within(kachel('Ankunft: Gleis')).getByText('Du kommst an')).toBeDefined()
+    expect(within(kachel('Anschluss: Gleis')).getByText('Dein Anschluss')).toBeDefined()
+    expect(kachel('Anschluss: Gleis').classList.contains('ziel')).toBe(true)
+  })
+
+  it('schaltet die Gleisnummer ab vier Zeichen auf die kleinere Stufe', async () => {
+    zeige()
+    const an = screen.getByLabelText('Ankunft: Gleis')
+    await userEvent.type(an, '14')
+    expect(an.classList.contains('lang')).toBe(false)
+    await userEvent.clear(an)
+    await userEvent.type(an, '7A-D')
+    expect(an.classList.contains('lang')).toBe(true)
+  })
+
+  it('nennt den gewaehlten Zug in der Kachel', () => {
+    zeige(undefined, {
+      suchtext: 'Berlin Hbf',
+      gewaehlt: BERLIN,
+      evaManuell: '',
+      gleisAn: '6',
+      gleisAb: '14',
+      wagenAn: '',
+      wagenAb: '',
+      profil: 'normal',
+      zugAnkunft: { zug: 'RE 3', zeitSoll: '14:22', gleisSoll: '6', ziel: 'Stralsund' },
+      zugAbfahrt: null,
+    })
+    expect(within(kachel('Ankunft: Gleis')).getByText(/RE 3 · an 14:22/)).toBeDefined()
+  })
+
+  it('klappt Zuege und Wagennummer auf dem Handy ein', () => {
+    zeige()
+    const aufklapper = screen.getByLabelText('Ankunft: Wagen (optional)').closest('details')
+    expect(aufklapper).not.toBeNull()
+    expect(aufklapper!.open).toBe(false)
+    expect(within(aufklapper!).getByText(/Züge und Wagennummer/)).toBeDefined()
+  })
+
+  it('stellt den Hauptknopf fest unter den Rollbereich, ohne Pfeil', () => {
+    zeige(undefined, null, { kopf: <p>KOPF</p>, fuss: <p>FUSS</p> })
+    const knopf = screen.getByRole('button', { name: /Umstieg starten/ })
+    expect(knopf.closest('.eingabe-rollbereich')).toBeNull()
+    expect(knopf.querySelector('svg')).toBeNull()
+    const bereich = document.querySelector('.eingabe-rollbereich') as HTMLElement
+    expect(within(bereich).getByText('KOPF')).toBeDefined()
+    expect(within(bereich).getByText('FUSS')).toBeDefined()
   })
 })

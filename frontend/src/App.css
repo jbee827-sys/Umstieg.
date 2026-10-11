@@ -2302,3 +2302,131 @@
 .knopf-breit {
   width: 100%;
 }
+
+/* — Eingabe (Spec 2026-10-11) — */
+
+/*
+ * Dieselbe Spalte wie Uebersicht und Wegseite: so hoch wie das Sichtfeld,
+ * der Inhalt rollt in `.eingabe-rollbereich`, „Umstieg starten" steht fest
+ * darunter. Vorher lag der Knopf unter Bahnhof, zwei Bloecken, Import und
+ * Einstellungen.
+ */
+.app-eingabe {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+.eingabe-flaeche {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.eingabe-rollbereich {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin: 0 -20px;
+  padding: 0 20px 4px;
+}
+.eingabe-titel {
+  margin: 0;
+  font-size: var(--schrift-titel);
+  font-weight: 700;
+  line-height: 1.2;
+}
+/* Fuer Vorleser da, im Bild nicht: „Ankunft: " vor „Gleis". */
+.nur-vorlesen {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.feld-rand {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+/* Abkuerzung am Rand: Text statt Flaeche, aber 44 px Tippziel. */
+.textknopf {
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--schrift-label);
+  font-weight: 700;
+  color: var(--color-accent-700);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.gleiskacheln {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+/* Dieselben Karten wie auf der Uebersicht - die Kachel WIRD dort zur Karte. */
+.gleiskachel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 14px;
+  border: 2px solid var(--color-divider);
+  border-radius: var(--radius-mittel);
+}
+.gleiskachel.ziel {
+  border-color: var(--color-accent);
+  background: var(--color-accent-100);
+}
+.gleiskachel-label {
+  font-size: var(--schrift-label);
+  color: var(--color-neutral-700);
+}
+.gleiskachel-feld {
+  min-height: 0;
+  padding: 2px 12px;
+  font-size: var(--schrift-gleis);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  border-radius: var(--radius-klein);
+}
+/* Teilgleise wie „7A-D" passen auf 320 px nur eine Stufe kleiner. */
+.gleiskachel-feld.lang {
+  font-size: var(--schrift-titel);
+}
+.gleiskachel.ziel .gleiskachel-feld {
+  color: var(--color-accent-700);
+  background: var(--color-bg);
+}
+.gleiskachel-zug {
+  margin: 0;
+  font-size: var(--schrift-label);
+  color: var(--color-neutral-700);
+}
+.zuege-wagen > summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 12px 0;
+  font-size: var(--schrift-label);
+  font-weight: 700;
+}
+.zuege-wagen-optional {
+  font-weight: 500;
+  color: var(--color-neutral-700);
+}
+.zuege-wagen > .reiseblock + .reiseblock {
+  margin-top: 12px;
+}

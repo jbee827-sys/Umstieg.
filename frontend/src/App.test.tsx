@@ -79,7 +79,13 @@ function abrufe(): RouteParameter[] {
 async function bisZumDashboard(): Promise<void> {
   render(<App />)
   await userEvent.type(screen.getByLabelText('Umstiegsbahnhof'), 'Leip')
-  await userEvent.click(await screen.findByRole('button', { name: 'Leipzig Hbf' }))
+  // 3 s statt der ueblichen 1 s: Hinter dem Vorschlag stehen 300 ms
+  // Entprellung, und im ersten Lauf nach einer Aenderung uebersetzt Vitest
+  // die geaenderten Dateien, waehrend 40 Testdateien parallel laufen - am
+  // 11.10.2026 riss dieser Test dabei einmal die Sekunde.
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Leipzig Hbf' }, { timeout: 3000 }),
+  )
   await userEvent.type(screen.getByLabelText('Ankunft: Gleis'), '6')
   await userEvent.type(screen.getByLabelText('Anschluss: Gleis'), '16')
   await userEvent.click(screen.getByRole('button', { name: /Umstieg starten/ }))
@@ -107,6 +113,11 @@ describe('App: die Uebersicht', () => {
   it('steht in der Spalte, die nur innen rollt', async () => {
     await bisZumDashboard()
     expect(document.querySelector('main.app-dashboard')).not.toBeNull()
+  })
+
+  it('stellt die Eingabe in die Spalte, die nur innen rollt', () => {
+    render(<App />)
+    expect(document.querySelector('main.app-eingabe')).not.toBeNull()
   })
 })
 
