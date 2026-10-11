@@ -101,10 +101,12 @@ describe('App.css: Druckgefühl', () => {
  * weil der Ladekreisel sich weiterdrehen soll.
  */
 describe('App.css: reduzierte Bewegung', () => {
-  it('setzt jeden Übergang auf sofort', () => {
+  it('setzt jeden Übergang auf sofort, auch seine Verzögerung', () => {
+    // Ohne die Verzoegerung kaeme die Abfahrtstafel ruckartig 120 ms nach
+    // der Ankunft (Spec 2026-10-11, Abschnitt 6).
     const block = bloeckeAb('@media (prefers-reduced-motion: reduce)').join('\n')
     expect(block.replace(/\s+/g, ' ')).toMatch(
-      /\*, ::before, ::after \{ transition-duration: 0\.01ms !important; \}/,
+      /\*, ::before, ::after \{ transition-duration: 0\.01ms !important; transition-delay: 0s !important; \}/,
     )
   })
 })

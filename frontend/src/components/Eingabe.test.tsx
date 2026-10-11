@@ -484,4 +484,33 @@ describe('Eingabe: breites Layout', () => {
     expect(await screen.findAllByText(/Ohne DB-Zugang keine Live-Tafel/)).toHaveLength(2)
     expect(holeTafelMock).not.toHaveBeenCalled()
   })
+
+  /** Spec 2026-10-11, Abschnitt 6: Die Tafeln klappen nach rechts auf. */
+  const spalte = (name: string) => screen.getByRole('region', { name }) as HTMLElement
+  const formular = () => document.querySelector('form.eingabe-flaeche') as HTMLElement
+
+  it('klappt die Tafeln mit Bewegung auf, wenn der Nutzer waehlt', async () => {
+    zeige()
+    await waehleBerlin()
+    expect(spalte('Ankunft').dataset.offen).toBe('ja')
+    expect(spalte('Abfahrt').dataset.offen).toBe('ja')
+    expect(formular().classList.contains('mit-bewegung')).toBe(true)
+  })
+
+  it('zeigt die Tafeln ohne Bewegung, wenn die Erkennung den Bahnhof setzt', () => {
+    // DESIGN.md 6: Bewegung, die von selbst Aufmerksamkeit fordert, ist verboten.
+    zeige([BERLIN])
+    expect(spalte('Ankunft').dataset.offen).toBe('ja')
+    expect(formular().classList.contains('mit-bewegung')).toBe(false)
+  })
+
+  it('klappt beim Aufheben der Wahl zu und sperrt die Tafel', async () => {
+    zeige()
+    await waehleBerlin()
+    await userEvent.type(feld(), 'x')
+    expect(spalte('Ankunft').dataset.offen).toBe('nein')
+    const inhalt = spalte('Ankunft').querySelector('.tafel-spalte-inhalt') as HTMLElement
+    expect(inhalt.hasAttribute('inert')).toBe(true)
+    expect(within(spalte('Ankunft')).getByText(/Wähle einen Bahnhof/)).toBeDefined()
+  })
 })

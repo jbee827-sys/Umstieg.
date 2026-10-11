@@ -45,3 +45,29 @@ describe('App.css: breites Layout der Eingabe', () => {
     )
   })
 })
+
+describe('App.css: die Tafeln klappen nach rechts auf', () => {
+  it('laeuft als Uebergang ueber die Token', () => {
+    const regel = deklarationenVon(css, '.mit-bewegung .tafel-spalte-inhalt').join('; ')
+    expect(regel).toMatch(/clip-path var\(--dauer-normal\) var\(--verlauf-ein\)/)
+  })
+
+  it('ist zugeklappt von rechts her verdeckt', () => {
+    expect(
+      deklarationenVon(css, ".tafel-spalte[data-offen='nein'] .tafel-spalte-inhalt"),
+    ).toContain('clip-path: inset(0 100% 0 0)')
+  })
+
+  it('klappt auch beim ersten Erscheinen auf', () => {
+    expect(bloeckeAb(css, '@starting-style').join(' ')).toMatch(/clip-path: inset\(0 100% 0 0\)/)
+  })
+
+  it('laesst die Abfahrt um --dauer-schnell nachfolgen', () => {
+    expect(
+      deklarationenVon(
+        css,
+        ".mit-bewegung .tafel-spalte.abfahrt[data-offen='ja'] .tafel-spalte-inhalt",
+      ),
+    ).toContain('transition-delay: var(--dauer-schnell)')
+  })
+})
