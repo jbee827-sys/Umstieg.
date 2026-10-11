@@ -584,6 +584,7 @@ Frontend-Suite grün.
 | Nordstern in der Navileiste | **entfernt 05.10.2026** | Am 21.09. gebaut (Inline-SVG über `currentColor`), am 05.10. auf Wunsch wieder herausgenommen – die vier Einträge sind gleichrangig |
 | Dunkelmodus-Durchgang | **fertig 26.09., ergänzt 05.10.2026** | 26.09.: zwölf feste Farbwerte in `App.css` über Token. 05.10.: Die Wortmarke im Lockup blieb nachts dunkel; dazu die Wahl Hell/Dunkel unter „Einstellungen“ |
 | Bewegung anschließen | **offen** | Die Token stehen, `App.css` nutzt noch eigene `transition`-Werte; Seitenübergänge brauchen die Pfad-Adressen |
+| Übersicht: Bahnsteigstreifen, Ebenenangabe, fester Hauptknopf (Abschnitt 2, Dashboard a–c) | **fertig 07.10.2026** | Die blanke Regel `.gewaehlt` (gemeint: das Abzeichen „✓ Bahnhof") gab seit August auch der gewählten Routenzeile 8 px Versatz; drei Balkenstücke zeigten Nähte |
 
 **Am 05.10.2026 im Browser angesehen** (Chrome, Rahmen 360 × 740, hell und
 dunkel). Dabei kam heraus, dass die Grundgröße 18 px nie gegriffen hatte: Sie

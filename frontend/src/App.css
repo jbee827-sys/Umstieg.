@@ -45,6 +45,40 @@
 }
 
 /*
+ * Die Uebersicht rollt nur innen (07.10.2026).
+ *
+ * „Navigation starten" lag unter dem Falz - hinter Kopf, Ampel, Karten,
+ * Standortwahl, Routenwahl und Hinweisen (`BRIEF.md`, Dashboard c). Jetzt
+ * dieselbe Spalte wie auf der Wegseite: so hoch wie das Sichtfeld, der Inhalt
+ * rollt in `.dashboard-rollbereich`, darunter stehen fest der Hauptknopf und
+ * die Leiste.
+ *
+ * Nicht `position: sticky` mit festem Abstand zur Leiste: Der Abstand haette
+ * die Hoehe der Leiste nachrechnen muessen, und die waechst mit grosser
+ * Schrift am Geraet - dann laege der Knopf halb hinter ihr.
+ */
+.app-dashboard {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+.dashboard-rollbereich {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  /* Derselbe Abstand wie zwischen den Kindern von `.app` - vorher standen
+     sie dort direkt. */
+  gap: 18px;
+  /* Bis an den Spaltenrand, damit eine Rollleiste nicht im Inhalt steht;
+     unten Luft fuer den Fokusring des letzten Elements. */
+  margin: 0 -20px;
+  padding: 0 20px 4px;
+}
+
+/*
  * Was oben steht, nimmt dem Bild den Platz. Am 05.10.2026 im Browser
  * gemessen (360 × 740): Mit dem Echtzeit-Banner in voller Laenge, dem
  * Stand-Satz und einem zweizeiligen Titel blieben dem Bild 56 px - genau der
@@ -230,7 +264,10 @@
   background: color-mix(in srgb, var(--color-text) 6%, transparent);
 }
 
-.gewaehlt {
+/* Das Abzeichen „✓ Bahnhof" unter dem Suchfeld. Bis zum 07.10.2026 hiess die
+   Regel nur `.gewaehlt` - und gab damit auch der gewaehlten Routenzeile und
+   Standortstelle `margin-top: 8px`, die die Klasse als Zustand tragen. */
+.bahnhof-gewaehlt {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -1461,6 +1498,13 @@
   font-size: var(--schrift-label);
   color: var(--color-neutral-700);
 }
+/* „Ebene −2" unter der Gleisnummer (`BRIEF.md`, Dashboard b). */
+.dashboard-ebene {
+  font-size: var(--schrift-label);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-neutral-700);
+}
 .wahl-gruppe-spalte {
   flex-direction: column;
 }
@@ -1861,15 +1905,37 @@
 /*
  * Standortwahl am Ankunftsgleis (Artboard „Kopfbahnhof").
  *
- * Drei Knoepfe NEBENEINANDER, nicht untereinander wie die Routenwahl: Die
- * Wahl ist raeumlich - Anfang, Mitte, Ende liegen am Bahnsteig genauso
- * nebeneinander. Die Reihenfolge im Markup ist die Reihenfolge am Gleis.
+ * Seit dem 07.10.2026 ein Bahnsteigstreifen (`BRIEF.md`, Dashboard a): EIN
+ * Balken - der Bahnsteig -, darauf drei Stellen, die drei Knoepfe ohne
+ * Abstand. Die Reihenfolge im Markup ist die Reihenfolge am Gleis. Vorher
+ * drei Knoepfe wie die Routenwahl, die gewaehlte Flaeche gefuellt: zwei
+ * gleich aussehende Gruppen, die Verschiedenes meinen.
  */
 .standortwahl {
   display: flex;
-  gap: 8px;
+}
+.bahnsteigstreifen {
+  /* Bezug fuer Balken und Standortpunkt */
+  position: relative;
+}
+/* Der Balken, einmal fuer den ganzen Streifen. Je Knopf ein Stueck Hintergrund
+   zeigte in der Sichtpruefung feine Naehte an den Stosskanten - drei Breiten
+   zu je einem Drittel landen auf Bruchteilen eines Pixels. Die Hoehe teilt er
+   mit `.bahnsteigstreifen-stueck` und `.standortpunkt`. */
+.bahnsteigstreifen::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  border-radius: var(--radius-gross);
+  background: var(--color-neutral-300);
 }
 .standortwahl-knopf {
+  /* Ueber dem Balken: Ohne eigene Lage malte der Browser den positionierten
+     Balken ueber die Ringe. */
+  position: relative;
   flex: 1;
   min-width: 0;
   /* 56 px wie die Routenwahl-Zeile - mit Gepaeck in der einen Hand ist das
@@ -1878,24 +1944,71 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 2px;
-  padding: 8px 6px;
-  border: 1px solid var(--color-divider);
+  gap: 4px;
+  /* Oben kein Polster: Der Standortpunkt liegt mit `top: 0` genau auf dem
+     Balken, egal wie gross die Schrift darunter wird. */
+  padding: 0 0 6px;
+  border: 0;
   border-radius: var(--radius-klein);
   background: transparent;
   font-family: inherit;
   color: var(--color-text);
   cursor: pointer;
-  transition: background 0.18s ease, color 0.18s ease, transform 0.12s ease;
 }
-.standortwahl-knopf:active {
-  transform: scale(0.985);
+/* Das Stueck Balken, das zu dieser Stelle gehoert - es traegt ihren Ring. */
+.bahnsteigstreifen-stueck {
+  align-self: stretch;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.standortwahl-knopf.gewaehlt {
-  border-color: var(--color-akzent-tief);
-  background: var(--color-akzent-tief);
-  color: var(--color-auf-akzent);
+/* Die Stelle, die man antippen kann. Drueckt man, gibt sie nach - der Balken
+   selbst bleibt ganz, ein `scale` auf dem Knopf haette ihn zerrissen. */
+.bahnsteigstreifen-ring {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--color-neutral-700);
+  background: var(--color-bg);
+  transition: transform var(--dauer-schnell) var(--verlauf-ein);
+}
+.standortwahl-knopf:active .bahnsteigstreifen-ring {
+  transform: scale(1.3);
+}
+/*
+ * Der Standortpunkt: derselbe wie im Ebenenschema (`.schema-start` mit Kern) -
+ * Ring in Schriftfarbe, heller Rand, voller Kern. EIN Punkt fuer alle drei
+ * Stellen, ein Drittel breit; er wandert in 200 ms an die neue Stelle, mit
+ * dem Hauch Nachgeben, den DESIGN.md 6 nur der Auswahlmarke erlaubt.
+ */
+.standortpunkt {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(100% / 3);
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: transform var(--dauer-normal) var(--verlauf-marke);
+}
+.standortpunkt::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-text);
+  box-shadow:
+    0 0 0 4px var(--color-bg),
+    0 0 0 7px var(--color-text);
+}
+.standortpunkt[data-stelle='mitte'] {
+  transform: translateX(100%);
+}
+.standortpunkt[data-stelle='ende'] {
+  transform: translateX(200%);
 }
 .standortwahl-name {
   font-size: var(--schrift-label);
@@ -1905,10 +2018,17 @@
   font-size: var(--schrift-label);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  opacity: 0.85;
+  color: var(--color-neutral-700);
   /* Platz bleibt frei, auch wenn keine Minuten kamen - sonst springen die
-     drei Knoepfe in der Hoehe, waehrend die Zeiten eintrudeln. */
+     drei Stellen in der Hoehe, waehrend die Zeiten eintrudeln. */
   min-height: 1.2em;
+}
+/* Die gewaehlte Stelle sagt der Punkt; Name und Minuten werden nur kraeftiger.
+   Keine Flaeche - die bleibt der Bahnsteig. */
+.standortwahl-knopf.gewaehlt .standortwahl-name,
+.standortwahl-knopf.gewaehlt .standortwahl-min {
+  font-weight: 800;
+  color: var(--color-text);
 }
 .standortwahl-knopf:disabled {
   cursor: default;
@@ -1916,7 +2036,6 @@
 }
 .standortwahl-knopf.laedt {
   opacity: 1;
-  border-color: var(--color-text);
 }
 .standortwahl-hinweis {
   margin: 8px 0 0;
@@ -1960,11 +2079,13 @@
     animation: none;
   }
 
-  /* Alle vier Uebergaenge der App: Knoepfe, Lampenfarbe, Zeitleiste. */
+  /* Die Uebergaenge der App: Knoepfe, Lampenfarbe, Zeitleiste, Standortpunkt. */
   .wahl-knopf,
   .knopf-primaer,
   .ampel-lampe,
-  .ampel-zeitleiste-fuellung {
+  .ampel-zeitleiste-fuellung,
+  .bahnsteigstreifen-ring,
+  .standortpunkt {
     transition-duration: 0.01ms;
   }
 

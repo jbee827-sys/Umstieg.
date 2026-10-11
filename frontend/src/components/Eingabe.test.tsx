@@ -146,7 +146,7 @@ describe('Eingabe: gespeicherter Entwurf', () => {
     // sich fuer "noch nichts gewaehlt", startet eine Suche und laesst den
     // Rechnen-Knopf gesperrt, obwohl alles ausgefuellt aussieht.
     zeige(undefined, ENTWURF)
-    expect(screen.getByText(/Berlin Hbf/, { selector: '.gewaehlt' })).toBeTruthy()
+    expect(screen.getByText(/Berlin Hbf/, { selector: '.bahnhof-gewaehlt' })).toBeTruthy()
   })
 
   it('haelt das gewaehlte Gehtempo', () => {

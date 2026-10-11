@@ -1,6 +1,7 @@
 import type {
   BahnhofSchema,
   KantenTyp,
+  RouteErgebnis,
   SchemaBahnsteig,
   SchemaEbene,
   SchemaWechsel,
@@ -69,12 +70,36 @@ export function wechselAnweisung(w: SchemaWechsel): string {
   return `${wechselName(w.typ)} ${w.nachLevel < w.vonLevel ? 'hinunter' : 'hinauf'}`
 }
 
-/** U+2212 statt Bindestrich — der Entwurf schreibt „EBENE −2". */
-export function ebenenLabel(level: number): string {
-  if (level === 0) return 'EBENE 0'
+/**
+ * Die Ebene als Zahl mit Vorzeichen: „−2", „+1", „0", „−0,3".
+ *
+ * U+2212 statt Bindestrich — der Entwurf schreibt „EBENE −2". Zwischenebenen
+ * (OSM `level=-0.3`) mit Komma, wie überall in der App.
+ */
+export function ebenenZahl(level: number): string {
+  if (level === 0) return '0'
   const betrag = Math.abs(level)
   const zahl = Number.isInteger(betrag) ? String(betrag) : betrag.toFixed(1).replace('.', ',')
-  return level > 0 ? `EBENE +${zahl}` : `EBENE −${zahl}`
+  return level > 0 ? `+${zahl}` : `−${zahl}`
+}
+
+export function ebenenLabel(level: number): string {
+  return `EBENE ${ebenenZahl(level)}`
+}
+
+/**
+ * Auf welcher Ebene Ankunfts- und Abfahrtsgleis liegen – für die Karten der
+ * Übersicht.
+ *
+ * Der erste Besuch ist das Ankunftsgleis, der letzte das Abfahrtsgleis; so
+ * vergibt das Backend `rolle`. Im Standardmodell (Stufe 3) sind die Ebenen
+ * geraten – dort zeichnet die Wegseite das Ersatzbild, und hier steht
+ * dieselbe Antwort: keine Angabe statt einer geratenen.
+ */
+export function gleisEbenen(route: RouteErgebnis): { an: number; ab: number } | undefined {
+  const ebenen = route.schema?.ebenen
+  if (route.stufe === 3 || !ebenen || ebenen.length === 0) return undefined
+  return { an: ebenen[0].level, ab: ebenen[ebenen.length - 1].level }
 }
 
 /** Länge eines Linienzugs in Metern — die Punkte stehen in Metern. */

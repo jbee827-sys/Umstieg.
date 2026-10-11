@@ -97,6 +97,19 @@ beforeEach(() => {
   window.sessionStorage.clear()
 })
 
+/**
+ * Die Uebersicht rollt nur innen, „Navigation starten" steht fest ueber der
+ * Leiste (`BRIEF.md`, Dashboard c). Dafuer braucht die Spalte `.app-dashboard`
+ * - die Regeln dazu prueft `screens/dashboard-css.test.ts`, hier nur, dass
+ * `App` sie der Uebersicht auch gibt.
+ */
+describe('App: die Uebersicht', () => {
+  it('steht in der Spalte, die nur innen rollt', async () => {
+    await bisZumDashboard()
+    expect(document.querySelector('main.app-dashboard')).not.toBeNull()
+  })
+})
+
 describe('App: Standortwahl am Ankunftsgleis', () => {
   it('rechnet zunaechst ab der Bahnsteigmitte', async () => {
     await bisZumDashboard()
