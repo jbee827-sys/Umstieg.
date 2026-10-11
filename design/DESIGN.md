@@ -409,10 +409,13 @@ einführt, bekommt sie einen deutschen Namen in derselben Machart.
 
 ### Die offenen Stellen — hier wird ein Entwurf wirklich gebraucht
 
-1. **Der Eingabe-Bildschirm.** Im Entwurf vom 18.09. fehlt er: `01-onboarding.png`
-   und `02-dashboard.png` sind dasselbe Bild. Der gesamte Einstieg lebt nur im
-   Code. Gebraucht wird: Tippen als Hauptweg, Einfügen und Standort als
-   Abkürzungen am Rand, Züge und Wagennummer eingeklappt.
+1. ~~**Der Eingabe-Bildschirm.**~~ **Gebaut am 11.10.2026** nach
+   [`docs/superpowers/specs/2026-10-11-eingabe-und-breites-layout-design.md`](../docs/superpowers/specs/2026-10-11-eingabe-und-breites-layout-design.md):
+   „Wo steigst du um?", Bahnhof, zwei Gleiskacheln mit den Wörtern der
+   Übersicht („Du kommst an" / „Dein Anschluss"), Züge und Wagennummer
+   eingeklappt, „Verbindung einfügen" als Textknopf am Rand, „Umstieg starten"
+   fest über der Leiste. Ursprünglich: Im Entwurf vom 18.09. fehlte er
+   (`01-onboarding.png` und `02-dashboard.png` sind dasselbe Bild).
 2. ~~**Der Bahnsteigstreifen** als Ersatz für die Standortwahl-Knopfliste —
    räumliche Frage, räumliche Antwort.~~ **Gebaut am 07.10.2026:** ein Balken,
    drei Stellen mit Ring, EIN Standortpunkt wie im Ebenenschema, der in 200 ms
@@ -422,7 +425,13 @@ einführt, bekommt sie einen deutschen Namen in derselben Machart.
    (Ebene 0 ist in OSM nicht verlässlich die Straße) und **ohne**
    „Abschnitt C" (keine Quelle, seit die Wagenreihung tot ist).
 4. **Die dunkle Palette** auf allen fünf Bildschirmen.
-5. **Das iPad-Layout.**
+5. **Das iPad-Layout.** Für die **Eingabe gebaut am 11.10.2026**, und zwar
+   nach Breite, nicht nach Gerät – iPad und Desktop teilen es: ab 700 px
+   Formular oben und beide Live-Tafeln darunter, ab 900 px drei Spalten
+   (Formular · Ankunft · Abfahrt). Die Tafeln stehen offen, reichen bis zum
+   Ende der nächsten Stunde und klappen auf eine Bahnhofswahl hin nach rechts
+   auf. **Offen** für Übersicht, Weg, Meldungen und Angekommen – sie bleiben
+   auf breiten Schirmen die 430-px-Spalte.
 
 ### Wie ein Auftrag an Stitch formuliert wird
 
