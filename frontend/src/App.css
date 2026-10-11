@@ -131,7 +131,10 @@
   font-size: var(--schrift-label);
   font-weight: 600;
   letter-spacing: 0.01em;
-  color: var(--color-accent);
+  /* Rotschrift, nicht Signalrot: Signalrot erreicht als 15-px-Schrift nur
+     4,2:1, auf dem Rotschleier der Anschlusskarte 3,8:1 (Sichtpruefung
+     11.10.2026, DESIGN.md 2). */
+  color: var(--color-accent-700);
 }
 
 .kopf h1 {
@@ -1136,7 +1139,8 @@
   position: relative;
 }
 .navileiste-knopf.hervorgehoben {
-  color: var(--color-accent);
+  /* Rotschrift - Signalrot ist als Schrift unter 22 px zu schwach (4,2:1). */
+  color: var(--color-accent-700);
 }
 .navileiste-knopf.hervorgehoben::after {
   content: '';
@@ -1505,7 +1509,8 @@
 .schrittsheet-zaehler {
   font-size: var(--schrift-label);
   letter-spacing: 0.14em;
-  color: var(--color-accent);
+  /* Rotschrift - Signalrot ist als Schrift unter 22 px zu schwach (4,2:1). */
+  color: var(--color-accent-700);
 }
 .schrittsheet-text {
   font-size: var(--schrift-anweisung);
@@ -2544,6 +2549,12 @@
 }
 
 @media (min-width: 900px) {
+  /* Rechts nur in den Spaltenabstand: Mit den -20 px des Handys ragte die
+     Rollleiste 2 px in die Ankunftstafel (Sichtpruefung 11.10.2026). */
+  .eingabe-rollbereich {
+    margin-right: -8px;
+    padding-right: 8px;
+  }
   .eingabe-flaeche {
     grid-template-columns: minmax(340px, 400px) 1fr 1fr;
     grid-template-rows: minmax(0, 1fr) auto;

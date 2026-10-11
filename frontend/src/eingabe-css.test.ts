@@ -71,3 +71,17 @@ describe('App.css: die Tafeln klappen nach rechts auf', () => {
     ).toContain('transition-delay: var(--dauer-schnell)')
   })
 })
+
+/**
+ * Sichtpruefung 11.10.2026: In drei Spalten ragte der Rollbereich mit seinem
+ * `margin: 0 -20px` 2 px in die Ankunftstafel - seine Rollleiste laege auf
+ * deren Rand. Ab 900 px reicht er rechts nur 8 px in den Spaltenabstand.
+ */
+describe('App.css: der Rollbereich bleibt in seiner Spalte', () => {
+  it('reicht ab 900 px rechts nur in den Abstand, nicht in die Tafel', () => {
+    const ab900 = bloeckeAb(css, '@media (min-width: 900px)').join(' ')
+    const regel = deklarationenVon(ab900, '.eingabe-rollbereich')
+    expect(regel).toContain('margin-right: -8px')
+    expect(regel).toContain('padding-right: 8px')
+  })
+})
