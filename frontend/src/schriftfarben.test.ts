@@ -25,3 +25,24 @@ describe('App.css: Schriftfarben', () => {
     expect(treffer).toEqual([])
   })
 })
+
+/**
+ * Sichtpruefung 11.10.2026: Signalrot (`--color-accent`, #ec3013) erreicht
+ * auf Weiss nur 4,2:1, auf dem Rotschleier der Anschlusskarte 3,8:1. Als
+ * Schrift unter 22 px ist es deshalb verboten; rote Schrift auf hellem Grund
+ * nimmt Rotschrift (`--color-accent-700`, 7,2:1) - DESIGN.md 2. Getroffen
+ * hatte es die Kicker („Du kommst an"), den Schrittzaehler und „Meldungen"
+ * in der Leiste. Grafik darf Signalrot tragen (3:1 genuegt dort).
+ */
+describe('App.css: Signalrot als Schrift', () => {
+  const GRAFIK = new Set(['.schema-scheibe.ankunft'])
+
+  it('steht nur an Grafik, nie an Text', () => {
+    const ohneKommentare = css.replace(/\/\*[\s\S]*?\*\//g, '')
+    const treffer: string[] = []
+    for (const t of ohneKommentare.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      if (/(^|;)\s*color:\s*var\(--color-accent\)\s*(;|$)/.test(t[2])) treffer.push(t[1].trim())
+    }
+    expect(treffer.filter((s) => !GRAFIK.has(s))).toEqual([])
+  })
+})
