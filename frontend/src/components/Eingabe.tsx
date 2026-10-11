@@ -13,6 +13,7 @@ import { ReiseImport } from './ReiseImport'
 import type { Umstieg } from '../reise/reisetext'
 import type { EingabeEntwurf } from '../sitzung/eingabespeicher'
 import { ladeDarstellung, waehleDarstellung, type Darstellung } from '../einstellungen/darstellung'
+import { useBreitesLayout } from '../aufbau/breite'
 
 export interface EingabeWerte {
   eva: string
@@ -245,6 +246,9 @@ export function Eingabe({
   const eva = gewaehlt?.eva ?? (dbFehlt ? evaManuell.trim() : '')
   const bereit = eva !== '' && gleisAn.trim() !== '' && gleisAb.trim() !== '' && !laden
 
+  // Ab 700 px (iPad, Desktop) stehen die Tafeln offen neben dem Formular.
+  const breit = useBreitesLayout()
+
   // Eine Wahl aus der Tafel setzt auch das Gleis; das Aufheben laesst es stehen.
   const waehleAnkunft = (e: TafelEintrag | null) => {
     setZugAnkunft(e)
@@ -289,6 +293,45 @@ export function Eingabe({
         abfahrtZeit: zugAbfahrt ? (zugAbfahrt.zeitIst ?? zugAbfahrt.zeitSoll) : undefined,
       },
       abbild,
+    )
+  }
+
+  // Leere Zustaende sagen, was fehlt und was zu tun ist (DESIGN.md 4). Ohne
+  // DB-Zugang gibt es nur die EVA-Ersatzeingabe - und keine Tafel.
+  const platzhaltertext = dbFehlt
+    ? 'Ohne DB-Zugang keine Live-Tafel – Gleise bitte von Hand eingeben.'
+    : 'Wähle einen Bahnhof – dann stehen hier die Züge bis zum Ende der nächsten Stunde.'
+
+  // Eine Tafelspalte des breiten Layouts. Sie haengt am GEWAEHLTEN Bahnhof,
+  // nicht an der EVA-Ersatzeingabe: Die gibt es nur ohne DB-Zugang, und dort
+  // kann auch die Tafel nicht laden.
+  function tafelSpalte(
+    art: 'ankunft' | 'abfahrt',
+    titel: string,
+    typ: 'arr' | 'dep',
+    auswahl: TafelEintrag | null,
+    onAuswahl: (e: TafelEintrag | null) => void,
+  ) {
+    return (
+      <section className={`tafel-spalte ${art}`} aria-label={titel}>
+        {gewaehlt ? (
+          <div className="tafel-spalte-inhalt">
+            <Zugauswahl
+              eva={gewaehlt.eva}
+              typ={typ}
+              label={`${titel} · ${gewaehlt.name}`}
+              auswahl={auswahl}
+              onAuswahl={onAuswahl}
+              immerOffen
+            />
+          </div>
+        ) : (
+          <div className="tafel-platzhalter">
+            <h3 className="tafel-spalte-titel">{titel}</h3>
+            <p>{platzhaltertext}</p>
+          </div>
+        )}
+      </section>
     )
   }
 
@@ -466,39 +509,48 @@ export function Eingabe({
         {/*
           Optional und eingeklappt (BRIEF.md 4). Gruppiert nach
           REISEABSCHNITT, nicht nach Feldart (Konzept §9): „mein ankommender
-          Zug, Wagen 26" - nicht „alle Zuege, dann alle Wagen".
+          Zug, Wagen 26" - nicht „alle Zuege, dann alle Wagen". Im breiten
+          Layout waehlt man die Zuege rechts in den Tafeln; dort stehen nur
+          die Wagenfelder, offen.
         */}
-        <details className="zuege-wagen">
-          <summary>
-            Züge und Wagennummer <span className="zuege-wagen-optional">· optional</span>
-          </summary>
-          <fieldset className="reiseblock">
-            <legend>Ankunft</legend>
-            {eva !== '' && (
-              <Zugauswahl
-                eva={eva}
-                typ="arr"
-                label="Ankunftszug wählen"
-                auswahl={zugAnkunft}
-                onAuswahl={waehleAnkunft}
-              />
-            )}
+        {breit ? (
+          <div className="gleis-zeile">
             {wagenAnFeld}
-          </fieldset>
-          <fieldset className="reiseblock">
-            <legend>Abfahrt</legend>
-            {eva !== '' && (
-              <Zugauswahl
-                eva={eva}
-                typ="dep"
-                label="Anschlusszug wählen"
-                auswahl={zugAbfahrt}
-                onAuswahl={waehleAbfahrt}
-              />
-            )}
             {wagenAbFeld}
-          </fieldset>
-        </details>
+          </div>
+        ) : (
+          <details className="zuege-wagen">
+            <summary>
+              Züge und Wagennummer <span className="zuege-wagen-optional">· optional</span>
+            </summary>
+            <fieldset className="reiseblock">
+              <legend>Ankunft</legend>
+              {eva !== '' && (
+                <Zugauswahl
+                  eva={eva}
+                  typ="arr"
+                  label="Ankunftszug wählen"
+                  auswahl={zugAnkunft}
+                  onAuswahl={waehleAnkunft}
+                />
+              )}
+              {wagenAnFeld}
+            </fieldset>
+            <fieldset className="reiseblock">
+              <legend>Abfahrt</legend>
+              {eva !== '' && (
+                <Zugauswahl
+                  eva={eva}
+                  typ="dep"
+                  label="Anschlusszug wählen"
+                  auswahl={zugAbfahrt}
+                  onAuswahl={waehleAbfahrt}
+                />
+              )}
+              {wagenAbFeld}
+            </fieldset>
+          </details>
+        )}
 
         {importOffen && (
           <ReiseImport
@@ -549,6 +601,13 @@ export function Eingabe({
         {fehler && <div className="fehler-box">{fehler}</div>}
         {fuss}
       </div>
+
+      {breit && (
+        <>
+          {tafelSpalte('ankunft', 'Ankunft', 'arr', zugAnkunft, waehleAnkunft)}
+          {tafelSpalte('abfahrt', 'Abfahrt', 'dep', zugAbfahrt, waehleAbfahrt)}
+        </>
+      )}
 
       {/* Fest unter dem Rollbereich, wie auf der Uebersicht. Ohne Pfeil:
           DESIGN.md 4, „Kein Pfeil hinter dem Text". „Wird berechnet",

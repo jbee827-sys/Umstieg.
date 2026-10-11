@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cssVon, deklarationenVon } from './testhilfen/css'
+import { bloeckeAb, cssVon, deklarationenVon } from './testhilfen/css'
 
 /**
  * Die Eingabe hat seit dem 11.10.2026 den Aufbau der Uebersicht: Spalte auf
@@ -27,6 +27,21 @@ describe('App.css: die Eingabe', () => {
     expect(deklarationenVon(css, '.gleiskachel-feld')).toContain('font-size: var(--schrift-gleis)')
     expect(deklarationenVon(css, '.gleiskachel-feld.lang')).toContain(
       'font-size: var(--schrift-titel)',
+    )
+  })
+})
+
+describe('App.css: breites Layout der Eingabe', () => {
+  const ab700 = bloeckeAb(css, '@media (min-width: 700px)').join(' ')
+  const ab900 = bloeckeAb(css, '@media (min-width: 900px)').join(' ')
+
+  it('wird ab 700 px breiter als die Telefonspalte', () => {
+    expect(deklarationenVon(ab700, '.app-eingabe')).toContain('max-width: 1280px')
+  })
+
+  it('stellt ab 900 px Formular, Ankunft und Abfahrt nebeneinander', () => {
+    expect(deklarationenVon(ab900, '.eingabe-flaeche')).toContain(
+      'grid-template-columns: minmax(340px, 400px) 1fr 1fr',
     )
   })
 })
