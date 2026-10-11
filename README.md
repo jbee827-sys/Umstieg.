@@ -73,10 +73,21 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 >
 > **Nächster Schritt unverändert: ausliefern** – Fly.io mit `--ha=false` und
 > Vercel, wie am 05.10. notiert (heute kam nur Frontend dazu, das Backend
-> trägt aber noch `662b8c7` und `32292fb`), danach M9/M10 am Gerät. **Weiter offen am Design:** Bewegung
-> an die Token anschließen, Seitenübergänge mit Pfad-Adressen, ToDo 38
-> (Vorbehalte in „Alle Schritte"), Eingabe-Bildschirm und iPad (beide warten
+> trägt aber noch `662b8c7` und `32292fb`), danach M9/M10 am Gerät.
+>
+> **Weiter offen am Design:** Bewegung an die Token anschließen,
+> Seitenübergänge mit Pfad-Adressen, Eingabe-Bildschirm und iPad (beide warten
 > auf einen Entwurf).
+>
+> **Nachtrag 11.10.2026 – ToDo 38 erledigt** (`176935d`): Die Datenvorbehalte
+> stehen wieder sichtbar, zuletzt im Aufklapper „Alle Schritte" (Schema-Satz,
+> Kreuzungswinkel, `schema.vorbehalte`; beim groben Bild nur der
+> Maßstabssatz). Im Rahmen gegen Berlin 14 → 6 geprüft: alle drei Sätze da,
+> der Aufklapper rollt in sich, die Seite nicht. Frontend 448/448.
+> **Nebenbei:** München 5 → 82 antwortete am 11.10. lokal mit
+> `gleis-unbekannt` – Overpass lieferte München nicht, und das
+> Standardmodell kennt Gleis 82 nicht. Am 07.10. kam dieselbe Route in
+> Stufe 1; das Backend ist seitdem unverändert.
 
 ### Davor (05.10.2026)
 
