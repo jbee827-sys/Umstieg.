@@ -316,7 +316,7 @@ export function Eingabe({ laden, fehler, erkannt, entwurf, onBerechnen }: Eingab
           </div>
         )}
         {gewaehlt && (
-          <span className="gewaehlt">
+          <span className="bahnhof-gewaehlt">
             ✓ {gewaehlt.name}
             {erkannt?.some((t) => t.eva === gewaehlt.eva) && ' · automatisch erkannt'}
           </span>

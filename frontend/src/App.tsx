@@ -673,7 +673,7 @@ function App() {
       : undefined
     const abgefahren = restSek !== undefined && restSek * 1000 < -ABGEFAHREN_KULANZ_MS
     return (
-      <main className="app">
+      <main className="app app-dashboard">
         {meldung}
         <Dashboard
           werte={werte}

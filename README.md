@@ -17,7 +17,68 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 05.10.2026)
+## Hier weitermachen (Stand 07.10.2026)
+
+> **Die Übersicht ist umgebaut** – die drei Anforderungen aus `BRIEF.md`,
+> Abschnitt 2 („Dashboard — hier liegt das eigentliche Problem"). Nicht
+> committet, nicht ausgeliefert.
+>
+> 1. **Bahnsteigstreifen statt drei Standortknöpfen** (a). Ein Balken ist der
+>    Bahnsteig, darauf drei Stellen mit Ring und Minuten; die Wahl zeigt EIN
+>    Standortpunkt – derselbe wie im Ebenenschema –, der in 200 ms an die neue
+>    Stelle wandert (`--verlauf-marke`, das einzige Federn der App). Für
+>    Screenreader bleiben es drei Knöpfe mit `aria-pressed`. Standort- und
+>    Routenwahl sehen damit nicht mehr gleich aus.
+> 2. **Ebenenangabe auf beiden Karten** (b): `Ebene 0` / `Ebene −2` aus dem
+>    ersten und letzten Ebenenbesuch (`gleisEbenen` in `schema/bandmodell.ts`).
+>    Im Standardmodell steht nichts – dort sind die Ebenen geraten. „tief" und
+>    „Abschnitt C" aus dem Entwurfsbild bewusst nicht (Gründe in
+>    `design/DESIGN.md` §8).
+> 3. **„Navigation starten" steht fest über der Leiste** (c). Die Übersicht
+>    hat jetzt den Aufbau der Wegseite: `.app-dashboard` so hoch wie das
+>    Sichtfeld, nur `.dashboard-rollbereich` rollt. Nicht `sticky` mit festem
+>    Abstand – die Leiste wächst mit großer Geräteschrift.
+>
+> **Was die Sichtprüfung gefunden hat** (Chrome, Rahmen 360 × 740, echte
+> Route München 5 → 82, Stufe 1):
+>
+> - **Die gewählte Routenzeile saß seit August 8 px tiefer** (`218a0c3`). Eine
+>   Regel für die blanke Klasse `.gewaehlt` – gemeint war das Abzeichen
+>   „✓ Bahnhof" in der Eingabe – gab jedem gewählten Element `margin-top: 8px`.
+>   Auf dem Streifen fiel es auf, weil die gewählte Stelle den Balken
+>   zerbrach. Das Abzeichen heißt jetzt `.bahnhof-gewaehlt`; ein Test hält
+>   `.gewaehlt` regelfrei.
+> - **Nähte im Balken**: drei Hintergrundstücke zu je einem Drittel landeten
+>   auf Bruchteilen eines Pixels. Der Balken ist jetzt EIN Hintergrund
+>   (`.bahnsteigstreifen::before`).
+>
+> | Gemessen im Rahmen | 360 hell | 360 dunkel | 320 hell | 320 dunkel |
+> |---|---|---|---|---|
+> | Seite rollt / rollt quer | nein / nein | nein / nein | nein / nein | nein / nein |
+> | Knopf über der Leiste | 594–652 / 670–740 | ebenso | ebenso | ebenso |
+> | Standortpunkt auf dem Ring | ±0 px | ±0 px | ±0 px | ±0 px |
+> | kleinster Kontrast der neuen Schrift | 5,96:1 | 7,76:1 | 5,96:1 | 7,76:1 |
+>
+> Dazu: Wechsel Mitte → Ostende (Punkt wandert, Route kommt mit 11 min) und
+> 150 % Grundschrift (Knopf bleibt über der Leiste, nichts rollt quer).
+>
+> ```bash
+> cd frontend && npm test && npm run lint && npm run build   # 443 von 443, Lint sauber, Build grün
+> ```
+>
+> **Nicht geprüft:** Den Streifen **nach** der Nahtkorrektur hat niemand mehr
+> gesehen – der Browser-Tab war danach verdeckt, die Maße oben stammen aus
+> dem Rahmen selbst. Das Standardmodell auf der Übersicht ist nur im Test
+> belegt. Das Backend ist unberührt.
+>
+> **Nächster Schritt unverändert: ausliefern** – Fly.io mit `--ha=false` und
+> Vercel, wie am 05.10. notiert (heute kam nur Frontend dazu, das Backend
+> trägt aber noch `662b8c7` und `32292fb`), danach M9/M10 am Gerät. **Weiter offen am Design:** Bewegung
+> an die Token anschließen, Seitenübergänge mit Pfad-Adressen, ToDo 38
+> (Vorbehalte in „Alle Schritte"), Eingabe-Bildschirm und iPad (beide warten
+> auf einen Entwurf).
+
+### Davor (05.10.2026)
 
 > **Seit dem 19.09. sind acht Commits dazugekommen.** Die ersten sechs stammen
 > vom 21.09. bis 02.10., die letzten beiden vom 05.10.:

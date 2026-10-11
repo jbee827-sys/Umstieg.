@@ -413,10 +413,14 @@ einführt, bekommt sie einen deutschen Namen in derselben Machart.
    und `02-dashboard.png` sind dasselbe Bild. Der gesamte Einstieg lebt nur im
    Code. Gebraucht wird: Tippen als Hauptweg, Einfügen und Standort als
    Abkürzungen am Rand, Züge und Wagennummer eingeklappt.
-2. **Der Bahnsteigstreifen** als Ersatz für die Standortwahl-Knopfliste —
-   räumliche Frage, räumliche Antwort.
-3. **Die Ebenenangabe auf den Dashboard-Karten** (`Ebene −2 · tief`,
-   `Ebene +1 · Abschnitt C`).
+2. ~~**Der Bahnsteigstreifen** als Ersatz für die Standortwahl-Knopfliste —
+   räumliche Frage, räumliche Antwort.~~ **Gebaut am 07.10.2026:** ein Balken,
+   drei Stellen mit Ring, EIN Standortpunkt wie im Ebenenschema, der in 200 ms
+   an die neue Stelle wandert. Treppen und Aufzüge stehen (noch) nicht darauf.
+3. ~~**Die Ebenenangabe auf den Dashboard-Karten**~~ **Gebaut am 07.10.2026**
+   als `Ebene −2` / `Ebene +1`, im Standardmodell gar nicht. **Ohne** „tief"
+   (Ebene 0 ist in OSM nicht verlässlich die Straße) und **ohne**
+   „Abschnitt C" (keine Quelle, seit die Wagenreihung tot ist).
 4. **Die dunkle Palette** auf allen fünf Bildschirmen.
 5. **Das iPad-Layout.**
 

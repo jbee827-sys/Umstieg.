@@ -245,4 +245,84 @@ describe('Dashboard: Standortwahl am Ankunftsgleis', () => {
     zeige({ standorte: LEIPZIG, laedt: 'barrierefrei' })
     expect((screen.getByRole('button', { name: /^Ende/ }) as HTMLButtonElement).disabled).toBe(true)
   })
+
+  /**
+   * `BRIEF.md`, Dashboard a): Die Standortwahl ist ein Bahnsteigstreifen, auf
+   * dem man die Stelle antippt – räumliche Frage, räumliche Antwort. Die
+   * Wahl zeigt EIN Standortpunkt, der an die neue Stelle wandert, statt dass
+   * eine Fläche sich füllt wie bei der Routenwahl.
+   */
+  it('setzt EINEN Standortpunkt an die gewaehlte Stelle', () => {
+    zeige({ standorte: { ...LEIPZIG, gewaehlt: 'ende' } })
+    const punkte = document.querySelectorAll('.bahnsteigstreifen .standortpunkt')
+    expect(punkte).toHaveLength(1)
+    expect(punkte[0].getAttribute('data-stelle')).toBe('ende')
+    // Nur Bild: Die Wahl sagt `aria-pressed` am Knopf.
+    expect(punkte[0].getAttribute('aria-hidden')).toBe('true')
+  })
+})
+
+/** Ankunft auf Ebene −2, Abfahrt auf Ebene +1 – wie im Entwurf vom 18.09. */
+function mitEbenen(stufe: RouteErgebnis['stufe'] = 1): RouteErgebnis {
+  return {
+    ...route,
+    stufe,
+    schema: {
+      ebenen: [
+        { level: -2, rolle: 'start', art: 'gleise', bahnsteige: [] },
+        { level: 0, art: 'verbindung', bahnsteige: [] },
+        { level: 1, rolle: 'ziel', art: 'gleise', bahnsteige: [] },
+      ],
+      anlagen: [],
+      pois: [],
+      wechsel: [],
+      vorbehalte: [],
+    },
+  }
+}
+
+function karte(kicker: string): HTMLElement {
+  return screen.getByText(kicker).closest('section') as HTMLElement
+}
+
+/**
+ * `BRIEF.md`, Dashboard b): Die Ebene fehlte, wo sie am meisten zählt. Sie
+ * steht jetzt auf beiden Karten – ohne „tief" und ohne Abschnitt aus dem
+ * Entwurfsbild: Das eine hiesse raten, wo die Straße liegt, für das andere
+ * gibt es seit dem Ende der Wagenreihung keine Quelle.
+ */
+describe('Dashboard: Ebenenangabe auf beiden Karten', () => {
+  it('nennt an jedem Gleis seine Ebene', () => {
+    zeige({ route: mitEbenen() })
+    expect(within(karte('Du kommst an')).getByText('Ebene −2')).toBeDefined()
+    expect(within(karte('Dein Anschluss')).getByText('Ebene +1')).toBeDefined()
+  })
+
+  it('schweigt im Standardmodell, wo die Ebenen geraten sind', () => {
+    zeige({ route: mitEbenen(3) })
+    expect(screen.queryByText(/^Ebene/)).toBeNull()
+  })
+
+  it('schweigt ohne Schema', () => {
+    zeige()
+    expect(screen.queryByText(/^Ebene/)).toBeNull()
+  })
+})
+
+/**
+ * `BRIEF.md`, Dashboard c): „Navigation starten" lag unter dem Falz – hinter
+ * Kopf, Ampel, Karten, Standortwahl, Routenwahl und Hinweisen. Jetzt rollt
+ * nur der Inhalt, der Knopf steht fest über der Leiste (die Regeln dazu
+ * prüft `dashboard-css.test.ts`).
+ */
+describe('Dashboard: der Hauptknopf bleibt stehen', () => {
+  it('liegt ausserhalb des Rollbereichs, die Wahl darin', () => {
+    zeige()
+    const bereich = document.querySelector('.dashboard-rollbereich') as HTMLElement | null
+    expect(bereich).not.toBeNull()
+    expect(within(bereich!).getByRole('group', { name: /Wo stehst du/ })).toBeDefined()
+    expect(within(bereich!).getByRole('group', { name: /Routenvariante/ })).toBeDefined()
+    const knopf = screen.getByRole('button', { name: /Navigation starten/ })
+    expect(knopf.closest('.dashboard-rollbereich')).toBeNull()
+  })
 })
