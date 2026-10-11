@@ -2430,3 +2430,81 @@
 .zuege-wagen > .reiseblock + .reiseblock {
   margin-top: 12px;
 }
+
+/*
+ * Breites Layout (Spec 2026-10-11): iPad und Desktop. Das Formular ist das
+ * Raster; seine Kinder - Rollbereich, zwei Tafelspalten, Hauptknopf - legen
+ * sich je Breite anders hinein. Unter 700 px bleibt es die Telefonspalte.
+ */
+.tafel-spalte {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+}
+/* Platzhalter und Tafel liegen in derselben Zelle uebereinander. */
+.tafel-spalte > * {
+  grid-area: 1 / 1;
+  min-height: 0;
+}
+.tafel-spalte-inhalt {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-mittel);
+  background: var(--color-neutral-100);
+}
+.tafel-platzhalter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border: 2px dashed var(--color-divider);
+  border-radius: var(--radius-mittel);
+  font-size: var(--schrift-label);
+  color: var(--color-neutral-700);
+}
+.tafel-platzhalter p {
+  margin: 0;
+}
+
+@media (min-width: 700px) {
+  .app-eingabe {
+    max-width: 1280px;
+  }
+  .eingabe-flaeche {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: minmax(0, 1fr) 420px auto;
+    grid-template-areas:
+      'formular formular'
+      'ankunft abfahrt'
+      'knopf knopf';
+  }
+  .eingabe-rollbereich {
+    grid-area: formular;
+  }
+  .tafel-spalte.ankunft {
+    grid-area: ankunft;
+  }
+  .tafel-spalte.abfahrt {
+    grid-area: abfahrt;
+  }
+  .eingabe-flaeche > .knopf-primaer {
+    grid-area: knopf;
+  }
+  /* Vier Knoepfe ueber 1400 px waeren keine Leiste mehr. */
+  .app-eingabe .navileiste {
+    padding-inline: max(8px, calc((100% - 560px) / 2));
+  }
+}
+
+@media (min-width: 900px) {
+  .eingabe-flaeche {
+    grid-template-columns: minmax(340px, 400px) 1fr 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'formular ankunft abfahrt'
+      'knopf ankunft abfahrt';
+  }
+}

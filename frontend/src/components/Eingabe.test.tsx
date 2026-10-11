@@ -1,13 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Eingabe } from './Eingabe'
-import { sucheStationen } from '../api/client'
-import type { BahnhofTreffer } from '../api/typen'
+import { holeTafel, sucheStationen } from '../api/client'
+import type { BahnhofTreffer, TafelEintrag } from '../api/typen'
 import type { EingabeEntwurf } from '../sitzung/eingabespeicher'
+import { raeumeBreiteAuf, stelleBreite } from '../aufbau/testbreite'
 
 vi.mock('../api/client', () => ({ sucheStationen: vi.fn(), holeTafel: vi.fn() }))
 const sucheMock = vi.mocked(sucheStationen)
+const holeTafelMock = vi.mocked(holeTafel)
 
 const BERLIN: BahnhofTreffer = { name: 'Berlin Hbf', eva: '8011160', lat: 52.525, lon: 13.369 }
 const BERNAU: BahnhofTreffer = { name: 'Bernau (b Berlin)', eva: '8010036', lat: 52.68, lon: 13.59 }
@@ -418,5 +420,68 @@ describe('Eingabe: der neue Aufbau', () => {
     const bereich = document.querySelector('.eingabe-rollbereich') as HTMLElement
     expect(within(bereich).getByText('KOPF')).toBeDefined()
     expect(within(bereich).getByText('FUSS')).toBeDefined()
+  })
+})
+
+/** Uhrzeit in `minuten` Minuten, als "HH:MM" - die Tafel kennt kein Datum. */
+function inMinuten(minuten: number): string {
+  const d = new Date(Date.now() + minuten * 60_000)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+/** Spec 2026-10-11, Abschnitt 5: iPad und Desktop. */
+describe('Eingabe: breites Layout', () => {
+  const RE3: TafelEintrag = { zug: 'RE 3', zeitSoll: inMinuten(12), gleisSoll: '6', ziel: 'Stralsund' }
+
+  beforeEach(() => {
+    stelleBreite(true)
+    sucheMock.mockReset()
+    sucheMock.mockResolvedValue({ ok: true, treffer: [BERLIN] })
+    holeTafelMock.mockReset()
+    holeTafelMock.mockImplementation(async (_eva, typ) => ({
+      ok: true,
+      eintraege: typ === 'arr' ? [RE3] : [],
+    }))
+  })
+  afterEach(raeumeBreiteAuf)
+
+  async function waehleBerlin() {
+    await userEvent.type(feld(), 'Ber')
+    await userEvent.click(await screen.findByRole('button', { name: 'Berlin Hbf' }))
+  }
+
+  it('zeigt ohne Bahnhof zwei Platzhalter und laedt nichts', () => {
+    zeige()
+    expect(screen.getAllByText(/Wähle einen Bahnhof/)).toHaveLength(2)
+    expect(holeTafelMock).not.toHaveBeenCalled()
+  })
+
+  it('oeffnet beide Tafeln, sobald ein Bahnhof gewaehlt ist', async () => {
+    zeige()
+    await waehleBerlin()
+    expect(await screen.findByRole('heading', { name: 'Ankunft · Berlin Hbf' })).toBeDefined()
+    expect(screen.getByRole('heading', { name: 'Abfahrt · Berlin Hbf' })).toBeDefined()
+    expect(holeTafelMock).toHaveBeenCalledWith('8011160', 'arr')
+    expect(holeTafelMock).toHaveBeenCalledWith('8011160', 'dep')
+  })
+
+  it('traegt einen angetippten Zug in die Kachel ein', async () => {
+    zeige()
+    await waehleBerlin()
+    await userEvent.click(await screen.findByRole('button', { name: /RE 3/ }))
+    expect((screen.getByLabelText('Ankunft: Gleis') as HTMLInputElement).value).toBe('6')
+  })
+
+  it('stellt die Wagenfelder offen hin, ohne Aufklapper', () => {
+    zeige()
+    expect(screen.getByLabelText('Ankunft: Wagen (optional)').closest('details')).toBeNull()
+  })
+
+  it('sagt ohne DB-Zugang, warum keine Tafel kommt', async () => {
+    sucheMock.mockResolvedValue({ ok: false, fehler: 'db-zugang-fehlt' })
+    zeige()
+    await userEvent.type(feld(), 'Ber')
+    expect(await screen.findAllByText(/Ohne DB-Zugang keine Live-Tafel/)).toHaveLength(2)
+    expect(holeTafelMock).not.toHaveBeenCalled()
   })
 })
