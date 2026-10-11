@@ -2,7 +2,7 @@ import { lazy, Suspense, type ReactNode } from 'react'
 import { Ebenenschema } from '../components/Ebenenschema'
 import { Schrittsheet } from '../components/Schrittsheet'
 import { leiteSchemaAb } from '../schema/ableitung'
-import { baueBandmodell } from '../schema/bandmodell'
+import { baueBandmodell, bildVorbehalte } from '../schema/bandmodell'
 import type { RouteErgebnis } from '../api/typen'
 import type { Standort } from '../standort/typen'
 
@@ -79,6 +79,13 @@ export function Navigation({
               </details>
             )}
             {zusatz}
+            {/* ToDo 38: Was das Bild nicht belegt. Zuletzt, weil es sich auf
+                der ganzen Route nicht aendert - aber nicht nirgends. */}
+            <ul className="schema-vorbehalte" aria-label="Zum Bild">
+              {bildVorbehalte(bandmodell).map((v) => (
+                <li key={v}>{v}</li>
+              ))}
+            </ul>
           </>
         }
       />

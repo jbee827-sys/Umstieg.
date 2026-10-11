@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Navigation } from './Navigation'
 import type { RouteErgebnis, Schritt } from '../api/typen'
@@ -110,5 +110,26 @@ describe('Navigation: Weg zur Angekommen-Seite', () => {
     const { container } = zeige(route(1, true), 0)
     expect(screen.queryByRole('button', { name: /^Angekommen$/ })).toBeNull()
     expect(container.querySelector('.schrittsheet ~ button')).toBeNull()
+  })
+})
+
+/** ToDo 38: Was das Bild nicht belegt, steht im Aufklapper – nicht nirgends. */
+describe('Navigation: Vorbehalte zum Bild', () => {
+  function aufklapper(container: HTMLElement): HTMLElement {
+    return container.querySelector('.schrittsheet-liste') as HTMLElement
+  }
+
+  it('stehen im Aufklapper „Alle Schritte"', () => {
+    const { container } = zeige(leipzigAnfang as unknown as RouteErgebnis, 0)
+    const liste = aufklapper(container)
+    expect(within(liste).getByText(/maßstäblich in der Länge/)).toBeDefined()
+    expect(within(liste).getByText(/Bahnsteigabschnitte \(A–G\)/)).toBeDefined()
+  })
+
+  it('nennen beim groben Bild nur den Maßstab', () => {
+    const { container } = zeige(route(3, false), 0)
+    const liste = aufklapper(container)
+    expect(within(liste).getByText(/Abstände sind nicht maßstäblich/)).toBeDefined()
+    expect(within(liste).queryByText(/Bahnsteigabschnitte/)).toBeNull()
   })
 })
