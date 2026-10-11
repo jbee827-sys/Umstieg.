@@ -2405,15 +2405,14 @@
 .gleiskachel-feld {
   min-height: 0;
   padding: 2px 12px;
-  font-size: var(--schrift-gleis);
+  /* Beide Kacheln in derselben Stufe (Entscheidung vom 11.10.2026): Vorher
+     56 px und fuer Teilgleise wie „2 A - D" 28 px - zwei ungleich hohe
+     Felder nebeneinander. Teilgleise passen auf 320 px nur in 28 px. */
+  font-size: var(--schrift-titel);
   font-weight: 800;
   line-height: 1.15;
   letter-spacing: -0.03em;
   border-radius: var(--radius-klein);
-}
-/* Teilgleise wie „7A-D" passen auf 320 px nur eine Stufe kleiner. */
-.gleiskachel-feld.lang {
-  font-size: var(--schrift-titel);
 }
 .gleiskachel.ziel .gleiskachel-feld {
   color: var(--color-accent-700);

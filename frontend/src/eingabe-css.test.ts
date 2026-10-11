@@ -24,10 +24,20 @@ describe('App.css: die Eingabe', () => {
     expect(bereich).toContain('overflow-y: auto')
   })
 
-  it('setzt die Gleisnummer in die Staffel: 56 px, ab vier Zeichen 28 px', () => {
-    expect(deklarationenVon(css, '.gleiskachel-feld')).toContain('font-size: var(--schrift-gleis)')
-    expect(deklarationenVon(css, '.gleiskachel-feld.lang')).toContain(
-      'font-size: var(--schrift-titel)',
+  /**
+   * Entscheidung vom 11.10.2026: Beide Gleisnummern gleich gross. Vorher 56 px
+   * und ab vier Zeichen 28 px - mit „2 A - D" links und „1" rechts standen
+   * zwei ungleich hohe Felder nebeneinander. Teilgleise passen auf 320 px nur
+   * in 28 px, also bekommen beide diese Stufe.
+   */
+  it('setzt beide Gleisnummern in dieselbe Stufe: 28 px', () => {
+    expect(deklarationenVon(css, '.gleiskachel-feld')).toContain('font-size: var(--schrift-titel)')
+    expect(deklarationenVon(css, '.gleiskachel-feld.lang')).toEqual([])
+  })
+
+  it('behaelt die rote Gleisnummer im Anschluss', () => {
+    expect(deklarationenVon(css, '.gleiskachel.ziel .gleiskachel-feld')).toContain(
+      'color: var(--color-accent-700)',
     )
   })
 })

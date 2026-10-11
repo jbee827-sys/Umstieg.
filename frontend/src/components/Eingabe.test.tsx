@@ -378,14 +378,18 @@ describe('Eingabe: der neue Aufbau', () => {
     expect(kachel('Anschluss: Gleis').classList.contains('ziel')).toBe(true)
   })
 
-  it('schaltet die Gleisnummer ab vier Zeichen auf die kleinere Stufe', async () => {
+  /**
+   * Entscheidung vom 11.10.2026: Ein langes Teilgleis macht seine Kachel nicht
+   * mehr kleiner als die andere - beide Felder tragen dieselben Klassen und
+   * damit dieselbe Groesse.
+   */
+  it('gibt beiden Gleisnummern dieselbe Groesse, auch einem langen Teilgleis', async () => {
     zeige()
     const an = screen.getByLabelText('Ankunft: Gleis')
-    await userEvent.type(an, '14')
-    expect(an.classList.contains('lang')).toBe(false)
-    await userEvent.clear(an)
-    await userEvent.type(an, '7A-D')
-    expect(an.classList.contains('lang')).toBe(true)
+    const ab = screen.getByLabelText('Anschluss: Gleis')
+    await userEvent.type(an, '2 A - D')
+    await userEvent.type(ab, '1')
+    expect(an.className).toBe(ab.className)
   })
 
   it('nennt den gewaehlten Zug in der Kachel', () => {

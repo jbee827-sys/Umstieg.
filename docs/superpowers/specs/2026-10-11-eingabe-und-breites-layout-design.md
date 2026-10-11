@@ -53,7 +53,7 @@ angepasst**, damit die Eingabe zur übrigen App passt:
 
 | Stelle | Im Gespräch | Festgelegt | Regel |
 |---|---|---|---|
-| Größe der Gleisnummer in der Kachel | 40 px | **56 px** (`--schrift-gleis`), ab vier Zeichen **28 px** (`--schrift-titel`) | §3: Staffel 56/28/22/18/15, „nichts darunter" – 40 px gibt es nicht. Teilgleise wie „7A-D" passen auf 320 px nur in 28 px |
+| Größe der Gleisnummer in der Kachel | 40 px | ~~56 px, ab vier Zeichen 28 px~~ – **seit dem 11.10.2026 abends beide 28 px** (`--schrift-titel`): Mit „2 A - D" links und „1" rechts standen zwei ungleich hohe Felder nebeneinander (im Browser gesehen, auf Wunsch angeglichen) | §3: Staffel 56/28/22/18/15, „nichts darunter" – 40 px gibt es nicht. Teilgleise wie „7A-D" passen auf 320 px nur in 28 px |
 | Beschriftung der Kacheln | „Ankunft" / „Abfahrt" | **„Du kommst an" / „Dein Anschluss"** als `.kicker`, darunter „Gleis" | Dieselben Wörter wie die Karten der Übersicht: Die Kachel *wird* auf dem nächsten Bildschirm zur Karte. §3: Kicker in normaler Schreibweise |
 | Farbe der Kacheln | offen | Ankunft wie `.dashboard-block`, Abfahrt wie `.dashboard-block.ziel` (roter Rand, Rotschleier, Nummer in Rotschrift) | Rot ist Sekundärfarbe (§2); dieselbe Rolle wie auf der Übersicht |
 | Rundung | offen | Kachel und Tafelspalte **mittel** (20 px), das Feld in der Kachel **klein** (14 px), Platzhalter **mittel** | §4: Karten/Tafelblöcke mittel, verschachtelt eine Stufe kleiner |
