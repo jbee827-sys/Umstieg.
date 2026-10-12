@@ -9,6 +9,8 @@ backend/test/fixtures/spike/
 # OSM-Ablage der Simulationen (Overpass-Antworten je EVA): gross, jederzeit
 # über scripts/osm-ablage-fuellen.ts neu abrufbar
 backend/osm-ablage/
+# Testablagen der Backend-Tests (OSM-Bestand) - nie im Temp-Scratchpad
+backend/.test-ablage/
 # Wegwerf-Entwuerfe zur Freigabe (Generator + erzeugtes HTML)
 frontend/.entwurf/
 # Arbeitsbereich der Plan-Ausführung (Ledger, Briefs, Review-Pakete)
