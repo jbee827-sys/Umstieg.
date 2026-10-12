@@ -22,6 +22,14 @@ export const epStopPlace = (eva: string): string =>
 export const epPlatforms = (eva: string): string =>
   `${RIS_STATIONS_BASIS}/platforms/${encodeURIComponent(eva)}`;
 
+// StaDa (Station Data v2): Bahnhoefe mit Preisklasse. Nur fuer das Skript
+// `bestand-fuellen.ts` - am 12.10.2026 mit dem vorhandenen Zugang geprueft:
+// `category=1-3` liefert 382 Bahnhoefe.
+export const STADA_BASIS = 'https://apis.deutschebahn.com/db-api-marketplace/apis/station-data/v2';
+
+export const epStadaStationen = (kategorien: string): string =>
+  `${STADA_BASIS}/stations?category=${encodeURIComponent(kategorien)}`;
+
 // Timetables (IRIS-XML): /plan/{evaNo}/{YYMMDD}/{HH} + /fchg/{evaNo}
 export const TIMETABLES_BASIS = 'https://apis.deutschebahn.com/db-api-marketplace/apis/timetables/v1';
 
