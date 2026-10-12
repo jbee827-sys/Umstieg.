@@ -22,14 +22,23 @@ RUN npm run build
 FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
+ENV OSM_STARTBESTAND_PFAD=/app/osm-bestand
+RUN apk add --no-cache su-exec
 
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --from=build /app/dist ./dist
 
-# Nicht als root laufen.
-USER node
+# Startbestand der OSM-Daten (Preisklassen 1-3) - Bahnhoefe ohne Warten auf Overpass.
+COPY osm-bestand ./osm-bestand
+
+COPY docker-start.sh /usr/local/bin/docker-start.sh
+RUN chmod +x /usr/local/bin/docker-start.sh
+
+# Nicht als root laufen: Das Startskript gibt die Rechte per su-exec an `node`
+# ab, nachdem es das Volume beschreibbar gemacht hat.
+ENTRYPOINT ["/usr/local/bin/docker-start.sh"]
 
 EXPOSE 3001
 

@@ -21,6 +21,7 @@ primary_region = "fra"
 
 [env]
   PORT = "3001"
+  OSM_VOLUME_PFAD = "/data/osm"
 
 [http_service]
   internal_port = 3001
@@ -46,3 +47,10 @@ primary_region = "fra"
   # 512 MB, weil der LRU-Cache bis zu 100 OSM-Graphen im Speicher haelt.
   memory = "512mb"
   cpus = 1
+
+# OSM-Bestand (Spec 2026-10-12): was das Backend selbst holt oder erneuert,
+# ueberlebt Neustarts und Deploys. Ein Volume gehoert zu genau einer Maschine
+# - passend zu --ha=false.
+[mounts]
+  source = "osm_daten"
+  destination = "/data"
