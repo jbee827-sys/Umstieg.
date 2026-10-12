@@ -34,6 +34,13 @@ export function hauptEva(s: StadaStation): string | null {
   return haupt ? String(haupt.number) : null;
 }
 
+// Ob die Verkehrsstellengruppe vollstaendig aufgeloest werden konnte. Nur dann
+// liefert die Kleinste-EVA denselben Schluessel wie der Betrieb. Andernfalls
+// wird der Bahnhof bei der naechsten Ausfuehrung erneut gefetcht.
+export function gruppeVerlaesslich(info: Pick<StationsInfo, 'gruppeUnvollstaendig'>): boolean {
+  return info.gruppeUnvollstaendig !== true;
+}
+
 const PAUSE_MS = 8000;
 const PAUSE_DB_MS = 1500;
 const PAUSE_NACH_FEHLER_MS = 45_000;
@@ -87,6 +94,12 @@ async function main(): Promise<void> {
     }
     if (info.lat === undefined || info.lon === undefined) {
       gescheitert.push(`${s.name}: keine Koordinaten`);
+      continue;
+    }
+    if (!gruppeVerlaesslich(info)) {
+      console.log(`${kopf} … Gruppe unvollstaendig – spaeter erneut`);
+      gescheitert.push(`${s.name}: Gruppe unvollstaendig`);
+      await warte(PAUSE_NACH_FEHLER_MS);
       continue;
     }
     const schluessel = schluesselVon(info.evas.length > 0 ? info.evas : [info.eva]);
