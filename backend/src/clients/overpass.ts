@@ -113,6 +113,13 @@ export async function overpassQuery(
       status = res.status;
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const antwort = (await res.json()) as OverpassAntwort;
+      // HTTP 200 heisst bei Overpass nicht Erfolg: Ein Zeit- oder Speicherfehler
+      // kommt mit Status 200, einem `remark` und leerem oder teilweisem
+      // `elements`. Als Erfolg gewertet laege so eine Antwort 30 Tage im Bestand;
+      // als Fehlversuch geht es zur naechsten Instanz wie bei jedem anderen.
+      if (typeof antwort.remark === 'string' && /runtime error/i.test(antwort.remark)) {
+        throw new Error(`Overpass-Laufzeitfehler: ${antwort.remark.slice(0, 160)}`);
+      }
       beiVersuch?.({ instanz, versuch: i + 1, ok: true, status, dauerMs: Date.now() - beginn });
       return antwort;
     } catch (e) {
