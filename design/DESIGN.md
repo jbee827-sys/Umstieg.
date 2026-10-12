@@ -260,8 +260,14 @@ Der Fluss ist Eingabe → Übersicht → Weg → Angekommen. Die Bewegung folgt 
   — reine Querblende, 200 ms.
 
 Umgesetzt über die View-Transitions-Schnittstelle des Browsers zusammen mit den
-neuen Pfad-Adressen (`/eingabe`, `/dashboard`, `/navigation`, …). In der nativen
-Fassung übernimmt das die Navigationsschicht der Plattform.
+neuen Pfad-Adressen. **Gebaut am 11./12.10.2026**
+([Spec](../docs/superpowers/specs/2026-10-11-seitenuebergaenge-design.md)):
+Die Adressen heißen wie die Leiste – `/eingabe`, `/uebersicht`, `/weg`,
+`/meldungen`, `/angekommen`; Leiste, Störmeldung und Echtzeit-Banner stehen
+während des Wechsels still; ohne View Transitions, bei reduzierter Bewegung und
+bei der Zurück-Wischgeste des iPhones (`hasUAVisualTransition`) gibt es keine
+Bewegung. In der nativen Fassung übernimmt das die Navigationsschicht der
+Plattform.
 
 **Knöpfe — Druckgefühl**
 

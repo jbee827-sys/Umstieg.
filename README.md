@@ -17,7 +17,55 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 11.10.2026)
+## Hier weitermachen (Stand 12.10.2026)
+
+> **Seitenübergänge, Adressen und gesicherte Reise** – Spec und Plan unter
+> `docs/superpowers/` (`2026-10-11-seitenuebergaenge*`), **nicht gepusht**.
+>
+> - **Adressen wie die Leiste:** `/eingabe`, `/uebersicht`, `/weg`,
+>   `/meldungen`, `/angekommen` (`navigation/adressen.ts`). `/` und
+>   Unbekanntes werden zu `/eingabe` berichtigt. `vercel.json` brauchte nichts
+>   – die Umschreibung auf `index.html` stand schon. Vercel Analytics sieht
+>   damit zum ersten Mal Bildschirme statt nur `/` (`BRIEF.md` §3).
+> - **Zurück-Taste:** Jeder Wechsel ist ein Verlaufseintrag; Zurück/Vor
+>   liest den Bildschirm aus der Adresse. Ein reiner Hash-Wechsel
+>   (Impressum, Datenschutz) lässt den Bildschirm stehen.
+> - **Die Reise überlebt ein Neuladen** (`sitzung/reisespeicher.ts`):
+>   Route, Werte, Variante, Standort, Gehzeiten, Meldungen und Schritt im
+>   `sessionStorage` des Tabs, höchstens 6 Stunden alt, geschrieben nur auf
+>   Übersicht/Weg/Meldungen, gelöscht beim Bestätigen von „Angekommen“ – wie
+>   der Eingabe-Entwurf. Die Datenschutzerklärung sagt es.
+> - **Bewegung** (`navigation/uebergang.ts`, `App.css`): vorwärts im Ablauf
+>   die neue Seite 24 px von rechts, rückwärts gespiegelt, je 320 ms; Leiste
+>   und Meldungen als Querblende 200 ms. Leiste, Störmeldung und
+>   Echtzeit-Banner stehen still. Keine Bewegung ohne View Transitions, bei
+>   reduzierter Bewegung und bei der Zurück-Wischgeste des iPhones.
+>
+> **Im echten Chrome geprüft** (Desktop, dunkel, Berlin Hbf, Gleis 8 → 1 –
+> Overpass antwortet wieder, Stufe 1, beide Gleise „Ebene −2“):
+>
+> | Schritt | Adresse | Übergang |
+> |---|---|---|
+> | Neuladen auf `/` | `/eingabe` | – |
+> | Umstieg starten | `/uebersicht` | vor |
+> | Navigation starten | `/weg` | vor |
+> | Zurück | `/uebersicht` | zurück |
+> | Zurück | `/eingabe` | zurück |
+> | Vor | `/uebersicht` | vor |
+> | Leiste „Weg“ | `/weg` | quer |
+> | Neuladen auf `/weg` | `/weg` – Weg mit derselben Route, Schritt 1 von 9 | – |
+>
+> ```bash
+> cd frontend && npm test && npm run lint && npm run build   # 535 von 535, Lint sauber, Build grün
+> ```
+>
+> **Nicht gesehen:** Die Bewegung selbst – Chrome meldete den Tab als
+> verdeckt, dort überspringt der Browser die Animation und führt nur den
+> Wechsel aus; geprüft sind Art und Reihenfolge der Übergänge, nicht ihr
+> Aussehen. Nicht am iPhone (Wischgeste). Und der direkte Aufruf von `/weg`
+> auf Vercel – erst nach dem Push prüfbar.
+
+### Davor (11.10.2026)
 
 > **Ausgeliefert am 11.10.2026, vormittags:** `feat/mvp` und `main` auf
 > `da3f9fe` (Übersicht, ToDo 38, Bewegung an den Token). Vercel baute die
