@@ -39,6 +39,7 @@ import { leere as leereEntwurf, lies as liesEntwurf, schreibe as schreibeEntwurf
 import type { Bildschirm } from './navigation/bildschirme'
 import { PFAD, bildschirmAusPfad, brauchtReise, startBildschirm } from './navigation/adressen'
 import { leereReise, liesReise, schreibeReise } from './sitzung/reisespeicher'
+import { mitUebergang, uebergangsart, type Ausloeser } from './navigation/uebergang'
 import { erkenneBahnhof } from './standort/bahnhofErkennung'
 import { useStandort } from './standort/useStandort'
 
@@ -105,15 +106,33 @@ function App() {
   // danach war nicht mehr feststellbar, dass es das vorige gegeben hatte.
   // Deshalb gab es auch nichts zu zaehlen.
   const [meldungen, setMeldungen] = useState<Meldung[]>(start.reise?.meldungen ?? [])
-  const setBildschirm = useCallback((naechster: Bildschirm) => {
-    setJetzt(Date.now())
-    // Das Lesen ist ein Ereignis, kein Zustandsabgleich: Wer die Seite
-    // oeffnet, hat gelesen. Ein Punkt, der dauerhaft steht, verliert seine
-    // Warnwirkung - nach der zweiten Meldung schaut niemand mehr hin. Dass
-    // es Meldungen GAB, bleibt an der Hervorhebung sichtbar.
-    if (naechster === 'meldungen') setMeldungen(alleGelesen)
-    setzeBildschirmRoh(naechster)
-  }, [])
+  // Der Bildschirm, von dem aus gewechselt wird - fuer die Richtung des
+  // Uebergangs. Als Ref, damit `setBildschirm` stabil bleibt: Viele Rueckrufe
+  // haengen an ihm.
+  const bildschirmRef = useRef<Bildschirm>(start.bildschirm)
+  const setBildschirm = useCallback(
+    (naechster: Bildschirm, ausloeser: Ausloeser = 'ablauf', browserAnimiert = false) => {
+      const von = bildschirmRef.current
+      bildschirmRef.current = naechster
+      const wechsle = () => {
+        setJetzt(Date.now())
+        // Das Lesen ist ein Ereignis, kein Zustandsabgleich: Wer die Seite
+        // oeffnet, hat gelesen. Ein Punkt, der dauerhaft steht, verliert seine
+        // Warnwirkung - nach der zweiten Meldung schaut niemand mehr hin. Dass
+        // es Meldungen GAB, bleibt an der Hervorhebung sichtbar.
+        if (naechster === 'meldungen') setMeldungen(alleGelesen)
+        setzeBildschirmRoh(naechster)
+      }
+      if (von === naechster) {
+        wechsle()
+        return
+      }
+      // Vorwaerts im Ablauf von rechts, rueckwaerts gespiegelt, ueber die
+      // Leiste quer (Spec 2026-10-11 Seitenuebergaenge, §5).
+      mitUebergang(uebergangsart(von, naechster, ausloeser), wechsle, { browserAnimiert })
+    },
+    [],
+  )
 
   // Die Adresse folgt dem Bildschirm: beim ersten Mal ersetzt (aus / wird
   // /eingabe, aus /weg ohne Reise auch), danach ein neuer Eintrag je Wechsel.
@@ -194,7 +213,11 @@ function App() {
   // Hash-Wechsel (Rechtsseiten) bringt denselben Bildschirm - dann aendert
   // sich nichts. Fehlt die Reise zu einer Adresse, wird der Eintrag ersetzt.
   useEffect(() => {
-    const beiZurueck = () => {
+    const beiZurueck = (e: PopStateEvent) => {
+      // Die Zurueck-Wischgeste auf dem iPhone zeigt ihre eigene Animation -
+      // zwei uebereinander waeren schlimmer als keine.
+      const browserAnimiert =
+        (e as PopStateEvent & { hasUAVisualTransition?: boolean }).hasUAVisualTransition === true
       const ziel = bildschirmAusPfad(window.location.pathname) ?? 'eingabe'
       if (brauchtReise(ziel) && !routeRef.current) {
         window.history.replaceState(
@@ -202,10 +225,10 @@ function App() {
           '',
           PFAD.eingabe + window.location.hash,
         )
-        setBildschirm('eingabe')
+        setBildschirm('eingabe', 'verlauf', browserAnimiert)
         return
       }
-      setBildschirm(ziel)
+      setBildschirm(ziel, 'verlauf', browserAnimiert)
     }
     window.addEventListener('popstate', beiZurueck)
     return () => window.removeEventListener('popstate', beiZurueck)
@@ -684,7 +707,7 @@ function App() {
           hatRoute={route !== null}
           ungelesen={ungelesen(meldungen)}
           hervorgehoben={hervorgehoben(meldungen)}
-          onWechsel={setBildschirm}
+          onWechsel={(b) => setBildschirm(b, 'leiste')}
         />
       </main>
     )
@@ -732,7 +755,7 @@ function App() {
           hatRoute={route !== null}
           ungelesen={ungelesen(meldungen)}
           hervorgehoben={hervorgehoben(meldungen)}
-          onWechsel={setBildschirm}
+          onWechsel={(b) => setBildschirm(b, 'leiste')}
         />
       </main>
     )
@@ -767,7 +790,7 @@ function App() {
           hatRoute={route !== null}
           ungelesen={ungelesen(meldungen)}
           hervorgehoben={hervorgehoben(meldungen)}
-          onWechsel={setBildschirm}
+          onWechsel={(b) => setBildschirm(b, 'leiste')}
         />
       </main>
     )
@@ -833,7 +856,7 @@ function App() {
           hatRoute={route !== null}
           ungelesen={ungelesen(meldungen)}
           hervorgehoben={hervorgehoben(meldungen)}
-          onWechsel={setBildschirm}
+          onWechsel={(b) => setBildschirm(b, 'leiste')}
         />
       </main>
     )
@@ -897,7 +920,7 @@ function App() {
         hatRoute={route !== null}
         ungelesen={ungelesen(meldungen)}
         hervorgehoben={hervorgehoben(meldungen)}
-        onWechsel={setBildschirm}
+        onWechsel={(b) => setBildschirm(b, 'leiste')}
       />
     </main>
   )

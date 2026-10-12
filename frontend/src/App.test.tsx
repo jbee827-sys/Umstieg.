@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
@@ -369,5 +369,43 @@ describe('App: Adressen, Zurueck-Taste und Neuladen', () => {
     await userEvent.click(await screen.findByRole('button', { name: /Angekommen/ }))
     expect(await screen.findByText(/Du bist da/)).toBeDefined()
     expect(window.sessionStorage.getItem(REISE_SCHLUESSEL)).toBeNull()
+  })
+})
+
+/** Spec 2026-10-11 Seitenuebergaenge, §5. */
+describe('App: Seitenwechsel bewegen sich gerichtet', () => {
+  let arten: (string | undefined)[]
+  beforeEach(() => {
+    arten = []
+    Object.defineProperty(document, 'startViewTransition', {
+      configurable: true,
+      value: (cb: () => void) => {
+        arten.push(document.documentElement.dataset.uebergang)
+        cb()
+        return {
+          finished: Promise.resolve(),
+          ready: Promise.resolve(),
+          updateCallbackDone: Promise.resolve(),
+          skipTransition() {},
+        }
+      },
+    })
+  })
+  afterEach(() => {
+    Reflect.deleteProperty(document, 'startViewTransition')
+  })
+
+  it('geht mit „Navigation starten" vorwaerts', async () => {
+    await bisZumDashboard()
+    arten.length = 0
+    await userEvent.click(screen.getByRole('button', { name: /Navigation starten/ }))
+    expect(arten).toEqual(['vor'])
+  })
+
+  it('blendet ueber die Leiste quer', async () => {
+    await bisZumDashboard()
+    arten.length = 0
+    await userEvent.click(screen.getByRole('button', { name: 'Weg' }))
+    expect(arten).toEqual(['quer'])
   })
 })

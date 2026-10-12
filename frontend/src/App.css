@@ -2198,6 +2198,14 @@
     transition-delay: 0s !important;
   }
 
+  /* Seitenwechsel: keine Bewegung, auch wenn ein Browser den Uebergang doch
+     startet (navigation/uebergang.ts ueberspringt ihn schon). */
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+
   /* Bleibt in Bewegung - siehe Begruendung oben. */
   .lade-kreisel {
     animation-duration: 2.4s;
@@ -2564,5 +2572,64 @@
     grid-template-areas:
       'formular ankunft abfahrt'
       'knopf ankunft abfahrt';
+  }
+}
+
+/*
+ * Seitenwechsel (Spec 2026-10-11 Seitenuebergaenge, DESIGN.md 6): vorwaerts
+ * im Ablauf kommt die neue Seite von rechts, rueckwaerts gespiegelt, sonst
+ * eine Querblende. Die Art setzt `navigation/uebergang.ts` als
+ * `data-uebergang` an <html>. Leiste, Stoermeldung und Echtzeit-Banner haben
+ * eigene Namen und stehen deshalb still - nur die Seite bewegt sich.
+ */
+.navileiste {
+  view-transition-name: navileiste;
+}
+.stoermeldung {
+  view-transition-name: stoermeldung;
+}
+.quelle-weg {
+  view-transition-name: quelle-weg;
+}
+::view-transition-old(root) {
+  animation-duration: var(--dauer-normal);
+}
+::view-transition-new(root) {
+  animation-duration: var(--dauer-normal);
+}
+html[data-uebergang='vor']::view-transition-new(root) {
+  animation: seite-herein-rechts var(--dauer-ruhig) var(--verlauf-ein) both;
+}
+html[data-uebergang='vor']::view-transition-old(root) {
+  animation: seite-hinaus-links var(--dauer-ruhig) var(--verlauf-aus) both;
+}
+html[data-uebergang='zurueck']::view-transition-new(root) {
+  animation: seite-herein-links var(--dauer-ruhig) var(--verlauf-ein) both;
+}
+html[data-uebergang='zurueck']::view-transition-old(root) {
+  animation: seite-hinaus-rechts var(--dauer-ruhig) var(--verlauf-aus) both;
+}
+@keyframes seite-herein-rechts {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+@keyframes seite-hinaus-links {
+  to {
+    transform: translateX(-12px);
+    opacity: 0;
+  }
+}
+@keyframes seite-herein-links {
+  from {
+    transform: translateX(-24px);
+    opacity: 0;
+  }
+}
+@keyframes seite-hinaus-rechts {
+  to {
+    transform: translateX(12px);
+    opacity: 0;
   }
 }
