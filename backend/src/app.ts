@@ -18,7 +18,15 @@ import { holeTafel } from './clients/timetables.js';
 import { holeWagenposition } from './clients/wagenreihung.js';
 import { Ueberwachung } from './core/ueberwachung.js';
 import { Sicherheitsprotokoll } from './core/sicherheitsprotokoll.js';
-import { registriereApiRouten, type ApiClients, type TafelFn } from './routes/api.js';
+import { erzeugeBestand } from './osm/bestand.js';
+import { erzeugeErneuerung } from './osm/erneuerung.js';
+import { erzeugeOsmQuelle } from './osm/quelle.js';
+import {
+  registriereApiRouten,
+  type ApiClients,
+  type OverpassFn,
+  type TafelFn,
+} from './routes/api.js';
 import {
   mitCache,
   FASTA_TTL_MS,
@@ -314,12 +322,28 @@ export function buildApp(
   app.register(async (instanz) => {
     instanz.get('/api/health', async () => ({ status: 'ok' }));
 
+    const overpass: OverpassFn =
+      clients.overpass ??
+      ((lat, lon, radiusM) =>
+        overpassQuery(lat, lon, radiusM, fetch, 2000, protokolliereVersuch(instanz.log)));
+    /*
+     * OSM-Bestand (Spec 2026-10-12): Startbestand im Image, Gelerntes auf dem
+     * Volume. Beide nur ueber Einstellungen - ohne sie (lokal, Tests) bleibt
+     * alles wie bisher. Die Tests nutzen 8000001 als Test-EVA; das ist Aachen
+     * Hbf und liegt im Startbestand.
+     */
+    const bestand = erzeugeBestand({
+      startPfad: process.env.OSM_STARTBESTAND_PFAD || undefined,
+      volumePfad: process.env.OSM_VOLUME_PFAD || undefined,
+      log: instanz.log,
+    });
+    const erneuerung = bestand.hatVolume
+      ? erzeugeErneuerung({ bestand, overpass, log: instanz.log })
+      : null;
+
     registriereApiRouten(instanz, {
-      overpass:
-        clients.overpass ??
-        ((lat, lon, radiusM) =>
-          overpassQuery(lat, lon, radiusM, fetch, 2000, protokolliereVersuch(instanz.log))),
-      osmQuelle: clients.osmQuelle,
+      overpass,
+      osmQuelle: clients.osmQuelle ?? erzeugeOsmQuelle({ bestand, erneuerung, overpass }),
       stations: clients.stations ?? {
         sucheBahnhoefe: mitCache((q: string) => sucheBahnhoefe(q), (q) => q, SUCHE_TTL_MS, 500),
         /**
