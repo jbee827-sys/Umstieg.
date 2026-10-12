@@ -81,8 +81,12 @@ export function erzeugeErneuerung(o: {
       for (const fn of abonnenten) {
         try {
           fn(a);
-        } catch {
+        } catch (e) {
           // Ein Abonnent darf die Warteschlange nicht anhalten.
+          log.warn(
+            { ereignis: 'osm-erneuerung-abonnent-fehler', schluessel: a.schluessel, bahnhof: a.name, grund: String(e) },
+            'OSM-Erneuerung: Abonnent hat geworfen - Erneuerung selbst gelungen',
+          );
         }
       }
     } catch (e) {

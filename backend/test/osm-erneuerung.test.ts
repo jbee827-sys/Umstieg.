@@ -118,4 +118,25 @@ describe('Hintergrund-Erneuerung', () => {
     await a.erneuerung.leerlauf();
     expect(erneuert).not.toHaveBeenCalled();
   });
+
+  it('protokolliert einen Fehler eines Abonnenten, ruft aber weitere auf', async () => {
+    const a = aufbau();
+    const werfer = vi.fn(() => {
+      throw new Error('Abonnent kaputt');
+    });
+    const weiterer = vi.fn();
+    a.erneuerung.beiErneuert(werfer);
+    a.erneuerung.beiErneuert(weiterer);
+    a.erneuerung.stosseAn(auftrag('8002549'));
+    await a.erneuerung.leerlauf();
+    expect(a.bestand.schreibe).toHaveBeenCalled();
+    expect(a.log.warn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ereignis: 'osm-erneuerung-abonnent-fehler',
+        schluessel: '8002549',
+      }),
+      expect.any(String),
+    );
+    expect(weiterer).toHaveBeenCalled();
+  });
 });
