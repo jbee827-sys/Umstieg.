@@ -2323,9 +2323,8 @@
 
 /*
  * Dieselbe Spalte wie Uebersicht und Wegseite: so hoch wie das Sichtfeld,
- * der Inhalt rollt in `.eingabe-rollbereich`, „Umstieg starten" steht fest
- * darunter. Vorher lag der Knopf unter Bahnhof, zwei Bloecken, Import und
- * Einstellungen.
+ * der Inhalt rollt in `.eingabe-rollbereich`. Vorher lag der Knopf unter
+ * Bahnhof, zwei Bloecken, Import und Einstellungen.
  */
 .app-eingabe {
   height: 100vh;
@@ -2333,12 +2332,15 @@
   overflow: hidden;
 }
 .eingabe-flaeche {
+  position: relative;
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 18px;
 }
+/* Unten so viel Polster wie Knopf und sein Abstand hoch sind, plus Luft:
+   Sonst bliebe die Fusszeile am Ende des Rollens unter dem Knopf. */
 .eingabe-rollbereich {
   flex: 1;
   min-height: 0;
@@ -2348,7 +2350,29 @@
   flex-direction: column;
   gap: 18px;
   margin: 0 -20px;
-  padding: 0 20px 4px;
+  padding: 0 20px 88px;
+}
+/*
+ * Auf dem Handy ist nur der rote Knopf angeheftet (Rueckbau 12.10.2026): Er
+ * schwebt ueber dem Rollbereich, der Inhalt rollt darunter durch. Vorher
+ * endete der Rollbereich ueber ihm, und der Knopf stand in einem eigenen
+ * Streifen vor der Leiste. Schrift eine Stufe kleiner und mittig.
+ */
+.eingabe-flaeche > .knopf-primaer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 14px;
+  z-index: 1;
+  justify-content: center;
+  font-size: var(--schrift-text);
+}
+/* Gesperrt sonst zu 45 % deckend - ueber dem Rollbereich schien der Inhalt
+   durch (Sichtpruefung 12.10.2026). Dieselben 45 %, aber vorgemischt. */
+.eingabe-flaeche > .knopf-primaer:disabled {
+  opacity: 1;
+  color: color-mix(in srgb, var(--color-auf-akzent) 45%, var(--color-bg));
+  background: color-mix(in srgb, var(--color-accent) 45%, var(--color-bg));
 }
 .eingabe-titel {
   margin: 0;
@@ -2431,21 +2455,6 @@
   font-size: var(--schrift-label);
   color: var(--color-neutral-700);
 }
-.zuege-wagen > summary {
-  cursor: pointer;
-  min-height: 44px;
-  padding: 12px 0;
-  font-size: var(--schrift-label);
-  font-weight: 700;
-}
-.zuege-wagen-optional {
-  font-weight: 500;
-  color: var(--color-neutral-700);
-}
-.zuege-wagen > .reiseblock + .reiseblock {
-  margin-top: 12px;
-}
-
 /*
  * Breites Layout (Spec 2026-10-11): iPad und Desktop. Das Formular ist das
  * Raster; seine Kinder - Rollbereich, zwei Tafelspalten, Hauptknopf - legen
@@ -2541,8 +2550,11 @@
       'ankunft abfahrt'
       'knopf knopf';
   }
+  /* Hier hat der Knopf seine eigene Zeile im Raster - nichts rollt unter
+     ihm durch, also braucht es auch kein Polster dafuer. */
   .eingabe-rollbereich {
     grid-area: formular;
+    padding-bottom: 4px;
   }
   .tafel-spalte.ankunft {
     grid-area: ankunft;
@@ -2552,6 +2564,7 @@
   }
   .eingabe-flaeche > .knopf-primaer {
     grid-area: knopf;
+    position: static;
   }
   /* Vier Knoepfe ueber 1400 px waeren keine Leiste mehr. */
   .app-eingabe .navileiste {

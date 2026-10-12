@@ -202,15 +202,15 @@ describe('Eingabe: Reise importieren', () => {
     'An 16:01 Eberswalde Hbf, Gleis 3',
   ].join('\n')
 
-  it('bietet „Verbindung einfügen" am Bahnhofsfeld an', () => {
+  it('bietet „Reise importieren" als Knopf an', () => {
     zeige()
-    expect(screen.getByRole('button', { name: 'Verbindung einfügen' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Reise importieren' })).toBeTruthy()
   })
 
   it('oeffnet ein Fenster, keine Seite', async () => {
     zeige()
     expect(screen.queryByRole('dialog')).toBeNull()
-    await userEvent.click(screen.getByRole('button', { name: 'Verbindung einfügen' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Reise importieren' }))
     expect(screen.getByRole('dialog')).toBeTruthy()
   })
 
@@ -220,7 +220,7 @@ describe('Eingabe: Reise importieren', () => {
    */
   it('uebernimmt Bahnhof und beide Gleise und schliesst das Fenster', async () => {
     zeige()
-    await userEvent.click(screen.getByRole('button', { name: 'Verbindung einfügen' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Reise importieren' }))
     await userEvent.click(screen.getByRole('textbox', { name: /Text der Verbindung/i }))
     await userEvent.paste(REISE)
 
@@ -248,7 +248,7 @@ describe('Eingabe: Reise importieren', () => {
     zeige(undefined, ENTWURF) // ENTWURF traegt Wagen 26 / 7
     expect((screen.getByLabelText('Ankunft: Wagen (optional)') as HTMLInputElement).value).toBe('26')
 
-    await userEvent.click(screen.getByRole('button', { name: 'Verbindung einfügen' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Reise importieren' }))
     await userEvent.click(screen.getByRole('textbox', { name: /Text der Verbindung/i }))
     await userEvent.paste(REISE)
     await userEvent.click(
@@ -268,7 +268,7 @@ describe('Eingabe: Reise importieren', () => {
    */
   it('laesst die Verkehrsstelle weiterhin von der Bahnhofssuche bestimmen', async () => {
     zeige()
-    await userEvent.click(screen.getByRole('button', { name: 'Verbindung einfügen' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Reise importieren' }))
     await userEvent.click(screen.getByRole('textbox', { name: /Text der Verbindung/i }))
     await userEvent.paste(REISE)
     await userEvent.click(
@@ -290,7 +290,7 @@ describe('Eingabe: Reise importieren', () => {
    */
   it('belegt auch Ankunfts- und Anschlusszug', async () => {
     zeige()
-    await userEvent.click(screen.getByRole('button', { name: 'Verbindung einfügen' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Reise importieren' }))
     await userEvent.click(screen.getByRole('textbox', { name: /Text der Verbindung/i }))
     await userEvent.paste(REISE)
     await userEvent.click(
@@ -356,64 +356,44 @@ describe('Eingabe: Einstellungen', () => {
   })
 })
 
-/** Spec 2026-10-11, Abschnitt 4: die neue Handy-Eingabe. */
-describe('Eingabe: der neue Aufbau', () => {
+/**
+ * Rueckbau vom 12.10.2026: Auf dem Handy war die Zugauswahl seit dem 11.10.
+ * im Aufklapper „Zuege und Wagennummer" verschwunden - beim Aufruf nicht zu
+ * sehen. Das Handy hat wieder den Aufbau von davor: je ein Block Ankunft und
+ * Abfahrt mit Zugauswahl, Gleis und Wagen. Titel und Gleiskacheln bleiben dem
+ * breiten Layout.
+ */
+describe('Eingabe: Handy wie vor dem 11.10.2026', () => {
   beforeEach(() => {
     sucheMock.mockReset()
     sucheMock.mockResolvedValue({ ok: true, treffer: [BERLIN] })
   })
 
-  const kachel = (feldname: string) =>
-    (screen.getByLabelText(feldname) as HTMLElement).closest('.gleiskachel') as HTMLElement
-
-  it('fragt „Wo steigst du um?"', () => {
-    zeige()
-    expect(screen.getByRole('heading', { level: 2, name: 'Wo steigst du um?' })).toBeDefined()
+  it('zeigt die Zugauswahl sofort, ohne Aufklapper', () => {
+    zeige([BERLIN])
+    expect(screen.getByRole('button', { name: 'Ankunftszug wählen' }).closest('details')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Anschlusszug wählen' }).closest('details')).toBeNull()
+    expect(screen.queryByText(/Züge und Wagennummer/)).toBeNull()
   })
 
-  it('traegt die Gleise in zwei Kacheln mit den Woertern der Uebersicht', () => {
-    zeige()
-    expect(within(kachel('Ankunft: Gleis')).getByText('Du kommst an')).toBeDefined()
-    expect(within(kachel('Anschluss: Gleis')).getByText('Dein Anschluss')).toBeDefined()
-    expect(kachel('Anschluss: Gleis').classList.contains('ziel')).toBe(true)
+  it('fasst Zug, Gleis und Wagen je Reiseabschnitt zusammen', () => {
+    zeige([BERLIN])
+    const ankunft = screen.getByRole('group', { name: 'Ankunft' })
+    expect(within(ankunft).getByRole('button', { name: 'Ankunftszug wählen' })).toBeDefined()
+    expect(within(ankunft).getByLabelText('Ankunft: Gleis')).toBeDefined()
+    expect(within(ankunft).getByLabelText('Ankunft: Wagen (optional)')).toBeDefined()
+    const abfahrt = screen.getByRole('group', { name: 'Abfahrt' })
+    expect(within(abfahrt).getByRole('button', { name: 'Anschlusszug wählen' })).toBeDefined()
+    expect(within(abfahrt).getByLabelText('Anschluss: Gleis')).toBeDefined()
+    expect(within(abfahrt).getByLabelText('Anschluss: Wagen (optional)')).toBeDefined()
   })
 
-  /**
-   * Entscheidung vom 11.10.2026: Ein langes Teilgleis macht seine Kachel nicht
-   * mehr kleiner als die andere - beide Felder tragen dieselben Klassen und
-   * damit dieselbe Groesse.
-   */
-  it('gibt beiden Gleisnummern dieselbe Groesse, auch einem langen Teilgleis', async () => {
+  it('traegt die Gleise in schlichte Felder statt in Kacheln, ohne Titel', () => {
     zeige()
-    const an = screen.getByLabelText('Ankunft: Gleis')
-    const ab = screen.getByLabelText('Anschluss: Gleis')
-    await userEvent.type(an, '2 A - D')
-    await userEvent.type(ab, '1')
-    expect(an.className).toBe(ab.className)
-  })
-
-  it('nennt den gewaehlten Zug in der Kachel', () => {
-    zeige(undefined, {
-      suchtext: 'Berlin Hbf',
-      gewaehlt: BERLIN,
-      evaManuell: '',
-      gleisAn: '6',
-      gleisAb: '14',
-      wagenAn: '',
-      wagenAb: '',
-      profil: 'normal',
-      zugAnkunft: { zug: 'RE 3', zeitSoll: '14:22', gleisSoll: '6', ziel: 'Stralsund' },
-      zugAbfahrt: null,
-    })
-    expect(within(kachel('Ankunft: Gleis')).getByText(/RE 3 · an 14:22/)).toBeDefined()
-  })
-
-  it('klappt Zuege und Wagennummer auf dem Handy ein', () => {
-    zeige()
-    const aufklapper = screen.getByLabelText('Ankunft: Wagen (optional)').closest('details')
-    expect(aufklapper).not.toBeNull()
-    expect(aufklapper!.open).toBe(false)
-    expect(within(aufklapper!).getByText(/Züge und Wagennummer/)).toBeDefined()
+    expect(screen.getByLabelText('Ankunft: Gleis').closest('.gleiskachel')).toBeNull()
+    expect(screen.getByPlaceholderText('z. B. 6')).toBe(screen.getByLabelText('Ankunft: Gleis'))
+    expect(screen.getByPlaceholderText('z. B. 14')).toBe(screen.getByLabelText('Anschluss: Gleis'))
+    expect(screen.queryByRole('heading', { level: 2, name: 'Wo steigst du um?' })).toBeNull()
   })
 
   it('stellt den Hauptknopf fest unter den Rollbereich, ohne Pfeil', () => {
@@ -479,6 +459,58 @@ describe('Eingabe: breites Layout', () => {
   it('stellt die Wagenfelder offen hin, ohne Aufklapper', () => {
     zeige()
     expect(screen.getByLabelText('Ankunft: Wagen (optional)').closest('details')).toBeNull()
+  })
+
+  /* Spec 2026-10-11, Abschnitt 4 - seit dem 12.10. nur noch im breiten Layout. */
+  const kachel = (feldname: string) =>
+    (screen.getByLabelText(feldname) as HTMLElement).closest('.gleiskachel') as HTMLElement
+
+  it('fragt „Wo steigst du um?"', () => {
+    zeige()
+    expect(screen.getByRole('heading', { level: 2, name: 'Wo steigst du um?' })).toBeDefined()
+  })
+
+  it('traegt die Gleise in zwei Kacheln mit den Woertern der Uebersicht', () => {
+    zeige()
+    expect(within(kachel('Ankunft: Gleis')).getByText('Du kommst an')).toBeDefined()
+    expect(within(kachel('Anschluss: Gleis')).getByText('Dein Anschluss')).toBeDefined()
+    expect(kachel('Anschluss: Gleis').classList.contains('ziel')).toBe(true)
+  })
+
+  /**
+   * Entscheidung vom 11.10.2026: Ein langes Teilgleis macht seine Kachel nicht
+   * mehr kleiner als die andere - beide Felder tragen dieselben Klassen und
+   * damit dieselbe Groesse.
+   */
+  it('gibt beiden Gleisnummern dieselbe Groesse, auch einem langen Teilgleis', async () => {
+    zeige()
+    const an = screen.getByLabelText('Ankunft: Gleis')
+    const ab = screen.getByLabelText('Anschluss: Gleis')
+    await userEvent.type(an, '2 A - D')
+    await userEvent.type(ab, '1')
+    expect(an.className).toBe(ab.className)
+  })
+
+  it('nennt den gewaehlten Zug in der Kachel', () => {
+    zeige(undefined, {
+      suchtext: 'Berlin Hbf',
+      gewaehlt: BERLIN,
+      evaManuell: '',
+      gleisAn: '6',
+      gleisAb: '14',
+      wagenAn: '',
+      wagenAb: '',
+      profil: 'normal',
+      zugAnkunft: { zug: 'RE 3', zeitSoll: '14:22', gleisSoll: '6', ziel: 'Stralsund' },
+      zugAbfahrt: null,
+    })
+    expect(within(kachel('Ankunft: Gleis')).getByText(/RE 3 · an 14:22/)).toBeDefined()
+  })
+
+  it('bietet „Verbindung einfügen" am Bahnhofsfeld an', () => {
+    zeige()
+    expect(screen.getByRole('button', { name: 'Verbindung einfügen' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Reise importieren' })).toBeNull()
   })
 
   it('sagt ohne DB-Zugang, warum keine Tafel kommt', async () => {

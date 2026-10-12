@@ -102,11 +102,12 @@ const DARSTELLUNGEN: { wert: Darstellung; label: string }[] = [
   { wert: 'dunkel', label: 'Dunkel' },
 ]
 
-// Eingabe nach Spec 2026-10-11 („kuerzer, nicht schoener", BRIEF.md 4): Pflicht
-// sind Bahnhof und die beiden Gleise - als Kacheln mit denselben Woertern wie
-// die Karten der Uebersicht. Zuege und Wagennummer stehen eingeklappt, der
-// Import ist eine Abkuerzung am Rand. Der Inhalt rollt, „Umstieg starten"
-// steht fest darunter.
+// Breit (Spec 2026-10-11, BRIEF.md 4): Pflicht sind Bahnhof und die beiden
+// Gleise - als Kacheln mit denselben Woertern wie die Karten der Uebersicht,
+// die Zuege waehlt man in den Tafeln daneben, der Import ist eine Abkuerzung
+// am Rand. Auf dem Handy seit dem 12.10.2026 wieder der Aufbau von davor: Die
+// Zugauswahl war dort eingeklappt und beim Aufruf nicht zu sehen. Der Inhalt
+// rollt, „Umstieg starten" schwebt darueber.
 export function Eingabe({
   laden,
   fehler,
@@ -398,7 +399,7 @@ export function Eingabe({
     >
       <div className="eingabe-rollbereich">
         {kopf}
-        <h2 className="eingabe-titel">Wo steigst du um?</h2>
+        {breit && <h2 className="eingabe-titel">Wo steigst du um?</h2>}
         <div className="feld">
           <label htmlFor="bahnhof">Umstiegsbahnhof</label>
           <input
@@ -487,69 +488,68 @@ export function Eingabe({
           )}
           {/* Abkuerzung am Rand (BRIEF.md 4), nicht der Einstieg: Statt Bahnhof
               und zwei Gleise zu tippen, den Text aus „Verbindung teilen"
-              einfuegen. Hiess bis zum 11.10.2026 „Reise importieren". */}
-          <div className="feld-rand">
-            <button type="button" className="textknopf" onClick={() => setImportOffen(true)}>
-              Verbindung einfügen
-            </button>
-          </div>
+              einfuegen. Auf dem Handy heisst sie wie vor dem 11.10.2026
+              „Reise importieren" und steht als Knopf unter den Bloecken. */}
+          {breit && (
+            <div className="feld-rand">
+              <button type="button" className="textknopf" onClick={() => setImportOffen(true)}>
+                Verbindung einfügen
+              </button>
+            </div>
+          )}
         </div>
 
         {/*
-          Die Pflichtangaben als Kacheln, mit den Woertern der Uebersicht - die
-          Kachel WIRD dort zur Karte. Der zugaengliche Name bleibt „Ankunft:
-          Gleis"; er enthaelt die sichtbare Beschriftung „Gleis" (WCAG 2.5.3).
-        */}
-        <div className="gleiskacheln">
-          <div className="gleiskachel">
-            <div className="kicker">Du kommst an</div>
-            <label htmlFor="gleisAn" className="gleiskachel-label">
-              <span className="nur-vorlesen">Ankunft: </span>Gleis
-            </label>
-            <input
-              id="gleisAn"
-              className="eingabefeld gleiskachel-feld"
-              type="text"
-              required
-              value={gleisAn}
-              onChange={(e) => setGleisAn(e.target.value)}
-            />
-            {zugAnkunft && <p className="gleiskachel-zug">{zugzeile(zugAnkunft, 'an')}</p>}
-          </div>
-          <div className="gleiskachel ziel">
-            <div className="kicker">Dein Anschluss</div>
-            <label htmlFor="gleisAb" className="gleiskachel-label">
-              <span className="nur-vorlesen">Anschluss: </span>Gleis
-            </label>
-            <input
-              id="gleisAb"
-              className="eingabefeld gleiskachel-feld"
-              type="text"
-              required
-              value={gleisAb}
-              onChange={(e) => setGleisAb(e.target.value)}
-            />
-            {zugAbfahrt && <p className="gleiskachel-zug">{zugzeile(zugAbfahrt, 'ab')}</p>}
-          </div>
-        </div>
+          Breit: die Pflichtangaben als Kacheln, mit den Woertern der
+          Uebersicht - die Kachel WIRD dort zur Karte. Der zugaengliche Name
+          bleibt „Ankunft: Gleis"; er enthaelt die sichtbare Beschriftung
+          „Gleis" (WCAG 2.5.3). Die Zuege waehlt man rechts in den Tafeln.
 
-        {/*
-          Optional und eingeklappt (BRIEF.md 4). Gruppiert nach
-          REISEABSCHNITT, nicht nach Feldart (Konzept §9): „mein ankommender
-          Zug, Wagen 26" - nicht „alle Zuege, dann alle Wagen". Im breiten
-          Layout waehlt man die Zuege rechts in den Tafeln; dort stehen nur
-          die Wagenfelder, offen.
+          Handy: zwei Bloecke, gruppiert nach REISEABSCHNITT, nicht nach
+          Feldart (Konzept §9): „mein ankommender Zug: Gleis 6, ICE 1006,
+          Wagen 26" - nicht „alle Gleise, dann alle Zuege".
         */}
         {breit ? (
-          <div className="gleis-zeile">
-            {wagenAnFeld}
-            {wagenAbFeld}
-          </div>
+          <>
+            <div className="gleiskacheln">
+              <div className="gleiskachel">
+                <div className="kicker">Du kommst an</div>
+                <label htmlFor="gleisAn" className="gleiskachel-label">
+                  <span className="nur-vorlesen">Ankunft: </span>Gleis
+                </label>
+                <input
+                  id="gleisAn"
+                  className="eingabefeld gleiskachel-feld"
+                  type="text"
+                  required
+                  value={gleisAn}
+                  onChange={(e) => setGleisAn(e.target.value)}
+                />
+                {zugAnkunft && <p className="gleiskachel-zug">{zugzeile(zugAnkunft, 'an')}</p>}
+              </div>
+              <div className="gleiskachel ziel">
+                <div className="kicker">Dein Anschluss</div>
+                <label htmlFor="gleisAb" className="gleiskachel-label">
+                  <span className="nur-vorlesen">Anschluss: </span>Gleis
+                </label>
+                <input
+                  id="gleisAb"
+                  className="eingabefeld gleiskachel-feld"
+                  type="text"
+                  required
+                  value={gleisAb}
+                  onChange={(e) => setGleisAb(e.target.value)}
+                />
+                {zugAbfahrt && <p className="gleiskachel-zug">{zugzeile(zugAbfahrt, 'ab')}</p>}
+              </div>
+            </div>
+            <div className="gleis-zeile">
+              {wagenAnFeld}
+              {wagenAbFeld}
+            </div>
+          </>
         ) : (
-          <details className="zuege-wagen">
-            <summary>
-              Züge und Wagennummer <span className="zuege-wagen-optional">· optional</span>
-            </summary>
+          <>
             <fieldset className="reiseblock">
               <legend>Ankunft</legend>
               {eva !== '' && (
@@ -561,8 +561,23 @@ export function Eingabe({
                   onAuswahl={waehleAnkunft}
                 />
               )}
-              {wagenAnFeld}
+              <div className="gleis-zeile">
+                <div className="feld">
+                  <label htmlFor="gleisAn">Ankunft: Gleis</label>
+                  <input
+                    id="gleisAn"
+                    className="eingabefeld"
+                    type="text"
+                    required
+                    placeholder="z. B. 6"
+                    value={gleisAn}
+                    onChange={(e) => setGleisAn(e.target.value)}
+                  />
+                </div>
+                {wagenAnFeld}
+              </div>
             </fieldset>
+
             <fieldset className="reiseblock">
               <legend>Abfahrt</legend>
               {eva !== '' && (
@@ -574,9 +589,33 @@ export function Eingabe({
                   onAuswahl={waehleAbfahrt}
                 />
               )}
-              {wagenAbFeld}
+              <div className="gleis-zeile">
+                <div className="feld">
+                  <label htmlFor="gleisAb">Anschluss: Gleis</label>
+                  <input
+                    id="gleisAb"
+                    className="eingabefeld"
+                    type="text"
+                    required
+                    placeholder="z. B. 14"
+                    value={gleisAb}
+                    onChange={(e) => setGleisAb(e.target.value)}
+                  />
+                </div>
+                {wagenAbFeld}
+              </div>
             </fieldset>
-          </details>
+
+            <div className="feld">
+              <button
+                type="button"
+                className="knopf-sekundaer knopf-breit"
+                onClick={() => setImportOffen(true)}
+              >
+                Reise importieren
+              </button>
+            </div>
+          </>
         )}
 
         {importOffen && (
@@ -636,9 +675,10 @@ export function Eingabe({
         </>
       )}
 
-      {/* Fest unter dem Rollbereich, wie auf der Uebersicht. Ohne Pfeil:
-          DESIGN.md 4, „Kein Pfeil hinter dem Text". „Wird berechnet",
-          nicht „Route wird berechnet": Das brach auf 360 px in zwei Zeilen. */}
+      {/* Ausserhalb des Rollbereichs; auf dem Handy schwebt nur er ueber dem
+          Inhalt (App.css). Ohne Pfeil: DESIGN.md 4, „Kein Pfeil hinter dem
+          Text". „Wird berechnet", nicht „Route wird berechnet": Das brach
+          auf 360 px in zwei Zeilen. */}
       <button className="knopf-primaer" type="submit" disabled={!bereit}>
         <span>{laden ? 'Wird berechnet …' : 'Umstieg starten'}</span>
         {laden && <span className="lade-kreisel" aria-hidden="true" />}
