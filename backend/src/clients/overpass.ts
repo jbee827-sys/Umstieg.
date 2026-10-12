@@ -9,6 +9,35 @@ const TIMEOUT_MS = 30_000;
 /** Umkreis der Bahnhofsabfrage. Bestand, Erneuerung und Route nutzen denselben. */
 export const OVERPASS_RADIUS_M = 400;
 
+/**
+ * Ein einzelner Versuch. Bis zum 12.10.2026 kannte das Log nur den Fehler des
+ * LETZTEN Versuchs – bei Berlin Ostkreuz stand dort ein Timeout des
+ * Ersatzservers, was der Hauptserver vorher geantwortet hatte, blieb unbekannt.
+ */
+export interface OverpassVersuch {
+  /** Host der Instanz, z. B. "overpass-api.de". */
+  instanz: string;
+  /** 1 bis 4 in der Reihenfolge der Instanzen. */
+  versuch: number;
+  ok: boolean;
+  status?: number;
+  fehler?: string;
+  dauerMs: number;
+}
+
+export interface VersuchsLogger {
+  info(obj: object, msg: string): void;
+  warn(obj: object, msg: string): void;
+}
+
+export function protokolliereVersuch(log: VersuchsLogger): (v: OverpassVersuch) => void {
+  return (v) => {
+    const eintrag = { ereignis: 'overpass-versuch', ...v };
+    if (v.ok) log.info(eintrag, 'Overpass-Versuch');
+    else log.warn(eintrag, 'Overpass-Versuch');
+  };
+}
+
 export function baueOverpassQL(lat: number, lon: number, radiusM: number): string {
   const um = `around:${radiusM},${lat},${lon}`;
   // Elementklassen gemäß Konzept 4.1: Bahnsteige (+ ref-Gleisnummern),
@@ -58,6 +87,7 @@ export async function overpassQuery(
   radiusM: number,
   fetchFn: typeof fetch = fetch,
   retryWartezeitMs = 2000,
+  beiVersuch?: (v: OverpassVersuch) => void,
 ): Promise<OverpassAntwort> {
   const ql = baueOverpassQL(lat, lon, radiusM);
   const versuche = instanzReihenfolge();
@@ -67,6 +97,9 @@ export async function overpassQuery(
     if (i > 0 && retryWartezeitMs > 0) {
       await new Promise((r) => setTimeout(r, retryWartezeitMs));
     }
+    const instanz = new URL(versuche[i]).host;
+    const beginn = Date.now();
+    let status: number | undefined;
     try {
       const res = await fetchFn(versuche[i], {
         method: 'POST',
@@ -77,10 +110,21 @@ export async function overpassQuery(
         body: `data=${encodeURIComponent(ql)}`,
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
+      status = res.status;
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return (await res.json()) as OverpassAntwort;
+      const antwort = (await res.json()) as OverpassAntwort;
+      beiVersuch?.({ instanz, versuch: i + 1, ok: true, status, dauerMs: Date.now() - beginn });
+      return antwort;
     } catch (e) {
       letzterFehler = e;
+      beiVersuch?.({
+        instanz,
+        versuch: i + 1,
+        ok: false,
+        status,
+        fehler: String(e).slice(0, 200),
+        dauerMs: Date.now() - beginn,
+      });
     }
   }
   throw new Error(`Overpass nicht erreichbar: ${String(letzterFehler)}`);

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { baueOverpassQL, overpassQuery } from '../src/clients/overpass.js';
+import { baueOverpassQL, overpassQuery, protokolliereVersuch, type OverpassVersuch } from '../src/clients/overpass.js';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -61,5 +61,49 @@ describe('overpassQuery', () => {
       overpassQuery(52.5, 13.4, 400, fetchFn as unknown as typeof fetch, 0),
     ).rejects.toThrow(/Overpass nicht erreichbar/);
     expect(fetchFn).toHaveBeenCalledTimes(4); // 2× primär, 2× fallback
+  });
+});
+
+describe('overpassQuery – Versuchsprotokoll', () => {
+  it('meldet jeden Versuch mit Instanz, Ergebnis und Dauer', async () => {
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse('busy', 504))
+      .mockResolvedValueOnce(jsonResponse({ elements: [] }));
+    const versuche: OverpassVersuch[] = [];
+    await overpassQuery(52.5, 13.4, 400, fetchFn as unknown as typeof fetch, 0, (v) => versuche.push(v));
+    expect(versuche).toHaveLength(2);
+    expect(versuche[0]).toMatchObject({ instanz: 'overpass-api.de', versuch: 1, ok: false, status: 504 });
+    expect(versuche[1]).toMatchObject({ instanz: 'overpass-api.de', versuch: 2, ok: true, status: 200 });
+    for (const v of versuche) expect(v.dauerMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it('meldet auch einen Netzfehler ohne Status', async () => {
+    const fetchFn = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError('fetch failed'))
+      .mockResolvedValueOnce(jsonResponse({ elements: [] }));
+    const versuche: OverpassVersuch[] = [];
+    await overpassQuery(52.5, 13.4, 400, fetchFn as unknown as typeof fetch, 0, (v) => versuche.push(v));
+    expect(versuche[0].ok).toBe(false);
+    expect(versuche[0].status).toBeUndefined();
+    expect(versuche[0].fehler).toMatch(/fetch failed/);
+  });
+});
+
+describe('protokolliereVersuch', () => {
+  it('schreibt Erfolge als info und Fehlschlaege als warn', () => {
+    const log = { info: vi.fn(), warn: vi.fn() };
+    const melde = protokolliereVersuch(log);
+    melde({ instanz: 'overpass-api.de', versuch: 1, ok: false, status: 504, dauerMs: 7600 });
+    melde({ instanz: 'overpass-api.de', versuch: 2, ok: true, status: 200, dauerMs: 4200 });
+    expect(log.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ ereignis: 'overpass-versuch', ok: false, status: 504, dauerMs: 7600 }),
+      'Overpass-Versuch',
+    );
+    expect(log.info).toHaveBeenCalledWith(
+      expect.objectContaining({ ereignis: 'overpass-versuch', ok: true, versuch: 2 }),
+      'Overpass-Versuch',
+    );
   });
 });

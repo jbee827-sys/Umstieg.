@@ -7,7 +7,7 @@ import Fastify, {
   type FastifyServerOptions,
 } from 'fastify';
 import { holeAnlagen } from './clients/fasta.js';
-import { overpassQuery } from './clients/overpass.js';
+import { overpassQuery, protokolliereVersuch } from './clients/overpass.js';
 import {
   holeGruppe,
   holeStationsInfo,
@@ -315,7 +315,10 @@ export function buildApp(
     instanz.get('/api/health', async () => ({ status: 'ok' }));
 
     registriereApiRouten(instanz, {
-      overpass: clients.overpass ?? ((lat, lon, radiusM) => overpassQuery(lat, lon, radiusM)),
+      overpass:
+        clients.overpass ??
+        ((lat, lon, radiusM) =>
+          overpassQuery(lat, lon, radiusM, fetch, 2000, protokolliereVersuch(instanz.log))),
       stations: clients.stations ?? {
         sucheBahnhoefe: mitCache((q: string) => sucheBahnhoefe(q), (q) => q, SUCHE_TTL_MS, 500),
         /**
