@@ -19,8 +19,22 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 
 ## Hier weitermachen (Stand 12.10.2026)
 
+> **Ausgeliefert am 12.10.2026, 15:13:** `feat/mvp` und `main` auf `07971b2`
+> (Fast-Forward). Vorher 535 von 535, Lint sauber, Build grün. Vercel baute
+> die Produktion selbst aus dem Push auf `main`, `vercel.json` unverändert.
+> Gegen <https://www.umstieg.online> geprüft: `/`, `/eingabe`, `/uebersicht`,
+> `/weg` und eine unbekannte Adresse kommen **direkt aufgerufen** mit 200 und
+> der App; Sicherheits-Header da; das CSS hat denselben Hash wie der lokale
+> Build, im JS stecken Reisespeicher (`umstieg.reise`) und View Transitions
+> (der JS-Hash weicht ab – Vercel kompiliert `VITE_API_BASE` ein). **Fly.io
+> nicht nötig** – das Backend ist seit `32292fb` unverändert.
+>
+> - **Die Vorschau für `feat/mvp` brach ab** (`git_info_fail` nach 3 s): kein
+>   Build-Fehler, derselbe Commit baute in Produktion sauber. Vermutlich die
+>   zwei Pushes direkt hintereinander; dieser Commit hat keine Vorschau-URL.
+>
 > **Seitenübergänge, Adressen und gesicherte Reise** – Spec und Plan unter
-> `docs/superpowers/` (`2026-10-11-seitenuebergaenge*`), **nicht gepusht**.
+> `docs/superpowers/` (`2026-10-11-seitenuebergaenge*`).
 >
 > - **Adressen wie die Leiste:** `/eingabe`, `/uebersicht`, `/weg`,
 >   `/meldungen`, `/angekommen` (`navigation/adressen.ts`). `/` und
@@ -62,8 +76,8 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > **Nicht gesehen:** Die Bewegung selbst – Chrome meldete den Tab als
 > verdeckt, dort überspringt der Browser die Animation und führt nur den
 > Wechsel aus; geprüft sind Art und Reihenfolge der Übergänge, nicht ihr
-> Aussehen. Nicht am iPhone (Wischgeste). Und der direkte Aufruf von `/weg`
-> auf Vercel – erst nach dem Push prüfbar.
+> Aussehen. Nicht am iPhone (Wischgeste). Der direkte Aufruf von `/weg` auf
+> Vercel ist seit der Auslieferung geprüft (oben).
 
 ### Davor (11.10.2026)
 
@@ -90,7 +104,8 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 >
 > **Danach: die Eingabe neu und das breite Layout für iPad und Desktop**
 > (Spec und Plan unter `docs/superpowers/`, Commits `b0d049c` bis `945832b`,
-> **nicht gepusht**):
+> **ausgeliefert am 11.10.2026, 21:10**, mit `388fd70` auf `main` – Vercel
+> baute die Produktion aus dem Push, Fly.io war nicht nötig):
 >
 > 1. **Handy:** „Wo steigst du um?", Bahnhof, zwei **Gleiskacheln** mit den
 >    Wörtern der Übersicht („Du kommst an" / „Dein Anschluss", die
