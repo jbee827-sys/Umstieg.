@@ -42,6 +42,50 @@ describe('App.css: die Eingabe', () => {
   })
 })
 
+/**
+ * Rueckbau vom 12.10.2026: Angeheftet ist nur der rote Knopf. Bis dahin
+ * endete der Rollbereich ueber ihm, und der Knopf stand in einem eigenen
+ * Streifen vor der Leiste. Jetzt rollt der Inhalt bis an die Leiste und unter
+ * dem Knopf durch.
+ */
+describe('App.css: der Hauptknopf der Eingabe', () => {
+  const knopf = () => deklarationenVon(css, '.eingabe-flaeche > .knopf-primaer')
+  const ab700 = bloeckeAb(css, `@media ${BREIT_ABFRAGE}`).join(' ')
+  const pixel = (deklaration: string) => parseInt(deklaration.split(' ').pop()!, 10)
+
+  it('schwebt auf dem Handy ueber dem Rollbereich', () => {
+    expect(deklarationenVon(css, '.eingabe-flaeche')).toContain('position: relative')
+    expect(knopf()).toContain('position: absolute')
+  })
+
+  it('laesst unten so viel Platz, dass das Letzte ueber dem Knopf zu stehen kommt', () => {
+    const polster = deklarationenVon(css, '.eingabe-rollbereich').find((d) => d.startsWith('padding:'))!
+    const abstand = knopf().find((d) => d.startsWith('bottom:'))!
+    const hoehe = deklarationenVon(css, '.knopf-primaer').find((d) => d.startsWith('min-height:'))!
+    expect(pixel(polster)).toBeGreaterThanOrEqual(pixel(hoehe) + pixel(abstand))
+  })
+
+  /**
+   * Sichtpruefung 12.10.2026: Gesperrt war der Knopf zu 45 % deckend - ueber
+   * dem Rollbereich schien „Einstellungen" durch ihn hindurch. Er sieht
+   * gesperrt aus wie vorher, ist aber voll deckend gemischt.
+   */
+  it('bleibt auch gesperrt deckend, damit nichts durch ihn scheint', () => {
+    const gesperrt = deklarationenVon(css, '.eingabe-flaeche > .knopf-primaer:disabled')
+    expect(gesperrt).toContain('opacity: 1')
+    expect(gesperrt.join(' ')).toMatch(/background: color-mix\(in srgb, var\(--color-accent\) 45%, var\(--color-bg\)\)/)
+  })
+
+  it('steht im breiten Layout wieder in seiner Zeile', () => {
+    expect(deklarationenVon(ab700, '.eingabe-flaeche > .knopf-primaer')).toContain('position: static')
+  })
+
+  it('setzt „Umstieg starten" kleiner und mittig', () => {
+    expect(knopf()).toContain('justify-content: center')
+    expect(knopf()).toContain('font-size: var(--schrift-text)')
+  })
+})
+
 describe('App.css: breites Layout der Eingabe', () => {
   const ab700 = bloeckeAb(css, `@media ${BREIT_ABFRAGE}`).join(' ')
   const ab900 = bloeckeAb(css, '@media (min-width: 900px) and (min-height: 600px)').join(' ')
