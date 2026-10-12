@@ -19,8 +19,28 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 
 ## Hier weitermachen (Stand 12.10.2026)
 
+> **Hauptknöpfe kleiner, im Verhältnis der Schrift (18/22)** – committet,
+> **nicht gepusht**. `.knopf-primaer` und `.knopf-angekommen` 58 → 47 px hoch,
+> 26 → 21 px Rand; das Paar auf der Wegseite 56 → 46 px (über 44 px,
+> `DESIGN.md` 4). Polster der Rollbereiche 88 → 76 px. Im Chrome gemessen
+> (390 × 740, dunkel, Berlin Hbf): „Umstieg starten", „Navigation starten",
+> „Neue Reise" 47 px, „Weiter"/„Angekommen"/„Zurück" 46 px; auf der Übersicht
+> am Ende 15 px frei über dem Knopf. 552 von 552, Lint sauber, Build grün.
+>
+> **Vercel-Störung (12.10.2026, ab 15:35):** „Increased build and deployment
+> failures", betroffen Builds und Git-Integration. Der Produktions-Build von
+> `bbecffe` scheiterte zweimal mit `git_info_fail` („Git information retrieval
+> failed") – auch beim Redeploy. Geprüft: GitHub hat `bbecffe` auf `main`,
+> die Projektverknüpfung (`jbee827-sys/Umstieg.`, Repo-ID, `main`) ist
+> unverändert seit dem 28.08., die Vorschau aus demselben Commit baute.
+> **Bei uns ist nichts kaputt.** Produktion zeigte bis dahin `025ac8d`. Dass
+> die Fehler an zwei gleichzeitigen Pushes lägen (Vermutung weiter unten),
+> stimmt nicht – sie kamen auch bei einem einzelnen Redeploy.
+
+### Davor: dieselbe Änderung für „Navigation starten" (12.10.2026)
+
 > **Dieselbe Änderung für „Navigation starten" und alle Hauptknöpfe** –
-> committet, **nicht gepusht**. Auf Wunsch:
+> gepusht mit `bbecffe`, Produktion wegen der Störung zunächst nicht. Auf Wunsch:
 >
 > 1. **„Navigation starten" schwebt** wie „Umstieg starten": Rollbereich und
 >    Knopf stehen in `.dashboard-flaeche`, der Inhalt rollt darunter durch,

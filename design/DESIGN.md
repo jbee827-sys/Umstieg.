@@ -189,7 +189,9 @@ auch seine Bahnsteige und Wegstücke mit runden Enden (`stroke-linecap: round`).
 
 - **Knöpfe:** Flach, keine Leuchtränder, vollrund. Primäraktion in Signalrot
   mit weißer Schrift, **18 px / Schnitt 800, mittig** (seit 12.10.2026, vorher
-  22 px links). Wo sie angeheftet ist („Umstieg starten" auf dem Handy,
+  22 px links). Der Knopf schrumpfte im selben Verhältnis mit: **47 px hoch,
+  21 px Rand** (vorher 58 / 26), das Paar auf der Wegseite 46 px (vorher 56).
+  Wo sie angeheftet ist („Umstieg starten" auf dem Handy,
   „Navigation starten"), ist es **nur der Knopf**: Er schwebt 14 px über dem
   unteren Rand des Rollbereichs, der Inhalt rollt darunter durch – kein
   Streifen um ihn (`.knopf-schwebend`). Den sicheren Bereich unten hält die
