@@ -20,6 +20,8 @@ export interface OsmElement {
 
 export interface OverpassAntwort {
   elements: OsmElement[];
+  /** Overpass meldet Laufzeitfehler mit HTTP 200 und einem Hinweis hier. */
+  remark?: string;
 }
 
 // --- Routing-Graph ---

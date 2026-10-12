@@ -91,6 +91,48 @@ describe('overpassQuery – Versuchsprotokoll', () => {
   });
 });
 
+// Overpass meldet einen Zeit- oder Speicherfehler mit HTTP 200, einem `remark`
+// und leerem oder teilweisem `elements`. Als Erfolg gewertet wuerde so eine
+// Antwort 30 Tage im Bestand liegen.
+describe('overpassQuery – Laufzeitfehler mit HTTP 200', () => {
+  const LAUFZEITFEHLER = {
+    remark: 'runtime error: Query timed out in "query" at line 3 after 26 seconds.',
+    elements: [],
+  };
+
+  it('wertet einen Laufzeitfehler-Hinweis trotz HTTP 200 als Fehlversuch', async () => {
+    const zweite = { elements: [] };
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(LAUFZEITFEHLER))
+      .mockResolvedValueOnce(jsonResponse(zweite));
+    const versuche: OverpassVersuch[] = [];
+    const res = await overpassQuery(52.5, 13.4, 400, fetchFn as unknown as typeof fetch, 0, (v) => versuche.push(v));
+    expect(res).toEqual(zweite);
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+    expect(versuche).toHaveLength(2);
+    expect(versuche[0]).toMatchObject({ versuch: 1, ok: false, status: 200 });
+    expect(versuche[0].fehler).toMatch(/Laufzeitfehler/);
+    expect(versuche[1]).toMatchObject({ versuch: 2, ok: true });
+  });
+
+  it('wirft, wenn alle vier Antworten einen Laufzeitfehler tragen', async () => {
+    const fetchFn = vi.fn(async () => jsonResponse(LAUFZEITFEHLER));
+    await expect(
+      overpassQuery(52.5, 13.4, 400, fetchFn as unknown as typeof fetch, 0),
+    ).rejects.toThrow(/Overpass nicht erreichbar/);
+    expect(fetchFn).toHaveBeenCalledTimes(4);
+  });
+
+  it('nimmt einen Hinweis ohne Laufzeitfehler als Erfolg', async () => {
+    const antwort = { remark: 'Hinweis ohne Fehler', elements: [] };
+    const fetchFn = vi.fn(async () => jsonResponse(antwort));
+    const res = await overpassQuery(52.5, 13.4, 400, fetchFn as unknown as typeof fetch, 0);
+    expect(res).toEqual(antwort);
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('protokolliereVersuch', () => {
   it('schreibt Erfolge als info und Fehlschlaege als warn', () => {
     const log = { info: vi.fn(), warn: vi.fn() };
