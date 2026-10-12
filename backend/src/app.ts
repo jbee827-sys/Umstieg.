@@ -319,6 +319,7 @@ export function buildApp(
         clients.overpass ??
         ((lat, lon, radiusM) =>
           overpassQuery(lat, lon, radiusM, fetch, 2000, protokolliereVersuch(instanz.log))),
+      osmQuelle: clients.osmQuelle,
       stations: clients.stations ?? {
         sucheBahnhoefe: mitCache((q: string) => sucheBahnhoefe(q), (q) => q, SUCHE_TTL_MS, 500),
         /**
