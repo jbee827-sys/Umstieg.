@@ -138,6 +138,11 @@ Standort sind Abkürzungen am Rand, nicht der Einstieg.
 stehen. Das Gehprofil ist eine Einstellung, keine Reiseentscheidung, und wandert
 hinter „Mehr". Züge und Wagennummer bleiben optional und eingeklappt.
 
+**Auf dem Handy zurückgenommen (12.10.2026):** Eingeklappt war die Zugauswahl
+beim Aufruf nicht zu sehen – sie soll aber sofort da und ohne Suchen bedienbar
+sein. Das Handy hat wieder die Blöcke Ankunft und Abfahrt von vor dem 11.10.;
+im breiten Layout wählt man die Züge ohnehin in den offenen Tafeln.
+
 ### Dashboard — hier liegt das eigentliche Problem
 
 Drei Befunde aus `frontend/src/screens/Dashboard.tsx`:

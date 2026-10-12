@@ -422,6 +422,12 @@ einführt, bekommt sie einen deutschen Namen in derselben Machart.
    eingeklappt, „Verbindung einfügen" als Textknopf am Rand, „Umstieg starten"
    fest über der Leiste. Ursprünglich: Im Entwurf vom 18.09. fehlte er
    (`01-onboarding.png` und `02-dashboard.png` sind dasselbe Bild).
+   **Auf dem Handy zurückgenommen am 12.10.2026:** Eingeklappt war die
+   Zugauswahl beim Aufruf nicht zu sehen. Dort stehen wieder die Blöcke
+   Ankunft und Abfahrt von davor (Zugauswahl, Gleis, Wagen), „Reise
+   importieren" als Knopf, kein Titel, keine Kacheln. Angeheftet ist nur noch
+   der rote Knopf – er schwebt über dem Inhalt, Schrift 18 px und mittig.
+   Das breite Layout bleibt wie gebaut.
 2. ~~**Der Bahnsteigstreifen** als Ersatz für die Standortwahl-Knopfliste —
    räumliche Frage, räumliche Antwort.~~ **Gebaut am 07.10.2026:** ein Balken,
    drei Stellen mit Ring, EIN Standortpunkt wie im Ebenenschema, der in 200 ms

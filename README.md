@@ -19,6 +19,38 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 
 ## Hier weitermachen (Stand 12.10.2026)
 
+> **Handy-Eingabe zurückgebaut, nur der rote Knopf angeheftet** – committet,
+> **nicht gepusht**. Auf Wunsch:
+>
+> 1. **Die Zugauswahl ist wieder sofort sichtbar.** Seit dem 11.10. lag sie auf
+>    dem Handy im Aufklapper „Züge und Wagennummer". Das Handy hat wieder den
+>    Aufbau von davor („ganz zurück" gewählt): Blöcke Ankunft und Abfahrt mit
+>    „Ankunftszug/Anschlusszug wählen", Gleis (`z. B. 6` / `z. B. 14`) und
+>    Wagen nebeneinander, „Reise importieren" als Knopf; kein Titel „Wo
+>    steigst du um?", keine Gleiskacheln. Ohne den Pfeil im Hauptknopf
+>    (`DESIGN.md` 4). Das breite Layout ist unverändert.
+> 2. **Angeheftet ist nur der rote Knopf** (nur Handy): Er schwebt 14 px über
+>    dem Rollbereich, der Inhalt rollt darunter durch; 88 px Polster unten,
+>    damit die Fusszeile am Ende frei über ihm steht. Ab 700 px steht er
+>    wieder in seiner Rasterzeile.
+> 3. **„Umstieg starten" kleiner und mittig** (überall): 18 px statt 22 px.
+>
+> **Die Sichtprüfung fand einen Fehler:** Gesperrt war der Knopf zu 45 %
+> deckend, schwebend schien „Einstellungen" durch ihn hindurch. Jetzt ist er
+> voll deckend, gemischt aus denselben 45 % (`color-mix`).
+>
+> Im Chrome geprüft, 390 × 750 als Rahmen (dunkel, Berlin Hbf): Zugauswahl
+> sofort nach der Bahnhofswahl da, Tafel lädt, RE 3351 setzt Gleis 2; der
+> Inhalt rollt unter dem Knopf durch, am Ende steht „Impressum · Datenschutz"
+> frei darüber. 1180 × 740: Kacheln, Tafeln, „Verbindung einfügen" wie
+> vorher, Knopf in seiner Zeile. **Nicht am echten Handy.**
+>
+> ```bash
+> cd frontend && npm test && npm run lint && npm run build   # 543 von 543, Lint sauber, Build grün
+> ```
+
+### Davor (12.10.2026, nachmittags)
+
 > **Ausgeliefert am 12.10.2026, 15:13:** `feat/mvp` und `main` auf `07971b2`
 > (Fast-Forward). Vorher 535 von 535, Lint sauber, Build grün. Vercel baute
 > die Produktion selbst aus dem Push auf `main`, `vercel.json` unverändert.
