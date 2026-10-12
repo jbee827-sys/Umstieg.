@@ -325,4 +325,17 @@ describe('Dashboard: der Hauptknopf bleibt stehen', () => {
     const knopf = screen.getByRole('button', { name: /Navigation starten/ })
     expect(knopf.closest('.dashboard-rollbereich')).toBeNull()
   })
+
+  /**
+   * Wunsch vom 12.10.2026: Angeheftet ist nur der Knopf, nicht ein Streifen um
+   * ihn. Er schwebt in derselben Flaeche wie der Rollbereich ueber ihm.
+   */
+  it('schwebt mit dem Rollbereich in einer gemeinsamen Flaeche', () => {
+    zeige()
+    const knopf = screen.getByRole('button', { name: /Navigation starten/ })
+    expect(knopf.classList.contains('knopf-schwebend')).toBe(true)
+    const flaeche = knopf.parentElement as HTMLElement
+    expect(flaeche.classList.contains('dashboard-flaeche')).toBe(true)
+    expect(flaeche.querySelector(':scope > .dashboard-rollbereich')).not.toBeNull()
+  })
 })

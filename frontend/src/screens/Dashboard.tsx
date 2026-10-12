@@ -110,7 +110,7 @@ export function Dashboard({
   // Im Standardmodell `undefined` - dort waeren die Ebenen geraten.
   const ebenen = gleisEbenen(route)
   return (
-    <>
+    <div className="dashboard-flaeche">
       <div className="dashboard-rollbereich">
         <div className="routen-kopf">
           <div>
@@ -269,9 +269,11 @@ export function Dashboard({
         )}
       </div>
 
-      <button type="button" className="knopf-primaer" onClick={onNavigation}>
+      {/* Schwebt ueber dem Rollbereich, der Inhalt rollt darunter durch -
+          angeheftet ist nur der Knopf (12.10.2026). */}
+      <button type="button" className="knopf-primaer knopf-schwebend" onClick={onNavigation}>
         <span>Navigation starten</span>
       </button>
-    </>
+    </div>
   )
 }
