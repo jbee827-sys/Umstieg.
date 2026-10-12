@@ -6,6 +6,12 @@ import { BETREIBER } from '../rechtliches/betreiber'
 // - Eingabe im sessionStorage: sitzung/eingabespeicher.ts, abgesichert in
 //   sitzung/eingabespeicher.test.ts ("fasst localStorage nicht an") und
 //   components/Datenschutz.test.tsx
+// - Reise (Route, Meldungen) im sessionStorage, seit 11.10.2026:
+//   sitzung/reisespeicher.ts, geloescht bei „Angekommen" (App.tsx,
+//   bestaetigeAnkunft), abgesichert in sitzung/reisespeicher.test.ts und
+//   App.test.tsx
+// - Adressen je Bildschirm (/eingabe, /weg ...), seit 11.10.2026:
+//   navigation/adressen.ts - sie tragen keine Reisedaten
 // - Darstellung (Hell/Dunkel) im localStorage, seit 05.10.2026:
 //   einstellungen/darstellung.ts, abgesichert in
 //   einstellungen/darstellung.test.ts ("schreibt nichts, solange niemand
@@ -181,7 +187,9 @@ export function Datenschutz({ onZurueck }: { onZurueck: () => void }) {
           Webseiten hinweg wiedererkennt.
         </p>
         <p>
-          <strong>Was übermittelt wird:</strong> die aufgerufene Adresse, der
+          <strong>Was übermittelt wird:</strong> die aufgerufene Adresse – sie
+          nennt nur den Bildschirm (etwa <code>/weg</code>), nie einen Bahnhof
+          oder ein Gleis –, der
           Verweis, aus dem du kamst, sowie Land, Betriebssystem und Browser in
           grober Form. Die <strong>Abfragezeichenkette der Adresse wird vorher
           abgeschnitten</strong> – sie könnte künftig Angaben tragen, die die
@@ -205,6 +213,8 @@ export function Datenschutz({ onZurueck }: { onZurueck: () => void }) {
           Damit du Bahnhof, Gleise und Zugauswahl nicht erneut eingeben musst,
           wenn du zwischen den Ansichten wechselst oder die Seite neu lädt,
           bleibt deine Eingabe im <code>sessionStorage</code> deines Browsers.
+          Ebenso die berechnete Route und die Meldungen dieser Reise – damit ein
+          Neuladen, etwa im Bahnhof ohne Netz, den Weg nicht verliert.
           Das ist der Speicher eines einzelnen Tabs: Er wird geleert, sobald du
           den Tab schließt – und außerdem, sobald du „Angekommen“ bestätigst
           oder einen neuen Umstieg eingibst.

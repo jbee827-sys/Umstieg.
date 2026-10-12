@@ -25,6 +25,16 @@ describe('Datenschutzerklaerung sagt, was die App wirklich tut', () => {
     expect(text).toMatch(/Tab schließt/)
   })
 
+  /** Seit dem 11.10.2026 liegt dort auch die Reise (sitzung/reisespeicher.ts). */
+  it('nennt Route und Meldungen der Reise im Sitzungsspeicher', () => {
+    expect(zeige()).toMatch(/berechnete Route und die Meldungen dieser Reise/)
+  })
+
+  /** Seit dem 11.10.2026 traegt jeder Bildschirm eine eigene Adresse. */
+  it('sagt, dass die gemessene Adresse nur den Bildschirm nennt', () => {
+    expect(zeige()).toMatch(/nennt nur den Bildschirm/)
+  })
+
   it('behauptet nicht mehr, gar nichts zu speichern', () => {
     // Die beiden Formulierungen, die durch den Sitzungsspeicher falsch
     // geworden sind. Sie duerfen nicht zurueckkehren.
