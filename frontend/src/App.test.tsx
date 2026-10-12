@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import App from './App'
 import { holeRoute, sucheStationen } from './api/client'
 import type { LiveEreignis, RouteErgebnis, RouteParameter } from './api/typen'
+import { REISE_SCHLUESSEL, schreibeReise } from './sitzung/reisespeicher'
 
 /**
  * DIE NAHT ZWISCHEN KNOPF UND WIRKUNG.
@@ -101,6 +102,8 @@ beforeEach(() => {
   routeMock.mockReset()
   routeMock.mockImplementation(async (p: RouteParameter) => antwort(p))
   window.sessionStorage.clear()
+  // Jeder Test beginnt auf `/` - die Adresse ueberlebt sonst den Test davor.
+  window.history.replaceState(null, '', '/')
 })
 
 /**
@@ -286,5 +289,85 @@ describe('App: Standort ueberlebt einen Gleiswechsel', () => {
     )
     expect(screen.getByRole('button', { name: /^Mitte/ }).textContent).toBe('Mitte')
     expect(screen.getByRole('button', { name: /^Ende/ }).textContent).toBe('Ende')
+  })
+})
+
+/** Spec 2026-10-11 Seitenuebergaenge, §3/§4. */
+describe('App: Adressen, Zurueck-Taste und Neuladen', () => {
+  it('beginnt auf /eingabe und berichtigt /', () => {
+    render(<App />)
+    expect(window.location.pathname).toBe('/eingabe')
+  })
+
+  it('traegt nach „Umstieg starten" /uebersicht in den Verlauf ein', async () => {
+    await bisZumDashboard()
+    expect(window.location.pathname).toBe('/uebersicht')
+  })
+
+  it('geht mit der Zurueck-Taste zur Eingabe', async () => {
+    await bisZumDashboard()
+    act(() => window.history.back())
+    expect(await screen.findByLabelText('Umstiegsbahnhof')).toBeDefined()
+    expect(window.location.pathname).toBe('/eingabe')
+  })
+
+  it('laesst den Bildschirm stehen, wenn nur der Hash wechselt', async () => {
+    await bisZumDashboard()
+    act(() => {
+      window.history.pushState(null, '', '/uebersicht#impressum')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    })
+    expect(window.location.pathname).toBe('/uebersicht')
+    expect(screen.getByRole('button', { name: /Navigation starten/ })).toBeDefined()
+  })
+
+  it('stellt nach dem Neuladen auf /weg den Weg wieder her', () => {
+    const route = antwort({
+      eva: '8010205',
+      gleisAn: '6',
+      gleisAb: '16',
+      profil: 'normal',
+      variante: 'schnellste',
+      abschnitt: 'mitte',
+    })
+    schreibeReise({
+      werte: {
+        eva: '8010205',
+        bahnhofName: 'Leipzig Hbf',
+        gleisAn: '6',
+        gleisAb: '16',
+        wagenAn: '',
+        wagenAb: '',
+        profil: 'normal',
+        variante: 'schnellste',
+        abschnitt: 'mitte',
+      },
+      route,
+      variante: 'schnellste',
+      standort: 'mitte',
+      gehzeiten: { 'schnellste|mitte': route.gehzeitSek },
+      meldungen: [],
+      versatz: 0,
+    })
+    window.history.replaceState(null, '', '/weg')
+    render(<App />)
+    expect(screen.getAllByText('Über den Bahnhofskopf').length).toBeGreaterThan(0)
+    expect(window.location.pathname).toBe('/weg')
+  })
+
+  it('zeigt ohne gesicherte Reise auf /weg die Eingabe und berichtigt die Adresse', () => {
+    window.history.replaceState(null, '', '/weg')
+    render(<App />)
+    expect(screen.getByLabelText('Umstiegsbahnhof')).toBeDefined()
+    expect(window.location.pathname).toBe('/eingabe')
+  })
+
+  it('sichert die Reise auf der Uebersicht und loescht sie mit „Angekommen"', async () => {
+    await bisZumDashboard()
+    expect(window.sessionStorage.getItem(REISE_SCHLUESSEL)).not.toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: /Navigation starten/ }))
+    await userEvent.click(await screen.findByRole('button', { name: /Angekommen/ }))
+    expect(await screen.findByText(/Du bist da/)).toBeDefined()
+    expect(window.sessionStorage.getItem(REISE_SCHLUESSEL)).toBeNull()
   })
 })

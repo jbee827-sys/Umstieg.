@@ -37,6 +37,8 @@ import {
 } from './meldungen/modell'
 import { leere as leereEntwurf, lies as liesEntwurf, schreibe as schreibeEntwurf } from './sitzung/eingabespeicher'
 import type { Bildschirm } from './navigation/bildschirme'
+import { PFAD, bildschirmAusPfad, brauchtReise, startBildschirm } from './navigation/adressen'
+import { leereReise, liesReise, schreibeReise } from './sitzung/reisespeicher'
 import { erkenneBahnhof } from './standort/bahnhofErkennung'
 import { useStandort } from './standort/useStandort'
 
@@ -82,8 +84,14 @@ function heuteUm(hhmm: string): Date {
 }
 
 function App() {
-  // 'dashboard' und 'navigation' zeigen bis Task 3/5 denselben Inhalt.
-  const [bildschirm, setzeBildschirmRoh] = useState<Bildschirm>('eingabe')
+  // Startzustand EINMAL aus Adresse und gesicherter Reise (Spec 2026-10-11
+  // Seitenuebergaenge, §3/§4): Ein Neuladen auf /weg zeigt wieder den Weg -
+  // auch im Bahnhof ohne Netz, wo neu rechnen nicht ginge.
+  const [start] = useState(() => {
+    const reise = liesReise()
+    return { reise, bildschirm: startBildschirm(window.location.pathname, reise !== null) }
+  })
+  const [bildschirm, setzeBildschirmRoh] = useState<Bildschirm>(start.bildschirm)
   // EIN Zeitpunkt fuer alle Zweige - Ampel-Countdown und Schrittanzeige lesen
   // dieselbe Zahl. Gehalten wird er als Zustand, nicht waehrend des Renderns
   // von der Uhr gelesen: `Date.now()` im Render liefert bei jedem Durchlauf
@@ -96,7 +104,7 @@ function App() {
   // hier EIN Vorschlag - jedes neue Ereignis ueberschrieb das vorige, und
   // danach war nicht mehr feststellbar, dass es das vorige gegeben hatte.
   // Deshalb gab es auch nichts zu zaehlen.
-  const [meldungen, setMeldungen] = useState<Meldung[]>([])
+  const [meldungen, setMeldungen] = useState<Meldung[]>(start.reise?.meldungen ?? [])
   const setBildschirm = useCallback((naechster: Bildschirm) => {
     setJetzt(Date.now())
     // Das Lesen ist ein Ereignis, kein Zustandsabgleich: Wer die Seite
@@ -106,9 +114,26 @@ function App() {
     if (naechster === 'meldungen') setMeldungen(alleGelesen)
     setzeBildschirmRoh(naechster)
   }, [])
+
+  // Die Adresse folgt dem Bildschirm: beim ersten Mal ersetzt (aus / wird
+  // /eingabe, aus /weg ohne Reise auch), danach ein neuer Eintrag je Wechsel.
+  // Kam der Wechsel von der Zurueck-Taste, stimmt die Adresse schon - dann
+  // geschieht nichts.
+  const ersteAdresse = useRef(true)
+  useEffect(() => {
+    const soll = PFAD[bildschirm]
+    if (window.location.pathname !== soll) {
+      if (ersteAdresse.current) {
+        window.history.replaceState({ bildschirm }, '', soll + window.location.hash)
+      } else {
+        window.history.pushState({ bildschirm }, '', soll)
+      }
+    }
+    ersteAdresse.current = false
+  }, [bildschirm])
   // Route bleibt nach Berechnung vollständig im Speicher – die Anzeige
   // funktioniert auch, wenn die Verbindung im Bahnhof abreißt (Konzept).
-  const [route, setRoute] = useState<RouteErgebnis | null>(null)
+  const [route, setRoute] = useState<RouteErgebnis | null>(start.reise?.route ?? null)
   /**
    * Gehzeiten in Sekunden, geschluesselt nach Variante UND Standort.
    *
@@ -119,10 +144,12 @@ function App() {
    * an den neuen Knoepfen. Hier kann das nicht passieren: Ein Eintrag gilt
    * fuer genau ein Paar, und was einmal geholt ist, bleibt richtig.
    */
-  const [gehzeiten, setGehzeiten] = useState<Record<string, number>>({})
+  const [gehzeiten, setGehzeiten] = useState<Record<string, number>>(
+    start.reise?.gehzeiten ?? {},
+  )
   // Spiegelt `gehzeiten` fuer die Nachladeschleifen: Sie laufen NACH dem
   // Zustandswechsel und saehen im Abschluss sonst den Stand von vorher.
-  const gehzeitenRef = useRef<Record<string, number>>({})
+  const gehzeitenRef = useRef<Record<string, number>>(start.reise?.gehzeiten ?? {})
   const merkeGehzeit = useCallback(
     (v: RoutenVariante, a: Bahnsteigabschnitt, sek: number) =>
       setGehzeiten((alt) => {
@@ -132,9 +159,12 @@ function App() {
       }),
     [],
   )
-  const [gewaehlteVariante, setGewaehlteVariante] = useState<RoutenVariante>('schnellste')
-  const [gewaehlterStandort, setGewaehlterStandort] =
-    useState<Bahnsteigabschnitt>(STANDORT_VOREINSTELLUNG)
+  const [gewaehlteVariante, setGewaehlteVariante] = useState<RoutenVariante>(
+    start.reise?.variante ?? 'schnellste',
+  )
+  const [gewaehlterStandort, setGewaehlterStandort] = useState<Bahnsteigabschnitt>(
+    start.reise?.standort ?? STANDORT_VOREINSTELLUNG,
+  )
   const varianten: VariantenStand = useMemo(
     () => ({
       gewaehlt: gewaehlteVariante,
@@ -155,11 +185,32 @@ function App() {
   )
   // Die aktuelle Route fuer den SSE-Behandler, ohne ihn bei jeder Aenderung
   // neu zu abonnieren.
-  const routeRef = useRef<RouteErgebnis | null>(null)
+  const routeRef = useRef<RouteErgebnis | null>(start.reise?.route ?? null)
   useEffect(() => {
     routeRef.current = route
   }, [route])
-  const [werte, setWerte] = useState<EingabeWerte | null>(null)
+
+  // Zurueck/Vor: Der Bildschirm kommt aus der Adresse. Ein reiner
+  // Hash-Wechsel (Rechtsseiten) bringt denselben Bildschirm - dann aendert
+  // sich nichts. Fehlt die Reise zu einer Adresse, wird der Eintrag ersetzt.
+  useEffect(() => {
+    const beiZurueck = () => {
+      const ziel = bildschirmAusPfad(window.location.pathname) ?? 'eingabe'
+      if (brauchtReise(ziel) && !routeRef.current) {
+        window.history.replaceState(
+          { bildschirm: 'eingabe' },
+          '',
+          PFAD.eingabe + window.location.hash,
+        )
+        setBildschirm('eingabe')
+        return
+      }
+      setBildschirm(ziel)
+    }
+    window.addEventListener('popstate', beiZurueck)
+    return () => window.removeEventListener('popstate', beiZurueck)
+  }, [setBildschirm])
+  const [werte, setWerte] = useState<EingabeWerte | null>(start.reise?.werte ?? null)
   const [laden, setLaden] = useState(false)
   const [fehler, setFehler] = useState<string | null>(null)
   /** Variante, die gerade geholt wird - `undefined`, solange nichts laeuft. */
@@ -230,7 +281,24 @@ function App() {
 
   // Wie weit der Nutzer sich durchgetippt hat. Summe der Weiter- und
   // Zurueck-Tipps; die Uhr redet hier nicht mehr mit (siehe fortschritt.ts).
-  const [versatz, setVersatz] = useState(0)
+  const [versatz, setVersatz] = useState(start.reise?.versatz ?? 0)
+
+  // Gesichert wird nur auf den Reise-Bildschirmen - nach „Angekommen"
+  // schriebe sonst schon das Leeren der Meldungen die eben geloeschte Reise
+  // zurueck. Wer danach ueber die Leiste zur Uebersicht geht, setzt die Reise
+  // fort; dann wird wieder gesichert.
+  useEffect(() => {
+    if (!AUF_REISE.includes(bildschirm) || !route || !werte) return
+    schreibeReise({
+      werte,
+      route,
+      variante: gewaehlteVariante,
+      standort: gewaehlterStandort,
+      gehzeiten,
+      meldungen,
+      versatz,
+    })
+  }, [bildschirm, route, werte, gewaehlteVariante, gewaehlterStandort, gehzeiten, meldungen, versatz])
 
   const ankunft = useRef(ANKUNFT_START)
   const [ankunftVorschlag, setAnkunftVorschlag] = useState(false)
@@ -575,6 +643,9 @@ function App() {
     // weiter vorzuhalten hiesse, die naechste Reise mit der letzten zu
     // beginnen.
     leereEntwurf()
+    // Dieselbe Zusage wie beim Entwurf (Datenschutzerklaerung): Mit
+    // „Angekommen" ist auch die gesicherte Reise weg.
+    leereReise()
     // Zaehler und Hervorhebung gehoerten zu diesem Umstieg. Sie in die
     // naechste Reise mitzunehmen hiesse, eine erledigte Aenderung als offen
     // auszugeben.
