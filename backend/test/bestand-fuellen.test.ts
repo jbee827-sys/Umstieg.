@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hauptEva } from '../scripts/bestand-fuellen.js';
+import { hauptEva, gruppeVerlaesslich } from '../scripts/bestand-fuellen.js';
 import { epStadaStationen } from '../src/clients/db-endpunkte.js';
 
 describe('bestand-fuellen', () => {
@@ -22,5 +22,17 @@ describe('bestand-fuellen', () => {
   it('liefert null ohne EVA', () => {
     expect(hauptEva({ name: 'X', evaNumbers: [] })).toBeNull();
     expect(hauptEva({ name: 'X' })).toBeNull();
+  });
+
+  it('gruppeVerlaesslich: unvollstaendig bedeutet nein', () => {
+    expect(gruppeVerlaesslich({ gruppeUnvollstaendig: true })).toBe(false);
+  });
+
+  it('gruppeVerlaesslich: kein Feld bedeutet ja', () => {
+    expect(gruppeVerlaesslich({})).toBe(true);
+  });
+
+  it('gruppeVerlaesslich: explicit false bedeutet ja', () => {
+    expect(gruppeVerlaesslich({ gruppeUnvollstaendig: false })).toBe(true);
   });
 });
