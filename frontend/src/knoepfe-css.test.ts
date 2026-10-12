@@ -25,6 +25,32 @@ describe('App.css: die Schrift der Hauptknoepfe', () => {
   })
 })
 
+/**
+ * Danach (Wunsch vom 12.10.2026): Die Knoepfe schrumpfen im selben Verhaeltnis
+ * wie ihre Schrift, 22 → 18 px. Vorher 58 px hoch mit 26 px Rand, das Paar
+ * auf der Wegseite 56 px.
+ */
+describe('App.css: die Groesse der Hauptknoepfe', () => {
+  const verhaeltnis = 18 / 22
+  const wert = (selektor: string, eigenschaft: string) =>
+    deklarationenVon(css, selektor).find((d) => d.startsWith(`${eigenschaft}:`))
+
+  it.each(['.knopf-primaer', '.knopf-angekommen'])('%s schrumpft mit der Schrift', (knopf) => {
+    expect(wert(knopf, 'min-height')).toBe(`min-height: ${Math.round(58 * verhaeltnis)}px`)
+    expect(wert(knopf, 'padding')).toBe(`padding: 0 ${Math.round(26 * verhaeltnis)}px`)
+  })
+
+  it('laesst auch das Paar auf der Wegseite mitschrumpfen', () => {
+    expect(wert('.schrittsheet-knoepfe > *', 'min-height')).toBe(
+      `min-height: ${Math.round(56 * verhaeltnis)}px`,
+    )
+  })
+
+  it('bleibt ein bequemes Tippziel (DESIGN.md 4: mindestens 44 px)', () => {
+    expect(Math.round(56 * verhaeltnis)).toBeGreaterThanOrEqual(44)
+  })
+})
+
 describe('App.css: der schwebende Knopf', () => {
   const schwebend = () => deklarationenVon(css, '.knopf-schwebend')
 

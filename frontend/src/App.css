@@ -85,7 +85,7 @@
      Unten so viel Polster wie Knopf und sein Abstand hoch sind, plus Luft:
      Sonst bliebe das Letzte am Ende des Rollens unter dem Knopf. */
   margin: 0 -20px;
-  padding: 0 20px 88px;
+  padding: 0 20px 76px;
 }
 
 /*
@@ -335,15 +335,17 @@
 /* — Primär-/Sekundärknöpfe — */
 
 /* Schrift mittig und eine Stufe kleiner als die Anweisung (12.10.2026). Bis
-   dahin links und 22 px - ein Rest aus der Zeit, als rechts ein Pfeil stand. */
+   dahin links und 22 px - ein Rest aus der Zeit, als rechts ein Pfeil stand.
+   Der Knopf schrumpft im selben Verhaeltnis mit (18/22): 58 → 47 px hoch,
+   26 → 21 px Rand. */
 .knopf-primaer {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   width: 100%;
-  min-height: 58px;
-  padding: 0 26px;
+  min-height: 47px;
+  padding: 0 21px;
   font-family: var(--font-heading);
   font-weight: 800;
   font-size: var(--schrift-text);
@@ -408,8 +410,8 @@
   justify-content: center;
   gap: 10px;
   width: 100%;
-  min-height: 58px;
-  padding: 0 26px;
+  min-height: 47px;
+  padding: 0 21px;
   font-family: var(--font-heading);
   font-weight: 800;
   /* Dieselbe Stufe wie „Weiter", neben dem er steht. */
@@ -1568,7 +1570,7 @@
    sahen die beiden aus wie zwei verschiedene Bedienelemente. */
 .schrittsheet-knoepfe > * {
   flex: 1;
-  min-height: 56px;
+  min-height: 46px;
   border-radius: var(--radius-pille);
   justify-content: center;
 }
@@ -2385,7 +2387,7 @@
   flex-direction: column;
   gap: 18px;
   margin: 0 -20px;
-  padding: 0 20px 88px;
+  padding: 0 20px 76px;
 }
 .eingabe-titel {
   margin: 0;
