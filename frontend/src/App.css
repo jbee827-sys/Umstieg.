@@ -50,8 +50,9 @@
  * „Navigation starten" lag unter dem Falz - hinter Kopf, Ampel, Karten,
  * Standortwahl, Routenwahl und Hinweisen (`BRIEF.md`, Dashboard c). Jetzt
  * dieselbe Spalte wie auf der Wegseite: so hoch wie das Sichtfeld, der Inhalt
- * rollt in `.dashboard-rollbereich`, darunter stehen fest der Hauptknopf und
- * die Leiste.
+ * rollt in `.dashboard-rollbereich`, darunter steht fest die Leiste. Der
+ * Hauptknopf schwebt seit dem 12.10.2026 ueber dem Rollbereich
+ * (`.knopf-schwebend`) - vorher stand er in einem Streifen darunter.
  *
  * Nicht `position: sticky` mit festem Abstand zur Leiste: Der Abstand haette
  * die Hoehe der Leiste nachrechnen muessen, und die waechst mit grosser
@@ -61,6 +62,14 @@
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
+}
+/* Rollbereich und schwebender Knopf - die Bezugsflaeche des Knopfs. */
+.dashboard-flaeche {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 .dashboard-rollbereich {
   flex: 1;
@@ -72,10 +81,11 @@
   /* Derselbe Abstand wie zwischen den Kindern von `.app` - vorher standen
      sie dort direkt. */
   gap: 18px;
-  /* Bis an den Spaltenrand, damit eine Rollleiste nicht im Inhalt steht;
-     unten Luft fuer den Fokusring des letzten Elements. */
+  /* Bis an den Spaltenrand, damit eine Rollleiste nicht im Inhalt steht.
+     Unten so viel Polster wie Knopf und sein Abstand hoch sind, plus Luft:
+     Sonst bliebe das Letzte am Ende des Rollens unter dem Knopf. */
   margin: 0 -20px;
-  padding: 0 20px 4px;
+  padding: 0 20px 88px;
 }
 
 /*
@@ -324,17 +334,19 @@
 
 /* — Primär-/Sekundärknöpfe — */
 
+/* Schrift mittig und eine Stufe kleiner als die Anweisung (12.10.2026). Bis
+   dahin links und 22 px - ein Rest aus der Zeit, als rechts ein Pfeil stand. */
 .knopf-primaer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 10px;
   width: 100%;
   min-height: 58px;
   padding: 0 26px;
   font-family: var(--font-heading);
   font-weight: 800;
-  font-size: var(--schrift-anweisung);
+  font-size: var(--schrift-text);
   color: var(--color-auf-akzent);
   background: var(--color-accent);
   border: 0;
@@ -364,6 +376,28 @@
 }
 
 /*
+ * Angeheftet ist nur der Knopf (12.10.2026): Er schwebt ueber dem
+ * Rollbereich, der Inhalt rollt darunter durch. Vorher endete der Rollbereich
+ * ueber ihm, und der Knopf stand in einem eigenen Streifen vor der Leiste.
+ * Bezugsflaeche ist der Elternteil mit `position: relative`, der Rollbereich
+ * darin braucht unten Polster fuer Knopf und Abstand.
+ */
+.knopf-schwebend {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 14px;
+  z-index: 1;
+}
+/* Gesperrt sonst zu 45 % deckend - ueber dem Rollbereich schien der Inhalt
+   durch (Sichtpruefung 12.10.2026). Dieselben 45 %, aber vorgemischt. */
+.knopf-schwebend:disabled {
+  opacity: 1;
+  color: color-mix(in srgb, var(--color-auf-akzent) 45%, var(--color-bg));
+  background: color-mix(in srgb, var(--color-accent) 45%, var(--color-bg));
+}
+
+/*
  * „Angekommen" am letzten Schritt: dieselbe Form wie „Weiter", aber im Grün
  * der Angekommen-Seite. Es ist keine Fortsetzung, sondern der Abschluss —
  * und der soll aussehen wie das, was danach kommt.
@@ -378,7 +412,8 @@
   padding: 0 26px;
   font-family: var(--font-heading);
   font-weight: 800;
-  font-size: 0.944rem;
+  /* Dieselbe Stufe wie „Weiter", neben dem er steht. */
+  font-size: var(--schrift-text);
   color: var(--color-bg);
   background: var(--color-gruen);
   border: 0;
@@ -2351,28 +2386,6 @@
   gap: 18px;
   margin: 0 -20px;
   padding: 0 20px 88px;
-}
-/*
- * Auf dem Handy ist nur der rote Knopf angeheftet (Rueckbau 12.10.2026): Er
- * schwebt ueber dem Rollbereich, der Inhalt rollt darunter durch. Vorher
- * endete der Rollbereich ueber ihm, und der Knopf stand in einem eigenen
- * Streifen vor der Leiste. Schrift eine Stufe kleiner und mittig.
- */
-.eingabe-flaeche > .knopf-primaer {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 14px;
-  z-index: 1;
-  justify-content: center;
-  font-size: var(--schrift-text);
-}
-/* Gesperrt sonst zu 45 % deckend - ueber dem Rollbereich schien der Inhalt
-   durch (Sichtpruefung 12.10.2026). Dieselben 45 %, aber vorgemischt. */
-.eingabe-flaeche > .knopf-primaer:disabled {
-  opacity: 1;
-  color: color-mix(in srgb, var(--color-auf-akzent) 45%, var(--color-bg));
-  background: color-mix(in srgb, var(--color-accent) 45%, var(--color-bg));
 }
 .eingabe-titel {
   margin: 0;

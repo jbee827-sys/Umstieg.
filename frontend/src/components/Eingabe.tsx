@@ -679,7 +679,7 @@ export function Eingabe({
           Inhalt (App.css). Ohne Pfeil: DESIGN.md 4, „Kein Pfeil hinter dem
           Text". „Wird berechnet", nicht „Route wird berechnet": Das brach
           auf 360 px in zwei Zeilen. */}
-      <button className="knopf-primaer" type="submit" disabled={!bereit}>
+      <button className="knopf-primaer knopf-schwebend" type="submit" disabled={!bereit}>
         <span>{laden ? 'Wird berechnet …' : 'Umstieg starten'}</span>
         {laden && <span className="lade-kreisel" aria-hidden="true" />}
       </button>

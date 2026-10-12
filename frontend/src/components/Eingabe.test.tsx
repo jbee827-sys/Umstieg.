@@ -400,6 +400,7 @@ describe('Eingabe: Handy wie vor dem 11.10.2026', () => {
     zeige(undefined, null, { kopf: <p>KOPF</p>, fuss: <p>FUSS</p> })
     const knopf = screen.getByRole('button', { name: /Umstieg starten/ })
     expect(knopf.closest('.eingabe-rollbereich')).toBeNull()
+    expect(knopf.classList.contains('knopf-schwebend')).toBe(true)
     expect(knopf.querySelector('svg')).toBeNull()
     const bereich = document.querySelector('.eingabe-rollbereich') as HTMLElement
     expect(within(bereich).getByText('KOPF')).toBeDefined()
