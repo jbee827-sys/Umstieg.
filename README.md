@@ -19,8 +19,17 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 
 ## Hier weitermachen (Stand 12.10.2026)
 
-> **Hauptknöpfe kleiner, im Verhältnis der Schrift (18/22)** – committet,
-> **nicht gepusht**. `.knopf-primaer` und `.knopf-angekommen` 58 → 47 px hoch,
+> **Ausgeliefert am 12.10.2026, 19:38:** `main` auf `6a702cb` – mit
+> `bbecffe` (schwebendes „Navigation starten", alle Hauptknöpfe 18 px) und
+> den kleineren Knöpfen in **einem** Produktions-Build. Gepusht wurde zuerst
+> nur `main`, damit keine Vorschau gleichzeitig baut; `feat/mvp` danach
+> (Vorschau grün). Gegen <https://www.umstieg.online> geprüft: `/`,
+> `/eingabe`, `/uebersicht`, `/weg` mit 200, fünf Sicherheits-Header; im CSS
+> `.knopf-primaer` 47 px / 18 px, `.knopf-schwebend`, `.dashboard-flaeche`,
+> das Paar 46 px; im JS tragen „Umstieg starten" und „Navigation starten"
+> die Schwebe-Klasse. Fly.io nicht nötig. **Nicht am Handy angesehen.**
+>
+> **Hauptknöpfe kleiner, im Verhältnis der Schrift (18/22).** `.knopf-primaer` und `.knopf-angekommen` 58 → 47 px hoch,
 > 26 → 21 px Rand; das Paar auf der Wegseite 56 → 46 px (über 44 px,
 > `DESIGN.md` 4). Polster der Rollbereiche 88 → 76 px. Im Chrome gemessen
 > (390 × 740, dunkel, Berlin Hbf): „Umstieg starten", „Navigation starten",
@@ -36,6 +45,14 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > **Bei uns ist nichts kaputt.** Produktion zeigte bis dahin `025ac8d`. Dass
 > die Fehler an zwei gleichzeitigen Pushes lägen (Vermutung weiter unten),
 > stimmt nicht – sie kamen auch bei einem einzelnen Redeploy.
+>
+> Die genaue Meldung im Dashboard: **GitHub fetch error 403 – „You have
+> exceeded a secondary rate limit"**. Die GitHub-Anbindung von Vercel lief in
+> GitHubs Schutzgrenze; jeder neue Versuch zählte mit. Abhilfe war Warten,
+> dann genau ein Build (siehe oben). Für später, nicht umgesetzt: In
+> `vercel.json` die Vorschau-Builds für `feat/mvp` abschalten
+> (`git.deploymentEnabled`) – dann löst ein Push auf beide Zweige nur noch
+> einen Build aus, aber `feat/mvp` hat keine Vorschau-URL mehr.
 
 ### Davor: dieselbe Änderung für „Navigation starten" (12.10.2026)
 
