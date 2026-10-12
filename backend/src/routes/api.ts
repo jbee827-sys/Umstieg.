@@ -5,7 +5,6 @@ import {
   gleislisteUnvollstaendig,
   istGueltigeEva,
 } from '../clients/stations.js';
-import { OVERPASS_RADIUS_M } from '../clients/overpass.js';
 import { namensvarianten } from '../core/bahnhofsname.js';
 import { gehzeitSekunden } from '../core/gehzeit.js';
 import { berlinTeile } from '../core/zeit.js';
@@ -15,6 +14,8 @@ import { baueBahnhofSchema } from '../core/schema.js';
 import { berechneRoute, findeStartknoten, istGleicherBahnsteig, loeseGleis } from '../core/routing.js';
 import { gleicherBahnsteigErgebnis, syntheseGraph, wendeFastaAn } from '../core/synthmodell.js';
 import { generiereSchritte } from '../core/textgen.js';
+import { erzeugeBestand } from '../osm/bestand.js';
+import { erzeugeOsmQuelle, type OsmQuelle } from '../osm/quelle.js';
 import type {
   BahnhofTreffer,
   FastaAnlage,
@@ -62,6 +63,11 @@ export interface ApiClients {
   tafel: TafelFn;
   wagenposition: WagenpositionFn;
   fasta: FastaFn;
+  /**
+   * Bestand vor Overpass (Spec 2026-10-12). Ohne Angabe ein leerer Bestand –
+   * dann fragt jede Route Overpass wie bisher.
+   */
+  osmQuelle?: OsmQuelle;
 }
 
 const GEHPROFILE: Gehprofil[] = ['zuegig', 'normal', 'langsam'];
@@ -94,6 +100,15 @@ function heuteJJJJMMTT(): string {
 
 export function registriereApiRouten(app: FastifyInstance, clients: ApiClients): void {
   const graphCache = erzeugeCache<GraphEintrag>(100, GRAPH_TTL_MS);
+  const osmQuelle =
+    clients.osmQuelle ??
+    erzeugeOsmQuelle({ bestand: erzeugeBestand(), erneuerung: null, overpass: clients.overpass });
+  // Nach einer Erneuerung im Hintergrund baut die naechste Anfrage aus den
+  // frischen Daten - sonst hielte der Graph-Cache die alten noch bis zu 24 h.
+  osmQuelle.beiErneuert((a) => {
+    for (const eva of a.evas) graphCache.delete(eva);
+    graphCache.delete([...a.evas].sort().join(','));
+  });
   /**
    * Der Cache haelt nur *fertige* Eintraege - ein *laufender* Graphbau war
    * fuer den Zweiten unsichtbar. Die Oberflaeche laedt zwei Routenvarianten,
@@ -328,7 +343,7 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
             return ausGruppe;
           }
           const gebaut = await buendle(laufendeGraphbauten, bahnhofSchluessel, () =>
-            baueGraphEintrag(info, clients.overpass, clients.fasta, req.log),
+            baueGraphEintrag(info, osmQuelle, clients.fasta, req.log),
           );
           // Frist nach Qualität: Ein Stufe-3-Notbehelf darf den Bahnhof nicht
           // einen Tag lang degradiert halten, nachdem Overpass sich erholt hat.
@@ -550,14 +565,14 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
  */
 async function baueGraphEintrag(
   info: StationsInfo,
-  overpass: OverpassFn,
+  osmQuelle: OsmQuelle,
   fasta: FastaFn,
   log: FastifyBaseLogger,
 ): Promise<GraphEintrag> {
   let grund = 'keine Koordinaten zum Bahnhof';
   if (info.lat !== undefined && info.lon !== undefined) {
     try {
-      const osm = await overpass(info.lat, info.lon, OVERPASS_RADIUS_M);
+      const osm = await osmQuelle.hole(info);
       // Die DB-Gleisliste als zweite Quelle: Ueber ihre IFOPT-Kennungen findet der
       // Graph Bahnsteige, an denen OSM keine Gleisnummer schreibt.
       const graph = baueGraph(osm, info.gleise);
