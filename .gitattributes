@@ -10,6 +10,7 @@ Dockerfile text eol=lf
 fly.toml text eol=lf
 
 # Binaerdateien nie anfassen.
+*.gz binary
 *.png binary
 *.jpg binary
 *.woff2 binary

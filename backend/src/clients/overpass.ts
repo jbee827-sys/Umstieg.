@@ -6,6 +6,9 @@ import type { OverpassAntwort } from '../core/typen.js';
 const USER_AGENT = 'umstiegs-navigator/0.1 (dev)';
 const TIMEOUT_MS = 30_000;
 
+/** Umkreis der Bahnhofsabfrage. Bestand, Erneuerung und Route nutzen denselben. */
+export const OVERPASS_RADIUS_M = 400;
+
 export function baueOverpassQL(lat: number, lon: number, radiusM: number): string {
   const um = `around:${radiusM},${lat},${lon}`;
   // Elementklassen gemäß Konzept 4.1: Bahnsteige (+ ref-Gleisnummern),

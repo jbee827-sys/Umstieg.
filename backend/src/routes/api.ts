@@ -5,6 +5,7 @@ import {
   gleislisteUnvollstaendig,
   istGueltigeEva,
 } from '../clients/stations.js';
+import { OVERPASS_RADIUS_M } from '../clients/overpass.js';
 import { namensvarianten } from '../core/bahnhofsname.js';
 import { gehzeitSekunden } from '../core/gehzeit.js';
 import { berlinTeile } from '../core/zeit.js';
@@ -63,7 +64,6 @@ export interface ApiClients {
   fasta: FastaFn;
 }
 
-const OVERPASS_RADIUS_M = 400;
 const GEHPROFILE: Gehprofil[] = ['zuegig', 'normal', 'langsam'];
 const VARIANTEN: RoutenVariante[] = ['schnellste', 'einfachste', 'barrierefrei', 'mit-stopp'];
 
