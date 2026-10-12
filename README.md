@@ -19,8 +19,39 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 
 ## Hier weitermachen (Stand 12.10.2026)
 
-> **Handy-Eingabe zurückgebaut, nur der rote Knopf angeheftet** – committet,
-> **nicht gepusht**. Auf Wunsch:
+> **Dieselbe Änderung für „Navigation starten" und alle Hauptknöpfe** –
+> committet, **nicht gepusht**. Auf Wunsch:
+>
+> 1. **„Navigation starten" schwebt** wie „Umstieg starten": Rollbereich und
+>    Knopf stehen in `.dashboard-flaeche`, der Inhalt rollt darunter durch,
+>    88 px Polster unten. Gemeinsam ist jetzt die Klasse `.knopf-schwebend`
+>    (Lage, und gesperrt voll deckend); die Eingabe nutzt sie auch.
+> 2. **Alle roten Hauptknöpfe 18 px und mittig** – direkt an `.knopf-primaer`
+>    statt nur an der Eingabe: „Weiter", „Neue Reise", „Route übernehmen",
+>    „Übernehmen" im Import-Fenster. Das grüne „Angekommen" neben „Zurück"
+>    von 17 auf 18 px, wie „Weiter". Angeheftet wurde nichts Neues: Die
+>    übrigen stehen im Fluss oder, auf der Wegseite, in der Schritt-Box.
+> 3. **Kontrast – bewusst entschieden:** Weiß auf Signalrot hat 4,2:1;
+>    `DESIGN.md` erlaubte das nur ab 22 px. Auf Rückfrage gewählt: Signalrot
+>    bleibt, die Regel hat jetzt eine Ausnahme für die Hauptknöpfe – mit dem
+>    Vermerk, dass 18 px / 800 unter der WCAG-Grenze von 4,5:1 liegt. Das
+>    betraf schon das ausgelieferte „Umstieg starten".
+>
+> Im Chrome gemessen, 390 × 740 als Rahmen (dunkel, Berlin Hbf, Gleis 2 → 8):
+> Übersicht – Knopf schwebt, am Ende des Rollens steht das letzte Element
+> 15 px über ihm; Weg – „Weiter" und „Angekommen" 18 px mittig; Angekommen –
+> „Neue Reise" 18 px mittig; Eingabe unverändert schwebend. **Kein Bild der
+> Übersicht nach dem Rollen** – die Screenshots liefen in eine Zeitsperre,
+> geprüft sind Maße, nicht das Aussehen. Nicht am echten Handy.
+>
+> ```bash
+> cd frontend && npm test && npm run lint && npm run build   # 548 von 548, Lint sauber, Build grün
+> ```
+
+### Davor: Handy-Eingabe zurückgebaut (12.10.2026)
+
+> **Handy-Eingabe zurückgebaut, nur der rote Knopf angeheftet** – ausgeliefert
+> am 12.10.2026 mit `025ac8d`. Auf Wunsch:
 >
 > 1. **Die Zugauswahl ist wieder sofort sichtbar.** Seit dem 11.10. lag sie auf
 >    dem Handy im Aufklapper „Züge und Wagennummer". Das Handy hat wieder den

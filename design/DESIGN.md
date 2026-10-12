@@ -58,7 +58,11 @@ gemessen, nicht geschätzt.
 - **Signalrot** (`#ec3013`) — Hauptknopf, Auswahlmarke, Marke, Akzentflächen.
   Weiß darauf erreicht 4,2:1 und ist deshalb **nur für große, fette Schrift**
   erlaubt (ab 22 px / Schnitt 600) — also Knopfbeschriftungen, nie Fließtext.
-- **Druckrot** (`#c42207`) — gedrückter Zustand und überall dort, wo weiße
+  **Ausnahme seit dem 12.10.2026: die Hauptknöpfe** mit 18 px / Schnitt 800 –
+  auf Wunsch kleiner, und bewusst mit dem Wissen, dass 4,2:1 für diese Größe
+  unter der WCAG-Grenze von 4,5:1 liegt (als große Schrift zählt fett erst
+  ab 18,66 px). Die Alternative wäre Druckrot gewesen.
+- **Druckrot** (`#c42207`) — gedrückter Zustand und überall sonst, wo weiße
   Schrift kleiner als 22 px auf Rot stehen muss (5,9:1)
 - **Rotschrift** (`#ae1800`) — rote Schrift auf hellem Grund (7,2:1)
 - **Rotschleier** (`#fff2ef`) — sehr helle rote Tönung für Akzentflächen
@@ -115,7 +119,9 @@ Schrift), damit die Rangfolge Weiß–Rot–Grau auch nachts erkennbar bleibt.
 - **Gelb in Sichtweite der Bernstein-Warnung**, außer als Teil des Alarmsaums.
 - `#9b9797` und jedes hellere Grau als Textfarbe (2,6:1 — unlesbar).
 - `#e08a00` als Schriftfarbe auf hellem Grund (2,4:1 — unter jeder Grenze).
-- Weiße Schrift unter 22 px auf `#ec3013`. Dafür gibt es Druckrot.
+- Weiße Schrift unter 22 px auf `#ec3013`. Dafür gibt es Druckrot. Einzige
+  Ausnahme: die Beschriftung der Hauptknöpfe (18 px / 800, Entscheidung vom
+  12.10.2026, siehe oben).
 - Reines Schwarz `#000000`. Es gibt Tintenschwarz.
 - Neon, Außenschein, Leuchtschatten, Verlaufsflächen als Schmuck.
 - Eine vierte Grundfarbe. Es gibt Weiß, Rot, Grau — und drei Statusfarben.
@@ -182,9 +188,12 @@ auch seine Bahnsteige und Wegstücke mit runden Enden (`stroke-linecap: round`).
 ### Die Bauteile
 
 - **Knöpfe:** Flach, keine Leuchtränder, vollrund. Primäraktion in Signalrot
-  mit weißer Schrift ab 22 px / Schnitt 600, fixiert am unteren Rand über der
-  Navileiste, mit `env(safe-area-inset-bottom)`. Mindestens 44 px hoch. Kein
-  Pfeil `→` hinter dem Text.
+  mit weißer Schrift, **18 px / Schnitt 800, mittig** (seit 12.10.2026, vorher
+  22 px links). Wo sie angeheftet ist („Umstieg starten" auf dem Handy,
+  „Navigation starten"), ist es **nur der Knopf**: Er schwebt 14 px über dem
+  unteren Rand des Rollbereichs, der Inhalt rollt darunter durch – kein
+  Streifen um ihn (`.knopf-schwebend`). Den sicheren Bereich unten hält die
+  Navileiste darunter. Mindestens 44 px hoch. Kein Pfeil `→` hinter dem Text.
 - **Karten:** Nur, wenn die Erhebung eine Hierarchie ausdrückt. Weiche
   Abrundung, gedämpfter Schatten in der Grundfarbe getönt. Keine Karte in einer
   Karte in einer Karte.
