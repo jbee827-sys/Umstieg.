@@ -5,3 +5,6 @@ scripts
 .env
 *.log
 vitest.config.ts
+# Simulationsablage (135 MB) und Testablagen - nie ins Image, nie hochladen
+osm-ablage
+.test-ablage
