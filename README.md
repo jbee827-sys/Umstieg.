@@ -17,7 +17,64 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 14.10.2026)
+## Hier weitermachen (Stand 14.10.2026, abends)
+
+> **Overpass von Fly aus: höflich lernen ohne Zusatzkosten** – Spec und Plan
+> unter `docs/superpowers/` (`2026-10-14-overpass-lernen*`), Commits
+> `7fc220d` bis `aeab86a` auf `feat/mvp`. **Ausgeliefert am 14.10.2026, 20:45**
+> (Fly, dieselbe Maschine `3d8d99410a3d68`, Volume bleibt).
+>
+> **Warum Overpass uns abwies:** Die Fly-Maschine hat keine eigene
+> Ausgangsadresse, sie teilt sich eine mit anderen Fly-Kunden (Zenlayer,
+> AS21859: `98.98.156.30`, `2a0b:21c0:100a:49::2`). `overpass-api.de` sperrt
+> Adressen automatisch, die zu viel fragen oder 429 missachten – diese war
+> gesperrt, schon vor unserer ersten Anfrage (`ECONNREFUSED` auf allen vier
+> Adressen, von zu Hause antwortet derselbe Server). Der Ersatzserver
+> `overpass.kumi.systems` ist inzwischen `overpass.private.coffee` und antwortet
+> von nirgendwo. Gleiches Bild im OSM-Forum (26.08.–02.09.2026, DigitalOcean).
+> Unser Client hätte uns zudem selbst sperren lassen: Nach 429 fragte er
+> denselben Server 2 s später erneut.
+>
+> **Gebaut** (Tasks 1–3, 546 von 546, Lint sauber):
+>
+> 1. **Sperrpause je Server** (`clients/overpass-pausen.ts`, `0f2c058`): 429 →
+>    60 s, abgewiesene Verbindung → 30 min, 406 → 24 h; in dieser Zeit keine
+>    einzige Anfrage an ihn, auch kein zweiter Versuch in derselben Abfrage. Sind
+>    alle pausiert, gleich Standardmodell ohne Netzverkehr.
+> 2. **Ein Pausenzustand für alles** (`f8c5ca9`): Vordergrund, Erneuerung und
+>    `bestand-fuellen.ts` teilen ihn.
+> 3. **Ersatzserver `maps.mail.ru`** statt `overpass.kumi.systems`.
+> 4. **Nachholen** (`aeab86a`): Scheitert ein unbekannter Bahnhof, stößt die
+>    Erneuerung ihn nach einer Stunde an – mit ihren Grenzen (50 je Stunde, ein
+>    Versuch je Bahnhof und Tag). Niemand muss erneut fragen.
+>
+> Nebenbei: `osm-startbestand.test.ts` riss in der vollen Suite die 5-s-Frist
+> (382 Dateien entpacken, allein 1,1 s) – jetzt 30 s (`6d00ab9`).
+>
+> **Im Betrieb geprüft:**
+>
+> | Prüfung | Ergebnis |
+> |---|---|
+> | Hamburg / Frankfurt, erster Aufruf | 0,88 s / 0,69 s, Stufe 1 |
+> | Wiesenburg (Mark) 8010376, nicht im Bestand | **gelernt**: 15,0 s, Stufe 2 – vorher 66,6 s Standardmodell |
+> | Versuchsprotokoll dazu | `overpass-api.de` abgewiesen (62 ms) → 2. Versuch „pausiert bis 19:14 UTC" (0 ms) → `maps.mail.ru` 200 in 12,7 s |
+> | Volume | `/data/osm/8010376.json.gz` (1314 Byte, `node`) |
+> | Maschine neu gestartet, Wiesenburg erneut | **0,44 s**, Stufe 2 – vom Volume |
+>
+> Damit sind auch Prüfung 2 und 3 der Spec vom 12.10. (Lernen, Neustart)
+> nachgeholt.
+>
+> **Grenze:** Solange `overpass-api.de` die geteilte Adresse sperrt, lernt Fly
+> nur über mail.ru – von Fly aus lieferte es 1 von 3 Abfragen. Neue Bahnhöfe
+> kommen dann eher nach Stunden als nach Sekunden. Zuverlässig wird es mit
+> einer eigenen Adresse (`fly ips allocate-egress -a umstieg-backend -r fra`,
+> 3,60 $ im Monat) – ohne Codeänderung zuschaltbar, bewusst nicht gemacht
+> (keine Zusatzkosten).
+>
+> **Offen, Kleinigkeit:** Sind beim Nachholen gerade alle Server pausiert,
+> verbraucht der Bahnhof seinen Tagesversuch ohne Anfrage.
+
+### Davor: OSM-Bestand ausgeliefert (14.10.2026, nachmittags)
 
 > **OSM-Bestand: Bahnhöfe ohne Warten auf Overpass** – Spec und Plan unter
 > `docs/superpowers/` (`2026-10-12-osm-bestand*`), Commits `3e62647` bis
