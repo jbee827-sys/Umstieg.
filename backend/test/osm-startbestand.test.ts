@@ -14,6 +14,10 @@ const dateien = (() => {
   }
 })();
 
+// 382 Dateien entpacken: allein gut 1 s, in der vollen, parallelen Suite auf
+// einem knappen Rechner ueber 5 s (14.10.2026).
+const ENTPACKEN_MS = 30_000;
+
 describe('Startbestand im Repo', () => {
   it('hat mindestens 350 Bahnhoefe', () => {
     expect(dateien.length).toBeGreaterThanOrEqual(350);
@@ -30,7 +34,7 @@ describe('Startbestand im Repo', () => {
       expect(e.abfrageVersion, n).toBe(ABFRAGE_VERSION);
       expect(`${e.schluessel}.json.gz`).toBe(n);
     }
-  });
+  }, ENTPACKEN_MS);
 
   it('enthaelt die Metropolen', async () => {
     const namen = new Set<string>();
@@ -38,5 +42,5 @@ describe('Startbestand im Repo', () => {
     for (const muster of [/^Berlin Hbf$/, /^Hamburg Hbf$/, /^Frankfurt ?\(Main\) ?Hbf$/, /^München Hbf$/, /^Köln Hbf$/]) {
       expect([...namen].some((n) => muster.test(n)), String(muster)).toBe(true);
     }
-  });
+  }, ENTPACKEN_MS);
 });
