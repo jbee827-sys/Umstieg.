@@ -73,6 +73,36 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 >
 > **Offen, Kleinigkeit:** Sind beim Nachholen gerade alle Server pausiert,
 > verbraucht der Bahnhof seinen Tagesversuch ohne Anfrage.
+>
+> **Was das für Nutzer heißt:**
+>
+> - **Bahnhöfe im System** (die 382 des Startbestands und alles Gelernte):
+>   keine Änderung – Overpass wird nicht gefragt, die Route kommt sofort.
+>   Veraltete Daten (über 30 Tage) werden im Hintergrund erneuert, niemand
+>   wartet darauf.
+> - **Neue Bahnhöfe:** Nur hier fragt das Backend Overpass, während der Nutzer
+>   wartet. Liefert ein Server, kommt die echte Route (beim ersten Mal etwa
+>   10–20 s) und der Bahnhof ist ab dann für alle sofort da. Liefert keiner,
+>   kommt die ungefähre Route (Standardmodell) mit Hinweis – nie ein Fehler –,
+>   und nach etwa einer Stunde ist der Bahnhof nachgeholt.
+> - **Die Sperrpause** kürzt das Warten: Ein abweisender Server wird
+>   übersprungen statt erneut gefragt (Wiesenburg vorher 66 s ungefähr, jetzt
+>   15 s echt); sind alle pausiert, kommt die ungefähre Route sofort. Und
+>   Overpass sperrt uns nicht noch länger. Schlechtester Fall, wenn mail.ru gar
+>   nicht antwortet: gut eine Minute (vorher etwa zwei).
+> - Dieselbe neue Station innerhalb von 10 min erneut: dieselbe ungefähre Route
+>   aus dem Graph-Cache, danach ein neuer Versuch.
+>
+> **Nachgeprüft am 14.10.2026, 20:57** – Stand `c358b34`, lokal = GitHub
+> (`main` und `feat/mvp`); seit dem Fly-Deploy kein Code geändert, daher kein
+> neuer Deploy. Protokolle in `.superpowers/pruefung-2026-10-14/` (gitignored).
+>
+> | Geprüft | Ergebnis |
+> |---|---|
+> | Backend: Tests, Lint, Build | 546 von 546, sauber, grün |
+> | Frontend: Tests, Lint, Build | 552 von 552, sauber, grün (nur die bekannte MapLibre-Größenmeldung) |
+> | Fly | eine Maschine, Prüfung 1/1, Volume angehängt; im Container `overpass-pausen.js`, mail.ru als Vorgabe, `spaeter`; 382 Dateien im Image, Wiesenburg auf dem Volume |
+> | Live | Health 200; Hamburg 0,66 s und Frankfurt 0,68 s (Stufe 1), Wiesenburg 0,09 s (Stufe 2); CORS nur `www.umstieg.online`; `/`, `/eingabe`, `/uebersicht`, `/weg` mit 200 |
 
 ### Davor: OSM-Bestand ausgeliefert (14.10.2026, nachmittags)
 
