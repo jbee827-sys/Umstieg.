@@ -8,6 +8,7 @@ import Fastify, {
 } from 'fastify';
 import { holeAnlagen } from './clients/fasta.js';
 import { overpassQuery, protokolliereVersuch } from './clients/overpass.js';
+import { erzeugeOverpassPausen } from './clients/overpass-pausen.js';
 import {
   holeGruppe,
   holeStationsInfo,
@@ -322,10 +323,13 @@ export function buildApp(
   app.register(async (instanz) => {
     instanz.get('/api/health', async () => ({ status: 'ok' }));
 
+    // EIN Pausenzustand fuer Vordergrund und Erneuerung (Spec 2026-10-14):
+    // Wer uns abweist, bekommt auch von der naechsten Nutzeranfrage keine.
+    const pausen = erzeugeOverpassPausen();
     const overpass: OverpassFn =
       clients.overpass ??
       ((lat, lon, radiusM) =>
-        overpassQuery(lat, lon, radiusM, fetch, 2000, protokolliereVersuch(instanz.log)));
+        overpassQuery(lat, lon, radiusM, fetch, 2000, protokolliereVersuch(instanz.log), pausen));
     /*
      * OSM-Bestand (Spec 2026-10-12): Startbestand im Image, Gelerntes auf dem
      * Volume. Beide nur ueber Einstellungen - ohne sie (lokal, Tests) bleibt
