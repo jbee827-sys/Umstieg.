@@ -183,6 +183,15 @@ der Test `osm-startbestand.test.ts` schlägt dann an):
 
 Danach `backend/osm-bestand/` committen und deployen.
 
+**Overpass von Fly aus (seit 14.10.2026):** Ersatzserver ist `maps.mail.ru`
+(`overpass.kumi.systems` antwortet nicht mehr). Wer mit 429, 406 oder
+abgewiesener Verbindung antwortet, bekommt 60 s / 24 h / 30 min keine Anfrage –
+im Log als `overpass-versuch` mit `fehler: "pausiert bis …"` und `dauerMs: 0`.
+Scheitert ein Bahnhof, holt die Erneuerung ihn nach einer Stunde nach.
+Fly schickt ausgehenden Verkehr über geteilte Adressen; sperrt Overpass eine
+davon, hilft nur Warten oder eine eigene Adresse
+(`fly ips allocate-egress -a umstieg-backend -r fra`, 3,60 $ im Monat).
+
 **Prüfen:** In den Fly-Logs steht jeder Overpass-Versuch einzeln
 (`ereignis: overpass-versuch`), Probleme mit dem Bestand als
 `degradation: osm-volume-fehlt | osm-bestand-kaputt | osm-volume-schreibfehler | osm-erneuerung-gescheitert`.
