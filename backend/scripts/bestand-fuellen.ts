@@ -14,6 +14,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { epStadaStationen } from '../src/clients/db-endpunkte.js';
 import { OVERPASS_RADIUS_M, overpassQuery } from '../src/clients/overpass.js';
+import { erzeugeOverpassPausen } from '../src/clients/overpass-pausen.js';
 import { dbAuthHeader, holeStationsInfo } from '../src/clients/stations.js';
 import type { StationsInfo } from '../src/core/typen.js';
 import { dateiname, entpackeEintrag, packeEintrag, schluesselVon } from '../src/osm/bestand.js';
@@ -75,6 +76,7 @@ async function main(): Promise<void> {
   const erledigt = new Set<string>();
   let geholt = 0;
   const gescheitert: string[] = [];
+  const pausen = erzeugeOverpassPausen();
   for (const [i, s] of stationen.entries()) {
     const kopf = `[${i + 1}/${stationen.length}] ${s.name}`;
     const eva = hauptEva(s);
@@ -116,7 +118,7 @@ async function main(): Promise<void> {
     let ok = false;
     for (let versuch = 1; versuch <= VERSUCHE && !ok; versuch++) {
       try {
-        const osm = await overpassQuery(info.lat, info.lon, OVERPASS_RADIUS_M);
+        const osm = await overpassQuery(info.lat, info.lon, OVERPASS_RADIUS_M, fetch, 2000, undefined, pausen);
         writeFileSync(
           pfad,
           await packeEintrag({

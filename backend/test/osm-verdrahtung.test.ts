@@ -36,6 +36,7 @@ const ordner = (name: string) => join(WURZEL, `${name}-${Date.now()}-${Math.rand
 
 afterEach(() => {
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
   rmSync(WURZEL, { recursive: true, force: true });
 });
 
@@ -80,4 +81,43 @@ describe('buildApp: OSM-Bestand aus den Einstellungen', () => {
     expect(res.statusCode).toBe(200);
     expect(c.overpass).toHaveBeenCalledTimes(1);
   });
+});
+
+describe('buildApp: ein Pausenzustand fuer alle Overpass-Abrufe', () => {
+  it('fragt einen abweisenden Server beim naechsten Bahnhof nicht erneut', async () => {
+    vi.stubEnv('OVERPASS_URL_PRIMARY', '');
+    vi.stubEnv('OVERPASS_URL_FALLBACK', '');
+    const gefragt: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string | URL) => {
+        const host = new URL(String(url)).host;
+        gefragt.push(host);
+        if (host === 'overpass-api.de') {
+          throw new TypeError('fetch failed', {
+            cause: Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' }),
+          });
+        }
+        return new Response(JSON.stringify(miniOsm), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }),
+    );
+    const c = clients();
+    // Zwei verschiedene Bahnhoefe – sonst traefe die zweite Anfrage den Graph-Cache.
+    const ohneOverpass = {
+      ...c,
+      overpass: undefined,
+      stations: {
+        ...c.stations,
+        holeStationsInfo: vi.fn(async (eva: string) => ({ ...ministadt, eva, evas: [eva] })),
+      },
+    };
+    const app = buildApp(ohneOverpass as never);
+    await app.inject({ method: 'GET', url: ROUTE });
+    await app.inject({ method: 'GET', url: ROUTE.replace('8000001', '8000002') });
+    expect(gefragt.filter((h) => h === 'overpass-api.de')).toHaveLength(1);
+    expect(gefragt.filter((h) => h === 'maps.mail.ru')).toHaveLength(2);
+  }, 15_000);
 });
