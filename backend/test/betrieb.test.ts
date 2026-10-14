@@ -31,4 +31,10 @@ describe('Betrieb: OSM-Bestand im Image, Gelerntes auf dem Volume', () => {
   it('schliesst den Startbestand nicht vom Build aus', () => {
     expect(lies('.dockerignore')).not.toContain('osm-bestand');
   });
+
+  it('laedt Simulations- und Testablagen nicht als Build-Kontext hoch', () => {
+    const zeilen = lies('.dockerignore').split(/\r?\n/).map((z) => z.trim());
+    expect(zeilen).toContain('osm-ablage');
+    expect(zeilen).toContain('.test-ablage');
+  });
 });
