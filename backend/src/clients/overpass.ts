@@ -1,4 +1,5 @@
 import type { OverpassAntwort } from '../core/typen.js';
+import { pauseFuer, type OverpassPausen } from './overpass-pausen.js';
 
 // Fairness gegenüber den öffentlich geteilten Overpass-Instanzen:
 // identifizierbarer User-Agent, Wartezeit zwischen Wiederholversuchen,
@@ -74,9 +75,12 @@ out body;`;
 }
 
 function instanzReihenfolge(): string[] {
-  const primaer = process.env.OVERPASS_URL_PRIMARY ?? 'https://overpass-api.de/api/interpreter';
+  // `||` statt `??`: Eine leer gesetzte Variable faellt auf die Vorgabe zurueck.
+  const primaer = process.env.OVERPASS_URL_PRIMARY || 'https://overpass-api.de/api/interpreter';
+  // Ersatz seit 14.10.2026: overpass.kumi.systems (= overpass.private.coffee)
+  // antwortet von nirgendwo mehr; maps.mail.ru liefert, wenn auch wackelig.
   const fallback =
-    process.env.OVERPASS_URL_FALLBACK ?? 'https://overpass.kumi.systems/api/interpreter';
+    process.env.OVERPASS_URL_FALLBACK || 'https://maps.mail.ru/osm/tools/overpass/api/interpreter';
   // 2 Versuche primär, dann 2 Versuche Fallback
   return [primaer, primaer, fallback, fallback];
 }
@@ -88,16 +92,29 @@ export async function overpassQuery(
   fetchFn: typeof fetch = fetch,
   retryWartezeitMs = 2000,
   beiVersuch?: (v: OverpassVersuch) => void,
+  pausen?: OverpassPausen,
 ): Promise<OverpassAntwort> {
   const ql = baueOverpassQL(lat, lon, radiusM);
   const versuche = instanzReihenfolge();
+  // Wer in DIESER Abfrage mit 429, 406 oder abgewiesener Verbindung geantwortet
+  // hat, bekommt keinen zweiten Versuch (Spec 2026-10-14, Abschnitt 4).
+  const abgewiesen = new Set<string>();
+  let gefragt = false;
   let letzterFehler: unknown;
 
   for (let i = 0; i < versuche.length; i++) {
-    if (i > 0 && retryWartezeitMs > 0) {
+    const instanz = new URL(versuche[i]).host;
+    const pauseBis = pausen?.pausiertBis(instanz) ?? null;
+    if (pauseBis || abgewiesen.has(instanz)) {
+      const grund = pauseBis ? `pausiert bis ${pauseBis.toISOString()}` : 'pausiert';
+      letzterFehler = new Error(`${instanz} ${grund}`);
+      beiVersuch?.({ instanz, versuch: i + 1, ok: false, fehler: grund, dauerMs: 0 });
+      continue;
+    }
+    if (gefragt && retryWartezeitMs > 0) {
       await new Promise((r) => setTimeout(r, retryWartezeitMs));
     }
-    const instanz = new URL(versuche[i]).host;
+    gefragt = true;
     const beginn = Date.now();
     let status: number | undefined;
     try {
@@ -124,6 +141,11 @@ export async function overpassQuery(
       return antwort;
     } catch (e) {
       letzterFehler = e;
+      const ergebnis = { status, fehler: e };
+      if (pauseFuer(ergebnis) > 0) {
+        abgewiesen.add(instanz);
+        pausen?.merke(instanz, ergebnis);
+      }
       beiVersuch?.({
         instanz,
         versuch: i + 1,
@@ -134,5 +156,6 @@ export async function overpassQuery(
       });
     }
   }
+  if (!gefragt) throw new Error('Overpass nicht erreichbar: alle Server pausiert');
   throw new Error(`Overpass nicht erreichbar: ${String(letzterFehler)}`);
 }
