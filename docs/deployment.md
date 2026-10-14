@@ -157,6 +157,36 @@ flyctl machines list                 # es darf genau eine geben
 flyctl machines destroy <id> --force # zweite entfernen
 ```
 
+## OSM-Bestand und Volume (seit 12.10.2026)
+
+Das Backend holt OSM-Daten nicht mehr bei jedem ersten Aufruf von Overpass:
+
+1. Graph-Cache im Arbeitsspeicher (24 h)
+2. Volume `/data/osm` – was das Backend selbst geholt oder erneuert hat
+3. Startbestand `/app/osm-bestand` – Preisklassen 1–3, im Image
+4. Overpass – Ergebnis landet auf dem Volume
+
+Daten älter als 30 Tage oder aus einer älteren Abfrageversion werden sofort
+benutzt und im Hintergrund erneuert (10 s Pause, höchstens 50 je Stunde, ein
+Versuch je Bahnhof und Tag).
+
+**Einmalig: Volume anlegen**
+
+    flyctl volumes create osm_daten --size 1 --region fra -a umstieg-backend
+
+**Startbestand erneuern** (nötig, wenn sich die Overpass-Abfrage ändert –
+der Test `osm-startbestand.test.ts` schlägt dann an):
+
+    cd backend
+    npx tsx scripts/bestand-fuellen.ts
+    # tote Spiegel: OVERPASS_URL_FALLBACK=https://maps.mail.ru/osm/tools/overpass/api/interpreter voranstellen
+
+Danach `backend/osm-bestand/` committen und deployen.
+
+**Prüfen:** In den Fly-Logs steht jeder Overpass-Versuch einzeln
+(`ereignis: overpass-versuch`), Probleme mit dem Bestand als
+`degradation: osm-volume-fehlt | osm-bestand-kaputt | osm-volume-schreibfehler | osm-erneuerung-gescheitert`.
+
 ## Frontend deployen (Vercel)
 
 Einmalig:
