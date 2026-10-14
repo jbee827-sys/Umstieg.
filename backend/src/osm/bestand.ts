@@ -80,13 +80,17 @@ const STILL: Warner = { warn: () => {} };
 /**
  * Zwei Ablagen: der Startbestand im Image (nur lesen) und das Volume (lesen
  * und schreiben). Das Volume gewinnt – dort liegt, was das Backend selbst
- * geholt oder erneuert hat. Nichts hier darf eine Anfrage scheitern lassen:
- * Jeder Fehler wird zu „nicht vorhanden" oder „nicht geschrieben".
+ * geholt oder erneuert hat. Ausnahme: Ist der Volume-Eintrag veraltet, der im
+ * Image aber nicht (neue Abfrageversion, neu gefuellter Startbestand), gilt
+ * das Image – sonst wuerde Overpass fuer Daten gefragt, die schon frisch
+ * daliegen. Nichts hier darf eine Anfrage scheitern lassen: Jeder Fehler wird
+ * zu „nicht vorhanden" oder „nicht geschrieben".
  */
 export function erzeugeBestand(
-  opt: { startPfad?: string; volumePfad?: string; log?: Warner } = {},
+  opt: { startPfad?: string; volumePfad?: string; log?: Warner; jetzt?: () => Date } = {},
 ): OsmBestand {
   const log = opt.log ?? STILL;
+  const jetzt = opt.jetzt ?? (() => new Date());
   let volume = opt.volumePfad;
   if (volume) {
     try {
@@ -133,11 +137,11 @@ export function erzeugeBestand(
     hatVolume: volume !== undefined,
 
     async lies(schluessel) {
-      if (volume) {
-        const vomVolume = await lese(volume, schluessel, 'volume');
-        if (vomVolume) return vomVolume;
-      }
-      return opt.startPfad ? lese(opt.startPfad, schluessel, 'start') : null;
+      const vomVolume = volume ? await lese(volume, schluessel, 'volume') : null;
+      if (vomVolume && !istVeraltet(vomVolume, jetzt())) return vomVolume;
+      const ausStart = opt.startPfad ? await lese(opt.startPfad, schluessel, 'start') : null;
+      if (ausStart && (!vomVolume || !istVeraltet(ausStart, jetzt()))) return ausStart;
+      return vomVolume;
     },
 
     async schreibe(eintrag) {
