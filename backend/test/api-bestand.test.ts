@@ -111,7 +111,12 @@ describe('/api/route mit OSM-Bestand', () => {
     const start = ordner('start');
     await legeStart(start, { geholtAm: '2026-01-01T00:00:00.000Z' });
     const c = clients();
-    const erneuerung: OsmErneuerung = { stosseAn: vi.fn(), beiErneuert: vi.fn(), leerlauf: async () => {} };
+    const erneuerung: OsmErneuerung = {
+      stosseAn: vi.fn(),
+      spaeter: vi.fn(),
+      beiErneuert: vi.fn(),
+      leerlauf: async () => {},
+    };
     const osmQuelle = erzeugeOsmQuelle({ bestand: erzeugeBestand({ startPfad: start }), erneuerung, overpass: c.overpass });
     const res = await buildApp({ ...c, osmQuelle } as never).inject({ method: 'GET', url: ROUTE });
     expect(res.statusCode).toBe(200);
@@ -124,6 +129,7 @@ describe('/api/route mit OSM-Bestand', () => {
     let melde: ((a: ErneuerungsAuftrag) => void) | undefined;
     const erneuerung: OsmErneuerung = {
       stosseAn: vi.fn(),
+      spaeter: vi.fn(),
       beiErneuert: (fn) => {
         melde = fn;
       },
