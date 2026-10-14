@@ -21,8 +21,37 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 
 > **OSM-Bestand: Bahnhöfe ohne Warten auf Overpass** – Spec und Plan unter
 > `docs/superpowers/` (`2026-10-12-osm-bestand*`), Commits `3e62647` bis
-> `07983c6` auf `feat/mvp`. **Nicht ausgeliefert** – weder Fly noch Push;
-> Produktion läuft noch ohne Bestand.
+> `a4b1439` auf `feat/mvp`.
+>
+> **Ausgeliefert am 14.10.2026, 16:20** (Fly, `--ha=false`): Volume
+> `osm_daten` (`vol_4m3m9d8mzg7ql73v`, 1 GB, `fra`) angelegt; Fly hat die alte
+> Maschine `e82d62ef513368` durch **eine** neue mit Volume ersetzt
+> (`3d8d99410a3d68`). In der Maschine geprüft: 382 Dateien unter
+> `/app/osm-bestand`, `/data/osm` gehört `node`, der Server läuft als `node`.
+> Build-Kontext 6,27 MB statt über 135 MB (`5af7380`). Protokoll in
+> `.superpowers/fly-deploy-2026-10-14.log` (gitignored).
+>
+> | Erster Aufruf nach dem Deploy | vorher (12.10.) | jetzt | Stufe |
+> |---|---|---|---|
+> | Hamburg Hbf (8002549) | 35,9 s | **0,81 s** | 1 |
+> | Frankfurt (Main) Hbf (8000105) | 4,6 s | **0,66 s** | 1 |
+>
+> Kein Overpass-Versuch dafür im Log. Am selben Tag um 12:04 und 12:06 UTC
+> waren Frankfurt und Berlin auf der alten Maschine wegen Overpass-
+> Zeitüberschreitungen ins Standardmodell gefallen.
+>
+> **Nicht nachgewiesen: Lernen und Neustart** (Spec §12, Prüfung 2 und 3).
+> Overpass ist von Fly aus nicht erreichbar: `overpass-api.de` lehnt die
+> Verbindung der neuen Maschine ab (`ECONNREFUSED` über IPv4 und IPv6, nach
+> 61 ms; von hier aus antwortet derselbe Server in 0,13 s),
+> `overpass.kumi.systems` läuft zweimal 30 s ins Leere. Wiesenburg (Mark)
+> (8010376, nicht im Bestand) kam nach 66,6 s als **Standardmodell**, auf dem
+> Volume liegt nichts. Das Versuchsprotokoll hat genau das gezeigt – jeder der
+> vier Versuche einzeln mit Instanz und Dauer (Prüfung 4 erfüllt).
+> **Bahnhöfe außerhalb der 382 lernt das Backend damit zurzeit nicht, und die
+> Erneuerung läuft ins Leere** – die alten Daten bleiben, wie geplant. Das ist
+> der nächste Blick wert: Ersatzserver tauschen (die Spec schloss das aus,
+> „Lösung 1") oder klären, warum `overpass-api.de` die Fly-Adresse abweist.
 >
 > **Anlass** (gemessen am 12.10. in Produktion): Hamburg Hbf brauchte beim
 > ersten Aufruf **35,9 s**, Frankfurt Hbf 4,6 s, danach je 0,1–0,2 s.
@@ -60,7 +89,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > (≥ 350), Größe (< 15 MB), Version, Dateinamen und die fünf Metropolen fest.
 >
 > ```bash
-> cd backend && npm test && npm run lint   # 525 von 525, Lint sauber
+> cd backend && npm test && npm run lint   # 529 von 529, Lint sauber
 > ```
 >
 > **Achtung beim Testen:** Ist `OVERPASS_URL_FALLBACK` in der Shell gesetzt
@@ -68,22 +97,22 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > Fehlversuchen auf die Fallback-Instanz zurück" – der Test liest die
 > Umgebung mit. Kein Fehler im Code; in einer frischen Shell grün.
 >
-> **Aus dem Schlussreview offen** (nichts davon blockiert das Ausliefern):
+> **Aus dem Schlussreview** – zwei Punkte auf Wunsch vor dem Ausliefern
+> behoben (529 von 529, Lint sauber):
 >
-> - Nach einer neuen Abfrageversion verdeckt ein veralteter Eintrag auf dem
->   Volume den frischen im Image – er wird benutzt und unnötig bei Overpass
->   erneuert. Heilt sich selbst; Abhilfe wären wenige Zeilen in `lies()`.
-> - `backend/.dockerignore` schließt `osm-ablage/` (135 MB) nicht aus – Fly lädt
->   den Ordner bei jedem Deploy als Build-Kontext mit hoch (schon vorher so).
-> - `docker-start.sh` bricht mit `set -e` ab, wenn `chown` scheitert; das
->   Skript endet auch nach Fehlschlägen mit Exit-Code 0.
+> - `a4b1439`: Nach einer neuen Abfrageversion verdeckte ein veralteter
+>   Eintrag auf dem Volume den frischen im Image. Jetzt gilt das Image, wenn
+>   nur der Volume-Eintrag veraltet ist; sind beide veraltet, bleibt das Volume.
+> - `5af7380`: `backend/.dockerignore` schließt `osm-ablage/` und
+>   `.test-ablage/` aus.
 >
-> **Nächster Schritt: ausliefern – nur nach Rückfrage** (Plan Task 10):
-> Volume anlegen (`flyctl volumes create osm_daten --size 1 --region fra`,
-> etwa 0,15 $ im Monat – **vor** dem Deploy, sonst scheitert er an
-> `[mounts]`), `flyctl deploy --ha=false`, Hamburg und Frankfurt messen (Ziel
-> unter 1 s), einen kleinen Bahnhof lernen lassen und nach einem Neustart
-> erneut abfragen, dann pushen – erst `main`, dann `feat/mvp`.
+> Offen, Kleinigkeiten: `docker-start.sh` bricht mit `set -e` ab, wenn `chown`
+> scheitert; `bestand-fuellen.ts` endet auch nach Fehlschlägen mit Exit-Code 0.
+>
+> **Nächster Schritt:** Overpass von Fly aus wieder erreichbar machen (siehe
+> oben), danach Prüfung 2 und 3 nachholen – einen kleinen Bahnhof abfragen,
+> `flyctl ssh console -a umstieg-backend -C "ls -la /data/osm"`, Maschine neu
+> starten, erneut abfragen.
 
 ### Davor: Knöpfe und „Navigation starten" ausgeliefert (12.10.2026, abends)
 
