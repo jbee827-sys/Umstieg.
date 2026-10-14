@@ -17,7 +17,75 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 12.10.2026)
+## Hier weitermachen (Stand 14.10.2026)
+
+> **OSM-Bestand: Bahnhöfe ohne Warten auf Overpass** – Spec und Plan unter
+> `docs/superpowers/` (`2026-10-12-osm-bestand*`), Commits `3e62647` bis
+> `07983c6` auf `feat/mvp`. **Nicht ausgeliefert** – weder Fly noch Push;
+> Produktion läuft noch ohne Bestand.
+>
+> **Anlass** (gemessen am 12.10. in Produktion): Hamburg Hbf brauchte beim
+> ersten Aufruf **35,9 s**, Frankfurt Hbf 4,6 s, danach je 0,1–0,2 s.
+> `overpass-api.de` antwortet abwechselnd mit Daten und 504,
+> `overpass.kumi.systems` gar nicht; der Graph-Cache ist nach jedem Deploy leer.
+>
+> **Gebaut (Tasks 1–8):**
+>
+> 1. **Nachschlagen in vier Stufen:** Graph-Cache → Fly-Volume `/data/osm`
+>    (was das Backend selbst geholt hat) → Startbestand im Image
+>    `/app/osm-bestand` → Overpass. Was Overpass liefert, landet auf dem
+>    Volume (`osm/bestand.ts`, `osm/quelle.ts`). Lokal und in Tests ist beides
+>    aus – ohne `OSM_STARTBESTAND_PFAD`/`OSM_VOLUME_PFAD` bleibt alles wie bisher.
+> 2. **Veraltet** (älter als 30 Tage oder andere Abfrageversion) wird sofort
+>    benutzt und im Hintergrund erneuert: 10 s Pause, höchstens 50 je Stunde,
+>    ein Versuch je Bahnhof und Tag (`osm/erneuerung.ts`). Die Abfrageversion
+>    ist ein Hash der Abfrage selbst (`osm/version.ts`) – niemand muss zählen.
+> 3. **Jeder Overpass-Versuch steht einzeln im Log** (`ereignis:
+>    overpass-versuch` mit Instanz, Status, Dauer). Eine 200-Antwort mit
+>    „runtime error" gilt als Fehlversuch und wird nicht gespeichert.
+> 4. **Betrieb:** Das Dockerfile kopiert den Startbestand, `docker-start.sh`
+>    macht das Volume für `node` beschreibbar und startet per `su-exec`;
+>    `fly.toml` hängt `osm_daten` unter `/data` ein. Befehle in
+>    [`docs/deployment.md`](./docs/deployment.md), „OSM-Bestand und Volume".
+> 5. **`scripts/bestand-fuellen.ts`** holt die Bahnhofsliste aus StaDa
+>    (Preisklassen 1–3) und füllt `backend/osm-bestand/`.
+>
+> **Startbestand: 382 von 382 Bahnhöfen, 6,2 MB gepackt**, Abfrageversion
+> `32bc423f0c92`. **Keiner gescheitert.** Overpass antwortete rund 70-mal mit
+> 504 oder gar nicht; jeder Bahnhof kam bei einer Wiederholung durch, Bremen
+> Hbf erst im zweiten Lauf. Es brauchte vier Läufe (12.–14.10.): Der erste
+> wurde wegen Speichermangel beendet, einer stand im Energiesparmodus des
+> Rechners still, einer endete durch ein versehentliches Strg+C – jeder neue
+> Lauf übersprang, was schon lag. `osm-startbestand.test.ts` hält Anzahl
+> (≥ 350), Größe (< 15 MB), Version, Dateinamen und die fünf Metropolen fest.
+>
+> ```bash
+> cd backend && npm test && npm run lint   # 525 von 525, Lint sauber
+> ```
+>
+> **Achtung beim Testen:** Ist `OVERPASS_URL_FALLBACK` in der Shell gesetzt
+> (etwa vom Skriptaufruf), scheitert `overpass.test.ts` „fällt nach zwei
+> Fehlversuchen auf die Fallback-Instanz zurück" – der Test liest die
+> Umgebung mit. Kein Fehler im Code; in einer frischen Shell grün.
+>
+> **Aus dem Schlussreview offen** (nichts davon blockiert das Ausliefern):
+>
+> - Nach einer neuen Abfrageversion verdeckt ein veralteter Eintrag auf dem
+>   Volume den frischen im Image – er wird benutzt und unnötig bei Overpass
+>   erneuert. Heilt sich selbst; Abhilfe wären wenige Zeilen in `lies()`.
+> - `backend/.dockerignore` schließt `osm-ablage/` (135 MB) nicht aus – Fly lädt
+>   den Ordner bei jedem Deploy als Build-Kontext mit hoch (schon vorher so).
+> - `docker-start.sh` bricht mit `set -e` ab, wenn `chown` scheitert; das
+>   Skript endet auch nach Fehlschlägen mit Exit-Code 0.
+>
+> **Nächster Schritt: ausliefern – nur nach Rückfrage** (Plan Task 10):
+> Volume anlegen (`flyctl volumes create osm_daten --size 1 --region fra`,
+> etwa 0,15 $ im Monat – **vor** dem Deploy, sonst scheitert er an
+> `[mounts]`), `flyctl deploy --ha=false`, Hamburg und Frankfurt messen (Ziel
+> unter 1 s), einen kleinen Bahnhof lernen lassen und nach einem Neustart
+> erneut abfragen, dann pushen – erst `main`, dann `feat/mvp`.
+
+### Davor: Knöpfe und „Navigation starten" ausgeliefert (12.10.2026, abends)
 
 > **Ausgeliefert am 12.10.2026, 19:38:** `main` auf `6a702cb` – mit
 > `bbecffe` (schwebendes „Navigation starten", alle Hauptknöpfe 18 px) und
