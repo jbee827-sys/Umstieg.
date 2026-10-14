@@ -7,6 +7,8 @@ export const PAUSE_MS = 10_000;
 export const MAX_PRO_STUNDE = 50;
 export const SPERRE_MS = 24 * 60 * 60 * 1000;
 const STUNDE_MS = 60 * 60 * 1000;
+/** Spec 2026-10-14, Abschnitt 5: so lange nach einem gescheiterten Vordergrundabruf. */
+export const NACHHOL_WARTEZEIT_MS = 60 * 60 * 1000;
 
 export interface ErneuerungsAuftrag {
   schluessel: string;
@@ -19,6 +21,12 @@ export interface ErneuerungsAuftrag {
 
 export interface OsmErneuerung {
   stosseAn(auftrag: ErneuerungsAuftrag): void;
+  /**
+   * Nach einem gescheiterten Vordergrundabruf: in `NACHHOL_WARTEZEIT_MS` ueber
+   * `stosseAn` erneut versuchen – mit dessen Grenzen. Niemand muss dafuer
+   * erneut fragen.
+   */
+  spaeter(auftrag: ErneuerungsAuftrag): void;
   beiErneuert(fn: (auftrag: ErneuerungsAuftrag) => void): void;
   /** Wartet, bis die Warteschlange leer ist – fuer Tests. */
   leerlauf(): Promise<void>;
@@ -44,6 +52,8 @@ export function erzeugeErneuerung(o: {
   pauseMs?: number;
   maxProStunde?: number;
   sperreMs?: number;
+  nachholWartezeitMs?: number;
+  zeitgeber?: (fn: () => void, ms: number) => void;
 }): OsmErneuerung {
   const log = o.log ?? STILL;
   const jetzt = o.jetzt ?? (() => new Date());
@@ -56,6 +66,13 @@ export function erzeugeErneuerung(o: {
   const pauseMs = o.pauseMs ?? PAUSE_MS;
   const maxProStunde = o.maxProStunde ?? MAX_PRO_STUNDE;
   const sperreMs = o.sperreMs ?? SPERRE_MS;
+  const nachholMs = o.nachholWartezeitMs ?? NACHHOL_WARTEZEIT_MS;
+  const zeitgeber =
+    o.zeitgeber ??
+    ((fn: () => void, ms: number) => {
+      setTimeout(fn, ms).unref();
+    });
+  const vorgemerkt = new Set<string>();
 
   const warteschlange: ErneuerungsAuftrag[] = [];
   const wartend = new Set<string>();
@@ -117,18 +134,28 @@ export function erzeugeErneuerung(o: {
     });
   }
 
+  function stosseAn(a: ErneuerungsAuftrag): void {
+    const t = jetzt().getTime();
+    if (wartend.has(a.schluessel)) return;
+    const letzter = letzterVersuch.get(a.schluessel);
+    if (letzter !== undefined && t - letzter < sperreMs) return;
+    while (aufnahmen.length > 0 && t - aufnahmen[0] >= STUNDE_MS) aufnahmen.shift();
+    if (aufnahmen.length >= maxProStunde) return;
+    aufnahmen.push(t);
+    wartend.add(a.schluessel);
+    warteschlange.push(a);
+    starte();
+  }
+
   return {
-    stosseAn(a) {
-      const t = jetzt().getTime();
-      if (wartend.has(a.schluessel)) return;
-      const letzter = letzterVersuch.get(a.schluessel);
-      if (letzter !== undefined && t - letzter < sperreMs) return;
-      while (aufnahmen.length > 0 && t - aufnahmen[0] >= STUNDE_MS) aufnahmen.shift();
-      if (aufnahmen.length >= maxProStunde) return;
-      aufnahmen.push(t);
-      wartend.add(a.schluessel);
-      warteschlange.push(a);
-      starte();
+    stosseAn,
+    spaeter(a) {
+      if (vorgemerkt.has(a.schluessel)) return;
+      vorgemerkt.add(a.schluessel);
+      zeitgeber(() => {
+        vorgemerkt.delete(a.schluessel);
+        stosseAn(a);
+      }, nachholMs);
     },
     beiErneuert(fn) {
       abonnenten.push(fn);

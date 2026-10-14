@@ -42,7 +42,15 @@ export function erzeugeOsmQuelle(o: {
         if (istVeraltet(gefunden, jetzt())) o.erneuerung?.stosseAn(auftrag);
         return gefunden.osm;
       }
-      const osm = await o.overpass(info.lat, info.lon, OVERPASS_RADIUS_M);
+      let osm: OverpassAntwort;
+      try {
+        osm = await o.overpass(info.lat, info.lon, OVERPASS_RADIUS_M);
+      } catch (e) {
+        // Spec 2026-10-14, Abschnitt 5: Niemand muss erneut fragen – die
+        // Erneuerung holt den Bahnhof in einer Stunde nach.
+        o.erneuerung?.spaeter(auftrag);
+        throw e;
+      }
       // Der Bestand warnt selbst, wenn das Schreiben scheitert – die Antwort geht trotzdem raus.
       await o.bestand.schreibe({
         schluessel: auftrag.schluessel,

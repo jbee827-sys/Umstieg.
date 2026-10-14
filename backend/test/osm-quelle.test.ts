@@ -38,7 +38,12 @@ function aufbau(liest: GefundenerEintrag | null, { overpassWirft = false } = {})
     lies: vi.fn(async () => liest),
     schreibe: vi.fn(async () => true),
   };
-  const erneuerung: OsmErneuerung = { stosseAn: vi.fn(), beiErneuert: vi.fn(), leerlauf: async () => {} };
+  const erneuerung: OsmErneuerung = {
+    stosseAn: vi.fn(),
+    spaeter: vi.fn(),
+    beiErneuert: vi.fn(),
+    leerlauf: async () => {},
+  };
   const overpass = vi.fn(async () => {
     if (overpassWirft) throw new Error('Overpass nicht erreichbar (Test)');
     return AUS_OVERPASS;
@@ -98,6 +103,27 @@ describe('OSM-Quelle', () => {
     const a = aufbau(null, { overpassWirft: true });
     await expect(a.quelle.hole(berlin)).rejects.toThrow(/Overpass nicht erreichbar/);
     expect(a.bestand.schreibe).not.toHaveBeenCalled();
+  });
+
+  it('merkt einen gescheiterten Bahnhof zum Nachholen vor und wirft weiter', async () => {
+    const a = aufbau(null, { overpassWirft: true });
+    await expect(a.quelle.hole(berlin)).rejects.toThrow(/Overpass nicht erreichbar/);
+    expect(a.erneuerung.spaeter).toHaveBeenCalledWith({
+      schluessel: '8011160',
+      name: 'Berlin Hbf',
+      lat: 52.525,
+      lon: 13.369,
+      evas: ['8098160', '8011160', '8089021'],
+    });
+  });
+
+  it('merkt nichts vor, wenn Overpass liefert oder der Bestand trifft', async () => {
+    const geholt = aufbau(null);
+    await geholt.quelle.hole(berlin);
+    expect(geholt.erneuerung.spaeter).not.toHaveBeenCalled();
+    const getroffen = aufbau(gefunden());
+    await getroffen.quelle.hole(berlin);
+    expect(getroffen.erneuerung.spaeter).not.toHaveBeenCalled();
   });
 
   it('wirft ohne Koordinaten', async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { erzeugeErneuerung, type ErneuerungsAuftrag } from '../src/osm/erneuerung.js';
+import { erzeugeErneuerung, NACHHOL_WARTEZEIT_MS, type ErneuerungsAuftrag } from '../src/osm/erneuerung.js';
 import { ABFRAGE_VERSION } from '../src/osm/version.js';
 import type { BestandsEintrag, OsmBestand } from '../src/osm/bestand.js';
 import type { OverpassAntwort } from '../src/core/typen.js';
@@ -138,5 +138,65 @@ describe('Hintergrund-Erneuerung', () => {
       expect.any(String),
     );
     expect(weiterer).toHaveBeenCalled();
+  });
+});
+
+describe('Hintergrund-Erneuerung – Nachholen', () => {
+  function mitZeitgeber() {
+    const zeitgeber: { fn: () => void; ms: number }[] = [];
+    const overpass = vi.fn(async () => OSM);
+    const bestand: OsmBestand = {
+      hatVolume: true,
+      lies: vi.fn(async () => null),
+      schreibe: vi.fn(async () => true),
+    };
+    const erneuerung = erzeugeErneuerung({
+      bestand,
+      overpass,
+      warte: async () => {},
+      jetzt: () => new Date('2026-10-14T12:00:00Z'),
+      zeitgeber: (fn, ms) => {
+        zeitgeber.push({ fn, ms });
+      },
+    });
+    return { erneuerung, overpass, bestand, zeitgeber };
+  }
+
+  it('holt einen vorgemerkten Bahnhof erst nach einer Stunde', async () => {
+    const a = mitZeitgeber();
+    const erneuert = vi.fn();
+    a.erneuerung.beiErneuert(erneuert);
+    a.erneuerung.spaeter(auftrag('8010376'));
+    await a.erneuerung.leerlauf();
+    expect(a.overpass).not.toHaveBeenCalled();
+    expect(a.zeitgeber).toHaveLength(1);
+    expect(a.zeitgeber[0].ms).toBe(NACHHOL_WARTEZEIT_MS);
+    expect(NACHHOL_WARTEZEIT_MS).toBe(60 * 60 * 1000);
+    a.zeitgeber[0].fn();
+    await a.erneuerung.leerlauf();
+    expect(a.overpass).toHaveBeenCalledWith(52, 13, 400);
+    expect(a.bestand.schreibe).toHaveBeenCalledWith(expect.objectContaining({ schluessel: '8010376' }));
+    expect(erneuert).toHaveBeenCalledWith(expect.objectContaining({ schluessel: '8010376' }));
+  });
+
+  it('merkt denselben Bahnhof nur einmal vor, bis er angestossen ist', async () => {
+    const a = mitZeitgeber();
+    a.erneuerung.spaeter(auftrag('8010376'));
+    a.erneuerung.spaeter(auftrag('8010376'));
+    expect(a.zeitgeber).toHaveLength(1);
+    a.zeitgeber[0].fn();
+    await a.erneuerung.leerlauf();
+    a.erneuerung.spaeter(auftrag('8010376'));
+    expect(a.zeitgeber).toHaveLength(2);
+  });
+
+  it('haelt beim Nachholen die Tagessperre ein', async () => {
+    const a = mitZeitgeber();
+    a.erneuerung.stosseAn(auftrag('8010376'));
+    await a.erneuerung.leerlauf();
+    a.erneuerung.spaeter(auftrag('8010376'));
+    a.zeitgeber[0].fn();
+    await a.erneuerung.leerlauf();
+    expect(a.overpass).toHaveBeenCalledTimes(1);
   });
 });
