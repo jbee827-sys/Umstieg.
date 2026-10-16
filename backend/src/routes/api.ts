@@ -90,6 +90,61 @@ interface RouteQuery {
   variante?: string;
 }
 
+/**
+ * Koordinate aus der Abfrage – oder `null`, wenn sie fehlt oder unbrauchbar
+ * ist. Ein leerer Wert ist ungueltig, nicht 0: `Number('')` ergaebe 0 und
+ * damit den Golf von Guinea.
+ */
+export function leseKoordinaten(
+  latRoh: string | undefined,
+  lonRoh: string | undefined,
+): { lat: number; lon: number } | null {
+  if (latRoh === undefined || lonRoh === undefined || latRoh.trim() === '' || lonRoh.trim() === '') {
+    return null;
+  }
+  const lat = Number(latRoh);
+  const lon = Number(lonRoh);
+  const gueltig =
+    Number.isFinite(lat) && Number.isFinite(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+  return gueltig ? { lat, lon } : null;
+}
+
+/**
+ * Schreibvarianten der Reihe nach probieren.
+ *
+ * Ein aus einer Verbund-App uebernommener Name ("S+U Berlin
+ * Gesundbrunnen Bhf") liefert bei RIS::Stations nichts, derselbe Ort
+ * als "Berlin Gesundbrunnen" schon. Statt das im Client zu raten - was
+ * jede App anders braeuchte - probiert die Suche selbst.
+ *
+ * Ein sauberer Name ergibt genau eine Variante und kostet damit auch
+ * genau einen Aufruf; die Tippsuche wird also nicht teurer.
+ *
+ * Faellt eine Variante mit einem Fehler aus, laeuft die naechste
+ * trotzdem: Die DB-API quittiert manche Eingaben mit einem Fehler statt
+ * mit einer leeren Liste. Erst wenn KEINE durchkam, wird gemeldet.
+ *
+ * Aus `/api/stations` hierher gezogen (Umstieg 2.0): `/api/orte` braucht
+ * dieselbe Suche.
+ */
+export async function sucheBahnhoefeMitVarianten(
+  stations: StationsClient,
+  q: string,
+): Promise<BahnhofTreffer[]> {
+  let ersterFehler: unknown;
+  for (const variante of namensvarianten(q)) {
+    try {
+      const treffer = await stations.sucheBahnhoefe(variante);
+      if (treffer.length > 0) return treffer;
+    } catch (e) {
+      if (e instanceof FehlendeZugangsdatenError) throw e;
+      ersterFehler ??= e;
+    }
+  }
+  if (ersterFehler) throw ersterFehler;
+  return [];
+}
+
 function heuteJJJJMMTT(): string {
   // Deutsche Ortszeit: Zwischen 22 und 24 Uhr deutscher Zeit ist im UTC-
   // Container noch der Vortag, und die Wagenreihung waere fuer den falschen
@@ -189,53 +244,15 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
 
     try {
       if (hatKoordinaten) {
-        const lat = Number(latRoh);
-        const lon = Number(lonRoh);
-        const gueltig =
-          latRoh !== undefined &&
-          latRoh.trim() !== '' &&
-          lonRoh !== undefined &&
-          lonRoh.trim() !== '' &&
-          Number.isFinite(lat) &&
-          Number.isFinite(lon) &&
-          lat >= -90 &&
-          lat <= 90 &&
-          lon >= -180 &&
-          lon <= 180;
-        if (!gueltig) {
+        const punkt = leseKoordinaten(latRoh, lonRoh);
+        if (!punkt) {
           return reply
             .code(400)
             .send({ fehler: 'parameter-ungueltig', detail: 'lat und lon muessen gueltig sein' });
         }
-        return await clients.stations.sucheBahnhoefeNahebei(lat, lon, ERKENNUNG_RADIUS_M);
+        return await clients.stations.sucheBahnhoefeNahebei(punkt.lat, punkt.lon, ERKENNUNG_RADIUS_M);
       }
-      /*
-       * Schreibvarianten der Reihe nach probieren.
-       *
-       * Ein aus einer Verbund-App uebernommener Name ("S+U Berlin
-       * Gesundbrunnen Bhf") liefert bei RIS::Stations nichts, derselbe Ort
-       * als "Berlin Gesundbrunnen" schon. Statt das im Client zu raten - was
-       * jede App anders braeuchte - probiert die Suche selbst.
-       *
-       * Ein sauberer Name ergibt genau eine Variante und kostet damit auch
-       * genau einen Aufruf; die Tippsuche wird also nicht teurer.
-       *
-       * Faellt eine Variante mit einem Fehler aus, laeuft die naechste
-       * trotzdem: Die DB-API quittiert manche Eingaben mit einem Fehler statt
-       * mit einer leeren Liste. Erst wenn KEINE durchkam, wird gemeldet.
-       */
-      let ersterFehler: unknown;
-      for (const variante of namensvarianten(q!)) {
-        try {
-          const treffer = await clients.stations.sucheBahnhoefe(variante);
-          if (treffer.length > 0) return treffer;
-        } catch (e) {
-          if (e instanceof FehlendeZugangsdatenError) throw e;
-          ersterFehler ??= e;
-        }
-      }
-      if (ersterFehler) throw ersterFehler;
-      return [];
+      return await sucheBahnhoefeMitVarianten(clients.stations, q!);
     } catch (e) {
       if (e instanceof FehlendeZugangsdatenError) {
         return reply.code(503).send({ fehler: 'db-zugang-fehlt' });
