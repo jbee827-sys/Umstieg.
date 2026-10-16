@@ -12,10 +12,36 @@ describe('Anfragezaehler', () => {
     z.zaehle('stoptimes');
     z.schreibe();
     expect(info).toHaveBeenCalledWith(
-      { ereignis: 'motis-anfragen', stunde: '2026-10-16T14', je: { geocode: 2, stoptimes: 1 }, summe: 3 },
+      {
+        ereignis: 'motis-anfragen',
+        stunde: '2026-10-16T14',
+        von: '2026-10-16T14:59:00.000Z',
+        bis: '2026-10-16T14:59:00.000Z',
+        je: { geocode: 2, stoptimes: 1 },
+        summe: 3,
+      },
       'MOTIS-Anfragen der Stunde',
     );
     expect(z.stand()).toEqual({});
+    z.beende();
+  });
+
+  it('beschriftet die Summe mit dem gezaehlten Zeitraum, nicht mit dem Schreibzeitpunkt (BUG-2)', () => {
+    const info = vi.fn();
+    let jetzt = new Date('2026-10-16T14:20:00Z');
+    const z = erzeugeAnfragezaehler({ log: { info }, jetzt: () => jetzt, intervallMs: 0 });
+    z.zaehle('geocode');
+    jetzt = new Date('2026-10-16T15:20:00Z');
+    z.schreibe();
+    expect(info.mock.calls[0][0]).toMatchObject({
+      stunde: '2026-10-16T14',
+      von: '2026-10-16T14:20:00.000Z',
+      bis: '2026-10-16T15:20:00.000Z',
+    });
+    z.zaehle('plan');
+    jetzt = new Date('2026-10-16T16:20:00Z');
+    z.schreibe();
+    expect(info.mock.calls[1][0]).toMatchObject({ stunde: '2026-10-16T15', von: '2026-10-16T15:20:00.000Z' });
     z.beende();
   });
 
