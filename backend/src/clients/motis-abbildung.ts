@@ -1,7 +1,13 @@
 import { haversineM } from '../core/graph.js';
 import { namensSchluessel } from '../core/orte.js';
-import type { Ort, Verkehrsmittel } from '../core/typen.js';
-import type { MotisMatch } from './motis-typen.js';
+import type { Fahrtverlauf, HaltestellenTafelEintrag, Ort, Verkehrsmittel } from '../core/typen.js';
+import type {
+  MotisItinerary,
+  MotisMatch,
+  MotisPlace,
+  MotisStopTime,
+  MotisStoptimesAntwort,
+} from './motis-typen.js';
 
 /**
  * MOTIS-Modus → eigenes Verkehrsmittel (Spec 5.3). Eine Tabelle statt einer
@@ -86,4 +92,104 @@ export function orteAusTreffern(treffer: MotisMatch[]): Ort[] {
     orte.push({ name: t.name, lat: t.lat, lon: t.lon, verkehrsmittel, haltestelleId: t.id });
   }
   return orte;
+}
+
+/**
+ * Steig aus einer DHID-Steigkennung (VDV 432): `de:<Kreis>:<Nr>:<Bereich>:<Steig>`,
+ * hinter dem Quellpräfix von MOTIS (`de-DELFI_…`).
+ *
+ * Gelesen wird NUR zur Anzeige, nie als Schlüssel – die einzige Stelle, an der
+ * Umstieg. in eine ID hineinschaut (Lockerung von Spec 5.1, begründet im
+ * Erkundungsbericht A2: Kassel führt den Steig sonst nirgends). Alles, was
+ * nicht genau diese Form hat, ergibt `undefined`.
+ */
+const DHID_STEIG = /(?:^|_)de:\d{5}:[^:_]+:[^:_]*:([^:_]+)$/;
+
+export function steigAusDhid(stopId: string | undefined): string | undefined {
+  if (!stopId) return undefined;
+  return DHID_STEIG.exec(stopId)?.[1];
+}
+
+function eintragAus(s: MotisStopTime, typ: 'arr' | 'dep'): HaltestellenTafelEintrag | null {
+  const p: MotisPlace | undefined = s?.place;
+  if (!p) return null;
+  const zeitSoll = typ === 'dep' ? p.scheduledDeparture : p.scheduledArrival;
+  if (!zeitSoll) return null;
+  const zeitIst = s.realTime ? (typ === 'dep' ? p.departure : p.arrival) : undefined;
+  const dhid = steigAusDhid(p.stopId);
+  const steigSoll = p.scheduledTrack ?? p.track ?? dhid;
+  const steigIst = s.realTime && p.track && p.track !== steigSoll ? p.track : undefined;
+  const ziel = typ === 'dep' ? s.headsign || s.tripTo?.name : s.tripFrom?.name;
+  return {
+    fahrtId: s.tripId,
+    linie: s.displayName || s.routeShortName || s.tripShortName || '',
+    verkehrsmittel: verkehrsmittelAus(s.mode),
+    ziel: ziel ?? '',
+    zeitSoll,
+    ...(zeitIst ? { zeitIst } : {}),
+    ...(steigSoll ? { steigSoll } : {}),
+    ...(steigIst ? { steigIst } : {}),
+    steigLat: p.lat,
+    steigLon: p.lon,
+    ...(typeof p.level === 'number' ? { steigLevel: p.level } : {}),
+    steigGenau: Boolean(p.track || p.scheduledTrack || p.parentId || dhid),
+    echtzeit: s.realTime === true,
+    ausfall: s.cancelled === true || s.tripCancelled === true,
+  };
+}
+
+/** Vorrang beim Entdoppeln: genauer Steig vor ungenauem, Echtzeit vor Fahrplan. */
+function rang(e: HaltestellenTafelEintrag): number {
+  return (e.steigGenau ? 2 : 0) + (e.echtzeit ? 1 : 0);
+}
+
+/**
+ * Stoptimes → Tafel einer Haltestelle.
+ *
+ * Zwei Fallen aus der Erkundung (16.10.2026):
+ *
+ * - Eine AUSGEFALLENE Fahrt trägt `pickupDropoffType: NOT_ALLOWED`, genau wie
+ *   ein Halt, an dem planmäßig niemand einsteigt. Wer nur nach dem Typ
+ *   filtert, versteckt die Ausfälle – die wichtigste Nachricht der Tafel.
+ * - Dieselbe Fahrt kommt aus zwei Quellen (DELFI und VBB, Wiesenburg) mit
+ *   verschiedenen IDs. Sie erscheint einmal; meldet EINE Quelle einen Ausfall,
+ *   wird gewarnt – lieber einmal zu vorsichtig als ein verpasster Hinweis.
+ */
+export function tafelAusStoptimes(antwort: MotisStoptimesAntwort, typ: 'arr' | 'dep'): HaltestellenTafelEintrag[] {
+  const je = new Map<string, HaltestellenTafelEintrag>();
+  for (const s of Array.isArray(antwort?.stopTimes) ? antwort.stopTimes : []) {
+    if (!istOevModus(s?.mode)) continue;
+    const ausfall = s.cancelled === true || s.tripCancelled === true;
+    if (s.pickupDropoffType === 'NOT_ALLOWED' && !ausfall) continue;
+    const e = eintragAus(s, typ);
+    if (!e) continue;
+    const schluessel = `${e.linie}|${e.ziel}|${e.zeitSoll}`;
+    const vorher = je.get(schluessel);
+    if (!vorher) {
+      je.set(schluessel, e);
+      continue;
+    }
+    const besser = rang(e) > rang(vorher) ? e : vorher;
+    je.set(schluessel, { ...besser, ausfall: vorher.ausfall || e.ausfall });
+  }
+  return [...je.values()].sort((a, b) => (a.zeitIst ?? a.zeitSoll).localeCompare(b.zeitIst ?? b.zeitSoll));
+}
+
+/** Fahrtverlauf einer Fahrt (Spec 5.1). Die Oberfläche nutzt ihn in 2.0 noch nicht. */
+export function fahrtverlaufAusTrip(it: MotisItinerary): Fahrtverlauf {
+  const legs = Array.isArray(it?.legs) ? it.legs : [];
+  const leg = legs.find((l) => istOevModus(l.mode)) ?? legs[0];
+  if (!leg) return { linie: '', ziel: '', halte: [] };
+  const halte = [leg.from, ...(leg.intermediateStops ?? []), leg.to].map((p) => {
+    const zeitSoll = p.scheduledDeparture ?? p.scheduledArrival;
+    const zeitIst = p.departure ?? p.arrival;
+    const steig = p.track ?? steigAusDhid(p.stopId);
+    return {
+      name: p.name,
+      ...(zeitSoll ? { zeitSoll } : {}),
+      ...(zeitIst ? { zeitIst } : {}),
+      ...(steig ? { steig } : {}),
+    };
+  });
+  return { linie: leg.displayName || leg.routeShortName || '', ziel: leg.headsign || leg.to.name, halte };
 }
