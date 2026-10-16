@@ -1,0 +1,275 @@
+[
+ {
+  "type": "STOP",
+  "tokens": [],
+  "name": "Kassel Rathaus",
+  "id": "de-DELFI_de:06611:200003::A",
+  "lat": 51.312633999999996,
+  "lon": 9.492859000000001,
+  "country": "DE",
+  "zip": "34117",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": true,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Hessen",
+    "adminLevel": 4,
+    "matched": true,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Kassel",
+    "adminLevel": 5,
+    "matched": true,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Kassel",
+    "adminLevel": 6,
+    "matched": true,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 9,
+    "matched": true,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": 31.860675811767578,
+  "modes": [
+   "SUBURBAN",
+   "TRAM"
+  ],
+  "importance": 0.0006828212062828243
+ },
+ {
+  "type": "STOP",
+  "tokens": [],
+  "name": "Kassel Rathaus/Fünffensterstraße",
+  "id": "de-DELFI_de:06611:200436::A",
+  "lat": 51.312115000000006,
+  "lon": 9.491246,
+  "country": "DE",
+  "zip": "34117",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": true,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Hessen",
+    "adminLevel": 4,
+    "matched": true,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Kassel",
+    "adminLevel": 5,
+    "matched": true,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Kassel",
+    "adminLevel": 6,
+    "matched": true,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 9,
+    "matched": true,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": 146.67300415039062,
+  "modes": [
+   "SUBURBAN",
+   "TRAM",
+   "BUS"
+  ],
+  "importance": 0.000768951722420752
+ },
+ {
+  "type": "STOP",
+  "tokens": [],
+  "name": "Kassel Friedrichsplatz",
+  "id": "de-DELFI_de:06611:200006::A",
+  "lat": 51.314116999999996,
+  "lon": 9.495420000000001,
+  "country": "DE",
+  "zip": "34117",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": true,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Hessen",
+    "adminLevel": 4,
+    "matched": true,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Kassel",
+    "adminLevel": 5,
+    "matched": true,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Kassel",
+    "adminLevel": 6,
+    "matched": true,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 9,
+    "matched": true,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": 199.0869598388672,
+  "modes": [
+   "SUBURBAN",
+   "TRAM"
+  ],
+  "importance": 0.0006825579912401736
+ },
+ {
+  "type": "STOP",
+  "tokens": [],
+  "name": "Kassel Wilhelmsstraße/Stadtmuseum",
+  "id": "de-DELFI_de:06611:200055::A",
+  "lat": 51.314254999999996,
+  "lon": 9.489253,
+  "country": "DE",
+  "zip": "34117",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": true,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Hessen",
+    "adminLevel": 4,
+    "matched": true,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Kassel",
+    "adminLevel": 5,
+    "matched": true,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Kassel",
+    "adminLevel": 6,
+    "matched": true,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 9,
+    "matched": true,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": 285.4607238769531,
+  "modes": [
+   "SUBURBAN",
+   "TRAM",
+   "BUS"
+  ],
+  "importance": 0.0007367001962848008
+ },
+ {
+  "type": "STOP",
+  "tokens": [],
+  "name": "Kassel Scheidemannplatz",
+  "id": "de-DELFI_de:06611:200073::C",
+  "lat": 51.316135,
+  "lon": 9.492489000000003,
+  "country": "DE",
+  "zip": "34117",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": true,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Hessen",
+    "adminLevel": 4,
+    "matched": true,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Kassel",
+    "adminLevel": 5,
+    "matched": true,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Kassel",
+    "adminLevel": 6,
+    "matched": true,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 9,
+    "matched": true,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": 340.4006042480469,
+  "modes": [
+   "SUBURBAN",
+   "TRAM",
+   "BUS"
+  ],
+  "importance": 0.000873693497851491
+ }
+]

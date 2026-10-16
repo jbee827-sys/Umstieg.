@@ -1,0 +1,694 @@
+[
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    9
+   ],
+   [
+    10,
+    15
+   ]
+  ],
+  "name": "Charlottenplatz",
+  "id": "de-DELFI_de:08111:6075_G",
+  "lat": 48.776276,
+  "lon": 9.182910999999999,
+  "level": -1,
+  "country": "DE",
+  "zip": "70173",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Baden-Württemberg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Stuttgart",
+    "adminLevel": 5,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Stuttgart",
+    "adminLevel": 6,
+    "matched": true,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Stuttgart-Mitte",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Rathaus",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -33.47166442871094,
+  "modes": [
+   "SUBWAY",
+   "TRAM",
+   "BUS"
+  ],
+  "importance": 0.0073870946653187275
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    9
+   ],
+   [
+    10,
+    15
+   ]
+  ],
+  "name": "Stuttgart, Charlottenplatz",
+  "id": "de-amarillo-bw_de:08111:6075",
+  "lat": 48.776276,
+  "lon": 9.182910999999999,
+  "level": -1,
+  "country": "DE",
+  "zip": "70173",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Baden-Württemberg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Stuttgart",
+    "adminLevel": 5,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Stuttgart",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Stuttgart-Mitte",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Rathaus",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -31.600000381469727,
+  "modes": [
+   "RIDE_SHARING"
+  ],
+  "importance": 7.97551962250509e-8
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    9
+   ],
+   [
+    10,
+    15
+   ]
+  ],
+  "name": "Esslingen (N) Charlottenplatz",
+  "id": "de-DELFI_de:08116:3805:0:3",
+  "lat": 48.73653000000001,
+  "lon": 9.316634000000002,
+  "country": "DE",
+  "zip": "73728",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Baden-Württemberg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Stuttgart",
+    "adminLevel": 5,
+    "matched": true,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Landkreis Esslingen",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Esslingen am Neckar",
+    "adminLevel": 8,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Innenstadt",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -25.100000381469727,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 0.00003289974483777769
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    9
+   ],
+   [
+    10,
+    15
+   ]
+  ],
+  "name": "Esslingen am Neckar, Charlottenplatz",
+  "id": "de-amarillo-bw_de:08116:3805",
+  "lat": 48.73655500000001,
+  "lon": 9.316338,
+  "country": "DE",
+  "zip": "73728",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Baden-Württemberg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Stuttgart",
+    "adminLevel": 5,
+    "matched": true,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Landkreis Esslingen",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Esslingen am Neckar",
+    "adminLevel": 8,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Innenstadt",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -23.600000381469727,
+  "modes": [],
+  "importance": 0
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    9
+   ],
+   [
+    10,
+    15
+   ]
+  ],
+  "name": "Stuttgart Hbf",
+  "id": "at-Railway-Current-Reference-Data-2026_de:08111:6115:1:1",
+  "lat": 48.784748,
+  "lon": 9.183216999999999,
+  "country": "DE",
+  "zip": "70173",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Baden-Württemberg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Stuttgart",
+    "adminLevel": 5,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Stuttgart",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Stuttgart-Mitte",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Hauptbahnhof",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -16.504125595092773,
+  "modes": [
+   "HIGHSPEED_RAIL",
+   "LONG_DISTANCE",
+   "NIGHT_RAIL",
+   "REGIONAL_RAIL",
+   "SUBURBAN",
+   "SUBWAY",
+   "TRAM",
+   "BUS"
+  ],
+  "importance": 0.019243692979216576
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    9
+   ],
+   [
+    10,
+    15
+   ]
+  ],
+  "name": "Weingarten Charlottenplatz",
+  "id": "de-DELFI_de:08436:8011:1:2",
+  "lat": 47.809025,
+  "lon": 9.63745,
+  "country": "DE",
+  "zip": "88250",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Baden-Württemberg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Tübingen",
+    "adminLevel": 5,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Landkreis Ravensburg",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "GVV Mittleres Schussental",
+    "adminLevel": 7,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Weingarten",
+    "adminLevel": 8,
+    "matched": false,
+    "unique": true,
+    "default": true
+   }
+  ],
+  "score": -16.350000381469727,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 0.000041379895264981315
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    9
+   ],
+   [
+    10,
+    15
+   ]
+  ],
+  "name": "Stuttgart, P+R",
+  "id": "de-amarillo-bw_de:08111:6001",
+  "lat": 48.717996,
+  "lon": 9.108161999999998,
+  "country": "DE",
+  "zip": "70565",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Baden-Württemberg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Stuttgart",
+    "adminLevel": 5,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Stuttgart",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Vaihingen",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Rohr",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -13.59999942779541,
+  "modes": [],
+  "importance": 0
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    9
+   ],
+   [
+    10,
+    15
+   ]
+  ],
+  "name": "Stuttgart, P6",
+  "id": "de-amarillo-bw_osm:r14271446",
+  "lat": 48.79059300000001,
+  "lon": 9.239687,
+  "level": 1,
+  "country": "DE",
+  "zip": "70372",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Baden-Württemberg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Stuttgart",
+    "adminLevel": 5,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Stuttgart",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Bad Cannstatt",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Wasen",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -13.59999942779541,
+  "modes": [],
+  "importance": 0
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    9
+   ],
+   [
+    10,
+    15
+   ]
+  ],
+  "name": "Stuttgart, P+R",
+  "id": "de-amarillo-bw_osm:w114266392",
+  "lat": 48.75828,
+  "lon": 9.237204999999998,
+  "country": "DE",
+  "zip": "70329",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Baden-Württemberg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Stuttgart",
+    "adminLevel": 5,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Stuttgart",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Hedelfingen",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Rohracker",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -13.59999942779541,
+  "modes": [],
+  "importance": 0
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    9
+   ],
+   [
+    10,
+    15
+   ]
+  ],
+  "name": "Stuttgart, P+R",
+  "id": "de-amarillo-bw_osm:w122080676",
+  "lat": 48.76597100000001,
+  "lon": 9.200736000000001,
+  "country": "DE",
+  "zip": "70184",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Baden-Württemberg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Stuttgart",
+    "adminLevel": 5,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Stuttgart",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Stuttgart-Süd",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Bopser",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -13.59999942779541,
+  "modes": [],
+  "importance": 0
+ }
+]

@@ -1,0 +1,577 @@
+[
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    3
+   ],
+   [
+    4,
+    14
+   ]
+  ],
+  "name": "S+U Alexanderplatz Bhf (Berlin)",
+  "id": "de-VBB_de:11000:900100003",
+  "lat": 52.521510000000006,
+  "lon": 13.411266999999999,
+  "level": 1,
+  "country": "DE",
+  "zip": "10179",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Berlin",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -26.471664428710938,
+  "modes": [
+   "SUBURBAN",
+   "SUBWAY"
+  ],
+  "importance": 0.007396642118692398
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    3
+   ],
+   [
+    4,
+    14
+   ]
+  ],
+  "name": "S+U Alexanderplatz Bhf/Grunerstr. (Berlin)",
+  "id": "de-VBB_de:11000:900100006::1",
+  "lat": 52.520283,
+  "lon": 13.414046,
+  "country": "DE",
+  "zip": "10179",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Berlin",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -21.850000381469727,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 0.00002672814116522204
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    3
+   ],
+   [
+    4,
+    14
+   ]
+  ],
+  "name": "S+U Alexanderplatz Bhf/Gontardstr. (Berlin)",
+  "id": "de-VBB_de:11000:900100024::1",
+  "lat": 52.521454,
+  "lon": 13.411990999999999,
+  "country": "DE",
+  "zip": "10178",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Berlin",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -21.600000381469727,
+  "modes": [
+   "TRAM"
+  ],
+  "importance": 0.00013209201279096305
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    3
+   ],
+   [
+    4,
+    14
+   ]
+  ],
+  "name": "S+U Alexanderplatz Bhf/Memhardstr. (Berlin)",
+  "id": "de-VBB_de:11000:900100031",
+  "lat": 52.523098000000005,
+  "lon": 13.410964,
+  "country": "DE",
+  "zip": "10178",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Berlin",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -21.600000381469727,
+  "modes": [
+   "TRAM",
+   "BUS"
+  ],
+  "importance": 0.00005343380689737387
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    3
+   ],
+   [
+    4,
+    14
+   ]
+  ],
+  "name": "Berlin Alexanderplatz",
+  "id": "eu-flixbus_dcbc32c3-9603-11e6-9066-549f350fcb0c",
+  "lat": 52.523197,
+  "lon": 13.414529,
+  "level": 0,
+  "country": "DE",
+  "zip": "10178",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Berlin",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -17.77886199951172,
+  "modes": [
+   "COACH"
+  ],
+  "importance": 0.0008259012829512358
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    3
+   ],
+   [
+    4,
+    14
+   ]
+  ],
+  "name": "Chur, Alexanderplatz",
+  "id": "ch-opentransportdataswiss26_Parentch:1:sloid:95591",
+  "lat": 46.852295,
+  "lon": 9.53144,
+  "country": "CH",
+  "tz": "Europe/Zurich",
+  "areas": [
+   {
+    "name": "Schweiz",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Graubünden",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Plessur",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Chur",
+    "adminLevel": 8,
+    "matched": false,
+    "unique": true,
+    "default": true
+   }
+  ],
+  "score": -17.526287078857422,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 0.0003032553649973124
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    3
+   ],
+   [
+    4,
+    14
+   ]
+  ],
+  "name": "Idar, Alexanderplatz",
+  "id": "de-DELFI_de:07134:35202:0:1",
+  "lat": 49.72239000000001,
+  "lon": 7.298909999999999,
+  "country": "DE",
+  "zip": "55743",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Rheinland-Pfalz",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Landkreis Birkenfeld",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Idar-Oberstein",
+    "adminLevel": 8,
+    "matched": false,
+    "unique": true,
+    "default": true
+   }
+  ],
+  "score": -17.100000381469727,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 0.000020428931748028845
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    3
+   ],
+   [
+    4,
+    14
+   ]
+  ],
+  "name": "Krefeld Alexanderplatz",
+  "id": "de-DELFI_de:05114:21906:0:1",
+  "lat": 51.325683999999995,
+  "lon": 6.562148,
+  "country": "DE",
+  "zip": "47798",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Nordrhein-Westfalen",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Düsseldorf",
+    "adminLevel": 5,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Krefeld",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Krefeld-Mitte",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Krefeld-Mitte",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -16.350000381469727,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 0.000007407082648569485
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    3
+   ],
+   [
+    4,
+    14
+   ]
+  ],
+  "name": "Höhr-Grenzhausen Alexanderplatz",
+  "id": "de-DELFI_000011318705",
+  "lat": 50.433548,
+  "lon": 7.670867,
+  "country": "DE",
+  "zip": "56203",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Rheinland-Pfalz",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Westerwaldkreis",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Höhr-Grenzhausen",
+    "adminLevel": 7,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Höhr-Grenzhausen",
+    "adminLevel": 8,
+    "matched": false,
+    "unique": true,
+    "default": true
+   }
+  ],
+  "score": -14.34999942779541,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 0.000004116818217880791
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    3
+   ],
+   [
+    4,
+    14
+   ]
+  ],
+  "name": "U Alexanderplatz (Berlin) [Tram]",
+  "id": "de-VBB_de:11000:900100005::1",
+  "lat": 52.52214000000001,
+  "lon": 13.414627999999999,
+  "country": "DE",
+  "zip": "10178",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Berlin",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -14.34999942779541,
+  "modes": [
+   "TRAM",
+   "BUS"
+  ],
+  "importance": 0.0001276119437534362
+ }
+]

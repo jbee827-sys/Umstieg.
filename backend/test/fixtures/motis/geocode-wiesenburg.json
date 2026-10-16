@@ -1,0 +1,624 @@
+[
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    10
+   ],
+   [
+    11,
+    6
+   ]
+  ],
+  "name": "Wiesenburg, Schule",
+  "id": "de-DELFI_de:12069:900222208::1",
+  "lat": 52.110730000000004,
+  "lon": 12.447234,
+  "country": "DE",
+  "zip": "14827",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Brandenburg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Potsdam-Mittelmark",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Wiesenburg/Mark",
+    "adminLevel": 8,
+    "matched": true,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Wiesenburg",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -19.600000381469727,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 0.000006065745310479542
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    10
+   ],
+   [
+    11,
+    6
+   ]
+  ],
+  "name": "Wiesenburg, Bahnhof",
+  "id": "de-VBB_de:12069:900220152",
+  "lat": 52.099026,
+  "lon": 12.431453,
+  "country": "DE",
+  "zip": "14827",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Brandenburg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Potsdam-Mittelmark",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Wiesenburg/Mark",
+    "adminLevel": 8,
+    "matched": true,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Jesering/Fläming",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -19.350000381469727,
+  "modes": [
+   "REGIONAL_RAIL",
+   "BUS"
+  ],
+  "importance": 0.00007155055936891586
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    10
+   ],
+   [
+    11,
+    6
+   ]
+  ],
+  "name": "Wiesenburg, Feldstr.",
+  "id": "de-DELFI_de:12069:900222207::1",
+  "lat": 52.11678,
+  "lon": 12.462363,
+  "country": "DE",
+  "zip": "14827",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Brandenburg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Potsdam-Mittelmark",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Wiesenburg/Mark",
+    "adminLevel": 8,
+    "matched": true,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Wiesenburg",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -19.350000381469727,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 0.0000032395109883509576
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    10
+   ],
+   [
+    11,
+    6
+   ]
+  ],
+  "name": "Wiesenburg, Ortsmitte",
+  "id": "de-DELFI_de:12069:900222206::1",
+  "lat": 52.11488299999999,
+  "lon": 12.455224000000001,
+  "country": "DE",
+  "zip": "14827",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Brandenburg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Potsdam-Mittelmark",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Wiesenburg/Mark",
+    "adminLevel": 8,
+    "matched": true,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Wiesenburg",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -18.850000381469727,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 0.000003381620217624004
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    10
+   ],
+   [
+    11,
+    6
+   ]
+  ],
+  "name": "Wiesenburg, Bahnhof/B107",
+  "id": "de-DELFI_de:12069:900220152::1",
+  "lat": 52.10085,
+  "lon": 12.430551,
+  "country": "DE",
+  "zip": "14827",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Brandenburg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Potsdam-Mittelmark",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Wiesenburg/Mark",
+    "adminLevel": 8,
+    "matched": true,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Wiesenburg",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -18.350000381469727,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 0.000008652713404444512
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    10
+   ],
+   [
+    11,
+    6
+   ]
+  ],
+  "name": "Jeserig (bei Wiesenburg), Ausbau",
+  "id": "de-DELFI_de:12069:900222101::1",
+  "lat": 52.08746299999999,
+  "lon": 12.447071999999999,
+  "country": "DE",
+  "zip": "14827",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Brandenburg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Potsdam-Mittelmark",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Wiesenburg/Mark",
+    "adminLevel": 8,
+    "matched": true,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Jesering/Fläming",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -17.100000381469727,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 0.000002320151224921574
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    10
+   ],
+   [
+    11,
+    6
+   ]
+  ],
+  "name": "Wiesenburg, Schule",
+  "id": "de-DELFI_de:14524:10882:0:BO",
+  "lat": 50.64911000000001,
+  "lon": 12.561070999999998,
+  "country": "DE",
+  "zip": "08134",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Sachsen",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Zwickau",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Wildenfels",
+    "adminLevel": 8,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Wiesen",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -13.59999942779541,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 0.0000010846706572920084
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    10
+   ],
+   [
+    11,
+    6
+   ]
+  ],
+  "name": "Wiesenburg, Bahnhof",
+  "id": "de-DELFI_de:14524:10209_G",
+  "lat": 50.652576,
+  "lon": 12.567089000000001,
+  "country": "DE",
+  "zip": "08134",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Sachsen",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Zwickau",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Wildenfels",
+    "adminLevel": 8,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Wiesenburg",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -13.34999942779541,
+  "modes": [
+   "REGIONAL_RAIL",
+   "BUS"
+  ],
+  "importance": 0.00019393127877265215
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    10
+   ],
+   [
+    11,
+    6
+   ]
+  ],
+  "name": "Wiesenburg, Kreuzung",
+  "id": "de-DELFI_de:14524:10710:0:BN",
+  "lat": 50.650566,
+  "lon": 12.559355,
+  "country": "DE",
+  "zip": "08134",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Sachsen",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Zwickau",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Wildenfels",
+    "adminLevel": 8,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Wiesen",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -13.09999942779541,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 9.889644161376054e-7
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    10
+   ],
+   [
+    11,
+    6
+   ]
+  ],
+  "name": "Wiesenburg, Krankenhaus",
+  "id": "de-DELFI_de:14524:10883:0:BS",
+  "lat": 50.64774,
+  "lon": 12.561466000000001,
+  "country": "DE",
+  "zip": "08134",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Sachsen",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Zwickau",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Wildenfels",
+    "adminLevel": 8,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Wiesenburg",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -12.34999942779541,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 0.0000011992281088168966
+ }
+]

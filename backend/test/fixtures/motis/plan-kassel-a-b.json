@@ -1,0 +1,193 @@
+{
+ "requestParameters": {},
+ "debugOutput": {},
+ "from": {
+  "name": "Kassel Rathaus",
+  "stopId": "de-DELFI_de:06611:200003::A",
+  "importance": 0.0006828212062828243,
+  "lat": 51.312633999999996,
+  "lon": 9.492859000000001,
+  "tz": "Europe/Berlin",
+  "vertexType": "TRANSIT",
+  "modes": [
+   "SUBURBAN",
+   "TRAM"
+  ]
+ },
+ "to": {
+  "name": "Kassel Rathaus",
+  "stopId": "de-DELFI_de:06611:200003::B",
+  "importance": 0.0006828212062828243,
+  "lat": 51.312138000000004,
+  "lon": 9.491899,
+  "tz": "Europe/Berlin",
+  "vertexType": "TRANSIT",
+  "modes": [
+   "SUBURBAN",
+   "TRAM"
+  ]
+ },
+ "direct": [
+  {
+   "duration": 85,
+   "startTime": "2026-10-16T14:12:00Z",
+   "endTime": "2026-10-16T14:13:00Z",
+   "transfers": 0,
+   "id": "",
+   "legs": [
+    {
+     "mode": "WALK",
+     "from": {
+      "name": "Kassel Rathaus",
+      "stopId": "de-DELFI_de:06611:200003::A",
+      "importance": 0.0006828212062828243,
+      "lat": 51.312633999999996,
+      "lon": 9.492859000000001,
+      "tz": "Europe/Berlin",
+      "departure": "2026-10-16T14:12:00Z",
+      "scheduledDeparture": "2026-10-16T14:12:00Z",
+      "vertexType": "TRANSIT",
+      "modes": [
+       "SUBURBAN",
+       "TRAM"
+      ]
+     },
+     "to": {
+      "name": "Kassel Rathaus",
+      "stopId": "de-DELFI_de:06611:200003::B",
+      "importance": 0.0006828212062828243,
+      "lat": 51.312138000000004,
+      "lon": 9.491899,
+      "tz": "Europe/Berlin",
+      "arrival": "2026-10-16T14:13:00Z",
+      "scheduledArrival": "2026-10-16T14:13:00Z",
+      "vertexType": "TRANSIT",
+      "modes": [
+       "SUBURBAN",
+       "TRAM"
+      ]
+     },
+     "duration": 85,
+     "startTime": "2026-10-16T14:12:00Z",
+     "endTime": "2026-10-16T14:13:00Z",
+     "scheduledStartTime": "2026-10-16T14:12:00Z",
+     "scheduledEndTime": "2026-10-16T14:13:00Z",
+     "realTime": false,
+     "scheduled": false,
+     "distance": 92,
+     "legGeometry": {
+      "points": "}~zz`BgvkbQlHhNQZ??bFvJ??Yh@??Wb@??fPr[",
+      "precision": 6,
+      "length": 11
+     },
+     "steps": [
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 25,
+       "fromLevel": 0,
+       "toLevel": 0,
+       "toOsmNode": 13768281732,
+       "polyline": {
+        "points": "}~zz`BgvkbQlHhNQZ",
+        "precision": 6,
+        "length": 3
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 18,
+       "fromLevel": 0,
+       "toLevel": 0,
+       "osmWay": 1504648332,
+       "fromOsmNode": 13768281732,
+       "toOsmNode": 5596469967,
+       "polyline": {
+        "points": "avzz`BafkbQbFvJ",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 2,
+       "fromLevel": 0,
+       "toLevel": 0,
+       "osmWay": 585673902,
+       "fromOsmNode": 5596469967,
+       "toOsmNode": 5596469965,
+       "polyline": {
+        "points": "}nzz`BizjbQYh@",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 2,
+       "fromLevel": 0,
+       "toLevel": 0,
+       "osmWay": 585673902,
+       "fromOsmNode": 5596469965,
+       "toOsmNode": 7880195428,
+       "polyline": {
+        "points": "wozz`B_yjbQWb@",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 45,
+       "fromLevel": 0,
+       "toLevel": 0,
+       "fromOsmNode": 7880195428,
+       "polyline": {
+        "points": "opzz`B{wjbQfPr[",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "itineraries": [],
+ "previousPageCursor": "",
+ "nextPageCursor": ""
+}
