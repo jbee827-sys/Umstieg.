@@ -60,6 +60,10 @@ export function erzeugeAnfragezaehler(
     stand: () => Object.fromEntries(je),
     beende() {
       if (timer) clearInterval(timer);
+      // Die laufende Stunde gehört zum Nachweis: Ein Neustart um 14:50 ließe
+      // sonst 50 Minuten verschwinden, und wer kürzer als eine Stunde läuft,
+      // stünde nie im Protokoll.
+      zaehler.schreibe();
     },
   };
   // Ohne `unref` hielte der Zähler einen sonst fertigen Prozess am Leben.

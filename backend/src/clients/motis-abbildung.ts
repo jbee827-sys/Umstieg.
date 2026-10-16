@@ -87,8 +87,14 @@ export function orteAusTreffern(treffer: MotisMatch[]): Ort[] {
     const verkehrsmittel = verkehrsmittelListe(t.modes);
     if (verkehrsmittel.length === 0) continue;
     const schluessel = namensSchluessel(t.name);
-    const doppelt = orte.some((o) => namensSchluessel(o.name) === schluessel && abstandM(o, t) <= DOPPELT_M);
-    if (doppelt) continue;
+    const doppelt = orte.find((o) => namensSchluessel(o.name) === schluessel && abstandM(o, t) <= DOPPELT_M);
+    if (doppelt) {
+      // Der erste Treffer bleibt (MOTIS sortiert nach Relevanz), aber er erbt
+      // die Verkehrsmittel des zweiten: Kennt die eine Quelle nur den Bus und
+      // die andere auch die Tram, fehlte sonst die Tram im Suchergebnis.
+      doppelt.verkehrsmittel = REIHENFOLGE.filter((v) => doppelt.verkehrsmittel.includes(v) || verkehrsmittel.includes(v));
+      continue;
+    }
     orte.push({ name: t.name, lat: t.lat, lon: t.lon, verkehrsmittel, haltestelleId: t.id });
   }
   return orte;
@@ -117,7 +123,9 @@ function eintragAus(s: MotisStopTime, typ: 'arr' | 'dep'): HaltestellenTafelEint
   if (!zeitSoll) return null;
   const zeitIst = s.realTime ? (typ === 'dep' ? p.departure : p.arrival) : undefined;
   const dhid = steigAusDhid(p.stopId);
-  const steigSoll = p.scheduledTrack ?? p.track ?? dhid;
+  // `||` statt `??`: Manche Quellen schicken ein leeres Gleis (''), und das
+  // darf den Steig aus der DHID nicht verdrängen.
+  const steigSoll = p.scheduledTrack || p.track || dhid;
   const steigIst = s.realTime && p.track && p.track !== steigSoll ? p.track : undefined;
   const ziel = typ === 'dep' ? s.headsign || s.tripTo?.name : s.tripFrom?.name;
   return {
@@ -163,7 +171,9 @@ export function tafelAusStoptimes(antwort: MotisStoptimesAntwort, typ: 'arr' | '
     if (s.pickupDropoffType === 'NOT_ALLOWED' && !ausfall) continue;
     const e = eintragAus(s, typ);
     if (!e) continue;
-    const schluessel = `${e.linie}|${e.ziel}|${e.zeitSoll}`;
+    // Verglichen wird, was eine Fahrt ausmacht, nicht ihre Schreibweise: Die
+    // Quellen schreiben „RE 7“ und „RE7“, „Brück, Bahnhof“ und „Brück (Bahnhof)“.
+    const schluessel = `${e.linie.replace(/\s+/g, '').toLowerCase()}|${namensSchluessel(e.ziel)}|${e.zeitSoll}`;
     const vorher = je.get(schluessel);
     if (!vorher) {
       je.set(schluessel, e);
@@ -187,7 +197,9 @@ export function fahrtverlaufAusTrip(it: MotisItinerary): Fahrtverlauf {
   if (!leg) return { linie: '', ziel: '', halte: [] };
   const halte = [leg.from, ...(leg.intermediateStops ?? []), leg.to].map((p) => {
     const zeitSoll = p.scheduledDeparture ?? p.scheduledArrival;
-    const zeitIst = p.departure ?? p.arrival;
+    // Ohne Echtzeit stehen in `departure` die Sollzeiten - als Ist-Zeit
+    // ausgegeben, gaebe der Fahrplan sich als live aus (F5).
+    const zeitIst = leg.realTime ? (p.departure ?? p.arrival) : undefined;
     const steig = p.track ?? steigAusDhid(p.stopId);
     return {
       name: p.name,

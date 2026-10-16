@@ -106,6 +106,16 @@ describe('pfadAusPlan', () => {
     expect(pfad.kanten.some((k) => k.typ === 'treppe')).toBe(false);
   });
 
+  it('Startebene kommt aus den Schritten, nicht aus einem abweichenden from.level (Review 2)', () => {
+    const roh = plan('plan-kassel-a-b');
+    const leg = roh.direct[0].legs[0];
+    leg.from = { ...leg.from, level: 0 };
+    leg.steps = leg.steps!.map((s) => ({ ...s, fromLevel: -1, toLevel: -1 }));
+    const pfad = pfadAusPlan(roh)!;
+    expect(pfad.knoten[0].level).toBe(-1);
+    expect(pfad.kanten.every((k) => k.typ === 'eben')).toBe(true);
+  });
+
   it('kein Weg: null', () => {
     expect(pfadAusPlan(plan('plan-kein-weg'))).toBeNull();
     expect(pfadAusPlan({ direct: [], itineraries: [] })).toBeNull();

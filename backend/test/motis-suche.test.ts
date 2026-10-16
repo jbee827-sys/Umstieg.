@@ -53,6 +53,14 @@ describe('orteAusTreffern', () => {
     expect(orte.map((o) => o.haltestelleId)).toEqual(['de-DELFI_x']);
   });
 
+  it('beim Zusammenlegen bleiben die Verkehrsmittel beider Quellen (Review 4)', () => {
+    const delfi: MotisMatch = { type: 'STOP', name: 'Rathaus', id: 'de-DELFI_x', lat: 51.0, lon: 9.0, country: 'DE', modes: ['BUS'] };
+    const vbb: MotisMatch = { ...delfi, id: 'de-VBB_y', lat: 51.0003, modes: ['BUS', 'TRAM'] };
+    expect(orteAusTreffern([delfi, vbb])).toEqual([
+      { name: 'Rathaus', lat: 51.0, lon: 9.0, haltestelleId: 'de-DELFI_x', verkehrsmittel: ['tram', 'bus'] },
+    ]);
+  });
+
   it('ein anderer Name am selben Ort ist ein anderer Halt', () => {
     const namen = orteAusTreffern(treffer('geocode-wiesenburg')).map((o) => o.name);
     expect(namen).toContain('Wiesenburg, Bahnhof/B107');
