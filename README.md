@@ -17,7 +17,44 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 14.10.2026, abends)
+## Hier weitermachen (Stand 16.10.2026)
+
+> **Umstieg 2.0: Haltestellen deutschlandweit über Transitous** – Spec
+> `docs/superpowers/specs/2026-10-16-umstieg-2-design.md`, Plan
+> `docs/superpowers/plans/2026-10-16-umstieg-2.md` (22 Tasks), Befunde der
+> Erkundung `docs/2026-10-16-transitous-erkundung.md`. Zweig **`feat/umstieg-2`**
+> (E2); `feat/mvp` bleibt auslieferbar.
+>
+> **Entschieden (Julian, 16.10.2026):** E1 wechselbar bauen (Transitous jetzt,
+> eigener MOTIS vor den ersten Einnahmen), E2 eigener Zweig, E3 **zwei
+> Ortsfelder** (Ankunft und Anschluss, je Bahnhof oder Haltestelle), E4 Auswahl
+> über Tafeln wie heute.
+>
+> **Paket 0 – Erkundung (erledigt):** 59 Abrufe, alle 16 Länder. A1–A3
+> bestätigt, A5 als Risiko bestätigt (IDs tragen Quellnamen mit Jahreszahl;
+> Rückfall über `center`+`radius` gefunden und geprüft). 21 Fixtures unter
+> `backend/test/fixtures/motis/`.
+>
+> **Paket 1 – Backend-Client (erledigt, 663 von 663, Lint und Build sauber):**
+> `clients/motis.ts` (Pfade zentral, Zeitgrenzen, ein Versuch je Anfrage),
+> `motis-pausen.ts` (429 + `Retry-After`, Störung 30 s), `motis-abbildung.ts`
+> (Suche, Tafel, Fahrtverlauf, Verkehrsmittel), `motis-weg.ts` (Fußweg als
+> `RoutenPfad`), `haltestellen.ts` (Zwischenspeicher je Aufgabe, Standort nie),
+> `core/anfragezaehler.ts` (K7). Noch nicht verdrahtet – das macht Paket 2.
+>
+> Abweichungen vom Plan (mit Grund im Commit): Verkehrsmittel-Zuordnung als
+> `Map` (ein Modus `constructor` traf sonst `Object.prototype`); `Retry-After: 0`
+> gilt als Standardpause; ein Ebenensprung ohne Treppenschritt wird **Rampe**,
+> nicht Treppe (Berlin Hbf −1 → 0, Washingtonplatz). Bug-Hunt: stabile
+> Fahrt-ID bei doppelten Fahrten aus DELFI und VBB, Zähler beschriftet den
+> gezählten Zeitraum.
+>
+> **Nächster Schritt:** Paket 2 (Routen `/api/orte`, `/api/haltestelle/tafel`,
+> `/api/weg`, `/api/live/haltestelle`, Verdrahtung über `MOTIS_BASIS_URL`).
+> Vor der Auslieferung: Kontakt für `MOTIS_KONTAKT` von Julian, Absprache im
+> Transitous-Matrix-Kanal (Zahlen im Erkundungsbericht 0.3).
+
+### Davor: Overpass von Fly aus (14.10.2026, abends)
 
 > **Overpass von Fly aus: höflich lernen ohne Zusatzkosten** – Spec und Plan
 > unter `docs/superpowers/` (`2026-10-14-overpass-lernen*`), Commits

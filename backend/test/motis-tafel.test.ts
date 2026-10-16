@@ -78,6 +78,22 @@ describe('tafelAusStoptimes', () => {
     expect(ids.size).toBe(1);
   });
 
+  it('doppelte Fahrt mit anders geschriebener Linie und anders geschriebenem Ziel erscheint einmal (Review 3)', () => {
+    const roh = lade<MotisStoptimesAntwort>('stoptimes-dep-wiesenburg');
+    const [a] = roh.stopTimes.filter((s) => s.displayName === 'RE7');
+    const b = { ...a, tripId: 'zweite', displayName: 'RE 7', headsign: 'Brück (Bahnhof)', cancelled: true, pickupDropoffType: 'NOT_ALLOWED' };
+    const t = tafelAusStoptimes({ ...roh, stopTimes: [{ ...a, headsign: 'Brück, Bahnhof' }, b] }, 'dep');
+    expect(t).toHaveLength(1);
+    expect(t[0].ausfall).toBe(true);
+  });
+
+  it('leerer track verdraengt den Steig aus der DHID nicht (Review 9)', () => {
+    const roh = lade<MotisStoptimesAntwort>('stoptimes-dep-kassel-rathaus');
+    const s = roh.stopTimes[0];
+    roh.stopTimes = [{ ...s, place: { ...s.place, track: '', scheduledTrack: '' } }];
+    expect(tafelAusStoptimes(roh, 'dep')[0].steigSoll).toBe('A');
+  });
+
   it('Ankunft: Herkunft statt Ziel, Ankunftszeit', () => {
     const roh = lade<MotisStoptimesAntwort>('stoptimes-arr-kassel-rathaus');
     const t = tafelAusStoptimes(roh, 'arr');
@@ -128,5 +144,13 @@ describe('fahrtverlaufAusTrip', () => {
     expect(f.halte.length).toBe(24);
     expect(f.halte[0].name).toBe('Kassel Schulzentrum Brückenhof');
     expect(f.halte[0].zeitSoll).toMatch(/Z$/);
+  });
+
+  it('ohne Echtzeit keine Ist-Zeiten (F5, Review 1)', () => {
+    const roh = lade<MotisItinerary>('trip-kassel-tram');
+    roh.legs = roh.legs.map((l) => ({ ...l, realTime: false }));
+    const f = fahrtverlaufAusTrip(roh);
+    expect(f.halte.every((h) => h.zeitIst === undefined)).toBe(true);
+    expect(f.halte.every((h) => h.zeitSoll !== undefined)).toBe(true);
   });
 });

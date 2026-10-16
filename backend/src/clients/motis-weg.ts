@@ -99,7 +99,10 @@ export function pfadAusPlan(antwort: MotisPlanAntwort): RoutenPfad | null {
   };
 
   const ersteEbene = schritte.find((s) => !IST_WECHSEL.has(s.relativeDirection))?.fromLevel;
-  knoten.push({ id: 'w0', lat: leg.from.lat, lon: leg.from.lon, level: leg.from.level ?? ersteEbene ?? 0 });
+  // Die Ebene des ersten Schritts zählt vor der des Startorts: Geroutet wird
+  // über die Schritte, und weichen beide ab, erfände `from.level` am Start
+  // einen Ebenenwechsel, den es nicht gibt.
+  knoten.push({ id: 'w0', lat: leg.from.lat, lon: leg.from.lon, level: ersteEbene ?? leg.from.level ?? 0 });
 
   schritte.forEach((s, i) => {
     const letzter = knoten[knoten.length - 1];

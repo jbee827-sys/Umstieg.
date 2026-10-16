@@ -45,6 +45,15 @@ describe('Anfragezaehler', () => {
     z.beende();
   });
 
+  it('beende() schreibt die laufende Stunde, statt sie zu verwerfen (Review 6)', () => {
+    const info = vi.fn();
+    const z = erzeugeAnfragezaehler({ log: { info }, intervallMs: 0 });
+    z.zaehle('stoptimes');
+    z.beende();
+    expect(info).toHaveBeenCalledTimes(1);
+    expect(info.mock.calls[0][0]).toMatchObject({ je: { stoptimes: 1 }, summe: 1 });
+  });
+
   it('schreibt nichts, wenn nichts gezaehlt wurde', () => {
     const info = vi.fn();
     const z = erzeugeAnfragezaehler({ log: { info }, intervallMs: 0 });
