@@ -26,6 +26,7 @@ import {
   registriereApiRouten,
   type ApiClients,
   type OverpassFn,
+  type StationsClient,
   type TafelFn,
 } from './routes/api.js';
 import {
@@ -36,10 +37,17 @@ import {
   TAFEL_TTL_MS,
 } from './cache/clients.js';
 import { registriereLiveRouten, type SseGrenzen } from './routes/live.js';
+import { registriereHaltestellenRouten } from './routes/haltestellen.js';
+import type { HaltestellenClient } from './clients/haltestellen.js';
 
 export interface AppClients extends ApiClients {
   /** Überwachung ist injizierbar, damit Tests die Polls selbst auslösen können. */
   ueberwachung: Ueberwachung;
+  /**
+   * Haltestellenpfad (Umstieg 2.0). `null` = ausdruecklich nicht eingerichtet;
+   * fehlt das Feld, entscheidet die Konfiguration (Plan-Task 13).
+   */
+  haltestellen: HaltestellenClient | null;
 }
 
 /**
@@ -72,6 +80,8 @@ const GRENZEN: Record<string, number> = {
   // Tippsuche. Im Frontend entprellt; ein Mensch loest ~10 je Minute aus.
   '/api/stations': 21,
   '/api/board/:eva': 21,
+  // Ortssuche ueber Bahnhoefe und Haltestellen - gleiche Tippsuche wie oben.
+  '/api/orte': 21,
   // Gegen Wiederverbindungsstuerme. Die eigentliche Grenze fuer den Strom ist
   // die Zahl gleichzeitiger Verbindungen, nicht die der Anfragen.
   '/api/live/:eva': 14,
@@ -345,34 +355,43 @@ export function buildApp(
       ? erzeugeErneuerung({ bestand, overpass, log: instanz.log })
       : null;
 
+    const stations: StationsClient = clients.stations ?? {
+      sucheBahnhoefe: mitCache((q: string) => sucheBahnhoefe(q), (q) => q, SUCHE_TTL_MS, 500),
+      /**
+       * BEWUSST OHNE Zwischenspeicher.
+       *
+       * Der Schluessel waere die Koordinate. Sie zehn Minuten lang zu
+       * halten widerspraeche der Zusage auf der Datenschutzseite, der
+       * Server verarbeite sie im Arbeitsspeicher und verwerfe sie danach -
+       * ein Cache-Schluessel IST eine Aufbewahrung, auch wenn er nur im RAM
+       * steht.
+       *
+       * Es geht dabei auch nichts verloren: Gegen den Missbrauchsfall
+       * wuerde ein Speicher ohnehin nicht helfen, weil geraten Koordinaten
+       * jedes Mal einen neuen Schluessel bilden. Dagegen steht die
+       * Ratenbegrenzung.
+       */
+      sucheBahnhoefeNahebei: (lat, lon, radiusM) => sucheBahnhoefeNahebei(lat, lon, radiusM),
+      holeStationsInfo: mitCache(
+        (eva: string) => holeStationsInfo(eva),
+        (eva) => eva,
+        STAMM_TTL_MS,
+        500,
+      ),
+      ermittleGruppe: mitCache((eva: string) => holeGruppe(eva), (eva) => eva, STAMM_TTL_MS, 500),
+    };
+
+    /*
+     * Haltestellenpfad (Umstieg 2.0). `null` heisst „nicht eingerichtet“: Die
+     * Routen antworten dann sauber mit 503, der Bahnhofspfad laeuft wie immer.
+     * Die Einrichtung ueber `MOTIS_BASIS_URL` folgt in Plan-Task 13.
+     */
+    const haltestellenClient: HaltestellenClient | null = clients.haltestellen ?? null;
+
     registriereApiRouten(instanz, {
       overpass,
       osmQuelle: clients.osmQuelle ?? erzeugeOsmQuelle({ bestand, erneuerung, overpass }),
-      stations: clients.stations ?? {
-        sucheBahnhoefe: mitCache((q: string) => sucheBahnhoefe(q), (q) => q, SUCHE_TTL_MS, 500),
-        /**
-         * BEWUSST OHNE Zwischenspeicher.
-         *
-         * Der Schluessel waere die Koordinate. Sie zehn Minuten lang zu
-         * halten widerspraeche der Zusage auf der Datenschutzseite, der
-         * Server verarbeite sie im Arbeitsspeicher und verwerfe sie danach -
-         * ein Cache-Schluessel IST eine Aufbewahrung, auch wenn er nur im RAM
-         * steht.
-         *
-         * Es geht dabei auch nichts verloren: Gegen den Missbrauchsfall
-         * wuerde ein Speicher ohnehin nicht helfen, weil geraten Koordinaten
-         * jedes Mal einen neuen Schluessel bilden. Dagegen steht die
-         * Ratenbegrenzung.
-         */
-        sucheBahnhoefeNahebei: (lat, lon, radiusM) => sucheBahnhoefeNahebei(lat, lon, radiusM),
-        holeStationsInfo: mitCache(
-          (eva: string) => holeStationsInfo(eva),
-          (eva) => eva,
-          STAMM_TTL_MS,
-          500,
-        ),
-        ermittleGruppe: mitCache((eva: string) => holeGruppe(eva), (eva) => eva, STAMM_TTL_MS, 500),
-      },
+      stations,
       tafel: tafelFuerRouten,
       wagenposition:
         clients.wagenposition ?? ((zug, datum, wagen) => holeWagenposition(zug, datum, wagen)),
@@ -380,6 +399,10 @@ export function buildApp(
         clients.fasta ??
         mitCache((nr: string) => holeAnlagen(nr), (nr) => nr, FASTA_TTL_MS, 200),
     });
+
+    // Haltestellenpfad (Umstieg 2.0) – dieselbe Bahnhofssuche wie oben, damit
+    // `/api/orte` ihren Zwischenspeicher teilt.
+    registriereHaltestellenRouten(instanz, { stations, haltestellen: haltestellenClient });
 
     registriereLiveRouten(
       instanz,
