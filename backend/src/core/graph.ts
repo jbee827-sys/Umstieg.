@@ -1027,8 +1027,22 @@ export function kopiereGraph(graph: StationGraph): StationGraph {
   return { knoten: graph.knoten, adjazenz, stufe: graph.stufe, gleise: graph.gleise };
 }
 
+/**
+ * Karte des Bahnhofspfads. Gezeichnet wird nur der Weg; der Graph bleibt als
+ * Parameter für die bestehenden Aufrufer.
+ */
 export function graphZuGeoJSON(
-  graph: StationGraph,
+  _graph: StationGraph,
+  pfad: RoutenPfad,
+): Record<string, { type: 'FeatureCollection'; features: GeoFeature[] }> {
+  return pfadZuGeoJSON(pfad);
+}
+
+/**
+ * GeoJSON je Ebene aus einem Weg – ohne Graph, damit auch der Fußweg des
+ * Haltestellenpfads (Umstieg 2.0) dieselbe Karte bekommt.
+ */
+export function pfadZuGeoJSON(
   pfad: RoutenPfad,
 ): Record<string, { type: 'FeatureCollection'; features: GeoFeature[] }> {
   if (pfad.knoten.length === 0) return {};
