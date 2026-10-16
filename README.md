@@ -17,7 +17,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 16.10.2026)
+## Hier weitermachen (Stand 16.10.2026, abends)
 
 > **Umstieg 2.0: Haltestellen deutschlandweit über Transitous** – Spec
 > `docs/superpowers/specs/2026-10-16-umstieg-2-design.md`, Plan
@@ -49,10 +49,49 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > Fahrt-ID bei doppelten Fahrten aus DELFI und VBB, Zähler beschriftet den
 > gezählten Zeitraum.
 >
-> **Nächster Schritt:** Paket 2 (Routen `/api/orte`, `/api/haltestelle/tafel`,
-> `/api/weg`, `/api/live/haltestelle`, Verdrahtung über `MOTIS_BASIS_URL`).
-> Vor der Auslieferung: Kontakt für `MOTIS_KONTAKT` von Julian, Absprache im
-> Transitous-Matrix-Kanal (Zahlen im Erkundungsbericht 0.3).
+> **Paket 2 – begonnen (Stand 16.10.2026, Arbeit auf Wunsch angehalten):**
+> Task 8 (`zielZusatz` in `core/textgen.ts`, `pfadZuGeoJSON` in
+> `core/graph.ts`) und Task 9 (**`GET /api/orte`** in `routes/haltestellen.ts`,
+> Bahnhöfe und Haltestellen in einer Suche, Bahnhof trägt EVA und
+> Haltestellen-ID, Stand beider Quellen in der Antwort) sind fertig und
+> committet (`adc6e12`, `f24f554`). **685 von 685 Tests, Lint sauber.**
+> Der Haltestellen-Client ist in `app.ts` noch **nicht** über die
+> Konfiguration eingerichtet (`clients.haltestellen ?? null`) – ohne Einspeisung
+> meldet `/api/orte` „nicht-eingerichtet“ und liefert nur Bahnhöfe.
+>
+> **Hier weitermachen – nächste Schritte in dieser Reihenfolge** (Einzelheiten,
+> Tests und Code je Task im Plan `docs/superpowers/plans/2026-10-16-umstieg-2.md`):
+>
+> 1. **Task 10** `GET /api/haltestelle/tafel` (Echtzeit, Ausfall, 503/404).
+> 2. **Task 11** `GET /api/weg` + `core/fussweg.ts` (Schritte über textgen,
+>    Luftlinie × 1,3 als Rückfall, Rollstuhlprofil bei `barrierefrei`).
+> 3. **Task 12** Live für Haltestellen (`/api/live/haltestelle`, ein Strom für
+>    beide Halte, Ereignis `ausfall`, gemeinsame SSE-Grenzen).
+> 4. **Task 13** Verdrahtung über `MOTIS_BASIS_URL`/`MOTIS_KONTAKT`, Zähler ins
+>    Protokoll, `fly.toml`, `docs/deployment.md`, Prüfskript
+>    `scripts/haltestellen-pruefung.ts`. Danach Paketabschluss 2: ganze Suite,
+>    `/code-review`, `/bug-hunter`, README.
+> 5. **Paket 3** Frontend (Tasks 14–19): Typen, Ortmodell und Speicher
+>    Fassung 2, **zwei Ortsfelder** (E3), Fahrtauswahl („laut Fahrplan“,
+>    Ausfall), Weg und Live, Quellenangaben.
+> 6. **Paket 4** Abnahme K1–K7 und Auslieferung Fly/Vercel (Julian hat
+>    „komplett ausliefern“ freigegeben).
+>
+> **Fortschrittsbuch** der Ausführung: `.superpowers/sdd/2026-10-16-umstieg-2/progress.md`
+> (gitignored, nur auf diesem Rechner) – erste Zeile nennt den Plan, je Task
+> eine `complete`-Zeile, dazu alle Abweichungen (`Ruling:`). Bei Wiederaufnahme
+> dort lesen; was dort fehlt, steht in `git log feat/mvp..feat/umstieg-2`.
+>
+> **Offen bei Julian:** Kontakt für `MOTIS_KONTAKT` (nur als Fly-Secret);
+> Absprache im Transitous-Matrix-Kanal vor dem Produktivbetrieb (Zahlen im
+> Erkundungsbericht 0.3); ob der veraltete Overpass-User-Agent
+> `umstiegs-navigator/0.1 (dev)` angeglichen werden soll (Bahnhofspfad, Overpass
+> sperrt nach User-Agent – bewusst nicht angefasst).
+>
+> **Hinweis Bug-Hunter-Skill:** Auf diesem Rechner fehlen die Hilfsdateien des
+> Skills (nur `SKILL.md` vorhanden); der Bug-Hunt lief deshalb von Hand.
+>
+> Der Zweig `feat/umstieg-2` ist **nur lokal** (nicht gepusht).
 
 ### Davor: Overpass von Fly aus (14.10.2026, abends)
 
