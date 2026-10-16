@@ -255,3 +255,21 @@ describe('Schritte verweisen auf ihren Pfadbereich', () => {
     for (const spanne of spannen) expect(spanne).toBeGreaterThan(0);
   });
 });
+
+describe('zielZusatz (Haltestellenpfad, Umstieg 2.0)', () => {
+  function geraderPfad(): RoutenPfad {
+    const a: GraphKnoten = { id: 'a', lat: 52.0, lon: 13.0, level: 0 };
+    const b: GraphKnoten = { id: 'b', lat: 52.00045, lon: 13.0, level: 0, gleis: '7' };
+    return machePfad([a, b], [{ von: 'a', nach: 'b', laengeM: 50, deltaLevel: 0, typ: 'eben', barrierefrei: true }]);
+  }
+
+  it('ersetzt „zu Gleis“ am letzten Schritt', () => {
+    const schritte = generiereSchritte(geraderPfad(), { profil: 'normal', zielZusatz: 'zu Steig B (Bus 245)' });
+    expect(schritte.at(-1)!.text).toMatch(/zu Steig B \(Bus 245\)$/);
+    expect(schritte.at(-1)!.text).not.toMatch(/Gleis 7/);
+  });
+
+  it('ohne zielZusatz bleibt alles wie bisher', () => {
+    expect(generiereSchritte(geraderPfad(), { profil: 'normal' }).at(-1)!.text).toMatch(/zu Gleis 7$/);
+  });
+});

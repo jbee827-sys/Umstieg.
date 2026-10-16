@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { baueGraph, graphZuGeoJSON, haversineM } from '../src/core/graph.js';
+import { baueGraph, graphZuGeoJSON, haversineM, pfadZuGeoJSON } from '../src/core/graph.js';
 import { berechneRoute } from '../src/core/routing.js';
 import type { OverpassAntwort, StationGraph } from '../src/core/typen.js';
 
@@ -537,5 +537,21 @@ describe('Gleise über die IFOPT-Kennung', () => {
       db('4', 'de:14511:30062:3:4'),
     ]);
     expect(graph.gleise).toEqual([]);
+  });
+});
+
+describe('pfadZuGeoJSON (ohne Graph, Umstieg 2.0)', () => {
+  it('liefert dasselbe wie graphZuGeoJSON, je Ebene getrennt', () => {
+    const a = { id: 'a', lat: 52, lon: 13, level: 0 };
+    const b = { id: 'b', lat: 52.001, lon: 13, level: -1 };
+    const pfad = {
+      knoten: [a, b],
+      kanten: [{ von: 'a', nach: 'b', laengeM: 110, deltaLevel: -1, typ: 'treppe' as const, barrierefrei: false }],
+      laengeM: 110,
+    };
+    const leer: StationGraph = { knoten: new Map(), adjazenz: new Map(), stufe: 1, gleise: [] };
+    expect(pfadZuGeoJSON(pfad)).toEqual(graphZuGeoJSON(leer, pfad));
+    expect(Object.keys(pfadZuGeoJSON(pfad)).sort()).toEqual(['-1', '0']);
+    expect(pfadZuGeoJSON({ knoten: [], kanten: [], laengeM: 0 })).toEqual({});
   });
 });

@@ -174,6 +174,11 @@ export interface TextOptionen {
   ungefaehr?: boolean;
   /** Ohne Profil bleibt `sekunden` undefiniert (aeltere Aufrufer). */
   profil?: Gehprofil;
+  /**
+   * Haltestellenpfad (Umstieg 2.0): was am Ende steht, statt „zu Gleis X“ –
+   * etwa „zu Steig B (Bus 245)“. Ohne Angabe bleibt der Bahnhofspfad, wie er ist.
+   */
+  zielZusatz?: string;
 }
 
 export function generiereSchritte(pfad: RoutenPfad, optionen: TextOptionen = {}): Schritt[] {
@@ -228,7 +233,9 @@ export function generiereSchritte(pfad: RoutenPfad, optionen: TextOptionen = {})
       schritte[i].text = t.charAt(0).toUpperCase() + t.slice(1);
     }
     const zielGleis = pfad.knoten[pfad.knoten.length - 1]?.gleis;
-    if (zielGleis) {
+    if (optionen.zielZusatz) {
+      schritte[schritte.length - 1].text += ` ${optionen.zielZusatz}`;
+    } else if (zielGleis) {
       schritte[schritte.length - 1].text += ` zu Gleis ${zielGleis}`;
     }
   }
