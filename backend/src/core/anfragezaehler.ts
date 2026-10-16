@@ -25,6 +25,12 @@ export function erzeugeAnfragezaehler(
   // Map statt Objekt: Der Endpunktname ist zwar intern, aber `stand()` gibt
   // ein frisches Objekt heraus, das niemand mit dem Inneren teilt.
   let je = new Map<string, number>();
+  /*
+   * Beginn des gezählten Zeitraums. Beschriftet wird mit IHM, nicht mit dem
+   * Schreibzeitpunkt: Der Takt läuft ab Prozessstart, nicht ab der vollen
+   * Stunde, und um 15:20 geschrieben gehört die Summe zu 14:20–15:20.
+   */
+  let beginn = jetzt();
   const intervall = o.intervallMs ?? 60 * 60_000;
 
   const zaehler: Anfragezaehler = {
@@ -32,14 +38,24 @@ export function erzeugeAnfragezaehler(
       je.set(endpunkt, (je.get(endpunkt) ?? 0) + 1);
     },
     schreibe() {
-      if (je.size === 0) return;
-      const stand = zaehler.stand();
-      const summe = Object.values(stand).reduce((s, n) => s + n, 0);
-      o.log?.info(
-        { ereignis: 'motis-anfragen', stunde: jetzt().toISOString().slice(0, 13), je: stand, summe },
-        'MOTIS-Anfragen der Stunde',
-      );
-      je = new Map();
+      const ende = jetzt();
+      if (je.size > 0) {
+        const stand = zaehler.stand();
+        const summe = Object.values(stand).reduce((s, n) => s + n, 0);
+        o.log?.info(
+          {
+            ereignis: 'motis-anfragen',
+            stunde: beginn.toISOString().slice(0, 13),
+            von: beginn.toISOString(),
+            bis: ende.toISOString(),
+            je: stand,
+            summe,
+          },
+          'MOTIS-Anfragen der Stunde',
+        );
+        je = new Map();
+      }
+      beginn = ende;
     },
     stand: () => Object.fromEntries(je),
     beende() {

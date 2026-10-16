@@ -170,7 +170,12 @@ export function tafelAusStoptimes(antwort: MotisStoptimesAntwort, typ: 'arr' | '
       continue;
     }
     const besser = rang(e) > rang(vorher) ? e : vorher;
-    je.set(schluessel, { ...besser, ausfall: vorher.ausfall || e.ausfall });
+    // Die ID muss von Abruf zu Abruf dieselbe bleiben: Die Live-Überwachung
+    // filtert auf sie. Hinge sie am besseren Eintrag, wechselte sie, sobald
+    // die andere Quelle Echtzeit bekommt oder MOTIS anders sortiert - und die
+    // Meldungen zum Anschluss gingen still verloren.
+    const fahrtId = vorher.fahrtId < e.fahrtId ? vorher.fahrtId : e.fahrtId;
+    je.set(schluessel, { ...besser, fahrtId, ausfall: vorher.ausfall || e.ausfall });
   }
   return [...je.values()].sort((a, b) => (a.zeitIst ?? a.zeitSoll).localeCompare(b.zeitIst ?? b.zeitSoll));
 }

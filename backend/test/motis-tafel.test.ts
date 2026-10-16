@@ -62,6 +62,22 @@ describe('tafelAusStoptimes', () => {
     expect(re7[0]).toMatchObject({ steigSoll: '1', steigGenau: true, echtzeit: true });
   });
 
+  it('doppelte Fahrt behaelt ihre Fahrt-ID, egal welche Quelle zuerst kommt oder Echtzeit hat (BUG-1)', () => {
+    // Die Live-Ueberwachung filtert auf die fahrtId. Wechselte sie zwischen zwei
+    // Abrufen, gingen die Meldungen zum Anschluss still verloren.
+    const roh = lade<MotisStoptimesAntwort>('stoptimes-dep-wiesenburg');
+    const re7 = roh.stopTimes.filter((s) => s.displayName === 'RE7');
+    expect(re7).toHaveLength(2);
+    const ids = new Set<string>();
+    for (const reihenfolge of [re7, [...re7].reverse()]) {
+      for (const beideEchtzeit of [false, true]) {
+        const variante = reihenfolge.map((s) => ({ ...s, realTime: beideEchtzeit || s.realTime }));
+        ids.add(tafelAusStoptimes({ ...roh, stopTimes: variante }, 'dep')[0].fahrtId);
+      }
+    }
+    expect(ids.size).toBe(1);
+  });
+
   it('Ankunft: Herkunft statt Ziel, Ankunftszeit', () => {
     const roh = lade<MotisStoptimesAntwort>('stoptimes-arr-kassel-rathaus');
     const t = tafelAusStoptimes(roh, 'arr');
