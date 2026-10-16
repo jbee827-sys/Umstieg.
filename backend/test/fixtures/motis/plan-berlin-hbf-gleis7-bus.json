@@ -1,0 +1,454 @@
+{
+ "requestParameters": {},
+ "debugOutput": {},
+ "from": {
+  "name": "S+U Berlin Hauptbahnhof",
+  "stopId": "de-DELFI_de:11000:900003200:4:56",
+  "parentId": "de-DELFI_de:11000:900003201",
+  "importance": 0.012571778148412704,
+  "lat": 52.52519000000001,
+  "lon": 13.369752000000002,
+  "level": -2,
+  "tz": "Europe/Berlin",
+  "scheduledTrack": "7",
+  "track": "7",
+  "description": "Bahnsteig Gleis 7",
+  "vertexType": "TRANSIT",
+  "modes": [
+   "HIGHSPEED_RAIL",
+   "LONG_DISTANCE",
+   "COACH",
+   "NIGHT_RAIL",
+   "REGIONAL_RAIL",
+   "SUBURBAN",
+   "SUBWAY",
+   "TRAM",
+   "BUS"
+  ]
+ },
+ "to": {
+  "name": "S+U Hauptbahnhof/Washingtonplatz (Berlin)",
+  "stopId": "de-VBB_de:11000:900003205::4",
+  "importance": 0.000010475482667970937,
+  "lat": 52.523340000000005,
+  "lon": 13.370220999999999,
+  "tz": "Europe/Berlin",
+  "scheduledTrack": "Pos. 11",
+  "track": "Pos. 11",
+  "stopCode": "11",
+  "description": "Bushalt R.-Hirsch-Str. ht. Fr.-List-Ufer",
+  "vertexType": "TRANSIT",
+  "modes": [
+   "BUS"
+  ]
+ },
+ "direct": [
+  {
+   "duration": 257,
+   "startTime": "2026-10-16T14:12:00Z",
+   "endTime": "2026-10-16T14:16:00Z",
+   "transfers": 0,
+   "id": "",
+   "legs": [
+    {
+     "mode": "WALK",
+     "from": {
+      "name": "S+U Berlin Hauptbahnhof",
+      "stopId": "de-DELFI_de:11000:900003200:4:56",
+      "parentId": "de-DELFI_de:11000:900003201",
+      "importance": 0.012571778148412704,
+      "lat": 52.52519000000001,
+      "lon": 13.369752000000002,
+      "level": -2,
+      "tz": "Europe/Berlin",
+      "departure": "2026-10-16T14:12:00Z",
+      "scheduledDeparture": "2026-10-16T14:12:00Z",
+      "scheduledTrack": "7",
+      "track": "7",
+      "description": "Bahnsteig Gleis 7",
+      "vertexType": "TRANSIT",
+      "modes": [
+       "HIGHSPEED_RAIL",
+       "LONG_DISTANCE",
+       "COACH",
+       "NIGHT_RAIL",
+       "REGIONAL_RAIL",
+       "SUBURBAN",
+       "SUBWAY",
+       "TRAM",
+       "BUS"
+      ]
+     },
+     "to": {
+      "name": "S+U Hauptbahnhof/Washingtonplatz (Berlin)",
+      "stopId": "de-VBB_de:11000:900003205::4",
+      "importance": 0.000010475482667970937,
+      "lat": 52.523340000000005,
+      "lon": 13.370220999999999,
+      "tz": "Europe/Berlin",
+      "arrival": "2026-10-16T14:16:00Z",
+      "scheduledArrival": "2026-10-16T14:16:00Z",
+      "scheduledTrack": "Pos. 11",
+      "track": "Pos. 11",
+      "stopCode": "11",
+      "description": "Bushalt R.-Hirsch-Str. ht. Fr.-List-Ufer",
+      "vertexType": "TRANSIT",
+      "modes": [
+       "BUS"
+      ]
+     },
+     "duration": 257,
+     "startTime": "2026-10-16T14:12:00Z",
+     "endTime": "2026-10-16T14:16:00Z",
+     "scheduledStartTime": "2026-10-16T14:12:00Z",
+     "scheduledEndTime": "2026-10-16T14:16:00Z",
+     "realTime": false,
+     "scheduled": false,
+     "distance": 309,
+     "legGeometry": {
+      "points": "}f{dcBwv_oXtm@w_@??_@yB??[R??aHbE??sAM??~AfJ??dPcKdJ}FjCcB??dBgA??t@pE??fArG??nMgI??dOwI??^|A??d@U??\\O??d@~BhAnHf@lC",
+      "precision": 6,
+      "length": 36
+     },
+     "steps": [
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 92,
+       "fromLevel": -2,
+       "toLevel": -2,
+       "toOsmNode": 4093546767,
+       "polyline": {
+        "points": "}f{dcBwv_oXtm@w_@",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 4,
+       "fromLevel": -2,
+       "toLevel": -2,
+       "osmWay": 407320716,
+       "fromOsmNode": 4093546767,
+       "toOsmNode": 4398571095,
+       "polyline": {
+        "points": "gxydcBow`oX_@yB",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 2,
+       "fromLevel": -2,
+       "toLevel": -2,
+       "osmWay": 407320723,
+       "fromOsmNode": 4398571095,
+       "toOsmNode": 4093546770,
+       "polyline": {
+        "points": "gyydcBi{`oX[R",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "STAIRS",
+       "distance": 17,
+       "fromLevel": -1,
+       "toLevel": -2,
+       "osmWay": 407320718,
+       "fromOsmNode": 4093546770,
+       "toOsmNode": 2744472563,
+       "polyline": {
+        "points": "czydcBuz`oXaHbE",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 5,
+       "fromLevel": -1,
+       "toLevel": -1,
+       "osmWay": 357666851,
+       "fromOsmNode": 2744472563,
+       "toOsmNode": 2745767065,
+       "polyline": {
+        "points": "eczdcBqt`oXsAM",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 13,
+       "fromLevel": -1,
+       "toLevel": -1,
+       "osmWay": 357666858,
+       "fromOsmNode": 2745767065,
+       "toOsmNode": 4093546777,
+       "polyline": {
+        "points": "yezdcB_u`oX~AfJ",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 63,
+       "fromLevel": -1,
+       "toLevel": -1,
+       "osmWay": 357666834,
+       "fromOsmNode": 4093546777,
+       "toOsmNode": 13688953946,
+       "polyline": {
+        "points": "ybzdcBwi`oXdPcKdJ}FjCcB",
+        "precision": 6,
+        "length": 4
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 6,
+       "fromLevel": -1,
+       "toLevel": -1,
+       "osmWay": 357666834,
+       "fromOsmNode": 13688953946,
+       "toOsmNode": 4093208369,
+       "polyline": {
+        "points": "abydcB}`aoXdBgA",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 8,
+       "fromLevel": -1,
+       "toLevel": -1,
+       "osmWay": 407270462,
+       "fromOsmNode": 4093208369,
+       "toOsmNode": 4093208359,
+       "polyline": {
+        "points": "{~xdcBecaoXt@pE",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 10,
+       "fromLevel": -1,
+       "toLevel": -1,
+       "osmWay": 407270462,
+       "fromOsmNode": 4093208359,
+       "toOsmNode": 8328279469,
+       "polyline": {
+        "points": "e}xdcBs|`oXfArG",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 28,
+       "fromLevel": 0,
+       "toLevel": 0,
+       "osmWay": 538207813,
+       "fromOsmNode": 8328279469,
+       "toOsmNode": 8328279444,
+       "polyline": {
+        "points": "}zxdcB_t`oXnMgI",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "Washingtonplatz",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 31,
+       "fromLevel": 0,
+       "toLevel": 0,
+       "osmWay": 538207813,
+       "fromOsmNode": 8328279444,
+       "toOsmNode": 11343423093,
+       "polyline": {
+        "points": "mlxdcBg~`oXdOwI",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "Washingtonplatz",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 4,
+       "fromLevel": 0,
+       "toLevel": 0,
+       "osmWay": 1184281378,
+       "fromOsmNode": 11343423093,
+       "toOsmNode": 2786208512,
+       "polyline": {
+        "points": "g|wdcB_iaoX^|A",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 2,
+       "fromLevel": 0,
+       "toLevel": 0,
+       "osmWay": 1184281377,
+       "fromOsmNode": 2786208512,
+       "toOsmNode": 12898808627,
+       "polyline": {
+        "points": "g{wdcBafaoXd@U",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "Washingtonplatz",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 2,
+       "fromLevel": 0,
+       "toLevel": 0,
+       "osmWay": 1184281377,
+       "fromOsmNode": 12898808627,
+       "toOsmNode": 10998061204,
+       "polyline": {
+        "points": "azwdcBwfaoX\\O",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "Washingtonplatz",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 22,
+       "fromLevel": 0,
+       "toLevel": 0,
+       "fromOsmNode": 10998061204,
+       "polyline": {
+        "points": "cywdcBggaoXd@~BhAnHf@lC",
+        "precision": 6,
+        "length": 4
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "itineraries": [],
+ "previousPageCursor": "",
+ "nextPageCursor": ""
+}

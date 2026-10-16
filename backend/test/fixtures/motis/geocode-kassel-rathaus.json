@@ -1,0 +1,651 @@
+[
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    6
+   ],
+   [
+    7,
+    7
+   ]
+  ],
+  "name": "Kassel Rathaus",
+  "id": "de-DELFI_de:06611:200003::A",
+  "lat": 51.312633999999996,
+  "lon": 9.492859000000001,
+  "country": "DE",
+  "zip": "34117",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Hessen",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Kassel",
+    "adminLevel": 5,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Kassel",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -24.37268829345703,
+  "modes": [
+   "SUBURBAN",
+   "TRAM"
+  ],
+  "importance": 0.0006828212062828243
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    6
+   ],
+   [
+    7,
+    7
+   ]
+  ],
+  "name": "Kassel Rathaus/Fünffensterstraße",
+  "id": "de-DELFI_de:06611:200436::A",
+  "lat": 51.312115000000006,
+  "lon": 9.491246,
+  "country": "DE",
+  "zip": "34117",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Hessen",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Kassel",
+    "adminLevel": 5,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Kassel",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -21.37268829345703,
+  "modes": [
+   "SUBURBAN",
+   "TRAM",
+   "BUS"
+  ],
+  "importance": 0.000768951722420752
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    6
+   ],
+   [
+    7,
+    7
+   ]
+  ],
+  "name": "Kandel, Rathaus",
+  "id": "de-amarillo-bw_de:07334:35106",
+  "lat": 49.08181999999999,
+  "lon": 8.194296999999999,
+  "country": "DE",
+  "zip": "76870",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Rheinland-Pfalz",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Landkreis Germersheim",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Kandel",
+    "adminLevel": 7,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Kandel",
+    "adminLevel": 8,
+    "matched": false,
+    "unique": true,
+    "default": true
+   }
+  ],
+  "score": -14.09999942779541,
+  "modes": [
+   "RIDE_SHARING",
+   "BUS"
+  ],
+  "importance": 0.000005360999239201192
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    6
+   ],
+   [
+    7,
+    7
+   ]
+  ],
+  "name": "Kappel Rathaus",
+  "id": "de-DELFI_de:08317:19001:1:1",
+  "lat": 48.292175000000015,
+  "lon": 7.742373000000001,
+  "country": "DE",
+  "zip": "77966",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Baden-Württemberg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Freiburg",
+    "adminLevel": 5,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Ortenaukreis",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "VVG der Stadt Ettenheim",
+    "adminLevel": 7,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Kappel-Grafenhausen",
+    "adminLevel": 8,
+    "matched": false,
+    "unique": true,
+    "default": true
+   }
+  ],
+  "score": -14.09999942779541,
+  "modes": [
+   "BUS",
+   "ODM"
+  ],
+  "importance": 0.000008378646271012258
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    6
+   ],
+   [
+    7,
+    7
+   ]
+  ],
+  "name": "Kastl Rathaus",
+  "id": "de-DELFI_de:09171:1415:0:1",
+  "lat": 48.194836,
+  "lon": 12.693302999999998,
+  "country": "DE",
+  "zip": "84556",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Bayern",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Oberbayern",
+    "adminLevel": 5,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Landkreis Altötting",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Unterneukirchen (VGem)",
+    "adminLevel": 7,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Kastl",
+    "adminLevel": 8,
+    "matched": false,
+    "unique": true,
+    "default": true
+   }
+  ],
+  "score": -13.949999809265137,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 0.0000025884187380142976
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    6
+   ],
+   [
+    7,
+    7
+   ]
+  ],
+  "name": "Wien Rathaus",
+  "id": "at-PTA-Eastern-Region-Flex-2026_Pat:49:1072",
+  "lat": 48.21002556,
+  "lon": 16.355347899999998,
+  "level": -1,
+  "country": "AT",
+  "zip": "1080",
+  "tz": "Europe/Vienna",
+  "areas": [
+   {
+    "name": "Österreich",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Wien",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Josefstadt",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Katastralgemeinde Josefstadt",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -13.625263214111328,
+  "modes": [
+   "SUBWAY",
+   "TRAM"
+  ],
+  "importance": 0.0025504783261567354
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    6
+   ],
+   [
+    7,
+    7
+   ]
+  ],
+  "name": "Fürth Rathaus",
+  "id": "de-DELFI_de:09563:2164",
+  "lat": 49.47764599999999,
+  "lon": 10.988588,
+  "level": -2,
+  "country": "DE",
+  "zip": "90762",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Bayern",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Mittelfranken",
+    "adminLevel": 5,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Fürth",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Süd",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Altstadt, Innenstadt",
+    "adminLevel": 11,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -13.155149459838867,
+  "modes": [
+   "SUBWAY",
+   "BUS"
+  ],
+  "importance": 0.0017055489588528872
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    6
+   ],
+   [
+    7,
+    7
+   ]
+  ],
+  "name": "Bedburg Kaster Rathaus",
+  "id": "de-DELFI_de:05362:89235:2:21",
+  "lat": 51.007954,
+  "lon": 6.553444,
+  "country": "DE",
+  "zip": "50181",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Nordrhein-Westfalen",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Köln",
+    "adminLevel": 5,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Rhein-Erft-Kreis",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Bedburg",
+    "adminLevel": 8,
+    "matched": false,
+    "unique": true,
+    "default": true
+   }
+  ],
+  "score": -12.59999942779541,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 0.00000786821237852564
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    6
+   ],
+   [
+    7,
+    7
+   ]
+  ],
+  "name": "Wangen Karsee Rathaus",
+  "id": "de-amarillo-bw_de:08436:8268",
+  "lat": 47.750169,
+  "lon": 9.804932,
+  "country": "DE",
+  "zip": "88239",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Baden-Württemberg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Tübingen",
+    "adminLevel": 5,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Landkreis Ravensburg",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "VVG der Stadt Wangen im Allgäu",
+    "adminLevel": 7,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Wangen im Allgäu",
+    "adminLevel": 8,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Karsee",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -12.59999942779541,
+  "modes": [
+   "RIDE_SHARING",
+   "BUS"
+  ],
+  "importance": 0.0000020373827283037826
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    6
+   ],
+   [
+    7,
+    7
+   ]
+  ],
+  "name": "Kappeln(Schlei) Rathaus",
+  "id": "de-DELFI_de:01059:16394::1",
+  "lat": 54.66241500000001,
+  "lon": 9.928320999999997,
+  "country": "DE",
+  "zip": "24376",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Schleswig-Holstein",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Kreis Schleswig-Flensburg",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Kappeln",
+    "adminLevel": 8,
+    "matched": false,
+    "unique": true,
+    "default": true
+   }
+  ],
+  "score": -12.34999942779541,
+  "modes": [],
+  "importance": 0
+ }
+]

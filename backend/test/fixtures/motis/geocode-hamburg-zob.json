@@ -1,0 +1,569 @@
+[
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    7
+   ],
+   [
+    8,
+    3
+   ]
+  ],
+  "name": "Hamburg ZOB",
+  "id": "at-Railway-Current-Reference-Data-2026_de:02000:10950:11:1",
+  "lat": 53.552475,
+  "lon": 10.008094999999999,
+  "level": -1,
+  "country": "DE",
+  "zip": "20099",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Hamburg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Hamburg-Mitte",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "St. Georg",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -24.057920455932617,
+  "modes": [
+   "HIGHSPEED_RAIL",
+   "LONG_DISTANCE",
+   "COACH",
+   "NIGHT_RAIL",
+   "REGIONAL_RAIL",
+   "SUBURBAN",
+   "SUBWAY",
+   "BUS"
+  ],
+  "importance": 0.021396104246377945
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    7
+   ],
+   [
+    8,
+    3
+   ]
+  ],
+  "name": "New Hamburg",
+  "id": "us-ny-MetroNorth_49",
+  "lat": 41.58745,
+  "lon": -73.94723000000002,
+  "country": "US",
+  "tz": "America/New_York",
+  "areas": [
+   {
+    "name": "Vereinigte Staaten von Amerika",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "New York",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Dutchess County",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Town of Poughkeepsie",
+    "adminLevel": 7,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "New Hamburg",
+    "adminLevel": 8,
+    "matched": false,
+    "unique": true,
+    "default": true
+   }
+  ],
+  "score": -13.278861999511719,
+  "modes": [
+   "REGIONAL_RAIL"
+  ],
+  "importance": 0.0009175472659990191
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    7
+   ],
+   [
+    8,
+    3
+   ]
+  ],
+  "name": "Hamburg-Altona",
+  "id": "at-Railway-Current-Reference-Data-2026_Pde:02000:80953",
+  "lat": 53.552692,
+  "lon": 9.935187,
+  "country": "DE",
+  "zip": "22765",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Hamburg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Altona",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Altona-Nord",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -13.246400833129883,
+  "modes": [
+   "HIGHSPEED_RAIL",
+   "LONG_DISTANCE",
+   "NIGHT_RAIL",
+   "REGIONAL_RAIL"
+  ],
+  "importance": 0.003006227081641555
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    7
+   ],
+   [
+    8,
+    3
+   ]
+  ],
+  "name": "Hamburg Dammtor",
+  "id": "de-DELFI_de:02000:8002548",
+  "lat": 53.560753000000005,
+  "lon": 9.989566000000002,
+  "level": 1,
+  "country": "DE",
+  "zip": "20354",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Hamburg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Eimsbüttel",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Rotherbaum",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -13.179060935974121,
+  "modes": [
+   "HIGHSPEED_RAIL",
+   "LONG_DISTANCE",
+   "REGIONAL_RAIL",
+   "SUBURBAN"
+  ],
+  "importance": 0.004373861942440271
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    7
+   ],
+   [
+    8,
+    3
+   ]
+  ],
+  "name": "Hamburg-Harburg",
+  "id": "at-Railway-Current-Reference-Data-2026_de:02000:49950:1:1",
+  "lat": 53.45555,
+  "lon": 9.992428,
+  "level": -1,
+  "country": "DE",
+  "zip": "21079",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Hamburg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Harburg",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Harburg",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -12.996400833129883,
+  "modes": [
+   "HIGHSPEED_RAIL",
+   "LONG_DISTANCE",
+   "NIGHT_RAIL",
+   "REGIONAL_RAIL",
+   "BUS"
+  ],
+  "importance": 0.003160997061058879
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    7
+   ],
+   [
+    8,
+    3
+   ]
+  ],
+  "name": "Hamburg Way",
+  "id": "gb-great-britain_290G9015",
+  "lat": 52.77295000000001,
+  "lon": 0.42112988000000007,
+  "country": "GB",
+  "tz": "Europe/London",
+  "areas": [
+   {
+    "name": "Vereinigtes Königreich",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "England",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Norfolk",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "King's Lynn and West Norfolk",
+    "adminLevel": 8,
+    "matched": false,
+    "unique": true,
+    "default": true
+   }
+  ],
+  "score": -12.09999942779541,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 0.0000221559930650983
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    7
+   ],
+   [
+    8,
+    3
+   ]
+  ],
+  "name": "Studio Hamburg",
+  "id": "de-DELFI_000016202226",
+  "lat": 53.5857,
+  "lon": 10.124767999999998,
+  "country": "DE",
+  "zip": "22045",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Hamburg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Wandsbek",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Tonndorf",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -11.34999942779541,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 0.00006232941086636856
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    7
+   ],
+   [
+    8,
+    3
+   ]
+  ],
+  "name": "Hamburg Lürade",
+  "id": "de-VBN_000002063023",
+  "lat": 53.42537000000001,
+  "lon": 9.93093,
+  "country": "DE",
+  "zip": "21077",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Hamburg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Harburg",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Marmstorf",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -11.34999942779541,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 0.000002040282879534061
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    7
+   ],
+   [
+    8,
+    3
+   ]
+  ],
+  "name": "Hamburg Seehof",
+  "id": "de-VBN_000002110003",
+  "lat": 53.518192000000006,
+  "lon": 9.782062999999999,
+  "country": "DE",
+  "zip": "21129",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Hamburg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Harburg",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Neuenfelde",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -11.34999942779541,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 0.000007684050615353044
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    7
+   ],
+   [
+    8,
+    3
+   ]
+  ],
+  "name": "Hamburg Street",
+  "id": "us-md-MTA-raillink_s7012",
+  "lat": 39.278946000000005,
+  "lon": -76.6199,
+  "country": "US",
+  "tz": "America/New_York",
+  "areas": [
+   {
+    "name": "Vereinigte Staaten von Amerika",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Maryland",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Baltimore",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": true,
+    "default": true
+   }
+  ],
+  "score": -11.34999942779541,
+  "modes": [
+   "TRAM"
+  ],
+  "importance": 0.000042088991904165596
+ }
+]

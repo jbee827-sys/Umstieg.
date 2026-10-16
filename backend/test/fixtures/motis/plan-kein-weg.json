@@ -1,0 +1,37 @@
+{
+ "requestParameters": {},
+ "debugOutput": {},
+ "from": {
+  "name": "Kassel Rathaus",
+  "stopId": "de-DELFI_de:06611:200003::A",
+  "importance": 0.0006828212062828243,
+  "lat": 51.312633999999996,
+  "lon": 9.492859000000001,
+  "tz": "Europe/Berlin",
+  "vertexType": "TRANSIT",
+  "modes": [
+   "SUBURBAN",
+   "TRAM"
+  ]
+ },
+ "to": {
+  "name": "S+U Hauptbahnhof/Washingtonplatz (Berlin)",
+  "stopId": "de-VBB_de:11000:900003205::4",
+  "importance": 0.000010475482667970937,
+  "lat": 52.523340000000005,
+  "lon": 13.370220999999999,
+  "tz": "Europe/Berlin",
+  "scheduledTrack": "Pos. 11",
+  "track": "Pos. 11",
+  "stopCode": "11",
+  "description": "Bushalt R.-Hirsch-Str. ht. Fr.-List-Ufer",
+  "vertexType": "TRANSIT",
+  "modes": [
+   "BUS"
+  ]
+ },
+ "direct": [],
+ "itineraries": [],
+ "previousPageCursor": "",
+ "nextPageCursor": ""
+}

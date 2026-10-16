@@ -1,0 +1,659 @@
+[
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    6
+   ],
+   [
+    7,
+    12
+   ]
+  ],
+  "name": "Berlin Hauptbahnhof",
+  "id": "at-Railway-Current-Reference-Data-2026_de:11000:900003200:1:51",
+  "lat": 52.52498,
+  "lon": 13.369114000000001,
+  "level": -2,
+  "country": "DE",
+  "zip": "10557",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Berlin",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Moabit",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -29.76677703857422,
+  "modes": [
+   "HIGHSPEED_RAIL",
+   "LONG_DISTANCE",
+   "COACH",
+   "NIGHT_RAIL",
+   "REGIONAL_RAIL",
+   "SUBURBAN",
+   "SUBWAY",
+   "TRAM",
+   "BUS"
+  ],
+  "importance": 0.012571778148412704
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    6
+   ],
+   [
+    7,
+    12
+   ]
+  ],
+  "name": "S+U Hauptbahnhof/Washingtonplatz (Berlin)",
+  "id": "de-VBB_de:11000:900003205::4",
+  "lat": 52.523340000000005,
+  "lon": 13.370220999999999,
+  "country": "DE",
+  "zip": "10557",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Berlin",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Moabit",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -23.350000381469727,
+  "modes": [
+   "BUS"
+  ],
+  "importance": 0.000010475482667970937
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    6
+   ],
+   [
+    7,
+    12
+   ]
+  ],
+  "name": "Hauptbahnhof Süd",
+  "id": "at-Railway-Current-Reference-Data-2026_de:09162:100:11:11",
+  "lat": 48.13988,
+  "lon": 11.557491,
+  "country": "DE",
+  "zip": "80335",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Bayern",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Oberbayern",
+    "adminLevel": 5,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "München",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Ludwigsvorstadt-Isarvorstadt",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -18.81806755065918,
+  "modes": [
+   "HIGHSPEED_RAIL",
+   "LONG_DISTANCE",
+   "NIGHT_RAIL",
+   "REGIONAL_RAIL",
+   "SUBURBAN",
+   "SUBWAY",
+   "TRAM",
+   "BUS"
+  ],
+  "importance": 0.021706413477659225
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    6
+   ],
+   [
+    7,
+    12
+   ]
+  ],
+  "name": "Hauptbahnhof/ZOB",
+  "id": "at-Railway-Current-Reference-Data-2026_de:02000:10950:11:1",
+  "lat": 53.552475,
+  "lon": 10.008094999999999,
+  "level": -1,
+  "country": "DE",
+  "zip": "20099",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Hamburg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Hamburg-Mitte",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "St. Georg",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -18.807920455932617,
+  "modes": [
+   "HIGHSPEED_RAIL",
+   "LONG_DISTANCE",
+   "COACH",
+   "NIGHT_RAIL",
+   "REGIONAL_RAIL",
+   "SUBURBAN",
+   "SUBWAY",
+   "BUS"
+  ],
+  "importance": 0.021396104246377945
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    6
+   ],
+   [
+    7,
+    12
+   ]
+  ],
+  "name": "Hauptbahnhof (tief)",
+  "id": "at-Railway-Current-Reference-Data-2026_de:08111:6115:1:1",
+  "lat": 48.784748,
+  "lon": 9.183216999999999,
+  "country": "DE",
+  "zip": "70173",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Baden-Württemberg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Stuttgart",
+    "adminLevel": 5,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Stuttgart",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Stuttgart-Mitte",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Hauptbahnhof",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -18.504125595092773,
+  "modes": [
+   "HIGHSPEED_RAIL",
+   "LONG_DISTANCE",
+   "NIGHT_RAIL",
+   "REGIONAL_RAIL",
+   "SUBURBAN",
+   "SUBWAY",
+   "TRAM",
+   "BUS"
+  ],
+  "importance": 0.019243692979216576
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    6
+   ],
+   [
+    7,
+    12
+   ]
+  ],
+  "name": "Wien Hauptbahnhof",
+  "id": "at-Railway-Current-Reference-Data-2026_Pat:49:1349",
+  "lat": 48.185190000000006,
+  "lon": 16.376413,
+  "level": 1,
+  "country": "AT",
+  "zip": "1100",
+  "tz": "Europe/Vienna",
+  "areas": [
+   {
+    "name": "Österreich",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Wien",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Favoriten",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Katastralgemeinde Favoriten",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -18.425134658813477,
+  "modes": [
+   "HIGHSPEED_RAIL",
+   "LONG_DISTANCE",
+   "COACH",
+   "NIGHT_RAIL",
+   "REGIONAL_RAIL",
+   "SUBURBAN",
+   "SUBWAY",
+   "TRAM",
+   "BUS"
+  ],
+  "importance": 0.016729388386011124
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    6
+   ],
+   [
+    7,
+    12
+   ]
+  ],
+  "name": "Ulm Hauptbahnhof",
+  "id": "at-Railway-Current-Reference-Data-2026_de:08421:1008:31:1",
+  "lat": 48.399345000000004,
+  "lon": 9.982933000000001,
+  "country": "DE",
+  "zip": "89073",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Baden-Württemberg",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Tübingen",
+    "adminLevel": 5,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Ulm",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Mitte",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -18.104284286499023,
+  "modes": [
+   "HIGHSPEED_RAIL",
+   "LONG_DISTANCE",
+   "COACH",
+   "NIGHT_RAIL",
+   "RIDE_SHARING",
+   "REGIONAL_RAIL",
+   "TRAM",
+   "BUS"
+  ],
+  "importance": 0.005866412539035082
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    6
+   ],
+   [
+    7,
+    12
+   ]
+  ],
+  "name": "Köln Hauptbahnhof",
+  "id": "be-sncb_8015458",
+  "lat": 50.943079999999995,
+  "lon": 6.95897,
+  "level": 1,
+  "country": "DE",
+  "zip": "50667",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Nordrhein-Westfalen",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Regierungsbezirk Köln",
+    "adminLevel": 5,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Köln",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Innenstadt",
+    "adminLevel": 9,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Altstadt-Nord",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -18.092802047729492,
+  "modes": [
+   "HIGHSPEED_RAIL",
+   "LONG_DISTANCE",
+   "COACH",
+   "NIGHT_RAIL",
+   "REGIONAL_RAIL",
+   "SUBURBAN",
+   "TRAM",
+   "BUS"
+  ],
+  "importance": 0.009131708182394505
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    6
+   ],
+   [
+    7,
+    12
+   ]
+  ],
+  "name": "Linz Hauptbahnhof",
+  "id": "at-Railway-Current-Reference-Data-2026_Pat:44:41164",
+  "lat": 48.290676000000005,
+  "lon": 14.291171999999998,
+  "level": -2,
+  "country": "AT",
+  "zip": "4020",
+  "tz": "Europe/Vienna",
+  "areas": [
+   {
+    "name": "Österreich",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Oberösterreich",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Linz",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Innere Stadt",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -17.924428939819336,
+  "modes": [
+   "HIGHSPEED_RAIL",
+   "LONG_DISTANCE",
+   "NIGHT_RAIL",
+   "REGIONAL_RAIL",
+   "SUBURBAN",
+   "TRAM",
+   "BUS"
+  ],
+  "importance": 0.006696700118482113
+ },
+ {
+  "type": "STOP",
+  "tokens": [
+   [
+    0,
+    6
+   ],
+   [
+    7,
+    12
+   ]
+  ],
+  "name": "Kiel Hauptbahnhof",
+  "id": "de-DELFI_de:01002:49079",
+  "lat": 54.31498299999999,
+  "lon": 10.131975999999998,
+  "country": "DE",
+  "zip": "24114",
+  "tz": "Europe/Berlin",
+  "areas": [
+   {
+    "name": "Deutschland",
+    "adminLevel": 2,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Schleswig-Holstein",
+    "adminLevel": 4,
+    "matched": false,
+    "unique": false,
+    "default": false
+   },
+   {
+    "name": "Kiel",
+    "adminLevel": 6,
+    "matched": false,
+    "unique": true,
+    "default": true
+   },
+   {
+    "name": "Südfriedhof",
+    "adminLevel": 10,
+    "matched": false,
+    "unique": false,
+    "default": false
+   }
+  ],
+  "score": -17.79500389099121,
+  "modes": [
+   "HIGHSPEED_RAIL",
+   "LONG_DISTANCE",
+   "REGIONAL_RAIL",
+   "BUS"
+  ],
+  "importance": 0.005264380946755409
+ }
+]

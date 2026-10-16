@@ -1,0 +1,449 @@
+{
+ "requestParameters": {},
+ "debugOutput": {},
+ "from": {
+  "name": "S+U Alexanderplatz Bhf (Berlin)",
+  "stopId": "de-VBB_de:11000:900100003:2:53",
+  "parentId": "de-VBB_de:11000:900100003",
+  "importance": 0.007396642118692398,
+  "lat": 52.521587,
+  "lon": 13.411356999999999,
+  "level": 1,
+  "tz": "Europe/Berlin",
+  "description": "S-Bahnsteig Gleis 4",
+  "vertexType": "TRANSIT",
+  "modes": [
+   "SUBURBAN",
+   "SUBWAY"
+  ]
+ },
+ "to": {
+  "name": "S+U Alexanderplatz Bhf (Berlin)",
+  "stopId": "de-VBB_de:11000:900100003::5",
+  "parentId": "de-VBB_de:11000:900100003",
+  "importance": 0.007396642118692398,
+  "lat": 52.520950000000006,
+  "lon": 13.412565,
+  "level": -3,
+  "tz": "Europe/Berlin",
+  "scheduledTrack": "1 (U8)",
+  "track": "1 (U8)",
+  "description": "U-Bahn Gleis 1 (U8)",
+  "vertexType": "TRANSIT",
+  "modes": [
+   "SUBURBAN",
+   "SUBWAY"
+  ]
+ },
+ "direct": [
+  {
+   "duration": 382,
+   "startTime": "2026-10-16T14:12:00Z",
+   "endTime": "2026-10-16T14:18:00Z",
+   "transfers": 0,
+   "id": "",
+   "legs": [
+    {
+     "mode": "WALK",
+     "from": {
+      "name": "S+U Alexanderplatz Bhf (Berlin)",
+      "stopId": "de-VBB_de:11000:900100003:2:53",
+      "parentId": "de-VBB_de:11000:900100003",
+      "importance": 0.007396642118692398,
+      "lat": 52.521587,
+      "lon": 13.411356999999999,
+      "level": 1,
+      "tz": "Europe/Berlin",
+      "departure": "2026-10-16T14:12:00Z",
+      "scheduledDeparture": "2026-10-16T14:12:00Z",
+      "description": "S-Bahnsteig Gleis 4",
+      "vertexType": "TRANSIT",
+      "modes": [
+       "SUBURBAN",
+       "SUBWAY"
+      ]
+     },
+     "to": {
+      "name": "S+U Alexanderplatz Bhf (Berlin)",
+      "stopId": "de-VBB_de:11000:900100003::5",
+      "parentId": "de-VBB_de:11000:900100003",
+      "importance": 0.007396642118692398,
+      "lat": 52.520950000000006,
+      "lon": 13.412565,
+      "level": -3,
+      "tz": "Europe/Berlin",
+      "arrival": "2026-10-16T14:18:00Z",
+      "scheduledArrival": "2026-10-16T14:18:00Z",
+      "scheduledTrack": "1 (U8)",
+      "track": "1 (U8)",
+      "description": "U-Bahn Gleis 1 (U8)",
+      "vertexType": "TRANSIT",
+      "modes": [
+       "SUBURBAN",
+       "SUBWAY"
+      ]
+     },
+     "duration": 382,
+     "startTime": "2026-10-16T14:12:00Z",
+     "endTime": "2026-10-16T14:18:00Z",
+     "scheduledStartTime": "2026-10-16T14:12:00Z",
+     "scheduledEndTime": "2026-10-16T14:18:00Z",
+     "realTime": false,
+     "scheduled": false,
+     "distance": 165,
+     "legGeometry": {
+      "points": "wetdcBc`qqXHQ??~IiP??nLgTxA{BpDuE??d@dA??Zi@??U^v@hA??vAP??~@kB??cDmH??{CyG??x@sA??~@}A??{A_G??xC|F??tAuB",
+      "precision": 6,
+      "length": 33
+     },
+     "steps": [
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 1,
+       "fromLevel": 1,
+       "toLevel": 1,
+       "toOsmNode": 2776837342,
+       "polyline": {
+        "points": "wetdcBc`qqXHQ",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 27,
+       "fromLevel": 1,
+       "toLevel": 1,
+       "osmWay": 860224061,
+       "fromOsmNode": 2776837342,
+       "toOsmNode": 3808684903,
+       "polyline": {
+        "points": "metdcBu`qqX~IiP",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "4",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 52,
+       "fromLevel": 1,
+       "toLevel": 1,
+       "osmWay": 860224061,
+       "fromOsmNode": 3808684903,
+       "toOsmNode": 3808684898,
+       "polyline": {
+        "points": "mzsdcB_rqqXnLgTxA{BpDuE",
+        "precision": 6,
+        "length": 4
+       },
+       "streetName": "4",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 3,
+       "fromLevel": 1,
+       "toLevel": 1,
+       "osmWay": 377494316,
+       "fromOsmNode": 3808684898,
+       "toOsmNode": 3808684895,
+       "polyline": {
+        "points": "qdsdcByqrqXd@dA",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 2,
+       "fromLevel": 1,
+       "toLevel": 1,
+       "osmWay": 377494315,
+       "fromOsmNode": 3808684895,
+       "toOsmNode": 1813690786,
+       "polyline": {
+        "points": "kcsdcBsorqXZi@",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "ELEVATOR",
+       "distance": 0,
+       "fromLevel": 1,
+       "toLevel": 0,
+       "polyline": {
+        "points": "",
+        "precision": 0,
+        "length": 0
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 6,
+       "fromLevel": 0,
+       "toLevel": 0,
+       "osmWay": 368198699,
+       "fromOsmNode": 1813690786,
+       "toOsmNode": 2776837155,
+       "polyline": {
+        "points": "obsdcB}prqXU^v@hA",
+        "precision": 6,
+        "length": 3
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 5,
+       "fromLevel": 0,
+       "toLevel": 0,
+       "osmWay": 272757344,
+       "fromOsmNode": 2776837155,
+       "toOsmNode": 2776837147,
+       "polyline": {
+        "points": "masdcBsmrqXvAP",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 5,
+       "fromLevel": 0,
+       "toLevel": 0,
+       "osmWay": 272757275,
+       "fromOsmNode": 2776837147,
+       "toOsmNode": 3527866824,
+       "polyline": {
+        "points": "u~rdcBamrqX~@kB",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 14,
+       "fromLevel": 0,
+       "toLevel": 0,
+       "osmWay": 169230291,
+       "fromOsmNode": 3527866824,
+       "toOsmNode": 11247145901,
+       "polyline": {
+        "points": "u|rdcBmprqXcDmH",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 13,
+       "fromLevel": 0,
+       "toLevel": 0,
+       "osmWay": 169230291,
+       "fromOsmNode": 11247145901,
+       "toOsmNode": 196763703,
+       "polyline": {
+        "points": "yasdcB{yrqX{CyG",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 4,
+       "fromLevel": 0,
+       "toLevel": 0,
+       "osmWay": 72157175,
+       "fromOsmNode": 196763703,
+       "toOsmNode": 13334720371,
+       "polyline": {
+        "points": "ufsdcBubsqXx@sA",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "Dircksenstraße",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 5,
+       "fromLevel": 0,
+       "toLevel": 0,
+       "osmWay": 72157175,
+       "fromOsmNode": 13334720371,
+       "toOsmNode": 14142816323,
+       "polyline": {
+        "points": "{dsdcBiesqX~@}A",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "Dircksenstraße",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 10,
+       "fromLevel": 0,
+       "toLevel": 0,
+       "osmWay": 1554560640,
+       "fromOsmNode": 14142816323,
+       "toOsmNode": 315294362,
+       "polyline": {
+        "points": "{bsdcBghsqX{A_G",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "ELEVATOR",
+       "distance": 0,
+       "fromLevel": 1,
+       "toLevel": -3,
+       "polyline": {
+        "points": "",
+        "precision": 0,
+        "length": 0
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 12,
+       "fromLevel": -3,
+       "toLevel": -3,
+       "osmWay": 500794561,
+       "fromOsmNode": 315294362,
+       "toOsmNode": 4917707294,
+       "polyline": {
+        "points": "wesdcBgpsqXxC|F",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      },
+      {
+       "relativeDirection": "CONTINUE",
+       "distance": 6,
+       "fromLevel": -3,
+       "toLevel": -3,
+       "fromOsmNode": 4917707294,
+       "polyline": {
+        "points": "}`sdcBihsqXtAuB",
+        "precision": 6,
+        "length": 2
+       },
+       "streetName": "",
+       "exit": "",
+       "stayOn": false,
+       "area": false,
+       "toll": false,
+       "elevationUp": 0,
+       "elevationDown": 0
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "itineraries": [],
+ "previousPageCursor": "",
+ "nextPageCursor": ""
+}
