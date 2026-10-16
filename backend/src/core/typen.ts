@@ -415,3 +415,82 @@ export interface TafelEintrag {
   gleisIst?: string;
   ziel: string;
 }
+
+// --- Haltestellenpfad (Umstieg 2.0, Spec 5.3) ---
+//
+// Diese Typen beschreiben Umstieg., nicht MOTIS. Was MOTIS liefert, steht in
+// `clients/motis-typen.ts` und kommt über `clients/haltestellen.ts` nicht hinaus.
+
+/** Eigene, kleine Aufzählung. Unbekannte MOTIS-Werte werden `sonstiges`. */
+export type Verkehrsmittel = 'bus' | 'tram' | 'ubahn' | 'sbahn' | 'bahn' | 'faehre' | 'sonstiges';
+
+/**
+ * Ein Ort, an dem man umsteigen kann: ein DB-Bahnhof, eine Haltestelle oder
+ * beides zugleich. Mindestens eine der beiden Kennungen ist gesetzt.
+ */
+export interface Ort {
+  name: string;
+  lat: number;
+  lon: number;
+  verkehrsmittel: Verkehrsmittel[];
+  /** Gesetzt, wenn der Ort ein DB-Bahnhof ist – dann gibt es den Bahnhofspfad. */
+  eva?: string;
+  /**
+   * MOTIS-Haltestellen-ID, unverändert durchgereicht. Nicht dauerhaft
+   * speichern: Die IDs tragen den Quellnamen samt Jahreszahl und ändern sich
+   * mit den Datenwechseln (Erkundung 16.10.2026, A5).
+   */
+  haltestelleId?: string;
+}
+
+export interface HaltestellenTafelEintrag {
+  fahrtId: string;
+  /** Anzeigename der Linie, so wie MOTIS ihn nennt: „ICE 1206“, „S5“, „245“. */
+  linie: string;
+  verkehrsmittel: Verkehrsmittel;
+  /** Abfahrt: Fahrtziel. Ankunft: Herkunft der Fahrt. */
+  ziel: string;
+  /** ISO-Zeitstempel, Soll. */
+  zeitSoll: string;
+  /** ISO-Zeitstempel, nur bei Echtzeit. */
+  zeitIst?: string;
+  /** Steig laut Fahrplan („7“, „Pos. 12“, „A“) – fehlt, wenn nicht bekannt. */
+  steigSoll?: string;
+  /** Nur gesetzt, wenn er vom Soll abweicht. */
+  steigIst?: string;
+  steigLat: number;
+  steigLon: number;
+  steigLevel?: number;
+  /** false: Die Koordinate ist die der Haltestelle, nicht die des Steigs. */
+  steigGenau: boolean;
+  /** F5: Ohne Echtzeit zeigt die Oberfläche „laut Fahrplan“. */
+  echtzeit: boolean;
+  ausfall: boolean;
+}
+
+/** Ein Punkt, zwischen dem und einem anderen ein Fußweg gesucht wird. */
+export interface Steigpunkt {
+  lat: number;
+  lon: number;
+  level?: number;
+}
+
+/** Fußweg des Haltestellenpfads – dieselbe Form wie `/api/route`, plus Herkunft. */
+export interface Weg extends RouteErgebnis {
+  distanzM: number;
+  /** `fussweg`: aus dem Kartenmaterial geroutet. `luftlinie`: Schätzung (Spec 5.6). */
+  herkunft: 'fussweg' | 'luftlinie';
+}
+
+export interface FahrtHalt {
+  name: string;
+  zeitSoll?: string;
+  zeitIst?: string;
+  steig?: string;
+}
+
+export interface Fahrtverlauf {
+  linie: string;
+  ziel: string;
+  halte: FahrtHalt[];
+}
