@@ -83,6 +83,8 @@ const GRENZEN: Record<string, number> = {
   // Ortssuche ueber Bahnhoefe und Haltestellen - gleiche Tippsuche wie oben.
   '/api/orte': 21,
   '/api/haltestelle/tafel': 21,
+  // Fussweg ueber MOTIS /plan - teurer als Suche und Tafel, wie /api/route.
+  '/api/weg': 14,
   // Gegen Wiederverbindungsstuerme. Die eigentliche Grenze fuer den Strom ist
   // die Zahl gleichzeitiger Verbindungen, nicht die der Anfragen.
   '/api/live/:eva': 14,
