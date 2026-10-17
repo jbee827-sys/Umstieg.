@@ -43,7 +43,10 @@ import {
   type SseGrenzen,
 } from './routes/live.js';
 import { registriereHaltestellenRouten } from './routes/haltestellen.js';
-import type { HaltestellenClient } from './clients/haltestellen.js';
+import { erzeugeHaltestellenClient, type HaltestellenClient } from './clients/haltestellen.js';
+import { erzeugeMotisKern } from './clients/motis.js';
+import { erzeugeMotisPausen } from './clients/motis-pausen.js';
+import { erzeugeAnfragezaehler } from './core/anfragezaehler.js';
 
 export interface AppClients extends ApiClients {
   /** Überwachung ist injizierbar, damit Tests die Polls selbst auslösen können. */
@@ -395,9 +398,26 @@ export function buildApp(
     /*
      * Haltestellenpfad (Umstieg 2.0). `null` heisst „nicht eingerichtet“: Die
      * Routen antworten dann sauber mit 503, der Bahnhofspfad laeuft wie immer.
-     * Die Einrichtung ueber `MOTIS_BASIS_URL` folgt in Plan-Task 13.
+     *
+     * Ohne uebergebenen Client entscheidet `MOTIS_BASIS_URL` (F4: der Anbieter
+     * ist Konfiguration - Transitous heute, eigener MOTIS spaeter). Der Kontakt
+     * fuer den User-Agent (F7) kommt nur als Fly-Secret, nie aus dem Repository.
      */
-    const haltestellenClient: HaltestellenClient | null = clients.haltestellen ?? null;
+    const motisBasisUrl = process.env.MOTIS_BASIS_URL?.trim();
+    let haltestellenClient: HaltestellenClient | null = clients.haltestellen ?? null;
+    if (clients.haltestellen === undefined && motisBasisUrl) {
+      // Der Zaehler ist der Nachweis fuer K7 und die Absprache mit Transitous.
+      const zaehler = erzeugeAnfragezaehler({ log: instanz.log });
+      instanz.addHook('onClose', async () => zaehler.beende());
+      haltestellenClient = erzeugeHaltestellenClient(
+        erzeugeMotisKern({
+          basisUrl: motisBasisUrl,
+          kontakt: process.env.MOTIS_KONTAKT?.trim() || undefined,
+          pausen: erzeugeMotisPausen(),
+          zaehler,
+        }),
+      );
+    }
 
     registriereApiRouten(instanz, {
       overpass,

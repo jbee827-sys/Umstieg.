@@ -22,6 +22,10 @@ primary_region = "fra"
 [env]
   PORT = "3001"
   OSM_VOLUME_PFAD = "/data/osm"
+  # Haltestellenpfad (Umstieg 2.0): Basis der MOTIS-API. Leer = nicht eingerichtet.
+  # Eigener MOTIS-Server spaeter: nur diese Zeile (Spec Abschnitt 10).
+  # MOTIS_KONTAKT kommt als Secret: fly secrets set MOTIS_KONTAKT=...
+  MOTIS_BASIS_URL = "https://api.transitous.org"
 
 [http_service]
   internal_port = 3001
