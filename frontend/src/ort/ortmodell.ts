@@ -36,14 +36,15 @@ const GLEICHER_ORT_M = 300;
 /**
  * Haltestellen-IDs ändern sich mit den Datenwechseln (A5). Ein gespeicherter
  * Ort wird deshalb beim Laden neu gesucht: gleiche EVA oder gleicher Name in
- * der Nähe. Findet sich nichts oder fällt die Suche aus, bleibt der alte Ort –
+ * der Nähe. Ebenso ein Bahnhof, der ohne Haltestellen-ID gewählt wurde. Findet sich nichts oder fällt die Suche aus, bleibt der alte Ort –
  * die Tafel findet ihn über die mitgeschickte Koordinate trotzdem.
  */
 export async function frischeOrtAuf(
   ort: Ort,
   suche: (q: string) => Promise<OrteErgebnis>,
 ): Promise<Ort> {
-  if (!ort.haltestelleId) return ort;
+  // Auch ohne ID: Ein Bahnhof, zu dem die letzte Suche keine Haltestelle
+  // kannte, bekommt hier seine (gleiche EVA).
   const ergebnis = await suche(ort.name);
   if (!ergebnis.ok) return ort;
   const treffer = ergebnis.antwort.orte.find(

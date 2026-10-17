@@ -5,7 +5,9 @@ import {
   kategorieVon,
   FENSTER_NACH_MIN,
   FENSTER_VOR_MIN,
+  gruppiereHaltestellenTafel,
 } from './tafelauswahl'
+import type { HaltestellenTafelEintrag } from './typen'
 import type { TafelEintrag } from './typen'
 
 function zug(name: string, zeit: string, zeitIst?: string): TafelEintrag {
@@ -140,5 +142,39 @@ describe('gruppiereTafel: langes Fenster', () => {
       gruppiereTafel(eintraege, jetzt, bis).flatMap((b) => b.eintraege.map((e) => e.zug))
     expect(namen()).toEqual([])
     expect(namen(endeNaechsteStunde(jetzt))).toEqual(['RE 1'])
+  })
+})
+
+describe('gruppiereHaltestellenTafel (Umstieg 2.0)', () => {
+  const jetzt = new Date('2026-10-17T12:00:00Z')
+  const nach = (min: number) => new Date(jetzt.getTime() + min * 60_000).toISOString()
+  const e = (fahrtId: string, verkehrsmittel: HaltestellenTafelEintrag['verkehrsmittel'], min: number, extra: Partial<HaltestellenTafelEintrag> = {}): HaltestellenTafelEintrag => ({
+    fahrtId, linie: fahrtId, verkehrsmittel, ziel: 'Z', zeitSoll: nach(min), steigLat: 1, steigLon: 2, steigGenau: true, echtzeit: true, ausfall: false, ...extra,
+  })
+
+  it('haelt das Fenster von -5 bis +45 Minuten und sortiert nach der wirklichen Zeit', () => {
+    const bloecke = gruppiereHaltestellenTafel(
+      [e('spaet', 'bus', 50), e('weg', 'bus', -6), e('b', 'bus', 20), e('a', 'bus', 30, { zeitIst: nach(10) }), e('knapp', 'bus', -5)],
+      jetzt,
+    )
+    expect(bloecke).toHaveLength(1)
+    expect(bloecke[0].eintraege.map((x) => x.fahrtId)).toEqual(['knapp', 'a', 'b'])
+  })
+
+  it('gruppiert nach Verkehrsmittel in fester Reihenfolge', () => {
+    const bloecke = gruppiereHaltestellenTafel(
+      [e('1', 'sonstiges', 1), e('2', 'bus', 1), e('3', 'tram', 1), e('4', 'bahn', 1), e('5', 'faehre', 1), e('6', 'ubahn', 1), e('7', 'sbahn', 1)],
+      jetzt,
+    )
+    expect(bloecke.map((b) => b.titel)).toEqual(['Bahn', 'S-Bahn', 'U-Bahn', 'Tram', 'Bus', 'Fähre', 'Sonstiges'])
+  })
+
+  it('reicht mit `bis` bis zum Ende der naechsten Stunde', () => {
+    const bloecke = gruppiereHaltestellenTafel([e('x', 'tram', 100)], jetzt, new Date(jetzt.getTime() + 120 * 60_000))
+    expect(bloecke[0].eintraege).toHaveLength(1)
+  })
+
+  it('verwirft unlesbare Zeiten statt zu werfen', () => {
+    expect(gruppiereHaltestellenTafel([e('x', 'tram', 0, { zeitSoll: 'bald' })], jetzt)).toEqual([])
   })
 })
