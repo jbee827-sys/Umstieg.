@@ -182,8 +182,12 @@ export interface TafelEintrag {
 
 /** Spiegel von backend/src/core/ueberwachung.ts – SSE-Ereignisse. */
 export interface LiveEreignis {
-  typ: 'gleiswechsel' | 'verspaetung' | 'heartbeat' | 'quelle-weg' | 'quelle-da';
+  /** `ausfall` nur im Haltestellenpfad: Die Fahrt fällt aus. */
+  typ: 'gleiswechsel' | 'verspaetung' | 'heartbeat' | 'quelle-weg' | 'quelle-da' | 'ausfall';
+  /** Im Haltestellenpfad die Fahrt-ID, nicht zum Anzeigen. */
   zug?: string;
+  /** Linie zum Anzeigen (Haltestellenpfad). */
+  anzeige?: string;
   alt?: string;
   neu?: string;
   zeitstempel: string;
@@ -198,4 +202,71 @@ export interface RouteParameter {
   abschnitt?: Bahnsteigabschnitt;
   profil: Gehprofil;
   variante: RoutenVariante;
+}
+
+// --- Haltestellenpfad (Umstieg 2.0) – Spiegel von backend/src/core/typen.ts ---
+
+export type Verkehrsmittel = 'bus' | 'tram' | 'ubahn' | 'sbahn' | 'bahn' | 'faehre' | 'sonstiges';
+
+/**
+ * Ein Ort, an dem man umsteigen kann: ein DB-Bahnhof, eine Haltestelle oder
+ * beides zugleich. Mindestens eine der beiden Kennungen ist gesetzt.
+ */
+export interface Ort {
+  name: string;
+  lat: number;
+  lon: number;
+  verkehrsmittel: Verkehrsmittel[];
+  /** Gesetzt, wenn der Ort ein DB-Bahnhof ist – dann gibt es den Bahnhofspfad. */
+  eva?: string;
+  /**
+   * MOTIS-Haltestellen-ID. Nicht blind wiederverwenden: Sie ändert sich mit
+   * den Datenwechseln (A5) – gespeicherte Orte werden neu aufgelöst.
+   */
+  haltestelleId?: string;
+}
+
+export interface HaltestellenTafelEintrag {
+  fahrtId: string;
+  /** Anzeigename der Linie: „ICE 1206“, „S5“, „245“. */
+  linie: string;
+  verkehrsmittel: Verkehrsmittel;
+  /** Abfahrt: Fahrtziel. Ankunft: Herkunft der Fahrt. */
+  ziel: string;
+  /** ISO-Zeitstempel, Soll. */
+  zeitSoll: string;
+  /** ISO-Zeitstempel, nur bei Echtzeit. */
+  zeitIst?: string;
+  steigSoll?: string;
+  /** Nur gesetzt, wenn er vom Soll abweicht. */
+  steigIst?: string;
+  steigLat: number;
+  steigLon: number;
+  steigLevel?: number;
+  /** false: Die Koordinate ist die der Haltestelle, nicht die des Steigs. */
+  steigGenau: boolean;
+  /** F5: Ohne Echtzeit zeigt die Oberfläche „laut Fahrplan“. */
+  echtzeit: boolean;
+  ausfall: boolean;
+}
+
+export interface Steigpunkt {
+  lat: number;
+  lon: number;
+  level?: number;
+}
+
+/** Fußweg des Haltestellenpfads – dieselbe Form wie `/api/route`, plus Herkunft. */
+export interface Weg extends RouteErgebnis {
+  distanzM: number;
+  /** `fussweg`: aus dem Kartenmaterial geroutet. `luftlinie`: Schätzung. */
+  herkunft: 'fussweg' | 'luftlinie';
+}
+
+/** Wie es einer Quelle bei der Ortssuche ging (Spiegel von routes/haltestellen.ts). */
+export type QuellenStand = 'ok' | 'zugang-fehlt' | 'ausfall' | 'nicht-eingerichtet';
+
+export interface OrteAntwort {
+  orte: Ort[];
+  quellen: { bahnhoefe: QuellenStand; haltestellen: QuellenStand };
 }
