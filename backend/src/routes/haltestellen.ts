@@ -2,8 +2,10 @@ import type { FastifyBaseLogger, FastifyInstance, FastifyReply } from 'fastify';
 import type { HaltestellenClient } from '../clients/haltestellen.js';
 import { HaltestellenAnfrageFehler, HaltestellenNichtVerfuegbarError } from '../clients/motis-pausen.js';
 import { FehlendeZugangsdatenError } from '../clients/stations.js';
+import { wegAusLuftlinie, wegAusPfad } from '../core/fussweg.js';
+import { haversineM } from '../core/graph.js';
 import { fuehreOrteZusammen } from '../core/orte.js';
-import type { BahnhofTreffer, Ort } from '../core/typen.js';
+import type { BahnhofTreffer, Gehprofil, Ort, Steigpunkt } from '../core/typen.js';
 import { leseKoordinaten, sucheBahnhoefeMitVarianten, type StationsClient } from './api.js';
 
 /**
@@ -39,6 +41,17 @@ const NICHT_EINGERICHTET = {
   fehler: 'haltestellen-nicht-eingerichtet',
   detail: 'Haltestellen sind auf diesem Server nicht eingerichtet.',
 };
+
+const PROFILE: readonly Gehprofil[] = ['zuegig', 'normal', 'langsam'];
+/** Ein Umstieg, keine Wanderung: weiter auseinander plant der Reiseplaner (F2). */
+const HOECHSTABSTAND_M = 3000;
+
+/** `undefined` = nicht angegeben, `null` = ungültig. */
+function leseEbene(roh?: string): number | undefined | null {
+  if (roh === undefined || roh === '') return undefined;
+  const n = Number(roh);
+  return Number.isInteger(n) && Math.abs(n) <= 20 ? n : null;
+}
 
 /** Eine Antwort für alle MOTIS-Fehler – die Ursache gehört ins Protokoll, nicht zum Nutzer. */
 function motisFehler(e: unknown, reply: FastifyReply, log: FastifyBaseLogger, route: string): FastifyReply {
@@ -134,4 +147,45 @@ export function registriereHaltestellenRouten(app: FastifyInstance, o: Haltestel
       }
     },
   );
+
+  app.get<{ Querystring: Record<string, string | undefined> }>('/api/weg', async (req, reply) => {
+    const q = req.query;
+    const von = leseKoordinaten(q.vonLat, q.vonLon);
+    const nach = leseKoordinaten(q.nachLat, q.nachLon);
+    const vonLevel = leseEbene(q.vonLevel);
+    const nachLevel = leseEbene(q.nachLevel);
+    const profil = (q.profil ?? 'normal') as Gehprofil;
+    const variante = q.variante ?? 'schnellste';
+    const ziel = q.ziel?.trim();
+    if (
+      !von ||
+      !nach ||
+      vonLevel === null ||
+      nachLevel === null ||
+      !PROFILE.includes(profil) ||
+      (variante !== 'schnellste' && variante !== 'barrierefrei') ||
+      (ziel !== undefined && ziel.length > 80)
+    ) {
+      return reply.code(400).send({ fehler: 'parameter-ungueltig' });
+    }
+    if (haversineM(von.lat, von.lon, nach.lat, nach.lon) > HOECHSTABSTAND_M) {
+      return reply
+        .code(400)
+        .send({ fehler: 'zu-weit', detail: 'Die beiden Steige liegen für einen Umstieg zu weit auseinander.' });
+    }
+    if (!o.haltestellen) return reply.code(503).send(NICHT_EINGERICHTET);
+    const a: Steigpunkt = { ...von, ...(vonLevel !== undefined ? { level: vonLevel } : {}) };
+    const b: Steigpunkt = { ...nach, ...(nachLevel !== undefined ? { level: nachLevel } : {}) };
+    try {
+      const pfad = await o.haltestellen.fussweg(a, b, variante === 'barrierefrei' ? 'WHEELCHAIR' : 'FOOT');
+      const weg = pfad ? wegAusPfad(pfad, profil, ziel ? `zu ${ziel}` : undefined) : wegAusLuftlinie(a, b, profil);
+      // Aufzugsstatus gibt es nur an DB-Bahnhöfen (FaSta), Spec 9.
+      if (variante === 'barrierefrei') {
+        weg.hinweise.push('Aufzugstatus an Haltestellen unbekannt – Anlagen können ausgefallen sein.');
+      }
+      return weg;
+    } catch (e) {
+      return motisFehler(e, reply, req.log, '/api/weg');
+    }
+  });
 }
