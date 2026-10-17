@@ -60,31 +60,37 @@ export function haltestellenTafelAlsTafel(e: HaltestellenTafelEintrag): TafelEin
   };
 }
 
+/**
+ * Schlüssel der Haltestellen-Überwachung: Haltestelle UND Richtung.
+ *
+ * An der Ankunftshaltestelle zählt nur die Ankunft, an der
+ * Anschlusshaltestelle nur die Abfahrt. Je Haltestelle beide Tafeln zu holen
+ * hieße doppelte Last auf Transitous (K7). Und getrennt geschlüsselt können
+ * sich Ankunft und Abfahrt derselben Fahrt zur selben Sollminute nicht mehr
+ * gegenseitig überschreiben – das ergab sonst an Bushaltestellen
+ * Phantom-Verspätungen, sobald beide verschiedene Ist-Zeiten trugen.
+ */
+export function haltestellenLiveSchluessel(id: string, typ: 'arr' | 'dep'): string {
+  return `${typ}|${id}`;
+}
+
+function leseLiveSchluessel(schluessel: string): { id: string; typ: 'arr' | 'dep' } {
+  const typ = schluessel.startsWith('arr|') ? 'arr' : 'dep';
+  return { id: schluessel.slice(4), typ };
+}
+
 export function erzeugeHaltestellenLive(
   client: HaltestellenClient,
   o: { log?: Protokoll; maxHalte?: number } = {},
 ): HaltestellenLive {
   const orte = erzeugeCache<{ lat: number; lon: number }>(500, 24 * 60 * 60_000);
   const ueberwachung = new Ueberwachung(
-    async (id) => {
+    async (schluessel) => {
+      const { id, typ } = leseLiveSchluessel(schluessel);
       const punkt = orte.get(id);
       if (!punkt) return [];
-      const h = { id, ...punkt };
-      const [an, ab] = await Promise.all([client.tafelFrisch(h, 'arr'), client.tafelFrisch(h, 'dep')]);
-      /*
-       * Die Überwachung schlüsselt nach Fahrt und Sollminute. An einer
-       * Bushaltestelle tragen Ankunft und Abfahrt derselben Fahrt oft dieselbe
-       * Sollminute, aber verschiedene Ist-Zeiten – beide Einträge
-       * überschrieben sich dann bei jedem Durchlauf gegenseitig und meldeten
-       * eine Verspätung, die es nicht gibt. Die Abfahrt gewinnt: Sie
-       * entscheidet über den Anschluss.
-       */
-      const tafel = ab.map(haltestellenTafelAlsTafel);
-      const vorhanden = new Set(tafel.map((t) => `${t.zug}|${t.zeitSoll}`));
-      for (const t of an.map(haltestellenTafelAlsTafel)) {
-        if (!vorhanden.has(`${t.zug}|${t.zeitSoll}`)) tafel.push(t);
-      }
-      return tafel;
+      const tafel = await client.tafelFrisch({ id, ...punkt }, typ);
+      return tafel.map(haltestellenTafelAlsTafel);
     },
     HALTESTELLEN_LIVE_INTERVALL_MS,
     o.log,
@@ -256,13 +262,14 @@ export function registriereLiveRouten(
   app.get<{ Querystring: Record<string, string | undefined> }>('/api/live/haltestelle', (req, reply) => {
     if (!haltestellen) return reply.code(503).send(HALTESTELLEN_NICHT_EINGERICHTET);
     const q = req.query;
-    const halte: { id: string; punkt: { lat: number; lon: number } }[] = [];
-    for (const s of ['an', 'ab'] as const) {
+    // `an` beobachtet die Ankünfte, `ab` die Abfahrten – auch an derselben Haltestelle.
+    const halte: { id: string; punkt: { lat: number; lon: number }; typ: 'arr' | 'dep' }[] = [];
+    for (const [s, typ] of [['an', 'arr'], ['ab', 'dep']] as const) {
       const id = q[s];
       if (id === undefined) continue;
       const punkt = leseKoordinaten(q[`${s}Lat`], q[`${s}Lon`]);
       if (!id || id.length > 300 || !punkt) return reply.code(400).send({ fehler: 'parameter-ungueltig' });
-      if (!halte.some((h) => h.id === id)) halte.push({ id, punkt });
+      halte.push({ id, punkt, typ });
     }
     if (halte.length === 0) {
       return reply.code(400).send({ fehler: 'parameter-fehlt', detail: 'an oder ab ist erforderlich' });
@@ -274,7 +281,7 @@ export function registriereLiveRouten(
       reply,
       {
         ueberwachung: haltestellen.ueberwachung,
-        schluessel: halte.map((h) => h.id),
+        schluessel: halte.map((h) => haltestellenLiveSchluessel(h.id, h.typ)),
         zuVieleFehler: 'zu-viele-haltestellen',
         zuVieleDetail: 'Es werden derzeit zu viele Haltestellen live beobachtet.',
       },

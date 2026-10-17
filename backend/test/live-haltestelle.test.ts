@@ -3,7 +3,7 @@ import type { AddressInfo } from 'node:net';
 import { buildApp } from '../src/app.js';
 import { Ueberwachung, type LiveEreignis } from '../src/core/ueberwachung.js';
 import { berlinUhrzeit } from '../src/core/zeit.js';
-import { erzeugeHaltestellenLive, haltestellenTafelAlsTafel } from '../src/routes/live.js';
+import { erzeugeHaltestellenLive, haltestellenLiveSchluessel, haltestellenTafelAlsTafel } from '../src/routes/live.js';
 import type { HaltestellenClient } from '../src/clients/haltestellen.js';
 import type { HaltestellenTafelEintrag, TafelEintrag } from '../src/core/typen.js';
 
@@ -58,17 +58,18 @@ describe('erzeugeHaltestellenLive', () => {
     const live = erzeugeHaltestellenLive(client as never);
     live.merkeOrt('h1', { lat: 52.5, lon: 13.3 });
     const e: LiveEreignis[] = [];
-    live.ueberwachung.abonniere('h1', ['f1'], (x) => e.push(x));
-    await live.ueberwachung.pruefeJetzt('h1');
-    await live.ueberwachung.pruefeJetzt('h1');
+    const schluessel = [haltestellenLiveSchluessel('h1', 'arr'), haltestellenLiveSchluessel('h1', 'dep')];
+    for (const s of schluessel) live.ueberwachung.abonniere(s, ['f1'], (x) => e.push(x));
+    for (let i = 0; i < 2; i++) for (const s of schluessel) await live.ueberwachung.pruefeJetzt(s);
     expect(e.filter((x) => x.typ === 'verspaetung')).toEqual([]);
   });
 
   it('ohne gemerkte Koordinate kein Abruf', async () => {
     const client = spionClient(async () => [E]);
     const live = erzeugeHaltestellenLive(client as never);
-    live.ueberwachung.abonniere('unbekannt', [], () => {});
-    await live.ueberwachung.pruefeJetzt('unbekannt');
+    const s = haltestellenLiveSchluessel('unbekannt', 'dep');
+    live.ueberwachung.abonniere(s, [], () => {});
+    await live.ueberwachung.pruefeJetzt(s);
     expect(client.tafelFrisch).not.toHaveBeenCalled();
   });
 });
@@ -116,15 +117,30 @@ describe('GET /api/live/haltestelle', () => {
     await app.close();
   });
 
-  it('zwei Zuschauer derselben Haltestelle: ein Abruf je Typ (Spec 5.4)', async () => {
+  it('zwei Zuschauer derselben Haltestelle: ein Abruf (Spec 5.4)', async () => {
     const { app, port, client, haltestellenLive } = await starte();
     const ctrl = new AbortController();
     const url = `http://127.0.0.1:${port}/api/live/haltestelle?ab=h2&abLat=52.51&abLon=13.31&fahrtAb=f1`;
     const stroeme = await Promise.all([fetch(url, { signal: ctrl.signal }), fetch(url, { signal: ctrl.signal })]);
     expect(stroeme.map((r) => r.status)).toEqual([200, 200]);
-    await haltestellenLive.ueberwachung.pruefeJetzt('h2');
-    expect(client.tafelFrisch.mock.calls.map((c) => c[1]).sort()).toEqual(['arr', 'dep']);
-    expect(client.tafelFrisch).toHaveBeenCalledWith({ id: 'h2', lat: 52.51, lon: 13.31 }, 'dep');
+    await haltestellenLive.ueberwachung.pruefeJetzt(haltestellenLiveSchluessel('h2', 'dep'));
+    expect(client.tafelFrisch.mock.calls).toEqual([[{ id: 'h2', lat: 52.51, lon: 13.31 }, 'dep']]);
+    ctrl.abort();
+    await app.close();
+  });
+
+  it('Ankunftshaltestelle nur Ankuenfte, Anschlusshaltestelle nur Abfahrten (K7)', async () => {
+    const { app, port, client, haltestellenLive } = await starte();
+    const ctrl = new AbortController();
+    expect((await fetch(`http://127.0.0.1:${port}${pfad}`, { signal: ctrl.signal })).status).toBe(200);
+    await haltestellenLive.ueberwachung.pruefeJetzt(haltestellenLiveSchluessel('h1', 'arr'));
+    await haltestellenLive.ueberwachung.pruefeJetzt(haltestellenLiveSchluessel('h2', 'dep'));
+    // Nicht abonniert: kein Abruf.
+    await haltestellenLive.ueberwachung.pruefeJetzt(haltestellenLiveSchluessel('h1', 'dep'));
+    expect(client.tafelFrisch.mock.calls.map((c) => [(c[0] as { id: string }).id, c[1]])).toEqual([
+      ['h1', 'arr'],
+      ['h2', 'dep'],
+    ]);
     ctrl.abort();
     await app.close();
   });
@@ -135,7 +151,7 @@ describe('GET /api/live/haltestelle', () => {
     expect(res.status).toBe(503);
     expect((await res.json()).fehler).toBe('zu-viele-haltestellen');
     // Nichts angemeldet: Der Platz bleibt frei.
-    expect(haltestellenLive.ueberwachung.hatKapazitaetFuerAlle(['h1'])).toBe(true);
+    expect(haltestellenLive.ueberwachung.hatKapazitaetFuerAlle([haltestellenLiveSchluessel('h1', 'arr')])).toBe(true);
     await app.close();
   });
 
