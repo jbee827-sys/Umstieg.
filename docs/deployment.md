@@ -196,6 +196,33 @@ davon, hilft nur Warten oder eine eigene Adresse
 (`ereignis: overpass-versuch`), Probleme mit dem Bestand als
 `degradation: osm-volume-fehlt | osm-bestand-kaputt | osm-volume-schreibfehler | osm-erneuerung-gescheitert`.
 
+## Haltestellenpfad (Umstieg 2.0)
+
+| Variable | Wo | Zweck |
+|---|---|---|
+| `MOTIS_BASIS_URL` | `fly.toml` `[env]` | Basis der MOTIS-API, heute `https://api.transitous.org`. Leer = Haltestellen „nicht eingerichtet“, Bahnhöfe laufen weiter. Eigener MOTIS-Server später: nur diese Zeile (Spec Abschnitt 10). |
+| `MOTIS_KONTAKT` | `fly secrets set MOTIS_KONTAKT=…` | Kontakt im User-Agent (F7). Nie ins Repository. |
+
+**Last:** Das Backend schreibt stündlich `ereignis: motis-anfragen` mit Summen
+je Endpunkt ins Protokoll (`fly logs | grep motis-anfragen`), beim Herunterfahren
+auch die angebrochene Stunde. Grundlage für die Absprache im
+Transitous-Matrix-Kanal (K7).
+
+**Ausfalltest (K5):** lokal
+`MOTIS_BASIS_URL=https://127.0.0.1:9 npx tsx src/server.ts`, auf Fly die Zeile in
+`fly.toml` auf diese Adresse setzen und deployen. Bahnhöfe bleiben voll
+nutzbar, Haltestellen melden „Haltestellendaten gerade nicht verfügbar“.
+Danach die Zeile zurücksetzen.
+
+**Prüfskript** (manuell, ruft die echte MOTIS-API, nacheinander mit 1,2 s
+Pause – nicht in CI):
+
+    cd backend
+    MOTIS_BASIS_URL=https://api.transitous.org npx tsx scripts/haltestellen-pruefung.ts
+
+Es prüft K1 (50 Haltestellen aus 10 Ländern), K2 (Tafeln) und K4 (20
+Steigpaare) und legt das Ergebnis als JSON unter `.superpowers/` ab (gitignored).
+
 ## Frontend deployen (Vercel)
 
 Einmalig:

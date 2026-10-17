@@ -67,6 +67,21 @@ describe('Ratenbegrenzung', () => {
     expect(res.statusCode).toBe(429);
   });
 
+  it('weist die 22. Anfrage an /api/orte ab', async () => {
+    const app = buildApp(clients() as never);
+    const codes = await rufeMehrfach(app, '/api/orte?q=Berlin', 22);
+    expect(codes.slice(0, 21).every((c) => c !== 429)).toBe(true);
+    expect(codes[21]).toBe(429);
+  });
+
+  it('weist die 15. Anfrage an /api/weg ab', async () => {
+    const app = buildApp(clients() as never);
+    const url = '/api/weg?vonLat=51.3&vonLon=9.4&nachLat=51.3&nachLon=9.401&profil=normal&variante=schnellste';
+    const codes = await rufeMehrfach(app, url, 15);
+    expect(codes.slice(0, 14).every((c) => c !== 429)).toBe(true);
+    expect(codes[14]).toBe(429);
+  });
+
   it('antwortet in der Fehlerform, die die App ueberall benutzt', async () => {
     const app = buildApp(clients() as never);
     await rufeMehrfach(app, '/api/stations?q=Berlin', 21);
