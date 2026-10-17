@@ -86,3 +86,32 @@ describe('reisespeicher', () => {
     expect(window.sessionStorage.getItem(REISE_SCHLUESSEL)).not.toBeNull()
   })
 })
+
+describe('reisespeicher Fassung 2 (Umstieg 2.0)', () => {
+  beforeEach(() => sessionStorage.clear())
+  const FAHRT = { fahrtId: 'f1', linie: 'Tram 6', verkehrsmittel: 'tram' as const, ziel: 'Zoo', zeitSoll: '2026-10-17T10:00:00Z', steigSoll: 'A', steigLat: 51.31, steigLon: 9.49, steigGenau: true, echtzeit: true, ausfall: false }
+  const ORT = { name: 'Kassel Rathaus', lat: 51.31, lon: 9.49, verkehrsmittel: ['tram' as const], haltestelleId: 'h-ks' }
+  const HALTESTELLEN_REISE: Reise = {
+    ...REISE,
+    werte: { ...REISE.werte, eva: '', bahnhofName: 'Kassel Rathaus', gleisAn: 'A', gleisAb: 'B', haltestellen: { ankunft: { ort: ORT, fahrt: FAHRT }, anschluss: { ort: ORT, fahrt: { ...FAHRT, fahrtId: 'f2', steigSoll: 'B' } } } },
+  }
+
+  it('liest eine Reise der Fassung 1 - sie ist ein Bahnhofspfad', () => {
+    sessionStorage.setItem(REISE_SCHLUESSEL, JSON.stringify({ fassung: 1, gespeichertUm: Date.now(), reise: REISE }))
+    expect(liesReise()).toEqual(REISE)
+  })
+
+  it('liest eine Haltestellenreise', () => {
+    schreibeReise(HALTESTELLEN_REISE)
+    expect(liesReise()).toEqual(HALTESTELLEN_REISE)
+  })
+
+  it('verwirft eine kaputte Haltestellenwahl', () => {
+    const kaputt = { ...HALTESTELLEN_REISE, werte: { ...HALTESTELLEN_REISE.werte, haltestellen: 'kaputt' } }
+    sessionStorage.setItem(REISE_SCHLUESSEL, JSON.stringify({ fassung: 2, gespeichertUm: Date.now(), reise: kaputt }))
+    expect(liesReise()).toBeNull()
+    const ohneFahrt = { ...HALTESTELLEN_REISE, werte: { ...HALTESTELLEN_REISE.werte, haltestellen: { ankunft: { ort: ORT }, anschluss: { ort: ORT, fahrt: FAHRT } } } }
+    sessionStorage.setItem(REISE_SCHLUESSEL, JSON.stringify({ fassung: 2, gespeichertUm: Date.now(), reise: ohneFahrt }))
+    expect(liesReise()).toBeNull()
+  })
+})

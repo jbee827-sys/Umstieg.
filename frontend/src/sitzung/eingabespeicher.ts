@@ -1,4 +1,5 @@
-import type { BahnhofTreffer, Gehprofil, TafelEintrag } from '../api/typen';
+import type { BahnhofTreffer, Gehprofil, HaltestellenTafelEintrag, Ort, TafelEintrag } from '../api/typen';
+import { ortAusBahnhof } from '../ort/ortmodell';
 
 /**
  * Die Eingabe eines Umstiegs, so wie sie im Formular steht.
@@ -15,7 +16,11 @@ import type { BahnhofTreffer, Gehprofil, TafelEintrag } from '../api/typen';
  */
 export interface EingabeEntwurf {
   suchtext: string;
-  gewaehlt: BahnhofTreffer | null;
+  /** Ankunftsort: Bahnhof oder Haltestelle (Fassung 1: nur Bahnhof). */
+  gewaehlt: Ort | null;
+  /** Zweites Ortsfeld (E3): wohin der Anschluss fährt ab. Leer = derselbe Ort. */
+  anschlussText: string;
+  anschlussOrt: Ort | null;
   evaManuell: string;
   gleisAn: string;
   gleisAb: string;
@@ -26,6 +31,9 @@ export interface EingabeEntwurf {
   profil: Gehprofil;
   zugAnkunft: TafelEintrag | null;
   zugAbfahrt: TafelEintrag | null;
+  /** Haltestellenpfad: die gewählten Fahrten aus den Haltestellentafeln. */
+  fahrtAnkunft: HaltestellenTafelEintrag | null;
+  fahrtAbfahrt: HaltestellenTafelEintrag | null;
 }
 
 export const SCHLUESSEL = 'umstieg.eingabe';
@@ -35,9 +43,11 @@ export const SCHLUESSEL = 'umstieg.eingabe';
  *
  * Ein Eintrag aus einer aelteren Fassung ist nicht halb brauchbar, sondern
  * unbrauchbar: Er traegt Felder, die es nicht mehr gibt, und ihm fehlen
- * welche, die die Maske erwartet.
+ * welche, die die Maske erwartet. Ausnahme ist, was `lies()` ausdruecklich
+ * umwandelt: Fassung 1 (nur Bahnhoefe) wird zu einem Bahnhofsentwurf der
+ * Fassung 2 (Umstieg 2.0).
  */
-const FASSUNG = 1;
+const FASSUNG = 2;
 
 interface Ablage {
   fassung: number;
@@ -75,6 +85,27 @@ function istZeichenkette(wert: unknown): wert is string {
  * Stelle, die mit der Ursache nichts zu tun hat.
  */
 function istEntwurf(wert: unknown): wert is EingabeEntwurf {
+  if (!istEntwurfFassung1(wert)) return false;
+  const e = wert as Record<string, unknown>;
+  return (
+    istZeichenkette(e.anschlussText) &&
+    istObjektOderNull(e.gewaehlt) &&
+    istObjektOderNull(e.anschlussOrt) &&
+    istObjektOderNull(e.fahrtAnkunft) &&
+    istObjektOderNull(e.fahrtAbfahrt)
+  );
+}
+
+function istObjektOderNull(wert: unknown): boolean {
+  return wert === null || typeof wert === 'object';
+}
+
+/** Fassung 1 (bis 16.10.2026): nur Bahnhöfe, `gewaehlt` als BahnhofTreffer. */
+type EntwurfFassung1 = Omit<EingabeEntwurf, 'gewaehlt' | 'anschlussText' | 'anschlussOrt' | 'fahrtAnkunft' | 'fahrtAbfahrt'> & {
+  gewaehlt: BahnhofTreffer | null;
+};
+
+function istEntwurfFassung1(wert: unknown): wert is EntwurfFassung1 {
   if (typeof wert !== 'object' || wert === null) return false;
   const e = wert as Record<string, unknown>;
   return (
@@ -100,7 +131,9 @@ export function lies(): EingabeEntwurf | null {
     if (!roh) return null;
     const abgelegt = JSON.parse(roh) as unknown;
     if (typeof abgelegt !== 'object' || abgelegt === null) return null;
-    const { fassung, entwurf } = abgelegt as Partial<Ablage>;
+    const { fassung, entwurf } = abgelegt as { fassung?: unknown; entwurf?: unknown };
+    // Fassung 1 war ein reiner Bahnhofsentwurf - er bleibt einer.
+    if (fassung === 1) return istEntwurfFassung1(entwurf) ? wandle1(entwurf) : null;
     if (fassung !== FASSUNG || !istEntwurf(entwurf)) return null;
     return entwurf;
   } catch {
@@ -108,6 +141,17 @@ export function lies(): EingabeEntwurf | null {
     // ist unangenehm, ein Absturz beim Start waere schlimmer.
     return null;
   }
+}
+
+function wandle1(alt: EntwurfFassung1): EingabeEntwurf {
+  return {
+    ...alt,
+    gewaehlt: alt.gewaehlt ? ortAusBahnhof(alt.gewaehlt) : null,
+    anschlussText: '',
+    anschlussOrt: null,
+    fahrtAnkunft: null,
+    fahrtAbfahrt: null,
+  };
 }
 
 export function schreibe(entwurf: EingabeEntwurf): void {

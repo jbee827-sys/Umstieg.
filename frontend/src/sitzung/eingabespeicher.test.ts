@@ -18,7 +18,9 @@ import { leere, lies, schreibe, SCHLUESSEL, type EingabeEntwurf } from './eingab
 
 const ENTWURF: EingabeEntwurf = {
   suchtext: 'Berlin Hbf',
-  gewaehlt: { name: 'Berlin Hbf', eva: '8011160', lat: 52.52, lon: 13.37 },
+  gewaehlt: { name: 'Berlin Hbf', eva: '8011160', lat: 52.52, lon: 13.37, verkehrsmittel: ['bahn'] },
+  anschlussText: '',
+  anschlussOrt: null,
   evaManuell: '',
   gleisAn: '14',
   gleisAb: '6',
@@ -27,6 +29,8 @@ const ENTWURF: EingabeEntwurf = {
   profil: 'langsam',
   zugAnkunft: { zug: 'ICE 1006', zeitSoll: '14:26', gleisSoll: '14', ziel: 'Hamburg' },
   zugAbfahrt: null,
+  fahrtAnkunft: null,
+  fahrtAbfahrt: null,
 };
 
 describe('Eingabespeicher', () => {
@@ -74,10 +78,26 @@ describe('Eingabespeicher', () => {
     expect(lies()).toBeNull();
   });
 
+  it('wandelt einen Eintrag der Fassung 1 um (Altformat)', () => {
+    sessionStorage.setItem(SCHLUESSEL, JSON.stringify({ fassung: 1, entwurf: {
+      suchtext: 'Leipzig Hbf', gewaehlt: { name: 'Leipzig Hbf', eva: '8010205', lat: 51.3, lon: 12.3 }, evaManuell: '',
+      gleisAn: '6', gleisAb: '16', wagenAn: '', wagenAb: '', profil: 'normal', zugAnkunft: null, zugAbfahrt: null } }))
+    expect(lies()).toEqual({
+      suchtext: 'Leipzig Hbf', gewaehlt: { name: 'Leipzig Hbf', eva: '8010205', lat: 51.3, lon: 12.3, verkehrsmittel: ['bahn'] },
+      anschlussText: '', anschlussOrt: null, evaManuell: '', gleisAn: '6', gleisAb: '16', wagenAn: '', wagenAb: '',
+      profil: 'normal', zugAnkunft: null, zugAbfahrt: null, fahrtAnkunft: null, fahrtAbfahrt: null })
+  })
+  it('verwirft eine unbekannte Fassung', () => {
+    sessionStorage.setItem(SCHLUESSEL, JSON.stringify({ fassung: 99, entwurf: {} }))
+    expect(lies()).toBeNull()
+  })
+
   it('haelt einen leeren Entwurf aus - nicht jedes Feld ist gefuellt', () => {
     const knapp: EingabeEntwurf = {
       suchtext: '',
       gewaehlt: null,
+      anschlussText: '',
+      anschlussOrt: null,
       evaManuell: '8011160',
       gleisAn: '1',
       gleisAb: '2',
@@ -86,6 +106,8 @@ describe('Eingabespeicher', () => {
       profil: 'normal',
       zugAnkunft: null,
       zugAbfahrt: null,
+      fahrtAnkunft: null,
+      fahrtAbfahrt: null,
     };
     schreibe(knapp);
     expect(lies()).toEqual(knapp);

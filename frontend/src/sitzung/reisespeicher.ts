@@ -25,8 +25,14 @@ export interface Reise {
 
 export const REISE_SCHLUESSEL = 'umstieg.reise'
 
-/** Hochzaehlen, sobald sich `Reise` aendert - wie im Eingabespeicher. */
-const FASSUNG = 1
+/**
+ * Hochzaehlen, sobald sich `Reise` aendert - wie im Eingabespeicher.
+ *
+ * Fassung 2 (Umstieg 2.0) kam mit `werte.haltestellen` hinzu. Eine Reise der
+ * Fassung 1 ist ein Bahnhofspfad und in Fassung 2 unveraendert gueltig.
+ */
+const FASSUNG = 2
+const LESBARE_FASSUNGEN = new Set([1, 2])
 
 /** Aelter wird verworfen: sonst landete man am naechsten Morgen auf der gestrigen Route. */
 export const REISE_HOECHSTALTER_MS = 6 * 3600 * 1000
@@ -75,7 +81,16 @@ function istReise(wert: unknown): wert is Reise {
     STANDORTE.has(wert.standort as string) &&
     istObjekt(wert.gehzeiten) &&
     Array.isArray(wert.meldungen) &&
-    typeof wert.versatz === 'number'
+    typeof wert.versatz === 'number' &&
+    (werte.haltestellen === undefined || istHaltestellenWahl(werte.haltestellen))
+  )
+}
+
+/** Beide Seiten mit Ort und Fahrt - eine halbe Wahl laesst sich nicht anzeigen. */
+function istHaltestellenWahl(wert: unknown): boolean {
+  if (!istObjekt(wert)) return false
+  return [wert.ankunft, wert.anschluss].every(
+    (seite) => istObjekt(seite) && istObjekt(seite.ort) && istObjekt(seite.fahrt),
   )
 }
 
@@ -89,7 +104,7 @@ export function liesReise(jetzt: number = Date.now()): Reise | null {
     const abgelegt = JSON.parse(roh) as unknown
     if (!istObjekt(abgelegt)) return null
     const { fassung, gespeichertUm, reise } = abgelegt as Partial<Ablage>
-    if (fassung !== FASSUNG || typeof gespeichertUm !== 'number') return null
+    if (!LESBARE_FASSUNGEN.has(fassung as number) || typeof gespeichertUm !== 'number') return null
     if (jetzt - gespeichertUm > REISE_HOECHSTALTER_MS) return null
     return istReise(reise) ? reise : null
   } catch {
