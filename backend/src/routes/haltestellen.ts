@@ -43,14 +43,28 @@ const NICHT_EINGERICHTET = {
 };
 
 const PROFILE: readonly Gehprofil[] = ['zuegig', 'normal', 'langsam'];
-/** Ein Umstieg, keine Wanderung: weiter auseinander plant der Reiseplaner (F2). */
-const HOECHSTABSTAND_M = 3000;
+/**
+ * Ein Umstieg, keine Wanderung: weiter auseinander plant der Reiseplaner (F2).
+ * Passt zu `maxDirectTime` in `clients/motis.ts` – weiter rechnet MOTIS nicht.
+ */
+const HOECHSTABSTAND_M = 2000;
 
 /** `undefined` = nicht angegeben, `null` = ungültig. */
 function leseEbene(roh?: string): number | undefined | null {
   if (roh === undefined || roh === '') return undefined;
   const n = Number(roh);
   return Number.isInteger(n) && Math.abs(n) <= 20 ? n : null;
+}
+
+/**
+ * Art eines Fehlers ohne seinen Text. Die Fehlertexte der Clients tragen die
+ * abgefragte URL – und damit Suchtext oder Koordinate. Ins Protokoll gehört
+ * nur, DASS und WIE eine Quelle ausfiel (Datenschutzzusage, `app.ts`).
+ */
+export function fehlerArt(e: unknown): string {
+  if (!(e instanceof Error)) return 'unbekannt';
+  const http = /HTTP (\d{3})/.exec(e.message)?.[1];
+  return http ? `${e.name} (HTTP ${http})` : e.name;
 }
 
 /** Eine Antwort für alle MOTIS-Fehler – die Ursache gehört ins Protokoll, nicht zum Nutzer. */
@@ -101,13 +115,13 @@ export function registriereHaltestellenRouten(app: FastifyInstance, o: Haltestel
     // (Datenschutzzusage, siehe `app.ts`).
     if (motis.status === 'rejected') {
       req.log.warn(
-        { degradation: 'haltestellen-unerreichbar', route: '/api/orte', grund: String(motis.reason) },
+        { degradation: 'haltestellen-unerreichbar', route: '/api/orte', grund: fehlerArt(motis.reason) },
         'Ortssuche ohne MOTIS - nur Bahnhoefe',
       );
     }
     if (quellen.bahnhoefe === 'ausfall') {
       req.log.warn(
-        { degradation: 'bahnhofssuche-unerreichbar', route: '/api/orte', grund: String((db as PromiseRejectedResult).reason) },
+        { degradation: 'bahnhofssuche-unerreichbar', route: '/api/orte', grund: fehlerArt((db as PromiseRejectedResult).reason) },
         'Ortssuche ohne RIS::Stations - nur Haltestellen',
       );
     }
@@ -179,6 +193,13 @@ export function registriereHaltestellenRouten(app: FastifyInstance, o: Haltestel
     try {
       const pfad = await o.haltestellen.fussweg(a, b, variante === 'barrierefrei' ? 'WHEELCHAIR' : 'FOOT');
       const weg = pfad ? wegAusPfad(pfad, profil, ziel ? `zu ${ziel}` : undefined) : wegAusLuftlinie(a, b, profil);
+      // Ohne Weg im Rollstuhlprofil darf die Luftlinie nicht wie ein
+      // gangbarer Weg aussehen: Der Weg, den es gibt, hat vermutlich Stufen.
+      if (!pfad && variante === 'barrierefrei') {
+        weg.hinweise = [
+          'Kein barrierefreier Weg im Kartenmaterial gefunden – ungefährer Weg aus der Luftlinie, Treppen sind möglich.',
+        ];
+      }
       // Aufzugsstatus gibt es nur an DB-Bahnhöfen (FaSta), Spec 9.
       if (variante === 'barrierefrei') {
         weg.hinweise.push('Aufzugstatus an Haltestellen unbekannt – Anlagen können ausgefallen sein.');

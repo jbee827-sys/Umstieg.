@@ -3,7 +3,7 @@ import type { AddressInfo } from 'node:net';
 import { buildApp } from '../src/app.js';
 import { Ueberwachung, type LiveEreignis } from '../src/core/ueberwachung.js';
 import { berlinUhrzeit } from '../src/core/zeit.js';
-import { erzeugeHaltestellenLive, haltestellenLiveSchluessel, haltestellenTafelAlsTafel } from '../src/routes/live.js';
+import { abonniereStrom, erzeugeHaltestellenLive, haltestellenLiveSchluessel, haltestellenTafelAlsTafel } from '../src/routes/live.js';
 import type { HaltestellenClient } from '../src/clients/haltestellen.js';
 import type { HaltestellenTafelEintrag, TafelEintrag } from '../src/core/typen.js';
 
@@ -160,5 +160,70 @@ describe('GET /api/live/haltestelle', () => {
     const res = await app.inject(pfad);
     expect(res.statusCode).toBe(503);
     expect(res.json().fehler).toBe('haltestellen-nicht-eingerichtet');
+  });
+});
+
+describe('abonniereStrom: ein Strom ueber mehrere Schluessel', () => {
+  const eintrag = (zug: string, zeitIst: string): TafelEintrag => ({ zug, zeitSoll: '10:00', zeitIst, gleisSoll: 'A', ziel: 'Zoo' });
+
+  it('jede Richtung meldet nur ihre eigene Fahrt (gleiche Haltestelle fuer an und ab)', async () => {
+    let n = 0;
+    // Beide Tafeln fuehren f0 und f1 - eine durchgehende Fahrt steht in beiden.
+    const u = new Ueberwachung(async () => [eintrag('f0', `10:0${n}`), eintrag('f1', `10:0${n}`)]);
+    const e: LiveEreignis[] = [];
+    const ab = abonniereStrom(u, [{ schluessel: 'arr|X', zuege: ['f0'] }, { schluessel: 'dep|X', zuege: ['f1'] }], (x) => e.push(x));
+    for (const s of ['arr|X', 'dep|X']) await u.pruefeJetzt(s);
+    n = 5;
+    for (const s of ['arr|X', 'dep|X']) await u.pruefeJetzt(s);
+    const versp = e.filter((x) => x.typ === 'verspaetung').map((x) => x.zug);
+    expect(versp).toEqual(['f0', 'f1']);
+    ab();
+  });
+
+  it('Teilausfall: quelle-weg einmal, keine Heartbeats, quelle-da erst wenn beide wieder da sind', async () => {
+    const kaputt = new Set<string>();
+    const u = new Ueberwachung(async (s) => {
+      if (kaputt.has(s)) throw new Error('weg');
+      return [];
+    });
+    const e: string[] = [];
+    abonniereStrom(u, [{ schluessel: 'arr|A', zuege: [] }, { schluessel: 'dep|B', zuege: [] }], (x) => e.push(x.typ));
+    const runde = async () => { for (const s of ['arr|A', 'dep|B']) await u.pruefeJetzt(s); };
+
+    kaputt.add('arr|A').add('dep|B');
+    await runde();
+    expect(e).toEqual(['quelle-weg']);
+
+    kaputt.delete('arr|A');
+    e.length = 0;
+    await runde();
+    // Die Ankunft ist zurueck, der Anschluss nicht: kein Entwarnen, kein frischer Stand.
+    expect(e).toEqual([]);
+
+    kaputt.delete('dep|B');
+    await runde();
+    expect(e).toEqual(['quelle-da', 'heartbeat']);
+  });
+});
+
+describe('Haltestellen-Live: Koordinate', () => {
+  it('fehlt die gemerkte Koordinate, meldet der Strom quelle-weg statt still leer zu laufen', async () => {
+    const client = spionClient(async () => [E]);
+    const live = erzeugeHaltestellenLive(client as never);
+    const s = haltestellenLiveSchluessel('vergessen', 'dep');
+    const e: string[] = [];
+    live.ueberwachung.abonniere(s, [], (x) => e.push(x.typ));
+    await live.ueberwachung.pruefeJetzt(s);
+    expect(e).toEqual(['quelle-weg']);
+  });
+
+  it('eine abgewiesene Anfrage merkt sich keine Koordinate', async () => {
+    const client = spionClient(async () => [E]);
+    const haltestellenLive = erzeugeHaltestellenLive(client as never, { maxHalte: 1 });
+    const merke = vi.spyOn(haltestellenLive, 'merkeOrt');
+    const app = buildApp({ haltestellen: client, haltestellenLive } as never);
+    const res = await app.inject('/api/live/haltestelle?an=h1&anLat=1&anLon=2&ab=h2&abLat=1&abLon=2.001');
+    expect(res.statusCode).toBe(503);
+    expect(merke).not.toHaveBeenCalled();
   });
 });

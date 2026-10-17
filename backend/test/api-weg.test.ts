@@ -43,6 +43,14 @@ describe('GET /api/weg', () => {
     expect(w.stufe).toBe(3);
   });
 
+  it('barrierefrei ohne Weg: sagt, dass kein barrierefreier Weg gefunden wurde', async () => {
+    const { a } = app(async () => null);
+    const w = (await a.inject(URL_OK.replace('schnellste', 'barrierefrei'))).json();
+    expect(w.herkunft).toBe('luftlinie');
+    expect(w.hinweise[0]).toMatch(/Kein barrierefreier Weg/);
+    expect(w.hinweise.join(' ')).not.toMatch(/Kein Fußweg im Kartenmaterial/);
+  });
+
   it('MOTIS weg: 503 Haltestellendaten gerade nicht verfuegbar', async () => {
     const { a } = app(async () => { throw new HaltestellenNichtVerfuegbarError('Test'); });
     expect((await a.inject(URL_OK)).json().fehler).toBe('haltestellen-nicht-verfuegbar');
@@ -54,6 +62,8 @@ describe('GET /api/weg', () => {
     URL_OK.replace('vonLat=51.31263', 'vonLat=abc'),
     URL_OK.replace('Steig%20B', 'x'.repeat(81)),
     '/api/weg?vonLat=51.3&vonLon=9.4&nachLat=52.5&nachLon=13.3&profil=normal&variante=schnellste',
+    // 2,5 km: kein Umstieg mehr - und laenger, als MOTIS zu Fuss rechnet.
+    '/api/weg?vonLat=51.3&vonLon=9.4&nachLat=51.3&nachLon=9.436&profil=normal&variante=schnellste',
   ])('400: %s', async (url) => {
     const { a } = app(async () => KASSEL);
     expect((await a.inject(url)).statusCode).toBe(400);

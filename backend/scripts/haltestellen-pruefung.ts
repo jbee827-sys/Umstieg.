@@ -75,10 +75,15 @@ const HALTESTELLEN: [land: string, text: string][] = [
   ['TH', 'Erfurt Anger'], ['TH', 'Jena Paradies'],
 ];
 
-/** Gefunden heisst: Ein Treffer traegt eine Haltestellen-ID und das erste Wort des Suchtexts. */
+/**
+ * Gefunden heisst: Ein Treffer traegt eine Haltestellen-ID und das erste Wort
+ * des Suchtexts. Kein Rueckfall auf „irgendein Treffer“ – sonst zaehlte
+ * „Paradiesstrasse, Dresden“ fuer „Jena Paradies“ und K1 sah besser aus, als es
+ * ist; K2 und K4 maessen dann an der falschen Haltestelle.
+ */
 function gefunden(text: string, orte: Ort[]): Ort | undefined {
   const wort = text.split(/[ /(]/)[0].toLowerCase();
-  return orte.find((o) => o.haltestelleId && o.name.toLowerCase().includes(wort)) ?? orte.find((o) => o.haltestelleId);
+  return orte.find((o) => o.haltestelleId && o.name.toLowerCase().includes(wort));
 }
 
 // --- K2: fuenf Tafeln ---

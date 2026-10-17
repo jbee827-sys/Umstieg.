@@ -165,7 +165,10 @@ export function erzeugeMotisKern(o: {
           transitModes: '',
           directModes: 'WALK',
           pedestrianProfile: profil,
-          maxDirectTime: '1800',
+          // Eine Stunde: 2 km Luftlinie (HOECHSTABSTAND_M in routes/haltestellen.ts)
+          // mal Umweg im Rollstuhltempo. Mit 30 min fanden weite Paare nie
+          // einen Weg und fielen auf die Luftlinie zurueck - 24 h lang.
+          maxDirectTime: '3600',
           detailedLegs: 'true',
           language: 'de',
         },
