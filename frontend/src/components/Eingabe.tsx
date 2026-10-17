@@ -1,7 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { sucheStationen } from '../api/client'
+import { useState, type ReactNode } from 'react'
 import type {
-  BahnhofTreffer,
   Bahnsteigabschnitt,
   Gehprofil,
   HaltestellenTafelEintrag,
@@ -9,7 +7,9 @@ import type {
   RoutenVariante,
   TafelEintrag,
 } from '../api/typen'
-import { ortAusBahnhof } from '../ort/ortmodell'
+import { ortSchluessel, pfadFuer } from '../ort/ortmodell'
+import { VerkehrsmittelSymbole } from '../ort/verkehrsmittel'
+import { Ortsuche, type OrtsucheStand } from './Ortsuche'
 import { STANDORT_VOREINSTELLUNG } from '../api/standorte'
 import { Zugauswahl } from './Zugauswahl'
 import { ReiseImport } from './ReiseImport'
@@ -56,9 +56,10 @@ export interface EingabeWerte {
   haltestellen?: HaltestellenWahl
 }
 
-/** Ein gespeicherter Ort als Bahnhofstreffer - nur, wenn er ein DB-Bahnhof ist. */
-function bahnhofAusOrt(o: Ort | null | undefined): BahnhofTreffer | null {
-  return o?.eva ? { name: o.name, eva: o.eva, lat: o.lat, lon: o.lon } : null
+/** Was die Bahnhofstafeln brauchen: Name fuer die Ueberschrift, EVA fuer den Abruf. */
+interface TafelBahnhof {
+  name: string
+  eva: string
 }
 
 /** "ICE 1006" → "1006" */
@@ -74,8 +75,8 @@ function zugnummer(zug: string): string | undefined {
 interface EingabeProps {
   laden: boolean
   fehler: string | null
-  /** Per Standort erkannte Bahnhoefe; leer, solange nichts erkannt wurde. */
-  erkannt?: BahnhofTreffer[]
+  /** Per Standort erkannte Bahnhoefe und Haltestellen; leer, solange nichts erkannt wurde. */
+  erkannt?: Ort[]
   /**
    * Die zuletzt abgesendete Eingabe dieser Sitzung, als Vorbelegung.
    *
@@ -142,10 +143,13 @@ export function Eingabe({
   // laufende Eingabe nicht ueberschreiben, und einen solchen gibt es nicht:
   // Geschrieben wird beim Absenden, und danach ist die Maske verlassen.
   const [suchtext, setSuchtext] = useState(entwurf?.suchtext ?? '')
-  const [vorschlaege, setVorschlaege] = useState<BahnhofTreffer[]>([])
-  const [gewaehlt, setGewaehlt] = useState<BahnhofTreffer | null>(bahnhofAusOrt(entwurf?.gewaehlt))
+  const [gewaehlt, setGewaehlt] = useState<Ort | null>(entwurf?.gewaehlt ?? null)
+  // Zweites Ortsfeld (E3): leer heisst „derselbe Ort wie die Ankunft“.
+  const [anschlussText, setAnschlussText] = useState(entwurf?.anschlussText ?? '')
+  const [anschlussOrt, setAnschlussOrt] = useState<Ort | null>(entwurf?.anschlussOrt ?? null)
   const [dbFehlt, setDbFehlt] = useState(false)
   const [netzFehlt, setNetzFehlt] = useState(false)
+  const [haltestellenAusfall, setHaltestellenAusfall] = useState(false)
   const [evaManuell, setEvaManuell] = useState(entwurf?.evaManuell ?? '')
   const [gleisAn, setGleisAn] = useState(entwurf?.gleisAn ?? '')
   const [gleisAb, setGleisAb] = useState(entwurf?.gleisAb ?? '')
@@ -157,7 +161,6 @@ export function Eingabe({
   const [darstellung, setDarstellung] = useState<Darstellung>(ladeDarstellung)
   const [zugAnkunft, setZugAnkunft] = useState<TafelEintrag | null>(entwurf?.zugAnkunft ?? null)
   const [zugAbfahrt, setZugAbfahrt] = useState<TafelEintrag | null>(entwurf?.zugAbfahrt ?? null)
-  const suchTimer = useRef<number | undefined>(undefined)
   const [erkennungVerworfen, setErkennungVerworfen] = useState(false)
   const [importOffen, setImportOffen] = useState(false)
   /*
@@ -183,6 +186,9 @@ export function Eingabe({
     setBewegung(true)
     setGewaehlt(null)
     setSuchtext(u.bahnhof)
+    // Ein geteilter Reisetext beschreibt einen Umstieg im Bahnhof.
+    setAnschlussText('')
+    setAnschlussOrt(null)
     setGleisAn(u.anGleis ?? '')
     setGleisAb(u.abGleis ?? '')
 
@@ -230,7 +236,7 @@ export function Eingabe({
   // nur eine Liste oder `undefined`). Mit `erkannt` als Anfangswert waere der
   // Vergleich beim ersten Rendern wahr - und ein bereits erkannter Bahnhof
   // haette es nie ins Feld geschafft.
-  const [zuletztErkannt, setZuletztErkannt] = useState<BahnhofTreffer[] | undefined | null>(null)
+  const [zuletztErkannt, setZuletztErkannt] = useState<Ort[] | undefined | null>(null)
   if (erkannt !== zuletztErkannt) {
     setZuletztErkannt(erkannt)
     if (!erkennungVerworfen && !gewaehlt && suchtext === '' && erkannt?.length === 1) {
@@ -240,48 +246,46 @@ export function Eingabe({
   }
 
   /*
+   * Weiche (Spec 4): Ohne Anschlussort oder im selben DB-Bahnhof laeuft der
+   * Bahnhofsablauf wie bisher. Sonst ist es ein Umstieg zwischen
+   * Haltestellen - dann gibt es keine Bahnhofstafeln und keine EVA.
+   */
+  const pfad = pfadFuer(gewaehlt, anschlussOrt)
+  const bahnhof: TafelBahnhof | null =
+    pfad !== 'haltestelle' && gewaehlt?.eva ? { name: gewaehlt.name, eva: gewaehlt.eva } : null
+
+  /*
    * Die Tafeln zeigen den zuletzt gewaehlten Bahnhof - auch noch, waehrend
    * sie zuklappen. Sonst verschwaende ihr Inhalt, bevor die Bewegung ihn
    * zeigen kann. Angepasst beim Rendern, wie die Erkennung oben.
    */
-  const [tafelBahnhof, setTafelBahnhof] = useState<BahnhofTreffer | null>(gewaehlt)
-  if (gewaehlt && gewaehlt.eva !== tafelBahnhof?.eva) setTafelBahnhof(gewaehlt)
-  const tafelnOffen = gewaehlt !== null
+  const [tafelBahnhof, setTafelBahnhof] = useState<TafelBahnhof | null>(bahnhof)
+  if (bahnhof && bahnhof.eva !== tafelBahnhof?.eva) setTafelBahnhof(bahnhof)
+  const tafelnOffen = bahnhof !== null
 
-  // Bahnhofssuche mit Entprellung; 503 → Freitext-Fallback (EVA direkt eingeben)
-  useEffect(() => {
-    window.clearTimeout(suchTimer.current)
-    // Nicht leeren, nur nicht suchen: Ob Vorschlaege sichtbar sind, steht
-    // beim Rendern schon fest (siehe `sichtbareVorschlaege`). Das hier war
-    // der einzige Grund, im Effekt Zustand zu setzen.
-    if (gewaehlt || suchtext.trim().length < 2) return
-    suchTimer.current = window.setTimeout(async () => {
-      const ergebnis = await sucheStationen(suchtext.trim())
-      if (ergebnis.ok) {
-        setDbFehlt(false)
-        setNetzFehlt(false)
-        setVorschlaege(ergebnis.treffer.slice(0, 6))
-      } else if (ergebnis.fehler === 'db-zugang-fehlt') {
-        setDbFehlt(true)
-        setNetzFehlt(false)
-        setVorschlaege([])
-      } else {
-        // Frueher fiel dieser Fall durch beide Zweige: keine Vorschlaege, keine
-        // Meldung, kein Hinweis - die App sah aus, als tue sie gar nichts.
-        setNetzFehlt(true)
-        setVorschlaege([])
-      }
-    }, 300)
-    return () => window.clearTimeout(suchTimer.current)
-  }, [suchtext, gewaehlt])
+  /**
+   * Was die letzte Suche ueber ihre Quellen sagte - aus beiden Feldern.
+   * `zugang-fehlt` oeffnet die EVA-Ersatzeingabe; ein Ausfall nur der
+   * Haltestellendaten bekommt einen Hinweis, Bahnhoefe gehen weiter (K5).
+   * Keine der beiden Quellen erreichbar (`nicht-verfuegbar`): wie bisher
+   * ohne DB-Zugang die EVA-Ersatzeingabe.
+   */
+  function merkeQuellen(q: OrtsucheStand) {
+    if (q === 'netz') {
+      setNetzFehlt(true)
+      return
+    }
+    setNetzFehlt(false)
+    if (q === 'nicht-verfuegbar') {
+      setDbFehlt(true)
+      setHaltestellenAusfall(true)
+      return
+    }
+    setDbFehlt(q.bahnhoefe === 'zugang-fehlt')
+    setHaltestellenAusfall(q.haltestellen === 'ausfall')
+  }
 
-  // Abgeleitet statt gespeichert: Vorschlaege gehoeren zu einem Suchtext ab
-  // zwei Zeichen ohne getroffene Wahl. Steht das nicht mehr, sind sie weg -
-  // ohne dass jemand sie loeschen muss.
-  const sichtbareVorschlaege =
-    gewaehlt || suchtext.trim().length < 2 ? [] : vorschlaege
-
-  const eva = gewaehlt?.eva ?? (dbFehlt ? evaManuell.trim() : '')
+  const eva = pfad === 'haltestelle' ? '' : (gewaehlt?.eva ?? (dbFehlt ? evaManuell.trim() : ''))
   const bereit = eva !== '' && gleisAn.trim() !== '' && gleisAb.trim() !== '' && !laden
 
   // Ab 700 px (iPad, Desktop) stehen die Tafeln offen neben dem Formular.
@@ -303,9 +307,9 @@ export function Eingabe({
     // soll die Maske spaeter genau so wiederherstellen, wie sie eben stand.
     const abbild: EingabeEntwurf = {
       suchtext,
-      gewaehlt: gewaehlt ? ortAusBahnhof(gewaehlt) : null,
-      anschlussText: '',
-      anschlussOrt: null,
+      gewaehlt,
+      anschlussText,
+      anschlussOrt,
       evaManuell,
       gleisAn,
       gleisAb,
@@ -424,92 +428,118 @@ export function Eingabe({
       <div className="eingabe-rollbereich">
         {kopf}
         {breit && <h2 className="eingabe-titel">Wo steigst du um?</h2>}
-        <div className="feld">
-          <label htmlFor="bahnhof">Umstiegsbahnhof</label>
-          <input
+        <div className="ortsfeld">
+          <div className="kicker" aria-hidden="true">Du kommst an</div>
+          <Ortsuche
             id="bahnhof"
-            className="eingabefeld"
-            type="text"
-            autoComplete="off"
-            placeholder="z. B. Berlin Hbf"
-            value={suchtext}
-            onChange={(e) => {
-              setSuchtext(e.target.value)
+            label={
+              <>
+                <span className="nur-vorlesen">Ankunft: </span>Bahnhof oder Haltestelle
+              </>
+            }
+            platzhalter="z. B. Berlin Hbf oder Kassel Rathaus"
+            text={suchtext}
+            gewaehlt={gewaehlt}
+            onText={(t) => {
+              setSuchtext(t)
               setGewaehlt(null)
               setErkennungVerworfen(true)
               setBewegung(true)
             }}
+            onWahl={(o) => {
+              setBewegung(true)
+              setGewaehlt(o)
+              if (o) setSuchtext(o.name)
+            }}
+            onQuellen={merkeQuellen}
+            wahlHinweis={
+              gewaehlt && erkannt?.some((t) => ortSchluessel(t) === ortSchluessel(gewaehlt))
+                ? ' · automatisch erkannt'
+                : undefined
+            }
+            zusatz={
+              <>
+                {!gewaehlt && !erkennungVerworfen && erkannt && erkannt.length > 1 && (
+                  <div style={{ marginTop: 8 }}>
+                    <div className="hinweis-box">Bahnhöfe und Haltestellen in deiner Nähe:</div>
+                    <ul className="vorschlaege">
+                      {erkannt.map((ort) => (
+                        <li key={ortSchluessel(ort)}>
+                          <button
+                            type="button"
+                            className="ort-vorschlag"
+                            onClick={() => {
+                              setBewegung(true)
+                              setGewaehlt(ort)
+                              setSuchtext(ort.name)
+                            }}
+                          >
+                            <span className="ort-name">{ort.name}</span>
+                            <VerkehrsmittelSymbole liste={ort.verkehrsmittel} />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {netzFehlt && !dbFehlt && (
+                  <div className="hinweis-box" style={{ marginTop: 8 }}>
+                    Die Suche erreicht den Server nicht. Prüfe deine Verbindung. Läuft die App
+                    unter einer Vorschau-Adresse, weist der Server die Anfrage ab – dann bitte die
+                    reguläre Adresse verwenden.
+                  </div>
+                )}
+                {haltestellenAusfall && !netzFehlt && (
+                  <div className="hinweis-box" style={{ marginTop: 8 }}>
+                    Haltestellendaten gerade nicht verfügbar – Bahnhöfe gehen weiter.
+                  </div>
+                )}
+                {dbFehlt && (
+                  <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div className="hinweis-box">
+                      Bahnhofssuche derzeit nicht verfügbar (kein DB-Zugang). Gib die EVA-Nummer des
+                      Bahnhofs direkt ein – z. B. 8011160 für Berlin Hbf.
+                    </div>
+                    <input
+                      className="eingabefeld"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="EVA-Nummer"
+                      aria-label="EVA-Nummer"
+                      value={evaManuell}
+                      onChange={(e) => setEvaManuell(e.target.value)}
+                    />
+                  </div>
+                )}
+              </>
+            }
           />
-          {sichtbareVorschlaege.length > 0 && (
-            <ul className="vorschlaege">
-              {sichtbareVorschlaege.map((treffer) => (
-                <li key={treffer.eva}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setBewegung(true)
-                      setGewaehlt(treffer)
-                      setSuchtext(treffer.name)
-                      setVorschlaege([])
-                    }}
-                  >
-                    {treffer.name}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          {!gewaehlt && !erkennungVerworfen && erkannt && erkannt.length > 1 && (
-            <div style={{ marginTop: 8 }}>
-              <div className="hinweis-box">Bahnhöfe in deiner Nähe:</div>
-              <ul className="vorschlaege">
-                {erkannt.map((treffer) => (
-                  <li key={treffer.eva}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBewegung(true)
-                        setGewaehlt(treffer)
-                        setSuchtext(treffer.name)
-                      }}
-                    >
-                      {treffer.name}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {gewaehlt && (
-            <span className="bahnhof-gewaehlt">
-              ✓ {gewaehlt.name}
-              {erkannt?.some((t) => t.eva === gewaehlt.eva) && ' · automatisch erkannt'}
-            </span>
-          )}
-          {netzFehlt && !dbFehlt && (
-            <div className="hinweis-box" style={{ marginTop: 8 }}>
-              Die Bahnhofssuche erreicht den Server nicht. Prüfe deine Verbindung. Läuft die App
-              unter einer Vorschau-Adresse, weist der Server die Anfrage ab – dann bitte die
-              reguläre Adresse verwenden.
-            </div>
-          )}
-          {dbFehlt && (
-            <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div className="hinweis-box">
-                Bahnhofssuche derzeit nicht verfügbar (kein DB-Zugang). Gib die EVA-Nummer des
-                Bahnhofs direkt ein – z. B. 8011160 für Berlin Hbf.
-              </div>
-              <input
-                className="eingabefeld"
-                type="text"
-                inputMode="numeric"
-                placeholder="EVA-Nummer"
-                aria-label="EVA-Nummer"
-                value={evaManuell}
-                onChange={(e) => setEvaManuell(e.target.value)}
-              />
-            </div>
-          )}
+        </div>
+
+        <div className="ortsfeld">
+          <div className="kicker" aria-hidden="true">Dein Anschluss</div>
+          <Ortsuche
+            id="anschlussort"
+            label={
+              <>
+                <span className="nur-vorlesen">Anschluss: </span>Bahnhof oder Haltestelle
+              </>
+            }
+            platzhalter="Leer = gleicher Ort wie die Ankunft"
+            text={anschlussText}
+            gewaehlt={anschlussOrt}
+            onText={(t) => {
+              setAnschlussText(t)
+              setAnschlussOrt(null)
+              setBewegung(true)
+            }}
+            onWahl={(o) => {
+              setBewegung(true)
+              setAnschlussOrt(o)
+              if (o) setAnschlussText(o.name)
+            }}
+            onQuellen={merkeQuellen}
+          />
           {/* Abkuerzung am Rand (BRIEF.md 4), nicht der Einstieg: Statt Bahnhof
               und zwei Gleise zu tippen, den Text aus „Verbindung teilen"
               einfuegen. Auf dem Handy heisst sie wie vor dem 11.10.2026

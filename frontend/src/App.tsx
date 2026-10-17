@@ -5,9 +5,9 @@ import { ersteVariante, ladeVarianten, ladeWeitereVarianten } from './api/varian
 import { gehzeitSchluessel, ladeStandorte, STANDORT_VOREINSTELLUNG } from './api/standorte'
 import { verbindeLive } from './api/sse'
 import type {
-  BahnhofTreffer,
   Bahnsteigabschnitt,
   LiveEreignis,
+  Ort,
   RouteErgebnis,
   RoutenVariante,
 } from './api/typen'
@@ -246,7 +246,7 @@ function App() {
   const [quelleWegSeit, setQuelleWegSeit] = useState<string | null>(null)
   const [stand, setStand] = useState<string | null>(null)
   const { status: standortStatus, standort, starteVerfolgung, stoppeVerfolgung } = useStandort()
-  const [erkannt, setErkannt] = useState<BahnhofTreffer[]>([])
+  const [erkannt, setErkannt] = useState<Ort[]>([])
   const [standortZuUngenau, setStandortZuUngenau] = useState(false)
   const erkennungLaeuft = useRef(false)
   const erkennungFertig = useRef(false)
