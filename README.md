@@ -70,29 +70,83 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > Zählerstunde geht bei Deploy verloren – `server.ts` hat keinen
 > SIGTERM-Handler), 2 kleine zurückgestellt.
 >
-> **Paket 3 – Frontend (begonnen 17.10.2026):** Task 14 fertig (Typen
-> gespiegelt, `api/orte.ts`, `api/haltestellen.ts`, `api/zeit.ts`,
-> `verbindeHaltestelleLive`).
+> **Paket 3 – Frontend (Stand 17.10.2026, angehalten nach Task 17 auf
+> Wunsch; 617 von 617 Frontend-Tests, Lint und Build sauber):**
+>
+> - Task 14: Typen gespiegelt, `api/orte.ts`, `api/haltestellen.ts`,
+>   `api/zeit.ts` (Uhrzeit immer deutsche Ortszeit), `verbindeHaltestelleLive`
+>   (öffnet ohne Haltestelle keinen Strom).
+> - Task 15: `ort/ortmodell.ts` (Weiche `pfadFuer`, `frischeOrtAuf` für A5),
+>   Eingabespeicher und Reisespeicher **Fassung 2**; Fassung 1 bleibt lesbar
+>   und wird zum Bahnhofsentwurf.
+> - Task 16: **zwei Ortsfelder** (E3) – `components/Ortsuche.tsx` mit
+>   Verkehrsmittel-Kürzeln (`ort/verkehrsmittel.tsx`), Standorterkennung über
+>   `/api/orte`; leerer Anschluss oder gleicher DB-Bahnhof = Bahnhofsablauf wie
+>   bisher; Hinweis bei Ausfall der Haltestellendaten (K5).
+> - Task 17: `components/Fahrtauswahl.tsx` – Tafel einer Haltestelle nach
+>   Verkehrsmittel, „laut Fahrplan“ (K3), „fällt aus“ (nicht wählbar),
+>   Steigzeile statt Gleisfeldern; Bahnhof ohne Haltestellen-ID wird
+>   nachgeschlagen.
+>
+> **Achtung, Zwischenstand:** Die Eingabe kann einen Haltestellenumstieg
+> schon absenden (`werte.haltestellen`), `App.tsx` rechnet ihn aber noch
+> **nicht** (ruft `holeRoute` mit leerer EVA) – das ist Task 18. Den Zweig in
+> diesem Stand **nicht ausliefern**. Der Bahnhofsablauf ist unverändert und
+> durch alle bestehenden Tests gedeckt.
 >
 > **Hier weitermachen – nächste Schritte in dieser Reihenfolge** (Einzelheiten,
-> Tests und Code je Task im Plan `docs/superpowers/plans/2026-10-16-umstieg-2.md`):
+> Tests und Code je Task im Plan `docs/superpowers/plans/2026-10-16-umstieg-2.md`,
+> Abweichungen im Fortschrittsbuch):
 >
-> 1. **Paket 3** Frontend, weiter mit Task 15: Ortmodell und Speicher
->    Fassung 2, **zwei Ortsfelder** (E3), Fahrtauswahl („laut Fahrplan“,
->    Ausfall), Weg und Live, Quellenangaben.
-> 2. **Paket 4** Abnahme K1–K7 (Prüfskript gegen Transitous) und Auslieferung
->    Fly/Vercel (Julian hat „komplett ausliefern“ freigegeben).
+> 1. **Task 18** Weg-Ansicht und Live für Haltestellen: in `App.tsx` bei
+>    `werte.haltestellen` `holeWeg` statt `holeRoute`, `verbindeHaltestelleLive`
+>    statt `verbindeLive`, Ereignis `ausfall` anzeigen; Reisespeicher-Pfad
+>    Ende-zu-Ende testen.
+> 2. **Task 19** Quellenangaben (Transitous mit Link auf
+>    `transitous.org/sources`, DELFI, OpenStreetMap) in Fußzeile und
+>    Impressum, Datenschutzerklärung (Koordinaten gehen gerundet an
+>    Transitous), `NOTICE`.
+> 3. **Paketabschluss 3:** ganze Suiten (Backend und Frontend **nacheinander**,
+>    nicht parallel), `/code-review` über das Frontend, README.
+> 4. **Paket 4** (Tasks 20–22): Gesamtprüfung, Prüfskript
+>    `backend/scripts/haltestellen-pruefung.ts` gegen Transitous (K1/K2/K4),
+>    Ausfalltest K5, Auslieferung Fly/Vercel (Julian hat „komplett
+>    ausliefern“ freigegeben) – vorher die offenen Punkte bei Julian klären.
+> 5. Danach Spec-Abschnitt 3 nachtragen (A1–A5 mit Datum) und die zwei
+>    zurückgestellten kleinen Review-Befunde aus Paket 2 entscheiden
+>    (Start/Ziel-Punkte der Luftlinien-Karte; doppelte Konstanten und
+>    Sicherheitsmeldung `sse-bahnhoefe` auch für Haltestellen).
+>
+> **Rechner (17.10.2026): Laufwerk C: ist voll** (0 GB frei; 10,5 GB liegen
+> in `C:\Windows\SoftwareDistribution\Download`, dem Download-Speicher von
+> Windows Update). Vitest und npm brachen mit `ENOSPC` ab. Seitdem laufen die
+> Befehle mit `source .superpowers/env-d.sh` (Temp und npm-Cache unter
+> `.superpowers/`, gitignored). Den Systemordner habe ich nicht angefasst –
+> aufräumen über „Datenträgerbereinigung → Systemdateien bereinigen →
+> Windows Update-Bereinigung“ oder die Speicheroptimierung. Danach ist die
+> Umleitung überflüssig. Die volle Platte macht die Suiten auch langsamer
+> (Frontend 58 s statt 42 s); der jeweils erste Test in `App.test.tsx` und
+> `Eingabe.test.tsx` hat deshalb mehr Zeit bekommen.
 >
 > **Fortschrittsbuch** der Ausführung: `.superpowers/sdd/2026-10-16-umstieg-2/progress.md`
 > (gitignored, nur auf diesem Rechner) – erste Zeile nennt den Plan, je Task
 > eine `complete`-Zeile, dazu alle Abweichungen (`Ruling:`). Bei Wiederaufnahme
 > dort lesen; was dort fehlt, steht in `git log feat/mvp..feat/umstieg-2`.
 >
-> **Offen bei Julian:** Kontakt für `MOTIS_KONTAKT` (nur als Fly-Secret);
-> Absprache im Transitous-Matrix-Kanal vor dem Produktivbetrieb (Zahlen im
-> Erkundungsbericht 0.3); ob der veraltete Overpass-User-Agent
-> `umstiegs-navigator/0.1 (dev)` angeglichen werden soll (Bahnhofspfad, Overpass
-> sperrt nach User-Agent – bewusst nicht angefasst).
+> **Offen bei Julian:**
+>
+> - Kontakt für `MOTIS_KONTAKT` (nur als Fly-Secret).
+> - Absprache im Transitous-Matrix-Kanal vor dem Produktivbetrieb (Zahlen im
+>   Erkundungsbericht 0.3; Live fragt inzwischen je Haltestelle nur die nötige
+>   Richtung, also 2 Halte × 15 Abrufe je Umstieg wie dort angenommen).
+> - Ob der veraltete Overpass-User-Agent `umstiegs-navigator/0.1 (dev)`
+>   angeglichen werden soll (Bahnhofspfad, Overpass sperrt nach User-Agent –
+>   bewusst nicht angefasst).
+> - Ob `server.ts` einen SIGTERM-Handler bekommen soll: Ohne ihn geht bei
+>   jedem Deploy die angebrochene Stunde des MOTIS-Zählers (K7-Nachweis)
+>   verloren. Ein Handler mit `app.close()` wartet auf offene SSE-Ströme und
+>   braucht ein eigenes kleines Design.
+> - Platz auf Laufwerk C: schaffen (siehe oben).
 >
 > **Hinweis Bug-Hunter-Skill:** Auf diesem Rechner fehlen die Hilfsdateien des
 > Skills (nur `SKILL.md` vorhanden); der Bug-Hunt lief deshalb von Hand.
