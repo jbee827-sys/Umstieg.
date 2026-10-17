@@ -310,6 +310,40 @@
   color: var(--color-neutral-700);
 }
 
+/* Fahrtauswahl an Haltestellen (Umstieg 2.0). „laut Fahrplan" ist eine
+   ehrliche Randnotiz (F5), keine Warnung - deshalb grau. „fällt aus" sagt der
+   Satz; die Rotschrift stuetzt ihn nur (DESIGN.md 2: Rot allein bedeutet
+   nichts). */
+.kennzeichen-fahrplan {
+  margin-left: 6px;
+  font-size: var(--schrift-label);
+  font-weight: 500;
+  color: var(--color-neutral-700);
+  white-space: nowrap;
+}
+
+.kennzeichen-ausfall {
+  margin-left: 6px;
+  font-size: var(--schrift-label);
+  font-weight: 700;
+  color: var(--color-accent-700);
+  white-space: nowrap;
+}
+
+.tafel button.faellt-aus {
+  cursor: not-allowed;
+}
+
+.tafel button.faellt-aus .tafel-zeit {
+  text-decoration: line-through;
+}
+
+/* Im Haltestellenpfad statt der Gleisfelder: Steig und Linie der Wahl. */
+.steig-zeile {
+  margin: 8px 0 0;
+  font-weight: 600;
+}
+
 /* Zwei Ortsfelder untereinander, je mit Kicker wie die Gleiskacheln. */
 .ortsfeld .kicker {
   margin-bottom: 4px;

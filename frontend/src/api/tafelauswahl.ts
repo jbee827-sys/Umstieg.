@@ -1,4 +1,4 @@
-import type { TafelEintrag } from './typen'
+import type { HaltestellenTafelEintrag, TafelEintrag, Verkehrsmittel } from './typen'
 
 /**
  * Die Auswahlliste zeigte alles, was die Tafel hergab - in Berlin Hbf ueber
@@ -127,6 +127,54 @@ export function gruppiereTafel(
       .filter((x) => kategorieVon(x.eintrag.zug) === kategorie)
       .map((x) => x.eintrag)
     if (eigene.length > 0) bloecke.push({ kategorie, titel, eintraege: eigene })
+  }
+  return bloecke
+}
+
+// --- Haltestellentafel (Umstieg 2.0) ---
+
+export interface HaltestellenBlock {
+  verkehrsmittel: Verkehrsmittel
+  titel: string
+  eintraege: HaltestellenTafelEintrag[]
+}
+
+/** Wie auf einer Haltestellentafel: vom Fernverkehr zum Bus. Fest, damit nichts springt. */
+const VERKEHRSMITTEL_REIHENFOLGE: { verkehrsmittel: Verkehrsmittel; titel: string }[] = [
+  { verkehrsmittel: 'bahn', titel: 'Bahn' },
+  { verkehrsmittel: 'sbahn', titel: 'S-Bahn' },
+  { verkehrsmittel: 'ubahn', titel: 'U-Bahn' },
+  { verkehrsmittel: 'tram', titel: 'Tram' },
+  { verkehrsmittel: 'bus', titel: 'Bus' },
+  { verkehrsmittel: 'faehre', titel: 'Fähre' },
+  { verkehrsmittel: 'sonstiges', titel: 'Sonstiges' },
+]
+
+/**
+ * Dasselbe Fenster wie `gruppiereTafel`, aber nach Verkehrsmittel gruppiert.
+ * Die Haltestellentafel traegt volle Zeitstempel, deshalb entfaellt hier die
+ * Faltung ueber Mitternacht.
+ */
+export function gruppiereHaltestellenTafel(
+  eintraege: HaltestellenTafelEintrag[],
+  jetzt: Date,
+  bis?: Date,
+): HaltestellenBlock[] {
+  const nachMin = bis ? Math.round((bis.getTime() - jetzt.getTime()) / 60_000) : FENSTER_NACH_MIN
+  const imFenster: { eintrag: HaltestellenTafelEintrag; abstand: number }[] = []
+  for (const eintrag of eintraege) {
+    const zeit = Date.parse(eintrag.zeitIst ?? eintrag.zeitSoll)
+    if (Number.isNaN(zeit)) continue
+    const abstand = (zeit - jetzt.getTime()) / 60_000
+    if (abstand < -FENSTER_VOR_MIN || abstand > nachMin) continue
+    imFenster.push({ eintrag, abstand })
+  }
+  imFenster.sort((a, b) => a.abstand - b.abstand)
+
+  const bloecke: HaltestellenBlock[] = []
+  for (const { verkehrsmittel, titel } of VERKEHRSMITTEL_REIHENFOLGE) {
+    const eigene = imFenster.filter((x) => x.eintrag.verkehrsmittel === verkehrsmittel).map((x) => x.eintrag)
+    if (eigene.length > 0) bloecke.push({ verkehrsmittel, titel, eintraege: eigene })
   }
   return bloecke
 }

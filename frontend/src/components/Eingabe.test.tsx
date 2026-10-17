@@ -4,12 +4,14 @@ import userEvent from '@testing-library/user-event'
 import { Eingabe } from './Eingabe'
 import { holeTafel } from '../api/client'
 import { sucheOrte } from '../api/orte'
-import type { Ort, QuellenStand, TafelEintrag } from '../api/typen'
+import { holeHaltestellenTafel } from '../api/haltestellen'
+import type { HaltestellenTafelEintrag, Ort, QuellenStand, TafelEintrag } from '../api/typen'
 import type { EingabeEntwurf } from '../sitzung/eingabespeicher'
 import { raeumeBreiteAuf, stelleBreite } from '../aufbau/testbreite'
 
 vi.mock('../api/client', () => ({ holeTafel: vi.fn() }))
 vi.mock('../api/orte', () => ({ sucheOrte: vi.fn() }))
+vi.mock('../api/haltestellen', () => ({ holeHaltestellenTafel: vi.fn() }))
 const sucheMock = vi.mocked(sucheOrte)
 const holeTafelMock = vi.mocked(holeTafel)
 
@@ -616,5 +618,88 @@ describe('Eingabe: zwei Ortsfelder (Umstieg 2.0, E3)', () => {
     zeige()
     await userEvent.type(feld(), 'Leip')
     expect(await screen.findByText('Haltestellendaten gerade nicht verfügbar – Bahnhöfe gehen weiter.')).toBeDefined()
+  })
+})
+
+describe('Eingabe: Haltestellenpfad (Umstieg 2.0)', () => {
+  const HBF: Ort = { name: 'Berlin Hbf', eva: '8011160', haltestelleId: 'h', lat: 52.525, lon: 13.369, verkehrsmittel: ['bahn', 'sbahn', 'bus'] }
+  const ZOB: Ort = { name: 'Berlin ZOB', haltestelleId: 'z', lat: 52.507, lon: 13.28, verkehrsmittel: ['bus'] }
+  const bald = new Date(Date.now() + 10 * 60_000).toISOString()
+  const fahrt = (extra: Partial<HaltestellenTafelEintrag>): HaltestellenTafelEintrag => ({
+    fahrtId: 'x', linie: 'x', verkehrsmittel: 'bus', ziel: 'Z', zeitSoll: bald, steigLat: 1, steigLon: 2, steigGenau: true, echtzeit: true, ausfall: false, ...extra,
+  })
+  const S5 = fahrt({ fahrtId: 'a1', linie: 'S5', verkehrsmittel: 'sbahn', ziel: 'Spandau', steigSoll: '15' })
+  const BUS = fahrt({ fahrtId: 'b1', linie: 'Bus 245', ziel: 'Zoo', steigSoll: 'Pos. 11' })
+
+  beforeEach(() => {
+    sucheMock.mockReset()
+    sucheMock.mockImplementation(async (q: string) => orteAntwort(q.includes('ZOB') ? [ZOB] : [HBF]))
+    vi.mocked(holeHaltestellenTafel).mockReset()
+    vi.mocked(holeHaltestellenTafel).mockImplementation(async (_o: Ort, typ: 'arr' | 'dep') => ({
+      ok: true as const,
+      stand: new Date().toISOString(),
+      eintraege: typ === 'arr' ? [S5] : [BUS, fahrt({ fahrtId: 'b2', linie: 'Bus 100', ausfall: true })],
+    }))
+  })
+
+  it('Berlin Hbf → Berlin ZOB: Fahrten statt Gleise, Absenden mit beiden Orten', async () => {
+    const onBerechnen = zeige()
+    await userEvent.type(feld(), 'Berlin H')
+    await userEvent.click(await screen.findByRole('button', { name: /^Berlin Hbf/ }))
+    await userEvent.type(screen.getByLabelText('Anschluss: Bahnhof oder Haltestelle'), 'Berlin ZOB')
+    await userEvent.click(await screen.findByRole('button', { name: /^Berlin ZOB/ }))
+
+    expect(screen.queryByLabelText('Ankunft: Gleis')).toBeNull()
+    expect(screen.queryByLabelText('Ankunft: Wagen (optional)')).toBeNull()
+    const knopf = screen.getByRole('button', { name: /Umstieg starten/ }) as HTMLButtonElement
+    expect(knopf.disabled).toBe(true)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ankunft wählen' }))
+    await userEvent.click(await screen.findByRole('button', { name: /S5/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Anschluss wählen' }))
+    await userEvent.click(await screen.findByRole('button', { name: /Bus 245/ }))
+    expect(screen.getByText('Pos. 11 · Bus 245')).toBeDefined()
+
+    await userEvent.click(knopf)
+    const [werte, entwurf] = onBerechnen.mock.calls[0]
+    expect(werte.eva).toBe('')
+    expect(werte.gleisAn).toBe('15')
+    expect(werte.gleisAb).toBe('Pos. 11')
+    expect(werte.bahnhofName).toBe('Berlin Hbf → Berlin ZOB')
+    expect(werte.zugAnName).toBe('S5')
+    expect(werte.haltestellen.ankunft.fahrt.fahrtId).toBe('a1')
+    expect(werte.haltestellen.anschluss.ort.haltestelleId).toBe('z')
+    expect(entwurf.fahrtAbfahrt.fahrtId).toBe('b1')
+    // Die Ankunftstafel gehoert zum Ankunftsort, die Abfahrtstafel zum Anschlussort.
+    expect(vi.mocked(holeHaltestellenTafel).mock.calls.map(([o, t]) => [o.haltestelleId, t])).toEqual([['h', 'arr'], ['z', 'dep']])
+  })
+
+  it('eine ausgefallene Fahrt laesst den Knopf gesperrt', () => {
+    zeige(undefined, {
+      ...ENTWURF,
+      gewaehlt: HBF,
+      anschlussOrt: ZOB,
+      anschlussText: 'Berlin ZOB',
+      fahrtAnkunft: S5,
+      fahrtAbfahrt: { ...BUS, ausfall: true },
+    })
+    expect((screen.getByRole('button', { name: /Umstieg starten/ }) as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('ein Wechsel des Anschlussorts hebt die gewaehlte Anschlussfahrt auf', async () => {
+    zeige(undefined, { ...ENTWURF, gewaehlt: HBF, anschlussOrt: ZOB, anschlussText: 'Berlin ZOB', fahrtAnkunft: S5, fahrtAbfahrt: BUS })
+    expect(screen.getByText('Pos. 11 · Bus 245')).toBeDefined()
+    await userEvent.type(screen.getByLabelText('Anschluss: Bahnhof oder Haltestelle'), 'x')
+    expect(screen.queryByText('Pos. 11 · Bus 245')).toBeNull()
+  })
+
+  it('Bahnhof ohne Haltestellen-ID: frischt auf, sonst Hinweis', async () => {
+    sucheMock.mockImplementation(async (q: string) => orteAntwort(q.includes('ZOB') ? [ZOB] : [{ ...HBF, haltestelleId: undefined }]))
+    zeige()
+    await userEvent.type(feld(), 'Berlin H')
+    await userEvent.click(await screen.findByRole('button', { name: /^Berlin Hbf/ }))
+    await userEvent.type(screen.getByLabelText('Anschluss: Bahnhof oder Haltestelle'), 'Berlin ZOB')
+    await userEvent.click(await screen.findByRole('button', { name: /^Berlin ZOB/ }))
+    expect(await screen.findByText('Für diesen Bahnhof fehlen gerade Haltestellendaten.')).toBeDefined()
   })
 })

@@ -26,3 +26,19 @@ describe('App.css: Ortsuche', () => {
     expect(deklarationenVon(css, '.vm-symbole')).toContain('white-space: nowrap')
   })
 })
+
+describe('App.css: Fahrtauswahl an Haltestellen', () => {
+  it('„laut Fahrplan“ als ruhiges Nebenzeichen, nicht in Rot', () => {
+    const k = deklarationenVon(css, '.kennzeichen-fahrplan')
+    expect(k).toContain('color: var(--color-neutral-700)')
+    expect(k).toContain('font-size: var(--schrift-label)')
+  })
+
+  it('„fällt aus“ in Rotschrift - der Satz sagt es, die Farbe stuetzt nur (DESIGN.md 2)', () => {
+    expect(deklarationenVon(css, '.kennzeichen-ausfall')).toContain('color: var(--color-accent-700)')
+  })
+
+  it('eine ausgefallene Fahrt sieht nicht antippbar aus', () => {
+    expect(deklarationenVon(css, '.tafel button.faellt-aus')).toContain('cursor: not-allowed')
+  })
+})
