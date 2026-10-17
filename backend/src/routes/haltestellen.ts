@@ -1,5 +1,6 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyBaseLogger, FastifyInstance, FastifyReply } from 'fastify';
 import type { HaltestellenClient } from '../clients/haltestellen.js';
+import { HaltestellenAnfrageFehler, HaltestellenNichtVerfuegbarError } from '../clients/motis-pausen.js';
 import { FehlendeZugangsdatenError } from '../clients/stations.js';
 import { fuehreOrteZusammen } from '../core/orte.js';
 import type { BahnhofTreffer, Ort } from '../core/typen.js';
@@ -33,6 +34,23 @@ export interface HaltestellenRoutenOptionen {
 
 /** Derselbe Umkreis wie die Standortsuche in `/api/stations`. */
 const ERKENNUNG_RADIUS_M = 1000;
+
+const NICHT_EINGERICHTET = {
+  fehler: 'haltestellen-nicht-eingerichtet',
+  detail: 'Haltestellen sind auf diesem Server nicht eingerichtet.',
+};
+
+/** Eine Antwort für alle MOTIS-Fehler – die Ursache gehört ins Protokoll, nicht zum Nutzer. */
+function motisFehler(e: unknown, reply: FastifyReply, log: FastifyBaseLogger, route: string): FastifyReply {
+  if (e instanceof HaltestellenAnfrageFehler) {
+    return reply.code(404).send({ fehler: 'haltestelle-unbekannt', detail: 'Diese Haltestelle ist gerade nicht bekannt.' });
+  }
+  if (e instanceof HaltestellenNichtVerfuegbarError) {
+    log.warn({ degradation: 'haltestellen-unerreichbar', route, grund: e.message }, 'Haltestellendaten nicht verfuegbar');
+    return reply.code(503).send({ fehler: 'haltestellen-nicht-verfuegbar', detail: 'Haltestellendaten gerade nicht verfügbar.' });
+  }
+  throw e;
+}
 
 export function registriereHaltestellenRouten(app: FastifyInstance, o: HaltestellenRoutenOptionen): void {
   app.get<{ Querystring: { q?: string; lat?: string; lon?: string } }>('/api/orte', async (req, reply) => {
@@ -96,4 +114,24 @@ export function registriereHaltestellenRouten(app: FastifyInstance, o: Haltestel
     const haltestellen: Ort[] = motis.status === 'fulfilled' ? motis.value : [];
     return { orte: fuehreOrteZusammen(bahnhoefe, haltestellen), quellen } satisfies OrteAntwort;
   });
+
+  app.get<{ Querystring: { id?: string; lat?: string; lon?: string; typ?: string } }>(
+    '/api/haltestelle/tafel',
+    async (req, reply) => {
+      const { id, typ } = req.query;
+      const punkt = leseKoordinaten(req.query.lat, req.query.lon);
+      if (!id || id.length > 300 || !punkt || (typ !== 'arr' && typ !== 'dep')) {
+        return reply.code(400).send({ fehler: 'parameter-ungueltig', detail: 'id, lat, lon und typ (arr|dep) sind erforderlich' });
+      }
+      if (!o.haltestellen) return reply.code(503).send(NICHT_EINGERICHTET);
+      try {
+        const eintraege = await o.haltestellen.tafel({ id, ...punkt }, typ);
+        // `stand` ist die Antwortzeit (F5); die Einträge können bis zu
+        // HALTESTELLEN_TAFEL_TTL_MS (30 s) aus dem Zwischenspeicher stammen.
+        return { eintraege, stand: new Date().toISOString() };
+      } catch (e) {
+        return motisFehler(e, reply, req.log, '/api/haltestelle/tafel');
+      }
+    },
+  );
 }

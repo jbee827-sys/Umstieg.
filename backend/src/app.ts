@@ -82,6 +82,7 @@ const GRENZEN: Record<string, number> = {
   '/api/board/:eva': 21,
   // Ortssuche ueber Bahnhoefe und Haltestellen - gleiche Tippsuche wie oben.
   '/api/orte': 21,
+  '/api/haltestelle/tafel': 21,
   // Gegen Wiederverbindungsstuerme. Die eigentliche Grenze fuer den Strom ist
   // die Zahl gleichzeitiger Verbindungen, nicht die der Anfragen.
   '/api/live/:eva': 14,
