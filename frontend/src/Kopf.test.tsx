@@ -22,12 +22,15 @@ vi.mock('./api/client', async () => {
   const echt = await vi.importActual<typeof import('./api/client')>('./api/client')
   return {
     RouteFehler: echt.RouteFehler,
-    sucheStationen: vi.fn(),
-    sucheStationenNahebei: vi.fn(async () => ({ ok: true, treffer: [] })),
     holeRoute: vi.fn(),
     holeTafel: vi.fn(async () => ({ ok: true, eintraege: [] })),
   }
 })
+
+vi.mock('./api/orte', () => ({
+  sucheOrte: vi.fn(),
+  orteNahebei: vi.fn(async () => ({ ok: true, antwort: { orte: [], quellen: { bahnhoefe: 'ok', haltestellen: 'ok' } } })),
+}))
 
 vi.mock('./api/sse', () => ({
   verbindeLive: () => () => undefined,

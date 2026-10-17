@@ -2,20 +2,26 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Eingabe } from './Eingabe'
-import { holeTafel, sucheStationen } from '../api/client'
-import type { BahnhofTreffer, TafelEintrag } from '../api/typen'
+import { holeTafel } from '../api/client'
+import { sucheOrte } from '../api/orte'
+import type { Ort, QuellenStand, TafelEintrag } from '../api/typen'
 import type { EingabeEntwurf } from '../sitzung/eingabespeicher'
 import { raeumeBreiteAuf, stelleBreite } from '../aufbau/testbreite'
 
-vi.mock('../api/client', () => ({ sucheStationen: vi.fn(), holeTafel: vi.fn() }))
-const sucheMock = vi.mocked(sucheStationen)
+vi.mock('../api/client', () => ({ holeTafel: vi.fn() }))
+vi.mock('../api/orte', () => ({ sucheOrte: vi.fn() }))
+const sucheMock = vi.mocked(sucheOrte)
 const holeTafelMock = vi.mocked(holeTafel)
 
-const BERLIN: BahnhofTreffer = { name: 'Berlin Hbf', eva: '8011160', lat: 52.525, lon: 13.369 }
-const BERNAU: BahnhofTreffer = { name: 'Bernau (b Berlin)', eva: '8010036', lat: 52.68, lon: 13.59 }
+const BERLIN: Ort = { name: 'Berlin Hbf', eva: '8011160', lat: 52.525, lon: 13.369, verkehrsmittel: ['bahn'] }
+const BERNAU: Ort = { name: 'Bernau (b Berlin)', eva: '8010036', lat: 52.68, lon: 13.59, verkehrsmittel: ['bahn'] }
+
+function orteAntwort(orte: Ort[], bahnhoefe: QuellenStand = 'ok') {
+  return { ok: true as const, antwort: { orte, quellen: { bahnhoefe, haltestellen: 'ok' as QuellenStand } } }
+}
 
 function zeige(
-  erkannt?: BahnhofTreffer[],
+  erkannt?: Ort[],
   entwurf?: EingabeEntwurf | null,
   extra: { kopf?: React.ReactNode; fuss?: React.ReactNode } = {},
 ) {
@@ -33,12 +39,12 @@ function zeige(
   return onBerechnen
 }
 
-const feld = () => screen.getByLabelText('Umstiegsbahnhof') as HTMLInputElement
+const feld = () => screen.getByLabelText('Ankunft: Bahnhof oder Haltestelle') as HTMLInputElement
 
 describe('Eingabe: Bahnhofssuche', () => {
   beforeEach(() => {
     sucheMock.mockReset()
-    sucheMock.mockResolvedValue({ ok: true, treffer: [BERLIN, BERNAU] })
+    sucheMock.mockResolvedValue(orteAntwort([BERLIN, BERNAU]))
   })
 
   it('schlaegt Bahnhoefe erst ab zwei Zeichen vor', async () => {
@@ -49,29 +55,31 @@ describe('Eingabe: Bahnhofssuche', () => {
     expect(sucheMock).not.toHaveBeenCalled()
 
     await userEvent.type(feld(), 'er')
-    expect(await screen.findByRole('button', { name: 'Berlin Hbf' })).toBeDefined()
+    // 3 s wie in App.test: 300 ms Entprellung, und als erster Test der Datei
+    // laeuft er waehrend des Aufwaermens.
+    expect(await screen.findByRole('button', { name: /^Berlin Hbf/ }, { timeout: 3000 })).toBeDefined()
   })
 
   it('uebernimmt den angetippten Vorschlag und raeumt die Liste ab', async () => {
     zeige()
     await userEvent.type(feld(), 'Ber')
-    await userEvent.click(await screen.findByRole('button', { name: 'Berlin Hbf' }))
+    await userEvent.click(await screen.findByRole('button', { name: /^Berlin Hbf/ }))
 
     expect(feld().value).toBe('Berlin Hbf')
-    expect(screen.queryByRole('button', { name: 'Bernau (b Berlin)' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Bernau \(b Berlin\)/ })).toBeNull()
   })
 
   it('blendet die Vorschlaege aus, wenn das Feld wieder zu kurz wird', async () => {
     zeige()
     await userEvent.type(feld(), 'Ber')
-    await screen.findByRole('button', { name: 'Berlin Hbf' })
+    await screen.findByRole('button', { name: /^Berlin Hbf/ })
 
     await userEvent.clear(feld())
-    expect(screen.queryByRole('button', { name: 'Berlin Hbf' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Berlin Hbf/ })).toBeNull()
   })
 
   it('bietet bei fehlendem DB-Zugang die EVA zur Direkteingabe an', async () => {
-    sucheMock.mockResolvedValue({ ok: false, fehler: 'db-zugang-fehlt' })
+    sucheMock.mockResolvedValue(orteAntwort([], 'zugang-fehlt'))
     zeige()
     await userEvent.type(feld(), 'Ber')
     expect(await screen.findByLabelText(/EVA/)).toBeDefined()
@@ -81,7 +89,7 @@ describe('Eingabe: Bahnhofssuche', () => {
 describe('Eingabe: Vorbelegung aus dem Standort', () => {
   beforeEach(() => {
     sucheMock.mockReset()
-    sucheMock.mockResolvedValue({ ok: true, treffer: [] })
+    sucheMock.mockResolvedValue(orteAntwort([]))
   })
 
   it('belegt ein leeres Feld mit dem einzigen erkannten Bahnhof vor', async () => {
@@ -103,10 +111,10 @@ describe('Eingabe: Vorbelegung aus dem Standort', () => {
 
   it('laesst bei mehreren Treffern den Nutzer waehlen', async () => {
     zeige([BERLIN, BERNAU])
-    expect(await screen.findByText(/Bahnhöfe in deiner Nähe/)).toBeDefined()
+    expect(await screen.findByText(/in deiner Nähe/)).toBeDefined()
     expect(feld().value).toBe('')
 
-    await userEvent.click(screen.getByRole('button', { name: 'Bernau (b Berlin)' }))
+    await userEvent.click(screen.getByRole('button', { name: /^Bernau \(b Berlin\)/ }))
     expect(feld().value).toBe('Bernau (b Berlin)')
   })
 })
@@ -119,7 +127,7 @@ describe('Eingabe: Vorbelegung aus dem Standort', () => {
  */
 const ENTWURF: EingabeEntwurf = {
   suchtext: 'Berlin Hbf',
-  gewaehlt: { ...BERLIN, verkehrsmittel: ['bahn'] },
+  gewaehlt: BERLIN,
   anschlussText: '',
   anschlussOrt: null,
   evaManuell: '',
@@ -137,7 +145,7 @@ const ENTWURF: EingabeEntwurf = {
 describe('Eingabe: gespeicherter Entwurf', () => {
   beforeEach(() => {
     sucheMock.mockReset()
-    sucheMock.mockResolvedValue({ ok: true, treffer: [BERLIN, BERNAU] })
+    sucheMock.mockResolvedValue(orteAntwort([BERLIN, BERNAU]))
   })
 
   it('fuellt die Felder aus dem Entwurf', () => {
@@ -188,7 +196,7 @@ describe('Eingabe: gespeicherter Entwurf', () => {
 describe('Eingabe: Reise importieren', () => {
   beforeEach(() => {
     sucheMock.mockReset()
-    sucheMock.mockResolvedValue({ ok: true, treffer: [BERLIN, BERNAU] })
+    sucheMock.mockResolvedValue(orteAntwort([BERLIN, BERNAU]))
   })
 
   const REISE = [
@@ -280,7 +288,7 @@ describe('Eingabe: Reise importieren', () => {
     )
     await userEvent.click(screen.getByRole('button', { name: 'Übernehmen' }))
 
-    expect(await screen.findByRole('button', { name: 'Berlin Hbf' })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: /^Berlin Hbf/ })).toBeTruthy()
   })
 
   /**
@@ -302,7 +310,7 @@ describe('Eingabe: Reise importieren', () => {
     )
     await userEvent.click(screen.getByRole('button', { name: 'Übernehmen' }))
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Berlin Hbf' }))
+    await userEvent.click(await screen.findByRole('button', { name: /^Berlin Hbf/ }))
 
     const text = document.body.textContent ?? ''
     expect(text).toMatch(/ICE 74/)
@@ -370,7 +378,7 @@ describe('Eingabe: Einstellungen', () => {
 describe('Eingabe: Handy wie vor dem 11.10.2026', () => {
   beforeEach(() => {
     sucheMock.mockReset()
-    sucheMock.mockResolvedValue({ ok: true, treffer: [BERLIN] })
+    sucheMock.mockResolvedValue(orteAntwort([BERLIN]))
   })
 
   it('zeigt die Zugauswahl sofort, ohne Aufklapper', () => {
@@ -425,7 +433,7 @@ describe('Eingabe: breites Layout', () => {
   beforeEach(() => {
     stelleBreite(true)
     sucheMock.mockReset()
-    sucheMock.mockResolvedValue({ ok: true, treffer: [BERLIN] })
+    sucheMock.mockResolvedValue(orteAntwort([BERLIN]))
     holeTafelMock.mockReset()
     holeTafelMock.mockImplementation(async (_eva, typ) => ({
       ok: true,
@@ -436,7 +444,7 @@ describe('Eingabe: breites Layout', () => {
 
   async function waehleBerlin() {
     await userEvent.type(feld(), 'Ber')
-    await userEvent.click(await screen.findByRole('button', { name: 'Berlin Hbf' }))
+    await userEvent.click(await screen.findByRole('button', { name: /^Berlin Hbf/ }))
   }
 
   it('zeigt ohne Bahnhof zwei Platzhalter und laedt nichts', () => {
@@ -499,7 +507,7 @@ describe('Eingabe: breites Layout', () => {
   it('nennt den gewaehlten Zug in der Kachel', () => {
     zeige(undefined, {
       suchtext: 'Berlin Hbf',
-      gewaehlt: { ...BERLIN, verkehrsmittel: ['bahn'] },
+      gewaehlt: BERLIN,
       anschlussText: '',
       anschlussOrt: null,
       evaManuell: '',
@@ -523,7 +531,7 @@ describe('Eingabe: breites Layout', () => {
   })
 
   it('sagt ohne DB-Zugang, warum keine Tafel kommt', async () => {
-    sucheMock.mockResolvedValue({ ok: false, fehler: 'db-zugang-fehlt' })
+    sucheMock.mockResolvedValue(orteAntwort([], 'zugang-fehlt'))
     zeige()
     await userEvent.type(feld(), 'Ber')
     expect(await screen.findAllByText(/Ohne DB-Zugang keine Live-Tafel/)).toHaveLength(2)
@@ -557,5 +565,56 @@ describe('Eingabe: breites Layout', () => {
     const inhalt = spalte('Ankunft').querySelector('.tafel-spalte-inhalt') as HTMLElement
     expect(inhalt.hasAttribute('inert')).toBe(true)
     expect(within(spalte('Ankunft')).getByText(/Wähle einen Bahnhof/)).toBeDefined()
+  })
+})
+
+describe('Eingabe: zwei Ortsfelder (Umstieg 2.0, E3)', () => {
+  const LEIPZIG: Ort = { name: 'Leipzig Hbf', eva: '8010205', haltestelleId: 'h-l', lat: 51.345, lon: 12.382, verkehrsmittel: ['bahn', 'sbahn', 'tram'] }
+  const WILLY: Ort = { name: 'Leipzig, Willy-Brandt-Platz', haltestelleId: 'h-w', lat: 51.343, lon: 12.381, verkehrsmittel: ['tram'] }
+
+  beforeEach(() => {
+    sucheMock.mockReset()
+    holeTafelMock.mockReset()
+    holeTafelMock.mockResolvedValue({ ok: true, eintraege: [] })
+  })
+
+  it('zeigt das zweite Feld mit dem Hinweis auf den gleichen Ort', () => {
+    zeige()
+    const zweites = screen.getByLabelText('Anschluss: Bahnhof oder Haltestelle') as HTMLInputElement
+    expect(zweites.placeholder).toBe('Leer = gleicher Ort wie die Ankunft')
+  })
+
+  it('ohne zweites Feld bleibt alles beim Bahnhof', async () => {
+    sucheMock.mockResolvedValue(orteAntwort([LEIPZIG]))
+    const onBerechnen = zeige()
+    await userEvent.type(feld(), 'Leip')
+    await userEvent.click(await screen.findByRole('button', { name: /^Leipzig Hbf/ }))
+    await userEvent.type(screen.getByLabelText('Ankunft: Gleis'), '6')
+    await userEvent.type(screen.getByLabelText('Anschluss: Gleis'), '16')
+    await userEvent.click(screen.getByRole('button', { name: /Umstieg starten/ }))
+    const [werte, entwurf] = onBerechnen.mock.calls[0]
+    expect(werte.eva).toBe('8010205')
+    expect(werte.haltestellen).toBeUndefined()
+    expect(entwurf.gewaehlt).toEqual(LEIPZIG)
+    expect(entwurf.anschlussOrt).toBeNull()
+  })
+
+  it('Anschluss an einer anderen Haltestelle: kein Bahnhofsablauf mehr', async () => {
+    sucheMock.mockImplementation(async (q: string) => orteAntwort(q.startsWith('Willy') ? [WILLY] : [LEIPZIG]))
+    zeige()
+    await userEvent.type(feld(), 'Leip')
+    await userEvent.click(await screen.findByRole('button', { name: /^Leipzig Hbf/ }))
+    expect(await screen.findByRole('button', { name: 'Ankunftszug wählen' })).toBeDefined()
+    await userEvent.type(screen.getByLabelText('Anschluss: Bahnhof oder Haltestelle'), 'Willy')
+    await userEvent.click(await screen.findByRole('button', { name: /^Leipzig, Willy-Brandt-Platz/ }))
+    // Die Bahnhofstafeln gehoeren zum Bahnhofspfad - hier waeren sie falsch.
+    expect(screen.queryByRole('button', { name: 'Ankunftszug wählen' })).toBeNull()
+  })
+
+  it('meldet einen Ausfall der Haltestellendaten, Bahnhoefe gehen weiter (K5)', async () => {
+    sucheMock.mockResolvedValue({ ok: true, antwort: { orte: [LEIPZIG], quellen: { bahnhoefe: 'ok', haltestellen: 'ausfall' } } })
+    zeige()
+    await userEvent.type(feld(), 'Leip')
+    expect(await screen.findByText('Haltestellendaten gerade nicht verfügbar – Bahnhöfe gehen weiter.')).toBeDefined()
   })
 })

@@ -282,6 +282,39 @@
   }
 }
 
+/* Ortsvorschlag (Umstieg 2.0): Name links, Kuerzelmarken der Verkehrsmittel
+   rechts. Lange Namen brechen um, die Marken nicht. */
+.ort-vorschlag {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.vm-symbole {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+/* Grau wie ein Feld, Schrift im Nebentext-Ton: Die Marken sagen, was haelt -
+   sie sollen nicht mit der Auswahlmarke (Rot) verwechselt werden. */
+.vm-marke {
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: var(--schrift-label);
+  font-weight: 600;
+  line-height: 1.4;
+  background: var(--color-surface);
+  color: var(--color-neutral-700);
+}
+
+/* Zwei Ortsfelder untereinander, je mit Kicker wie die Gleiskacheln. */
+.ortsfeld .kicker {
+  margin-bottom: 4px;
+}
+
 /* Das Abzeichen „✓ Bahnhof" unter dem Suchfeld. Bis zum 07.10.2026 hiess die
    Regel nur `.gewaehlt` - und gab damit auch der gewaehlten Routenzeile und
    Standortstelle `margin-top: 8px`, die die Klasse als Zustand tragen. */

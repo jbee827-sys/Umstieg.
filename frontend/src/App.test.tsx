@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
-import { holeRoute, sucheStationen } from './api/client'
+import { holeRoute } from './api/client'
+import { sucheOrte } from './api/orte'
 import type { LiveEreignis, RouteErgebnis, RouteParameter } from './api/typen'
 import { REISE_SCHLUESSEL, schreibeReise } from './sitzung/reisespeicher'
 
@@ -24,8 +25,6 @@ vi.mock('./api/client', async () => {
   return {
     // `RouteFehler` wird mit `instanceof` geprueft - die echte Klasse bleibt.
     RouteFehler: echt.RouteFehler,
-    sucheStationen: vi.fn(),
-    sucheStationenNahebei: vi.fn(async () => ({ ok: true, treffer: [] })),
     holeRoute: vi.fn(),
     holeTafel: vi.fn(async () => ({ ok: true, eintraege: [] })),
   }
@@ -36,6 +35,11 @@ vi.mock('./api/client', async () => {
  * Ereignis einspeisen - so wie es am 03.09.2026 fuer P4/P5 im Browser gemacht
  * wurde, statt auf einen echten Gleiswechsel zu warten.
  */
+vi.mock('./api/orte', () => ({
+  sucheOrte: vi.fn(),
+  orteNahebei: vi.fn(async () => ({ ok: true, antwort: { orte: [], quellen: { bahnhoefe: 'ok', haltestellen: 'ok' } } })),
+}))
+
 const strom: { sende?: (e: LiveEreignis) => void } = {}
 vi.mock('./api/sse', () => ({
   verbindeLive: (o: { onEreignis: (e: LiveEreignis) => void }) => {
@@ -44,7 +48,7 @@ vi.mock('./api/sse', () => ({
   },
 }))
 
-const sucheMock = vi.mocked(sucheStationen)
+const sucheMock = vi.mocked(sucheOrte)
 const routeMock = vi.mocked(holeRoute)
 
 /**
@@ -79,13 +83,13 @@ function abrufe(): RouteParameter[] {
 
 async function bisZumDashboard(): Promise<void> {
   render(<App />)
-  await userEvent.type(screen.getByLabelText('Umstiegsbahnhof'), 'Leip')
+  await userEvent.type(screen.getByLabelText('Ankunft: Bahnhof oder Haltestelle'), 'Leip')
   // 3 s statt der ueblichen 1 s: Hinter dem Vorschlag stehen 300 ms
   // Entprellung, und im ersten Lauf nach einer Aenderung uebersetzt Vitest
   // die geaenderten Dateien, waehrend 40 Testdateien parallel laufen - am
   // 11.10.2026 riss dieser Test dabei einmal die Sekunde.
   await userEvent.click(
-    await screen.findByRole('button', { name: 'Leipzig Hbf' }, { timeout: 3000 }),
+    await screen.findByRole('button', { name: /^Leipzig Hbf/ }, { timeout: 3000 }),
   )
   await userEvent.type(screen.getByLabelText('Ankunft: Gleis'), '6')
   await userEvent.type(screen.getByLabelText('Anschluss: Gleis'), '16')
@@ -97,7 +101,10 @@ beforeEach(() => {
   sucheMock.mockReset()
   sucheMock.mockResolvedValue({
     ok: true,
-    treffer: [{ name: 'Leipzig Hbf', eva: '8010205', lat: 51.345, lon: 12.381 }],
+    antwort: {
+      orte: [{ name: 'Leipzig Hbf', eva: '8010205', lat: 51.345, lon: 12.381, verkehrsmittel: ['bahn'] }],
+      quellen: { bahnhoefe: 'ok', haltestellen: 'ok' },
+    },
   })
   routeMock.mockReset()
   routeMock.mockImplementation(async (p: RouteParameter) => antwort(p))
@@ -113,10 +120,14 @@ beforeEach(() => {
  * `App` sie der Uebersicht auch gibt.
  */
 describe('App: die Uebersicht', () => {
+  // Mehr Zeit als die 5 s Voreinstellung: Als erster Test der Datei zahlt er
+  // das Aufwaermen von App samt aller Bildschirme. Unter voller Suite lag er
+  // am 17.10.2026 bei 3,7 s und riss mit den zwei Ortsfeldern die Grenze -
+  // einzeln braucht er 2,3 s.
   it('steht in der Spalte, die nur innen rollt', async () => {
     await bisZumDashboard()
     expect(document.querySelector('main.app-dashboard')).not.toBeNull()
-  })
+  }, 15_000)
 
   it('stellt die Eingabe in die Spalte, die nur innen rollt', () => {
     render(<App />)
@@ -307,7 +318,7 @@ describe('App: Adressen, Zurueck-Taste und Neuladen', () => {
   it('geht mit der Zurueck-Taste zur Eingabe', async () => {
     await bisZumDashboard()
     act(() => window.history.back())
-    expect(await screen.findByLabelText('Umstiegsbahnhof')).toBeDefined()
+    expect(await screen.findByLabelText('Ankunft: Bahnhof oder Haltestelle')).toBeDefined()
     expect(window.location.pathname).toBe('/eingabe')
   })
 
@@ -358,7 +369,7 @@ describe('App: Adressen, Zurueck-Taste und Neuladen', () => {
   it('zeigt ohne gesicherte Reise auf /weg die Eingabe und berichtigt die Adresse', () => {
     window.history.replaceState(null, '', '/weg')
     render(<App />)
-    expect(screen.getByLabelText('Umstiegsbahnhof')).toBeDefined()
+    expect(screen.getByLabelText('Ankunft: Bahnhof oder Haltestelle')).toBeDefined()
     expect(window.location.pathname).toBe('/eingabe')
   })
 
