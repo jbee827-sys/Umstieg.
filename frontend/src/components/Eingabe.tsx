@@ -4,9 +4,12 @@ import type {
   BahnhofTreffer,
   Bahnsteigabschnitt,
   Gehprofil,
+  HaltestellenTafelEintrag,
+  Ort,
   RoutenVariante,
   TafelEintrag,
 } from '../api/typen'
+import { ortAusBahnhof } from '../ort/ortmodell'
 import { STANDORT_VOREINSTELLUNG } from '../api/standorte'
 import { Zugauswahl } from './Zugauswahl'
 import { ReiseImport } from './ReiseImport'
@@ -14,6 +17,12 @@ import type { Umstieg } from '../reise/reisetext'
 import type { EingabeEntwurf } from '../sitzung/eingabespeicher'
 import { ladeDarstellung, waehleDarstellung, type Darstellung } from '../einstellungen/darstellung'
 import { useBreitesLayout } from '../aufbau/breite'
+
+/** Haltestellenpfad (Umstieg 2.0): beide Orte mit der gewählten Fahrt. */
+export interface HaltestellenWahl {
+  ankunft: { ort: Ort; fahrt: HaltestellenTafelEintrag }
+  anschluss: { ort: Ort; fahrt: HaltestellenTafelEintrag }
+}
 
 export interface EingabeWerte {
   eva: string
@@ -39,6 +48,17 @@ export interface EingabeWerte {
   zugAbName?: string
   ankunftZeit?: string
   abfahrtZeit?: string
+  /**
+   * Gesetzt = Haltestellenpfad (Umstieg 2.0). Fehlt = Bahnhofspfad wie bisher;
+   * dann gelten `eva`, `gleisAn`, `gleisAb` wie immer. Im Haltestellenpfad sind
+   * `gleisAn`/`gleisAb` die ANZEIGE des Steigs („A“, „Pos. 12“) und `eva` leer.
+   */
+  haltestellen?: HaltestellenWahl
+}
+
+/** Ein gespeicherter Ort als Bahnhofstreffer - nur, wenn er ein DB-Bahnhof ist. */
+function bahnhofAusOrt(o: Ort | null | undefined): BahnhofTreffer | null {
+  return o?.eva ? { name: o.name, eva: o.eva, lat: o.lat, lon: o.lon } : null
 }
 
 /** "ICE 1006" → "1006" */
@@ -123,7 +143,7 @@ export function Eingabe({
   // Geschrieben wird beim Absenden, und danach ist die Maske verlassen.
   const [suchtext, setSuchtext] = useState(entwurf?.suchtext ?? '')
   const [vorschlaege, setVorschlaege] = useState<BahnhofTreffer[]>([])
-  const [gewaehlt, setGewaehlt] = useState<BahnhofTreffer | null>(entwurf?.gewaehlt ?? null)
+  const [gewaehlt, setGewaehlt] = useState<BahnhofTreffer | null>(bahnhofAusOrt(entwurf?.gewaehlt))
   const [dbFehlt, setDbFehlt] = useState(false)
   const [netzFehlt, setNetzFehlt] = useState(false)
   const [evaManuell, setEvaManuell] = useState(entwurf?.evaManuell ?? '')
@@ -283,7 +303,9 @@ export function Eingabe({
     // soll die Maske spaeter genau so wiederherstellen, wie sie eben stand.
     const abbild: EingabeEntwurf = {
       suchtext,
-      gewaehlt,
+      gewaehlt: gewaehlt ? ortAusBahnhof(gewaehlt) : null,
+      anschlussText: '',
+      anschlussOrt: null,
       evaManuell,
       gleisAn,
       gleisAb,
@@ -292,6 +314,8 @@ export function Eingabe({
       profil,
       zugAnkunft,
       zugAbfahrt,
+      fahrtAnkunft: null,
+      fahrtAbfahrt: null,
     }
     onBerechnen(
       {

@@ -119,7 +119,9 @@ describe('Eingabe: Vorbelegung aus dem Standort', () => {
  */
 const ENTWURF: EingabeEntwurf = {
   suchtext: 'Berlin Hbf',
-  gewaehlt: BERLIN,
+  gewaehlt: { ...BERLIN, verkehrsmittel: ['bahn'] },
+  anschlussText: '',
+  anschlussOrt: null,
   evaManuell: '',
   gleisAn: '14',
   gleisAb: '6',
@@ -128,6 +130,8 @@ const ENTWURF: EingabeEntwurf = {
   profil: 'langsam',
   zugAnkunft: { zug: 'ICE 1006', zeitSoll: '14:26', gleisSoll: '14', ziel: 'Hamburg' },
   zugAbfahrt: null,
+  fahrtAnkunft: null,
+  fahrtAbfahrt: null,
 }
 
 describe('Eingabe: gespeicherter Entwurf', () => {
@@ -495,7 +499,9 @@ describe('Eingabe: breites Layout', () => {
   it('nennt den gewaehlten Zug in der Kachel', () => {
     zeige(undefined, {
       suchtext: 'Berlin Hbf',
-      gewaehlt: BERLIN,
+      gewaehlt: { ...BERLIN, verkehrsmittel: ['bahn'] },
+      anschlussText: '',
+      anschlussOrt: null,
       evaManuell: '',
       gleisAn: '6',
       gleisAb: '14',
@@ -504,6 +510,8 @@ describe('Eingabe: breites Layout', () => {
       profil: 'normal',
       zugAnkunft: { zug: 'RE 3', zeitSoll: '14:22', gleisSoll: '6', ziel: 'Stralsund' },
       zugAbfahrt: null,
+      fahrtAnkunft: null,
+      fahrtAbfahrt: null,
     })
     expect(within(kachel('Ankunft: Gleis')).getByText(/RE 3 · an 14:22/)).toBeDefined()
   })
