@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Writable } from 'node:stream';
 import { buildApp } from '../src/app.js';
+import { HaltestellenAnfrageFehler, HaltestellenNichtVerfuegbarError } from '../src/clients/motis-pausen.js';
 
 /**
  * Die veroeffentlichte Datenschutzerklaerung sagt zwei Dinge zu, die der
@@ -193,5 +194,49 @@ describe('Kein Fastify-6-Deprecation-Hinweis mehr', () => {
       process.off('warning', aufWarnung);
     }
     expect(gesehen).not.toContain('FSTDEP023');
+  });
+});
+
+describe('Ortssuche (Umstieg 2.0): Fehler der Quellen tragen keine Nutzerdaten ins Protokoll', () => {
+  /*
+   * Die Fehlertexte der Clients enthalten die abgefragte URL - und damit
+   * Suchtext oder Koordinate. `/api/orte` protokolliert den Ausfall einer
+   * Quelle; der Grund darf nur die Art des Fehlers nennen.
+   */
+  function ausfallClients(geheim: string) {
+    const fehler = new Error(`DB-API https://apis.deutschebahn.com/x?query=${geheim}: HTTP 500`);
+    return {
+      ...clients(),
+      stations: {
+        ...clients().stations,
+        sucheBahnhoefe: vi.fn(async () => { throw fehler; }),
+        sucheBahnhoefeNahebei: vi.fn(async () => { throw fehler; }),
+      },
+      haltestellen: {
+        sucheOrte: vi.fn(async () => { throw new HaltestellenAnfrageFehler(400, `kein Treffer fuer ${geheim}`); }),
+        orteNahebei: vi.fn(async () => { throw new HaltestellenNichtVerfuegbarError(`fetch ${geheim} failed`); }),
+        tafel: vi.fn(), tafelFrisch: vi.fn(), fussweg: vi.fn(), fahrt: vi.fn(),
+      },
+    };
+  }
+
+  it('Textsuche: kein Suchtext im Protokoll, wohl aber der Ausfall', async () => {
+    const log = sammelLogger();
+    const app = buildApp(ausfallClients('Lindenstrasse') as never, log.optionen as never);
+    await app.inject({ method: 'GET', url: '/api/orte?q=Lindenstrasse' });
+    const alles = log.roh.join('\n');
+    expect(alles).toContain('haltestellen-unerreichbar');
+    expect(alles).toContain('HTTP 500');
+    expect(alles).not.toContain('Lindenstrasse');
+  });
+
+  it('Standortsuche: keine Koordinate im Protokoll', async () => {
+    const log = sammelLogger();
+    const app = buildApp(ausfallClients('52.521,13.411') as never, log.optionen as never);
+    await app.inject({ method: 'GET', url: '/api/orte?lat=52.521&lon=13.411' });
+    const alles = log.roh.join('\n');
+    expect(alles).toContain('bahnhofssuche-unerreichbar');
+    expect(alles).not.toContain('52.521');
+    expect(alles).not.toContain('13.411');
   });
 });

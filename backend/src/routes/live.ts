@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { erzeugeCache } from '../cache/lru.js';
 import type { HaltestellenClient } from '../clients/haltestellen.js';
-import { Ueberwachung, type Protokoll } from '../core/ueberwachung.js';
+import { Ueberwachung, type LiveEreignis, type Protokoll } from '../core/ueberwachung.js';
 import type { Sicherheitsprotokoll } from '../core/sicherheitsprotokoll.js';
 import type { HaltestellenTafelEintrag, TafelEintrag } from '../core/typen.js';
 import { berlinUhrzeit } from '../core/zeit.js';
@@ -88,7 +88,9 @@ export function erzeugeHaltestellenLive(
     async (schluessel) => {
       const { id, typ } = leseLiveSchluessel(schluessel);
       const punkt = orte.get(id);
-      if (!punkt) return [];
+      // Nicht still leer: Ohne Koordinate (verdraengt oder abgelaufen) waere
+      // das ein Durchlauf ohne Daten, der wie „nichts geaendert“ aussieht.
+      if (!punkt) throw new Error('Koordinate der Haltestelle nicht mehr bekannt');
       const tafel = await client.tafelFrisch({ id, ...punkt }, typ);
       return tafel.map(haltestellenTafelAlsTafel);
     },
@@ -97,6 +99,50 @@ export function erzeugeHaltestellenLive(
     o.maxHalte,
   );
   return { ueberwachung, merkeOrt: (id, punkt) => void orte.set(id, punkt) };
+}
+
+/** Ein Schluessel der Ueberwachung und die Zuege, die dieser Strom dort sehen will. */
+export interface StromAbo {
+  schluessel: string;
+  /** Leer = alle Zuege dieses Schluessels. */
+  zuege: string[];
+}
+
+/**
+ * Meldet einen Strom bei allen seinen Schluesseln an und fasst deren Zustand
+ * zu EINEM zusammen.
+ *
+ * Der Zuschauer hat ein Banner und einen Zeitstempel, nicht zwei. Faellt nur
+ * einer von zwei Schluesseln aus, darf weder der Heartbeat des anderen einen
+ * frischen Stand vortaeuschen noch dessen Rueckkehr das Banner abraeumen:
+ * `quelle-weg` beim ersten ausgefallenen Schluessel, `quelle-da` erst, wenn
+ * alle wieder liefern, Heartbeats nur, solange keiner fehlt.
+ *
+ * Die Zuege gelten je Schluessel: Die Ankunftstafel meldet nur die
+ * Ankunftsfahrt, die Abfahrtstafel nur die Anschlussfahrt. Sonst kaeme eine
+ * durchgehende Fahrt aus beiden Tafeln, mit verschiedenen Zeiten.
+ */
+export function abonniereStrom(
+  ueberwachung: Ueberwachung,
+  abos: StromAbo[],
+  sende: (ereignis: LiveEreignis) => void,
+): () => void {
+  const weg = new Set<string>();
+  const abmeldungen = abos.map(({ schluessel, zuege }) =>
+    ueberwachung.abonniere(schluessel, zuege, (ereignis) => {
+      if (ereignis.typ === 'quelle-weg') {
+        if (weg.size === 0) sende(ereignis);
+        weg.add(schluessel);
+      } else if (ereignis.typ === 'quelle-da') {
+        if (weg.delete(schluessel) && weg.size === 0) sende(ereignis);
+      } else if (ereignis.typ !== 'heartbeat' || weg.size === 0) {
+        sende(ereignis);
+      }
+    }),
+  );
+  return () => {
+    for (const abmelden of abmeldungen) abmelden();
+  };
 }
 
 const HALTESTELLEN_NICHT_EINGERICHTET = {
@@ -133,8 +179,14 @@ export function registriereLiveRouten(
   function oeffneStrom(
     req: FastifyRequest,
     reply: FastifyReply,
-    quelle: { ueberwachung: Ueberwachung; schluessel: string[]; zuVieleFehler: string; zuVieleDetail: string },
-    zuege: string[],
+    quelle: {
+      ueberwachung: Ueberwachung;
+      abos: StromAbo[];
+      zuVieleFehler: string;
+      zuVieleDetail: string;
+      /** Laeuft erst, wenn alle Grenzen geprueft sind - eine Absage hinterlaesst nichts. */
+      vorAnmeldung?: () => void;
+    },
     route: string,
   ) {
     /*
@@ -153,7 +205,7 @@ export function registriereLiveRouten(
     }
     // Alle Schluessel zugleich: Einzeln geprueft haette jeder den letzten
     // freien Platz fuer sich beansprucht, und der zweite risse die Grenze.
-    if (!quelle.ueberwachung.hatKapazitaetFuerAlle(quelle.schluessel)) {
+    if (!quelle.ueberwachung.hatKapazitaetFuerAlle(quelle.abos.map((a) => a.schluessel))) {
       sicherheit?.melde('sse-bahnhoefe', route);
       return reply.code(503).send({ fehler: quelle.zuVieleFehler, detail: quelle.zuVieleDetail });
     }
@@ -205,11 +257,10 @@ export function registriereLiveRouten(
     reply.hijack();
     reply.raw.writeHead(200, kopf);
 
-    const abmeldungen = quelle.schluessel.map((schluessel) =>
-      quelle.ueberwachung.abonniere(schluessel, zuege, (ereignis) => {
-        reply.raw.write(`event: ${ereignis.typ}\ndata: ${JSON.stringify(ereignis)}\n\n`);
-      }),
-    );
+    quelle.vorAnmeldung?.();
+    const abmelden = abonniereStrom(quelle.ueberwachung, quelle.abos, (ereignis) => {
+      reply.raw.write(`event: ${ereignis.typ}\ndata: ${JSON.stringify(ereignis)}\n\n`);
+    });
 
     // Erst nach der Anmeldung senden: Wer diesen Kommentar empfängt, ist
     // sicher abonniert – darauf verlassen sich die Tests.
@@ -225,7 +276,7 @@ export function registriereLiveRouten(
     req.raw.on('close', () => {
       if (beendet) return;
       beendet = true;
-      for (const abmelden of abmeldungen) abmelden();
+      abmelden();
       offen--;
       const rest = (jeAufrufer.get(aufrufer) ?? 1) - 1;
       if (rest > 0) jeAufrufer.set(aufrufer, rest);
@@ -242,11 +293,10 @@ export function registriereLiveRouten(
         reply,
         {
           ueberwachung,
-          schluessel: [req.params.eva],
+          abos: [{ schluessel: req.params.eva, zuege }],
           zuVieleFehler: 'zu-viele-bahnhoefe',
           zuVieleDetail: 'Es werden derzeit zu viele Bahnhoefe live beobachtet.',
         },
-        zuege,
         '/api/live/:eva',
       );
     },
@@ -263,29 +313,35 @@ export function registriereLiveRouten(
     if (!haltestellen) return reply.code(503).send(HALTESTELLEN_NICHT_EINGERICHTET);
     const q = req.query;
     // `an` beobachtet die Ankünfte, `ab` die Abfahrten – auch an derselben Haltestelle.
-    const halte: { id: string; punkt: { lat: number; lon: number }; typ: 'arr' | 'dep' }[] = [];
-    for (const [s, typ] of [['an', 'arr'], ['ab', 'dep']] as const) {
+    // Die Fahrt gilt nur fuer ihre eigene Tafel (siehe `abonniereStrom`).
+    const halte: { id: string; punkt: { lat: number; lon: number }; typ: 'arr' | 'dep'; fahrt?: string }[] = [];
+    for (const [s, typ, fahrt] of [
+      ['an', 'arr', q.fahrtAn],
+      ['ab', 'dep', q.fahrtAb],
+    ] as const) {
       const id = q[s];
       if (id === undefined) continue;
       const punkt = leseKoordinaten(q[`${s}Lat`], q[`${s}Lon`]);
       if (!id || id.length > 300 || !punkt) return reply.code(400).send({ fehler: 'parameter-ungueltig' });
-      halte.push({ id, punkt, typ });
+      halte.push({ id, punkt, typ, ...(fahrt ? { fahrt } : {}) });
     }
     if (halte.length === 0) {
       return reply.code(400).send({ fehler: 'parameter-fehlt', detail: 'an oder ab ist erforderlich' });
     }
-    for (const h of halte) haltestellen.merkeOrt(h.id, h.punkt);
-    const zuege = [q.fahrtAn, q.fahrtAb].filter((z): z is string => Boolean(z));
     return oeffneStrom(
       req,
       reply,
       {
         ueberwachung: haltestellen.ueberwachung,
-        schluessel: halte.map((h) => haltestellenLiveSchluessel(h.id, h.typ)),
+        abos: halte.map((h) => ({ schluessel: haltestellenLiveSchluessel(h.id, h.typ), zuege: h.fahrt ? [h.fahrt] : [] })),
         zuVieleFehler: 'zu-viele-haltestellen',
         zuVieleDetail: 'Es werden derzeit zu viele Haltestellen live beobachtet.',
+        // Erst nach den Grenzen: Eine abgewiesene Anfrage soll keine
+        // Koordinate eines beobachteten Halts verdraengen oder ueberschreiben.
+        vorAnmeldung: () => {
+          for (const h of halte) haltestellen.merkeOrt(h.id, h.punkt);
+        },
       },
-      zuege,
       '/api/live/haltestelle',
     );
   });

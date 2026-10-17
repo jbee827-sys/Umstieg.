@@ -111,6 +111,8 @@ describe('MOTIS-Kern', () => {
     expect(u.searchParams.get('transitModes')).toBe('');
     expect(u.searchParams.get('directModes')).toBe('WALK');
     expect(u.searchParams.get('pedestrianProfile')).toBe('WHEELCHAIR');
+    // 2 km Luftlinie mal Umweg, im Rollstuhltempo: unter 30 min ging das nicht.
+    expect(Number(u.searchParams.get('maxDirectTime'))).toBeGreaterThanOrEqual(3600);
   });
 
   it('IDs werden unveraendert und kodiert durchgereicht', async () => {
