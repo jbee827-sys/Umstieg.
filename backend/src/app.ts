@@ -36,7 +36,12 @@ import {
   SUCHE_TTL_MS,
   TAFEL_TTL_MS,
 } from './cache/clients.js';
-import { registriereLiveRouten, type SseGrenzen } from './routes/live.js';
+import {
+  erzeugeHaltestellenLive,
+  registriereLiveRouten,
+  type HaltestellenLive,
+  type SseGrenzen,
+} from './routes/live.js';
 import { registriereHaltestellenRouten } from './routes/haltestellen.js';
 import type { HaltestellenClient } from './clients/haltestellen.js';
 
@@ -48,6 +53,8 @@ export interface AppClients extends ApiClients {
    * fehlt das Feld, entscheidet die Konfiguration (Plan-Task 13).
    */
   haltestellen: HaltestellenClient | null;
+  /** Live-Überwachung der Haltestellen – injizierbar wie `ueberwachung`. */
+  haltestellenLive?: HaltestellenLive | null;
 }
 
 /**
@@ -88,6 +95,7 @@ const GRENZEN: Record<string, number> = {
   // Gegen Wiederverbindungsstuerme. Die eigentliche Grenze fuer den Strom ist
   // die Zahl gleichzeitiger Verbindungen, nicht die der Anfragen.
   '/api/live/:eva': 14,
+  '/api/live/haltestelle': 14,
 };
 
 /** Fuer alles, was keine eigene Grenze hat. */
@@ -407,12 +415,19 @@ export function buildApp(
     // `/api/orte` ihren Zwischenspeicher teilt.
     registriereHaltestellenRouten(instanz, { stations, haltestellen: haltestellenClient });
 
+    // Eigene Überwachung je Haltestelle, ein Abruf je Minute für alle
+    // Zuschauer (Spec 5.4).
+    const haltestellenLive =
+      clients.haltestellenLive ??
+      (haltestellenClient ? erzeugeHaltestellenLive(haltestellenClient, { log: instanz.log }) : null);
+
     registriereLiveRouten(
       instanz,
       ueberwachung,
       erlaubteHerkuenfte,
       optionen.sseGrenzen,
       sicherheit,
+      haltestellenLive,
     );
   });
 

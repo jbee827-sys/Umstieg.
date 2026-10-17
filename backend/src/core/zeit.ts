@@ -37,3 +37,15 @@ export function berlinTeile(zeitpunkt: Date): ZeitTeile {
     stunde: hole('hour'),
   };
 }
+
+const UHRZEIT = new Intl.DateTimeFormat('de-DE', {
+  timeZone: ZONE,
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+
+/** ISO-Zeitstempel → „HH:MM“ deutscher Ortszeit – unabhängig von der Zone des Containers. */
+export function berlinUhrzeit(iso: string): string {
+  return UHRZEIT.format(new Date(iso));
+}

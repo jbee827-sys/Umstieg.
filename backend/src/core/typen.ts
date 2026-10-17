@@ -414,6 +414,10 @@ export interface TafelEintrag {
   gleisSoll: string;
   gleisIst?: string;
   ziel: string;
+  /** Nur Haltestellenpfad (Umstieg 2.0): Fahrt fällt aus. Der Bahnhofspfad setzt es nie. */
+  ausfall?: boolean;
+  /** Nur Haltestellenpfad: Linie zum Anzeigen; `zug` ist dort die Fahrt-ID. */
+  anzeige?: string;
 }
 
 // --- Haltestellenpfad (Umstieg 2.0, Spec 5.3) ---
