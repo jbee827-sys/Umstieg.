@@ -9,9 +9,14 @@ export interface LiveEreignis {
    * (Degradationstabelle Zeile 2). Ohne sie blieb der Strom bei einem Ausfall
    * einfach stumm - und stumm ist vom Fall „es aendert sich gerade nichts“
    * nicht zu unterscheiden. Gesendet wird nur beim Zustandswechsel.
+   *
+   * `ausfall` gibt es nur im Haltestellenpfad (Umstieg 2.0): Dort fällt eine
+   * Fahrt sichtbar aus, statt aus der Tafel zu verschwinden.
    */
-  typ: 'gleiswechsel' | 'verspaetung' | 'heartbeat' | 'quelle-weg' | 'quelle-da';
+  typ: 'gleiswechsel' | 'verspaetung' | 'heartbeat' | 'quelle-weg' | 'quelle-da' | 'ausfall';
   zug?: string;
+  /** Linie zum Anzeigen, wenn `zug` nur ein Schlüssel ist (Haltestellenpfad: Fahrt-ID). */
+  anzeige?: string;
   alt?: string;
   neu?: string;
   zeitstempel: string; // ISO – jede Live-Anzeige trägt Zeitstempel
@@ -70,6 +75,18 @@ export class Ueberwachung {
   hatKapazitaetFuer(eva: string): boolean {
     if (this.jeEva.has(eva)) return true;
     return this.jeEva.size < this.maxEvas;
+  }
+
+  /**
+   * Ist Platz fuer alle diese Schluessel zugleich?
+   *
+   * Ein Strom des Haltestellenpfads beobachtet Ankunfts- UND
+   * Abfahrtshaltestelle. Einzeln geprueft haette jede den letzten freien Platz
+   * fuer sich beansprucht - und die zweite die Grenze ueberschritten.
+   */
+  hatKapazitaetFuerAlle(schluessel: string[]): boolean {
+    const neu = new Set(schluessel.filter((s) => !this.jeEva.has(s)));
+    return this.jeEva.size + neu.size <= this.maxEvas;
   }
 
   /** Meldet einen Abonnenten an; Rückgabe ist die Abmeldefunktion. */
@@ -135,16 +152,20 @@ export class Ueberwachung {
       // stabil (nur zeitIst aendert sich) und trennt die beiden Haelften sauber.
       const schluessel = `${aktuell.zug}|${aktuell.zeitSoll}`;
       const vorher = eintrag.letzterStand.get(schluessel);
+      const anzeige = aktuell.anzeige ? { anzeige: aktuell.anzeige } : {};
       if (vorher) {
         const gleisAlt = vorher.gleisIst ?? vorher.gleisSoll;
         const gleisNeu = aktuell.gleisIst ?? aktuell.gleisSoll;
         if (gleisAlt !== gleisNeu) {
-          ereignisse.push({ typ: 'gleiswechsel', zug: aktuell.zug, alt: gleisAlt, neu: gleisNeu, zeitstempel });
+          ereignisse.push({ typ: 'gleiswechsel', zug: aktuell.zug, alt: gleisAlt, neu: gleisNeu, zeitstempel, ...anzeige });
         }
         const zeitAlt = vorher.zeitIst ?? vorher.zeitSoll;
         const zeitNeu = aktuell.zeitIst ?? aktuell.zeitSoll;
         if (zeitAlt !== zeitNeu) {
-          ereignisse.push({ typ: 'verspaetung', zug: aktuell.zug, alt: zeitAlt, neu: zeitNeu, zeitstempel });
+          ereignisse.push({ typ: 'verspaetung', zug: aktuell.zug, alt: zeitAlt, neu: zeitNeu, zeitstempel, ...anzeige });
+        }
+        if (aktuell.ausfall && !vorher.ausfall) {
+          ereignisse.push({ typ: 'ausfall', zug: aktuell.zug, zeitstempel, ...anzeige });
         }
       }
       eintrag.letzterStand.set(schluessel, aktuell);
