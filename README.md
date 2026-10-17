@@ -17,7 +17,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 16.10.2026, abends)
+## Hier weitermachen (Stand 17.10.2026)
 
 > **Umstieg 2.0: Haltestellen deutschlandweit über Transitous** – Spec
 > `docs/superpowers/specs/2026-10-16-umstieg-2-design.md`, Plan
@@ -49,33 +49,39 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > Fahrt-ID bei doppelten Fahrten aus DELFI und VBB, Zähler beschriftet den
 > gezählten Zeitraum.
 >
-> **Paket 2 – begonnen (Stand 16.10.2026, Arbeit auf Wunsch angehalten):**
-> Task 8 (`zielZusatz` in `core/textgen.ts`, `pfadZuGeoJSON` in
-> `core/graph.ts`) und Task 9 (**`GET /api/orte`** in `routes/haltestellen.ts`,
-> Bahnhöfe und Haltestellen in einer Suche, Bahnhof trägt EVA und
-> Haltestellen-ID, Stand beider Quellen in der Antwort) sind fertig und
-> committet (`adc6e12`, `f24f554`). **685 von 685 Tests, Lint sauber.**
-> Der Haltestellen-Client ist in `app.ts` noch **nicht** über die
-> Konfiguration eingerichtet (`clients.haltestellen ?? null`) – ohne Einspeisung
-> meldet `/api/orte` „nicht-eingerichtet“ und liefert nur Bahnhöfe.
+> **Paket 2 – Backend-Routen und Live (erledigt 17.10.2026, 733 von 733,
+> Lint und Build sauber):** `GET /api/orte`, `GET /api/haltestelle/tafel`,
+> `GET /api/weg` (`core/fussweg.ts`, Luftlinie × 1,3 als Rückfall, höchstens
+> 2 km), `GET /api/live/haltestelle` (ein Strom für Ankunfts- und
+> Anschlusshaltestelle, Ereignis `ausfall`, Grenzen und CORS gemeinsam mit
+> `/api/live/:eva`). Verdrahtet über **`MOTIS_BASIS_URL`** (`fly.toml`) und
+> **`MOTIS_KONTAKT`** (nur Fly-Secret); Zähler `motis-anfragen` stündlich im
+> Protokoll; Prüfskript `backend/scripts/haltestellen-pruefung.ts` (K1/K2/K4,
+> noch nicht gegen Transitous gelaufen – das ist Task 21). Doku:
+> `docs/deployment.md`, Abschnitt „Haltestellenpfad“.
+>
+> Abweichungen vom Plan (mit Grund im Commit und im Fortschrittsbuch): Live
+> fragt je Haltestelle **nur die nötige Richtung** (Ankunftshalt nur Ankünfte,
+> Anschlusshalt nur Abfahrten) – halbe Last, passt zur Lastabschätzung;
+> Fahrt-Filter und Quellenzustand je Strom zusammengefasst (Teilausfall
+> verschleiert nichts mehr); `maxDirectTime` 1 h statt 30 min. Code-Review
+> Paket 2: 7 Befunde behoben (u. a. Suchtext/Koordinate konnten über
+> Fehlertexte ins Protokoll geraten), 1 bewusst offen (angebrochene
+> Zählerstunde geht bei Deploy verloren – `server.ts` hat keinen
+> SIGTERM-Handler), 2 kleine zurückgestellt.
+>
+> **Paket 3 – Frontend (begonnen 17.10.2026):** Task 14 fertig (Typen
+> gespiegelt, `api/orte.ts`, `api/haltestellen.ts`, `api/zeit.ts`,
+> `verbindeHaltestelleLive`).
 >
 > **Hier weitermachen – nächste Schritte in dieser Reihenfolge** (Einzelheiten,
 > Tests und Code je Task im Plan `docs/superpowers/plans/2026-10-16-umstieg-2.md`):
 >
-> 1. **Task 10** `GET /api/haltestelle/tafel` (Echtzeit, Ausfall, 503/404).
-> 2. **Task 11** `GET /api/weg` + `core/fussweg.ts` (Schritte über textgen,
->    Luftlinie × 1,3 als Rückfall, Rollstuhlprofil bei `barrierefrei`).
-> 3. **Task 12** Live für Haltestellen (`/api/live/haltestelle`, ein Strom für
->    beide Halte, Ereignis `ausfall`, gemeinsame SSE-Grenzen).
-> 4. **Task 13** Verdrahtung über `MOTIS_BASIS_URL`/`MOTIS_KONTAKT`, Zähler ins
->    Protokoll, `fly.toml`, `docs/deployment.md`, Prüfskript
->    `scripts/haltestellen-pruefung.ts`. Danach Paketabschluss 2: ganze Suite,
->    `/code-review`, `/bug-hunter`, README.
-> 5. **Paket 3** Frontend (Tasks 14–19): Typen, Ortmodell und Speicher
+> 1. **Paket 3** Frontend, weiter mit Task 15: Ortmodell und Speicher
 >    Fassung 2, **zwei Ortsfelder** (E3), Fahrtauswahl („laut Fahrplan“,
 >    Ausfall), Weg und Live, Quellenangaben.
-> 6. **Paket 4** Abnahme K1–K7 und Auslieferung Fly/Vercel (Julian hat
->    „komplett ausliefern“ freigegeben).
+> 2. **Paket 4** Abnahme K1–K7 (Prüfskript gegen Transitous) und Auslieferung
+>    Fly/Vercel (Julian hat „komplett ausliefern“ freigegeben).
 >
 > **Fortschrittsbuch** der Ausführung: `.superpowers/sdd/2026-10-16-umstieg-2/progress.md`
 > (gitignored, nur auf diesem Rechner) – erste Zeile nennt den Plan, je Task
