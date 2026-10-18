@@ -9,7 +9,7 @@ import type {
   RoutenVariante,
   TafelEintrag,
 } from '../api/typen'
-import { frischeOrtAuf, ortSchluessel, pfadFuer } from '../ort/ortmodell'
+import { ortSchluessel, pfadFuer, sucheHaltestelleZu } from '../ort/ortmodell'
 import { steigText } from '../ort/steig'
 import { VerkehrsmittelSymbole } from '../ort/verkehrsmittel'
 import { Ortsuche, type OrtsucheStand } from './Ortsuche'
@@ -264,30 +264,47 @@ export function Eingabe({
 
   /*
    * Ein Bahnhof ohne Haltestellen-ID - die Suche kannte gerade keine - wird
-   * im Haltestellenpfad nachgeschlagen (`frischeOrtAuf`, gleiche EVA). Je Ort
-   * gemerkt: `null` heisst gesucht und nichts gefunden.
+   * im Haltestellenpfad nachgeschlagen (`sucheHaltestelleZu`, gleiche EVA). Je
+   * Ort gemerkt: `null` heisst gesucht und nichts gefunden, `'ausfall'`, dass
+   * die Suche nicht antwortete - dann gibt es einen neuen Versuch auf Wunsch.
    */
-  const [nachgeschlagen, setNachgeschlagen] = useState<Record<string, Ort | null>>({})
+  const [nachgeschlagen, setNachgeschlagen] = useState<Record<string, Ort | null | 'ausfall'>>({})
   useEffect(() => {
     if (!haltestellenPfad) return
     let gueltig = true
     for (const ort of [gewaehlt, anschlussOrt]) {
       if (!ort || ort.haltestelleId) continue
-      void frischeOrtAuf(ort, sucheOrte).then((neu) => {
-        if (gueltig) setNachgeschlagen((alt) => ({ ...alt, [ortSchluessel(ort)]: neu.haltestelleId ? neu : null }))
+      void sucheHaltestelleZu(ort, sucheOrte).then((neu) => {
+        if (gueltig) setNachgeschlagen((alt) => ({ ...alt, [ortSchluessel(ort)]: neu }))
       })
     }
     return () => {
       gueltig = false
     }
   }, [haltestellenPfad, gewaehlt, anschlussOrt])
-  const mitId = (o: Ort | null): Ort | null =>
-    !o ? null : o.haltestelleId ? o : (nachgeschlagen[ortSchluessel(o)] ?? null)
+  // Der neue Versuch nach einem Ausfall - nur fuer die Orte, deren Suche
+  // nicht antwortete.
+  function schlageNochmalNach() {
+    for (const ort of [gewaehlt, anschlussOrt]) {
+      if (!ort || ort.haltestelleId || nachgeschlagen[ortSchluessel(ort)] !== 'ausfall') continue
+      void sucheHaltestelleZu(ort, sucheOrte).then((neu) =>
+        setNachgeschlagen((alt) => ({ ...alt, [ortSchluessel(ort)]: neu })),
+      )
+    }
+  }
+  const mitId = (o: Ort | null): Ort | null => {
+    if (!o) return null
+    if (o.haltestelleId) return o
+    const gefunden = nachgeschlagen[ortSchluessel(o)]
+    return gefunden && gefunden !== 'ausfall' ? gefunden : null
+  }
   const ankunftHalt = mitId(gewaehlt)
   const abfahrtHalt = mitId(anschlussOrt ?? gewaehlt)
-  const haltFehlt =
+  const nachschlagStand = (wert: Ort | null | 'ausfall') =>
     haltestellenPfad &&
-    [gewaehlt, anschlussOrt].some((o) => o && !o.haltestelleId && nachgeschlagen[ortSchluessel(o)] === null)
+    [gewaehlt, anschlussOrt].some((o) => o && !o.haltestelleId && nachgeschlagen[ortSchluessel(o)] === wert)
+  const haltFehlt = nachschlagStand(null)
+  const haltNichtErreichbar = nachschlagStand('ausfall')
   const bahnhof: TafelBahnhof | null =
     pfad !== 'haltestelle' && gewaehlt?.eva ? { name: gewaehlt.name, eva: gewaehlt.eva } : null
 
@@ -506,6 +523,14 @@ export function Eingabe({
   const haltestellenTeil = (
     <>
       {haltFehlt && <div className="hinweis-box">Für diesen Bahnhof fehlen gerade Haltestellendaten.</div>}
+      {haltNichtErreichbar && (
+        <div className="hinweis-box">
+          <p style={{ margin: '0 0 8px' }}>Haltestellendaten gerade nicht erreichbar.</p>
+          <button type="button" className="knopf-sekundaer" onClick={schlageNochmalNach}>
+            Erneut versuchen
+          </button>
+        </div>
+      )}
       {breit ? (
         <div className="gleiskacheln">
           <div className="gleiskachel">
@@ -523,6 +548,9 @@ export function Eingabe({
             <legend>Ankunft</legend>
             {ankunftHalt && (
               <Fahrtauswahl
+                // Je Ort eine eigene Tafel - sonst zeigte die geoeffnete Liste
+                // nach einem Ortswechsel die Fahrten des alten Ortes.
+                key={`${ortSchluessel(ankunftHalt)}|arr`}
                 ort={ankunftHalt}
                 typ="arr"
                 label="Ankunft wählen"
@@ -536,6 +564,7 @@ export function Eingabe({
             <legend>Abfahrt</legend>
             {abfahrtHalt && (
               <Fahrtauswahl
+                key={`${ortSchluessel(abfahrtHalt)}|dep`}
                 ort={abfahrtHalt}
                 typ="dep"
                 label="Anschluss wählen"

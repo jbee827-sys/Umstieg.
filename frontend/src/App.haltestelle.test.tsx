@@ -158,3 +158,20 @@ describe('Haltestellenpfad Ende-zu-Ende (Paket 3.5)', () => {
     expect(strom.bahnhof).toBe(0)
   })
 })
+
+describe('Haltestellenpfad: Review Paket 3', () => {
+  it('eine verspaetete Ankunft meldet die Ankunftszeit', async () => {
+    await starteUmstieg()
+    await screen.findByText('Gehzeit 5 min', {}, { timeout: 3000 })
+    act(() => strom.sende!({ typ: 'verspaetung', zug: 'ice', anzeige: 'ICE 1206', alt: '10:20', neu: '23:59', zeitstempel: new Date().toISOString() }))
+    expect(await screen.findByText('Neue Ankunftszeit')).toBeDefined()
+    expect(screen.getByText('ICE 1206 kommt um 23:59 statt 10:20 an.')).toBeDefined()
+  })
+
+  it('der Gleiswechsel des ICE heisst Gleiswechsel, nicht Steigwechsel', async () => {
+    await starteUmstieg()
+    await screen.findByText('Gehzeit 5 min', {}, { timeout: 3000 })
+    act(() => strom.sende!({ typ: 'gleiswechsel', zug: 'ice', anzeige: 'ICE 1206', alt: '7', neu: '8', zeitstempel: new Date().toISOString() }))
+    expect(await screen.findByText('ICE 1206 fährt heute von Gleis 8 statt 7.')).toBeDefined()
+  })
+})

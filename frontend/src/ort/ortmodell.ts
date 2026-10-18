@@ -43,17 +43,31 @@ export async function frischeOrtAuf(
   ort: Ort,
   suche: (q: string) => Promise<OrteErgebnis>,
 ): Promise<Ort> {
+  const treffer = await sucheHaltestelleZu(ort, suche);
+  return treffer && treffer !== 'ausfall' ? treffer : ort;
+}
+
+/**
+ * Wie `frischeOrtAuf`, aber mit Unterschied zwischen „nichts gefunden“
+ * (`null`) und „Suche ausgefallen“ (`'ausfall'`). Wer den Ausfall wie ein
+ * Nichtfinden behandelt, meldet nach einem kurzen Netzloch dauerhaft
+ * fehlende Daten.
+ */
+export async function sucheHaltestelleZu(
+  ort: Ort,
+  suche: (q: string) => Promise<OrteErgebnis>,
+): Promise<Ort | null | 'ausfall'> {
   // Auch ohne ID: Ein Bahnhof, zu dem die letzte Suche keine Haltestelle
   // kannte, bekommt hier seine (gleiche EVA).
-  const ergebnis = await suche(ort.name);
-  if (!ergebnis.ok) return ort;
+  const ergebnis = await suche(ort.name).catch(() => null);
+  if (!ergebnis || !ergebnis.ok) return 'ausfall';
   const treffer = ergebnis.antwort.orte.find(
     (o) =>
       o.haltestelleId &&
       ((ort.eva && o.eva === ort.eva) ||
         (o.name === ort.name && haversineM(ort.lat, ort.lon, o.lat, o.lon) <= GLEICHER_ORT_M)),
   );
-  return treffer ?? ort;
+  return treffer ?? null;
 }
 
 /** Stabiler Schlüssel für Listen und Vergleiche. */

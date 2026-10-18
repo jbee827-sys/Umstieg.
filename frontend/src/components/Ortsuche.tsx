@@ -52,8 +52,12 @@ export function Ortsuche({
   useEffect(() => {
     window.clearTimeout(suchTimer.current)
     if (gewaehlt || text.trim().length < 2) return
+    // Eine spaete Antwort fuer einen alten Suchtext wird verworfen - sonst
+    // ueberschriebe sie die Vorschlaege und den Quellenstand der neueren.
+    let gueltig = true
     suchTimer.current = window.setTimeout(async () => {
       const ergebnis = await sucheOrte(text.trim())
+      if (!gueltig) return
       if (ergebnis.ok) {
         setVorschlaege(ergebnis.antwort.orte.slice(0, 6))
         meldeQuellen.current?.(ergebnis.antwort.quellen)
@@ -64,7 +68,10 @@ export function Ortsuche({
         meldeQuellen.current?.(ergebnis.fehler)
       }
     }, 300)
-    return () => window.clearTimeout(suchTimer.current)
+    return () => {
+      gueltig = false
+      window.clearTimeout(suchTimer.current)
+    }
   }, [text, gewaehlt])
 
   // Abgeleitet statt gespeichert: Vorschlaege gehoeren zu einem Suchtext ab

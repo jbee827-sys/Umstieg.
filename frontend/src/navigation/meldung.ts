@@ -12,11 +12,17 @@ export function meldungsText(ereignis: LiveEreignis): { titel: string; text: str
     }
   }
   if (ereignis.typ === 'gleiswechsel') {
-    // `anzeige` traegt nur der Haltestellenpfad - dort ist es ein Steig.
-    const ort = ereignis.anzeige !== undefined ? 'Steig' : 'Gleis'
+    // An Haltestellen heisst der Halt eines Busses Steig, der einer Bahn Gleis.
+    const ort = ereignis.haltWort ?? 'Gleis'
     return {
       titel: `${ort}wechsel`,
       text: `${zug}fährt heute von ${ort} ${ereignis.neu} statt ${ereignis.alt}.`,
+    }
+  }
+  if (ereignis.seite === 'an') {
+    return {
+      titel: 'Neue Ankunftszeit',
+      text: `${zug}kommt um ${ereignis.neu} statt ${ereignis.alt} an.`,
     }
   }
   return {

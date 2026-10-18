@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { useState } from 'react'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Ortsuche } from './Ortsuche'
 import { sucheOrte } from '../api/orte'
@@ -70,5 +70,32 @@ describe('Ortsuche', () => {
     render(<Huelle onWahl={vi.fn()} onQuellen={onQuellen} />)
     await userEvent.type(screen.getByLabelText('Anschluss: Bahnhof oder Haltestelle'), 'Ber')
     await vi.waitFor(() => expect(onQuellen).toHaveBeenCalledWith('netz'))
+  })
+})
+
+describe('Ortsuche: spaete Antworten (Review Paket 3)', () => {
+  it('eine langsame Antwort fuer einen aelteren Suchtext ueberschreibt die neuere nicht', async () => {
+    const KASSEL: Ort = { name: 'Kassel Rathaus', haltestelleId: 'k', lat: 51.3, lon: 9.5, verkehrsmittel: ['tram'] }
+    const ALT: Ort = { name: 'Kastanienallee', haltestelleId: 'a', lat: 52.5, lon: 13.4, verkehrsmittel: ['tram'] }
+    let gibAlt: (v: Awaited<ReturnType<typeof sucheOrte>>) => void = () => {}
+    suche.mockImplementation((q: string) =>
+      q === 'Kas'
+        ? new Promise((r) => {
+            gibAlt = r
+          })
+        : Promise.resolve({ ok: true, antwort: { orte: [KASSEL], quellen: { bahnhoefe: 'ok', haltestellen: 'ok' } } }),
+    )
+    const onQuellen = vi.fn()
+    render(<Huelle onWahl={vi.fn()} onQuellen={onQuellen} />)
+    const eingabe = screen.getByLabelText('Anschluss: Bahnhof oder Haltestelle')
+    await userEvent.type(eingabe, 'Kas')
+    await waitFor(() => expect(suche).toHaveBeenCalledWith('Kas'), { timeout: 3000 })
+    await userEvent.type(eingabe, 'sel Rathaus')
+    await screen.findByRole('button', { name: /Kassel Rathaus/ }, { timeout: 3000 })
+    onQuellen.mockClear()
+    await act(async () => gibAlt({ ok: true, antwort: { orte: [ALT], quellen: { bahnhoefe: 'ok', haltestellen: 'ausfall' } } }))
+    expect(screen.getByRole('button', { name: /Kassel Rathaus/ })).toBeDefined()
+    expect(screen.queryByRole('button', { name: /Kastanienallee/ })).toBeNull()
+    expect(onQuellen).not.toHaveBeenCalled()
   })
 })

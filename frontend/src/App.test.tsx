@@ -420,3 +420,23 @@ describe('App: Seitenwechsel bewegen sich gerichtet', () => {
     expect(arten).toEqual(['quer'])
   })
 })
+
+describe('Bahnhofspfad: Verspaetung des Ankunftszugs (Review Paket 3)', () => {
+  it('verschiebt die Ankunft, nicht die Abfahrt des Anschlusses', async () => {
+    const route: RouteErgebnis = { stufe: 1, schritte: [{ text: 'Geradeaus', typ: 'eben', sekunden: 60 }], gehzeitSek: 60, hinweise: [] }
+    schreibeReise({
+      werte: {
+        eva: '8010205', bahnhofName: 'Leipzig Hbf', gleisAn: '6', gleisAb: '16', wagenAn: '', wagenAb: '',
+        profil: 'normal', variante: 'schnellste', abschnitt: 'mitte',
+        zugAnName: 'RE 3', zugAbName: 'ICE 1006', ankunftZeit: '14:30', abfahrtZeit: '14:36',
+      },
+      route, variante: 'schnellste', standort: 'mitte', gehzeiten: { 'schnellste|mitte': 60 }, meldungen: [], versatz: 0,
+    })
+    window.history.replaceState(null, '', '/uebersicht')
+    render(<App />)
+    act(() => strom.sende!({ typ: 'verspaetung', zug: 'RE 3', alt: '14:30', neu: '14:38', zeitstempel: '2026-10-18T12:00:00.000Z' }))
+    expect(await screen.findByText('Neue Ankunftszeit')).toBeDefined()
+    await userEvent.click(screen.getByRole('button', { name: /Was heißt das/ }))
+    expect(await screen.findByText('14:36', { selector: 'dd' })).toBeDefined()
+  })
+})

@@ -188,6 +188,10 @@ export interface LiveEreignis {
   zug?: string;
   /** Linie zum Anzeigen (Haltestellenpfad). */
   anzeige?: string;
+  /** Nur im Frontend gesetzt (App.tsx): welche der beiden Fahrten gemeint ist. */
+  seite?: 'an' | 'ab';
+  /** Nur im Frontend gesetzt (App.tsx, Haltestellenpfad): wie der Halt dieser Fahrt heisst. */
+  haltWort?: 'Gleis' | 'Steig';
   alt?: string;
   neu?: string;
   zeitstempel: string;
