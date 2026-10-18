@@ -51,3 +51,15 @@ describe('Fahrtauswahl', () => {
     expect(zeilen.map((z) => z.getAttribute('aria-pressed'))).toEqual(['false', 'true'])
   })
 })
+
+describe('Fahrtauswahl: Kennzeichen sichtbar (Browserpruefung 18.10.2026)', () => {
+  it('„laut Fahrplan“ steht neben dem gekuerzten Text, nicht darin - sonst wird es zu „la…“', async () => {
+    vi.mocked(holeHaltestellenTafel).mockResolvedValue({ ok: true, stand: new Date().toISOString(), eintraege: [
+      { ...basis, fahrtId: 'f2', linie: '245', verkehrsmittel: 'bus', ziel: 'S+U Zoologischer Garten', echtzeit: false },
+    ] })
+    render(<Fahrtauswahl ort={ORT} typ="dep" label="Anschluss wählen" auswahl={null} onAuswahl={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Anschluss wählen' }))
+    const kennzeichen = within(await screen.findByRole('button', { name: /245/ })).getByText('laut Fahrplan')
+    expect(kennzeichen.closest('.tafel-zug')).toBeNull()
+  })
+})

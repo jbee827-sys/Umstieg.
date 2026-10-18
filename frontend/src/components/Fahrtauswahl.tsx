@@ -84,8 +84,11 @@ function FahrtBloecke({ bloecke, typ, auswahl, markiere, onTipp }: BloeckeProps)
                   <Zeit e={e} />
                   <span className="tafel-zug">
                     <VerkehrsmittelSymbole liste={[e.verkehrsmittel]} /> <strong>{e.linie}</strong>{' '}
-                    {typ === 'arr' ? 'aus' : 'nach'} {e.ziel} <Kennzeichen e={e} />
+                    {typ === 'arr' ? 'aus' : 'nach'} {e.ziel}
                   </span>
+                  {/* Neben, nicht in der Zeile: Die wird bei langem Ziel mit
+                      „…“ gekuerzt - und „laut Fahrplan“ (F5) ging mit. */}
+                  <Kennzeichen e={e} />
                   <span className={`tafel-gleis${e.steigIst ? ' gleiswechsel' : ''}`}>{steigText(e)}</span>
                 </button>
               </li>

@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { LngLatBounds, Map as MapLibreMap, type GeoJSONSource } from 'maplibre-gl'
+import { LngLatBounds, Map as MapLibreMap, setWorkerUrl, type GeoJSONSource } from 'maplibre-gl'
+// MapLibre 6 setzt die Worker-Adresse zur Laufzeit aus `import.meta.url` und
+// einem variablen Dateinamen zusammen. Das erkennt kein Bundler: Die Datei
+// wurde nie ausgeliefert, der Browser bekam fuer
+// `/assets/maplibre-gl-worker.mjs` die index.html (SPA-Rueckfall), der Worker
+// starb lautlos - und KEINE GeoJSON-Quelle lud: keine Weglinie, kein Start,
+// kein Ziel, kein Standort, seit dem 25.08.2026 (Browserpruefung 18.10.2026).
+// `?worker&url` laesst Vite den Worker samt Abhaengigkeiten buendeln.
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
+
+setWorkerUrl(maplibreWorkerUrl)
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { Schritt } from '../api/typen'
 import { genauigkeitsPolygon } from '../standort/distanz'
@@ -63,6 +73,14 @@ export function Karte({ karte, standort, aktiverSchritt, anfangsOffen = false }:
   const [ebene, setEbene] = useState(() => (ebenen.includes('0') ? '0' : (ebenen[0] ?? '0')))
   const behaelter = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
+  // Die Ebene zum Zeitpunkt des Ladens, nicht die beim Aufbau: Offen
+  // gestartet (Haltestellenpfad) wechselt die Ebene auf die des aktiven
+  // Schritts, BEVOR die Karte geladen ist - und `load` las bis zum 18.10.2026
+  // die alte, waehrend der Knopf schon die neue zeigte.
+  const ebeneRef = useRef(ebene)
+  useEffect(() => {
+    ebeneRef.current = ebene
+  }, [ebene])
 
   const daten = (e: string): FeatureCollection => (karte[e] as FeatureCollection) ?? LEER
 
@@ -112,7 +130,7 @@ export function Karte({ karte, standort, aktiverSchritt, anfangsOffen = false }:
     })
 
     map.on('load', () => {
-      map.addSource('route', { type: 'geojson', data: daten(ebene) })
+      map.addSource('route', { type: 'geojson', data: daten(ebeneRef.current) })
       map.addLayer({
         id: 'route-linie',
         type: 'line',
