@@ -137,6 +137,11 @@ function App() {
   // danach war nicht mehr feststellbar, dass es das vorige gegeben hatte.
   // Deshalb gab es auch nichts zu zaehlen.
   const [meldungen, setMeldungen] = useState<Meldung[]>(start.reise?.meldungen ?? [])
+  // Fuer den Live-Behandler, ohne ihn bei jeder Meldung neu zu abonnieren.
+  const meldungenRef = useRef<Meldung[]>(meldungen)
+  useEffect(() => {
+    meldungenRef.current = meldungen
+  }, [meldungen])
   // Der Bildschirm, von dem aus gewechselt wird - fuer die Richtung des
   // Uebergangs. Als Ref, damit `setBildschirm` stabil bleibt: Viele Rueckrufe
   // haengen an ihm.
@@ -674,6 +679,14 @@ function App() {
                 ? 'ankunft'
                 : null
           if (!seite) return
+          // Nach einer Neuverbindung meldet der Server einen Ausfall erneut
+          // (er hat keine Grundlinie mehr). Einmal reicht.
+          if (
+            roh.typ === 'ausfall' &&
+            meldungenRef.current.some((m) => m.ereignis.typ === 'ausfall' && m.ereignis.zug === roh.zug)
+          ) {
+            return
+          }
           // „Bus 245“ statt „245“ - die Meldung steht ohne Tafel daneben.
           // `seite` und `haltWort` braucht der Meldungstext: Er kennt die
           // Fahrten nicht und sagte sonst „Abfahrt“ und „Steig“ zu allem.
@@ -716,7 +729,10 @@ function App() {
           void holeHaltestellenTafel(ort, seite === 'ankunft' ? 'arr' : 'dep')
             .then(async (tafel) => {
               const neueFahrt = tafel.ok ? tafel.eintraege.find((e) => e.fahrtId === fahrt.fahrtId) : undefined
-              if (!neueFahrt) return
+              // Die Tafel liegt bis zu 30 s im Zwischenspeicher und kann den
+              // alten Steig noch tragen. Ein Weg dorthin waere ein Vorschlag
+              // zum falschen Steig - dann lieber keiner.
+              if (!neueFahrt || (neueFahrt.steigIst ?? neueFahrt.steigSoll) !== ereignis.neu) return
               const neueWahl: HaltestellenWahl = { ...wahl, [seite]: { ort, fahrt: neueFahrt } }
               const steig = neueFahrt.steigIst ?? neueFahrt.steigSoll ?? ''
               const neueWerte: EingabeWerte = {
@@ -1017,6 +1033,7 @@ function App() {
           onZurueck={() => setVersatz((v) => v - 1)}
           onWeiter={() => setVersatz((v) => v + 1)}
           onAngekommen={bestaetigeAnkunft}
+          pfad={werte.haltestellen ? 'haltestelle' : 'bahnhof'}
           // Die Streckenhinweise standen bis zum 19.09.2026 lose unter der
           // Schritt-Box. Im festen Bildschirm ist dort kein Platz mehr; sie
           // bleiben im Aufklapper erreichbar, statt zu verschwinden.

@@ -227,3 +227,23 @@ describe('Haltestellen-Live: Koordinate', () => {
     expect(merke).not.toHaveBeenCalled();
   });
 });
+
+describe('Ueberwachung: Ausfall vor der ersten Grundlinie (Gesamtreview Umstieg 2.0)', () => {
+  it('meldet eine Fahrt, die schon beim ersten Abruf ausfaellt, einmal', async () => {
+    const tafel: TafelEintrag[] = [{ zug: 'f1', zeitSoll: '16:28', gleisSoll: 'A', ziel: 'Zoo', anzeige: 'Bus 245', ausfall: true }];
+    const u = new Ueberwachung(async () => tafel);
+    const e: LiveEreignis[] = [];
+    u.abonniere('h1', ['f1'], (x) => e.push(x));
+    await u.pruefeJetzt('h1');
+    await u.pruefeJetzt('h1');
+    expect(e.filter((x) => x.typ === 'ausfall')).toHaveLength(1);
+  });
+
+  it('der Bahnhofspfad (ohne Ausfall-Feld) meldet beim ersten Abruf nichts', async () => {
+    const u = new Ueberwachung(async () => [{ zug: 'ICE 1006', zeitSoll: '16:28', gleisSoll: '7', ziel: 'Hamburg' }]);
+    const e: LiveEreignis[] = [];
+    u.abonniere('8011160', ['ICE 1006'], (x) => e.push(x));
+    await u.pruefeJetzt('8011160');
+    expect(e.filter((x) => x.typ !== 'heartbeat')).toEqual([]);
+  });
+});

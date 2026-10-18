@@ -175,3 +175,35 @@ describe('Haltestellenpfad: Review Paket 3', () => {
     expect(await screen.findByText('ICE 1206 fährt heute von Gleis 8 statt 7.')).toBeDefined()
   })
 })
+
+describe('Haltestellenpfad: Gesamtreview Umstieg 2.0', () => {
+  it('die Schrittansicht zeigt kein Ebenenschema, sondern sagt, warum keine Karte da ist', async () => {
+    await starteUmstieg()
+    await screen.findByText('Gehzeit 5 min', {}, { timeout: 3000 })
+    await userEvent.click(screen.getByRole('button', { name: 'Navigation starten' }))
+    await screen.findByRole('heading', { name: 'Gleis 7 → Steig Pos. 11' })
+    expect(screen.queryByRole('img', { name: /Ebenenschema/ })).toBeNull()
+    expect(document.querySelector('.schema-stapel')).toBeNull()
+    expect(screen.getByText(/Für diesen Weg gibt es keine Karte/)).toBeDefined()
+  })
+
+  it('ein zweites Ausfall-Ereignis derselben Fahrt (Neuverbindung) meldet nicht doppelt', async () => {
+    await starteUmstieg()
+    await screen.findByText('Gehzeit 5 min', {}, { timeout: 3000 })
+    act(() => strom.sende!({ typ: 'ausfall', zug: 'bus', anzeige: '245', zeitstempel: new Date().toISOString() }))
+    await userEvent.click(await screen.findByRole('button', { name: /Später/ }))
+    act(() => strom.sende!({ typ: 'ausfall', zug: 'bus', anzeige: '245', zeitstempel: new Date().toISOString() }))
+    expect(screen.queryByText(/Bus 245 fällt aus/)).toBeNull()
+  })
+
+  it('Steigwechsel, die Tafel kennt den neuen Steig noch nicht: kein Vorschlag zum alten Steig', async () => {
+    await starteUmstieg()
+    await screen.findByText('Gehzeit 5 min', {}, { timeout: 3000 })
+    vi.mocked(holeWeg).mockClear()
+    act(() => strom.sende!({ typ: 'gleiswechsel', zug: 'bus', anzeige: '245', alt: 'Pos. 11', neu: 'Pos. 3', zeitstempel: new Date().toISOString() }))
+    await waitFor(() => expect(vi.mocked(holeHaltestellenTafel)).toHaveBeenCalledWith(BUS, 'dep'))
+    await userEvent.click(screen.getByRole('button', { name: /Was heißt das/ }))
+    expect(await screen.findByText(/lässt sich gerade nicht berechnen/)).toBeDefined()
+    expect(vi.mocked(holeWeg)).not.toHaveBeenCalled()
+  })
+})

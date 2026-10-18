@@ -99,6 +99,20 @@ describe('Eingabe: Vorbelegung aus dem Standort', () => {
     expect(await screen.findByDisplayValue('Berlin Hbf')).toBeDefined()
   })
 
+  it('erkennt den einzigen Bahnhof auch zwischen Haltestellen (Gesamtreview Umstieg 2.0)', async () => {
+    const halt = (n: string): Ort => ({ name: n, haltestelleId: n, lat: 52.52, lon: 13.37, verkehrsmittel: ['bus'] })
+    zeige([BERLIN, halt('Washingtonplatz'), halt('Invalidenpark')])
+    expect(await screen.findByDisplayValue('Berlin Hbf')).toBeDefined()
+  })
+
+  it('waehlt nichts unter mehreren Haltestellen ohne Bahnhof', () => {
+    zeige([
+      { name: 'Washingtonplatz', haltestelleId: 'w', lat: 52.52, lon: 13.37, verkehrsmittel: ['bus'] },
+      { name: 'Invalidenpark', haltestelleId: 'i', lat: 52.53, lon: 13.37, verkehrsmittel: ['bus'] },
+    ])
+    expect(feld().value).toBe('')
+  })
+
   it('ueberschreibt eine bereits getippte Eingabe nicht', async () => {
     const { rerender } = render(
       <Eingabe laden={false} fehler={null} onBerechnen={vi.fn()} />,
