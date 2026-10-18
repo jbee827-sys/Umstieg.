@@ -14,7 +14,12 @@ export function ortsangabe(werte: EingabeWerte, seite: 'an' | 'ab'): string {
   const fahrt = seite === 'an' ? wahl.ankunft.fahrt : wahl.anschluss.fahrt
   const steig = fahrt.steigIst ?? fahrt.steigSoll
   if (!steig) return 'Haltestelle'
-  return fahrt.verkehrsmittel === 'bahn' || fahrt.verkehrsmittel === 'sbahn' ? `Gleis ${steig}` : `Steig ${steig}`
+  return `${haltWort(fahrt)} ${steig}`
+}
+
+/** Ein Bahnsteig der Bahn heisst auch an einer Haltestelle Gleis, alles andere Steig. */
+export function haltWort(fahrt: HaltestellenTafelEintrag): 'Gleis' | 'Steig' {
+  return fahrt.verkehrsmittel === 'bahn' || fahrt.verkehrsmittel === 'sbahn' ? 'Gleis' : 'Steig'
 }
 
 /**

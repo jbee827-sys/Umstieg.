@@ -13,7 +13,7 @@ import type {
   RoutenVariante,
   Weg,
 } from './api/typen'
-import { haltestellenHinweise, linienName, ortsangabe } from './ort/anzeige'
+import { haltestellenHinweise, haltWort, linienName, ortsangabe } from './ort/anzeige'
 import { Datenschutz } from './components/Datenschutz'
 import { Fusszeile } from './components/Fusszeile'
 import { Impressum } from './components/Impressum'
@@ -675,7 +675,15 @@ function App() {
                 : null
           if (!seite) return
           // „Bus 245“ statt „245“ - die Meldung steht ohne Tafel daneben.
-          const ereignis: LiveEreignis = { ...roh, anzeige: linienName(wahl[seite].fahrt) }
+          // `seite` und `haltWort` braucht der Meldungstext: Er kennt die
+          // Fahrten nicht und sagte sonst „Abfahrt“ und „Steig“ zu allem.
+          const betroffen = wahl[seite].fahrt
+          const ereignis: LiveEreignis = {
+            ...roh,
+            anzeige: linienName(betroffen),
+            seite: seite === 'ankunft' ? 'an' : 'ab',
+            haltWort: haltWort(betroffen),
+          }
           setLiveEreignis(ereignis)
           navigator.vibrate?.([200, 100, 200])
 
@@ -735,8 +743,13 @@ function App() {
       zugAn: werte.zugAnName,
       zugAb: werte.zugAbName,
       onWiederverbunden: () => void berechne(werte),
-      onEreignis: (ereignis) => {
-        if (zustand(ereignis)) return
+      onEreignis: (roh) => {
+        if (zustand(roh)) return
+        // Der Strom meldet beide Zuege. Ohne die Seite wurde eine verspaetete
+        // ANKUNFT bis zum 18.10.2026 zur neuen Abfahrtszeit des Anschlusses -
+        // und die Ampel rechnete mit einer Abfahrt, die es nicht gab.
+        const betrifftAnkunftszug = roh.zug !== undefined && roh.zug === werte.zugAnName && roh.zug !== werte.zugAbName
+        const ereignis: LiveEreignis = { ...roh, seite: betrifftAnkunftszug ? 'an' : 'ab' }
         setLiveEreignis(ereignis)
         navigator.vibrate?.([200, 100, 200])
 
@@ -753,7 +766,7 @@ function App() {
             const basis = liste[0]?.vorschlag
             const ergaenzt = ergaenze(liste, ereignis, {
               route: basis?.route ?? routeRef.current!,
-              werte: { ...(basis?.werte ?? werte), abfahrtZeit: ereignis.neu! },
+              werte: { ...(basis?.werte ?? werte), [betrifftAnkunftszug ? 'ankunftZeit' : 'abfahrtZeit']: ereignis.neu! },
               anlass: ereignis,
             })
             // Wer die Seite offen hat, liest mit.

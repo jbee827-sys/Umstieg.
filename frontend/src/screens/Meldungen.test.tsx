@@ -206,3 +206,27 @@ describe('Meldungen: Haltestellenpfad (Umstieg 2.0)', () => {
     expect(screen.queryByText('trip-7f3a')).toBeNull()
   })
 })
+
+describe('Meldungen: Ankunft und Halt (Review Paket 3)', () => {
+  it('eine verspaetete Ankunft verschiebt die Ankunft, nicht die Abfahrt', () => {
+    const ereignis: LiveEreignis = { typ: 'verspaetung', zug: 'RE 3', seite: 'an', alt: '14:30', neu: '14:38', zeitstempel: STAND }
+    render(
+      <Meldungen
+        meldungen={mitVorschlag(ereignis, { route: alteRoute, werte: { ...alteWerte, ankunftZeit: '14:38' }, anlass: ereignis })}
+        alteRoute={alteRoute}
+        alteWerte={{ ...alteWerte, ankunftZeit: '14:30' }}
+        stand={STAND}
+        restSek={240}
+        onUebernehmen={vi.fn()}
+      />,
+    )
+    expect(screen.getByText('14:38 · 8 min später')).toBeDefined()
+    expect(screen.getByText('14:36', { selector: 'dd' })).toBeDefined()
+    expect(screen.getByText('Ankunft')).toBeDefined()
+  })
+  it('ein S-Bahn-Gleis an einer Haltestelle heisst Gl., nicht Steig', () => {
+    const ereignis: LiveEreignis = { typ: 'gleiswechsel', zug: 't', anzeige: 'S5', haltWort: 'Gleis', alt: '2', neu: '3', zeitstempel: STAND }
+    zeige(ergaenze([], ereignis))
+    expect(screen.getByText('Gl. 3')).toBeDefined()
+  })
+})

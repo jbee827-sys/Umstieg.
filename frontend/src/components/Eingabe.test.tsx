@@ -702,4 +702,43 @@ describe('Eingabe: Haltestellenpfad (Umstieg 2.0)', () => {
     await userEvent.click(await screen.findByRole('button', { name: /^Berlin ZOB/ }))
     expect(await screen.findByText('Für diesen Bahnhof fehlen gerade Haltestellendaten.')).toBeDefined()
   })
+
+  it('ein neuer Anschlussort holt seine eigene Abfahrtstafel (Review Paket 3)', async () => {
+    vi.mocked(holeHaltestellenTafel).mockImplementation(async (o: Ort, typ: 'arr' | 'dep') => ({
+      ok: true as const,
+      stand: new Date().toISOString(),
+      eintraege: typ === 'arr' ? [S5] : [o.haltestelleId === 'z' ? BUS : fahrt({ fahrtId: 'h1', linie: 'Bus 123', ziel: 'Mitte' })],
+    }))
+    zeige(undefined, { ...ENTWURF, gewaehlt: ZOB, suchtext: 'Berlin ZOB' })
+    await userEvent.click(screen.getByRole('button', { name: 'Anschluss wählen' }))
+    expect(await screen.findByRole('button', { name: /Bus 245/ })).toBeDefined()
+    await userEvent.type(screen.getByLabelText('Anschluss: Bahnhof oder Haltestelle'), 'Berlin H')
+    await userEvent.click(await screen.findByRole('button', { name: /^Berlin Hbf/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Anschluss wählen' }))
+    expect(await screen.findByRole('button', { name: /Bus 123/ })).toBeDefined()
+    expect(screen.queryByRole('button', { name: /Bus 245/ })).toBeNull()
+  })
+
+  it('faellt das Nachschlagen aus, sagt die Eingabe das und versucht es auf Wunsch noch einmal (Review Paket 3)', async () => {
+    let frisch = 0
+    sucheMock.mockImplementation(async (q: string) => {
+      if (q.includes('ZOB')) return orteAntwort([ZOB])
+      if (q === 'Berlin Hbf') {
+        frisch += 1
+        if (frisch === 1) return { ok: false as const, fehler: 'netz' as const }
+        return orteAntwort([HBF])
+      }
+      return orteAntwort([{ ...HBF, haltestelleId: undefined }])
+    })
+    zeige()
+    await userEvent.type(feld(), 'Berlin H')
+    await userEvent.click(await screen.findByRole('button', { name: /^Berlin Hbf/ }))
+    await userEvent.type(screen.getByLabelText('Anschluss: Bahnhof oder Haltestelle'), 'Berlin ZOB')
+    await userEvent.click(await screen.findByRole('button', { name: /^Berlin ZOB/ }))
+    expect(await screen.findByText('Haltestellendaten gerade nicht erreichbar.')).toBeDefined()
+    expect(screen.queryByText('Für diesen Bahnhof fehlen gerade Haltestellendaten.')).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }))
+    expect(await screen.findByRole('button', { name: 'Ankunft wählen' })).toBeDefined()
+    expect(screen.queryByText('Haltestellendaten gerade nicht erreichbar.')).toBeNull()
+  })
 })

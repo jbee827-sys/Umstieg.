@@ -53,8 +53,8 @@ function ampelAussage(restSek: number | undefined, gehzeitSek: number): string {
 function wert(ereignis: LiveEreignis, welcher: 'alt' | 'neu'): string {
   const roh = ereignis[welcher] ?? '–'
   if (ereignis.typ !== 'gleiswechsel') return roh
-  // `anzeige` traegt nur der Haltestellenpfad - dort ist es ein Steig.
-  return ereignis.anzeige !== undefined ? `Steig ${roh}` : `Gl. ${roh}`
+  // An Haltestellen heisst der Halt eines Busses Steig, der einer Bahn Gleis.
+  return ereignis.haltWort === 'Steig' ? `Steig ${roh}` : `Gl. ${roh}`
 }
 
 // Nachfolger von Screen 4 des Entwurfs. Screen 4 war eine Entscheidungsseite
@@ -100,8 +100,12 @@ export function Meldungen({
   // gegenueberzustellen und nichts nachzurechnen.
   const ausfall = neueste.ereignis.typ === 'ausfall'
   const vorschlag = neueste.vorschlag
+  // Eine verspaetete ANKUNFT verschiebt die Ankunft; die Abfahrt bleibt.
+  const ankunftVerschoben = neueste.ereignis.typ === 'verspaetung' && neueste.ereignis.seite === 'an'
   const zeitversatz = vorschlag
-    ? verschiebung(alteWerte.abfahrtZeit, vorschlag.werte.abfahrtZeit)
+    ? ankunftVerschoben
+      ? verschiebung(alteWerte.ankunftZeit, vorschlag.werte.ankunftZeit)
+      : verschiebung(alteWerte.abfahrtZeit, vorschlag.werte.abfahrtZeit)
     : null
 
   return (
@@ -138,12 +142,21 @@ export function Meldungen({
       {vorschlag && (
         <>
           <dl className="stoerung-werte">
+            {ankunftVerschoben && vorschlag.werte.ankunftZeit && (
+              <>
+                <dt>Ankunft</dt>
+                <dd>
+                  {vorschlag.werte.ankunftZeit}
+                  {zeitversatz ? ` · ${zeitversatz}` : ''}
+                </dd>
+              </>
+            )}
             {vorschlag.werte.abfahrtZeit && (
               <>
                 <dt>Abfahrt</dt>
                 <dd>
                   {vorschlag.werte.abfahrtZeit}
-                  {zeitversatz ? ` · ${zeitversatz}` : ''}
+                  {!ankunftVerschoben && zeitversatz ? ` · ${zeitversatz}` : ''}
                 </dd>
               </>
             )}

@@ -64,7 +64,7 @@ describe('meldungsText im Haltestellenpfad (Umstieg 2.0)', () => {
   })
   it('heisst den Wechsel an einer Haltestelle Steigwechsel', () => {
     expect(
-      meldungsText({ typ: 'gleiswechsel', zug: 'trip-7f3a', anzeige: 'Bus 245', alt: 'A', neu: 'B', zeitstempel: stamp }),
+      meldungsText({ typ: 'gleiswechsel', zug: 'trip-7f3a', anzeige: 'Bus 245', haltWort: 'Steig', alt: 'A', neu: 'B', zeitstempel: stamp }),
     ).toEqual({ titel: 'Steigwechsel', text: 'Bus 245 fährt heute von Steig B statt A.' })
   })
   it('nennt bei der Verspaetung die Linie', () => {
@@ -81,5 +81,20 @@ describe('meldungsText im Haltestellenpfad (Umstieg 2.0)', () => {
       />,
     )
     expect(screen.getByText('Bus 245 fällt aus. Bitte eine andere Verbindung wählen.')).toBeDefined()
+  })
+})
+
+describe('meldungsText: welche Fahrt, welcher Halt (Review Paket 3)', () => {
+  const stamp = '2026-10-18T12:32:10.000Z'
+  it('eine verspaetete Ankunft heisst Ankunftszeit, nicht Abfahrtszeit', () => {
+    expect(meldungsText({ typ: 'verspaetung', zug: 'RE 3', seite: 'an', alt: '14:32', neu: '14:40', zeitstempel: stamp })).toEqual({
+      titel: 'Neue Ankunftszeit',
+      text: 'RE 3 kommt um 14:40 statt 14:32 an.',
+    })
+  })
+  it('ein Bahnsteig der Bahn an einer Haltestelle bleibt ein Gleis', () => {
+    expect(
+      meldungsText({ typ: 'gleiswechsel', zug: 't', anzeige: 'S5', haltWort: 'Gleis', alt: '2', neu: '3', zeitstempel: stamp }),
+    ).toEqual({ titel: 'Gleiswechsel', text: 'S5 fährt heute von Gleis 3 statt 2.' })
   })
 })
