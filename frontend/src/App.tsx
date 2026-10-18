@@ -3,14 +3,17 @@ import './App.css'
 import { holeRoute, RouteFehler } from './api/client'
 import { ersteVariante, ladeVarianten, ladeWeitereVarianten } from './api/varianten'
 import { gehzeitSchluessel, ladeStandorte, STANDORT_VOREINSTELLUNG } from './api/standorte'
-import { verbindeLive } from './api/sse'
+import { verbindeHaltestelleLive, verbindeLive } from './api/sse'
+import { holeHaltestellenTafel, holeWeg, steigpunktAus } from './api/haltestellen'
 import type {
   Bahnsteigabschnitt,
   LiveEreignis,
   Ort,
   RouteErgebnis,
   RoutenVariante,
+  Weg,
 } from './api/typen'
+import { haltestellenHinweise, linienName, ortsangabe } from './ort/anzeige'
 import { Datenschutz } from './components/Datenschutz'
 import { Fusszeile } from './components/Fusszeile'
 import { Impressum } from './components/Impressum'
@@ -19,7 +22,7 @@ import { Navileiste } from './components/Navileiste'
 import { Dashboard, type StandortStand, type VariantenStand } from './screens/Dashboard'
 import { Navigation } from './screens/Navigation'
 import { Meldungen } from './screens/Meldungen'
-import { Eingabe, type EingabeWerte } from './components/Eingabe'
+import { Eingabe, type EingabeWerte, type HaltestellenWahl } from './components/Eingabe'
 import { Stoermeldung } from './components/Stoermeldung'
 import { StandortStreifen } from './components/StandortStreifen'
 import { QuelleWeg } from './components/QuelleWeg'
@@ -57,6 +60,34 @@ const FEHLER_TEXTE: Record<string, string> = {
     'Die Gleisliste dieses Bahnhofs ist gerade unvollständig – das Gleis lässt sich nicht prüfen. Bitte in einem Moment erneut versuchen.',
   'keine-route': 'Keine passende Route gefunden.',
   netz: 'Keine Verbindung zum Server.',
+  // Haltestellenpfad (Umstieg 2.0). Der zweite Satz ist die Zusage aus F6:
+  // Ein Ausfall von MOTIS beruehrt den Bahnhofspfad nicht.
+  'haltestellen-nicht-verfuegbar': 'Haltestellendaten gerade nicht verfügbar. Bahnhöfe gehen weiter.',
+  'haltestellen-nicht-eingerichtet': 'Haltestellendaten gerade nicht verfügbar. Bahnhöfe gehen weiter.',
+  'zu-weit': 'Die beiden Steige liegen für einen Umstieg zu weit auseinander.',
+}
+
+/** Was `/api/weg` rechnen kann - „Mit Stopp" braucht den Bahnhofsgraphen. */
+type WegVariante = 'schnellste' | 'barrierefrei'
+
+function wegVariante(v: RoutenVariante): WegVariante {
+  return v === 'barrierefrei' ? 'barrierefrei' : 'schnellste'
+}
+
+/**
+ * Der Fussweg eines Haltestellenumstiegs - das Gegenstueck zu `holeRoute`.
+ * Die Hinweise zu Steig und Echtzeit stehen VOR denen des Backends: Sie
+ * sagen, worauf der ganze Weg beruht.
+ */
+async function rechneWeg(werte: EingabeWerte, wahl: HaltestellenWahl, variante: WegVariante): Promise<Weg> {
+  const weg = await holeWeg({
+    von: steigpunktAus(wahl.ankunft.fahrt),
+    nach: steigpunktAus(wahl.anschluss.fahrt),
+    profil: werte.profil,
+    variante,
+    ziel: `${ortsangabe(werte, 'ab')} (${wahl.anschluss.fahrt.linie})`,
+  })
+  return { ...weg, hinweise: [...haltestellenHinweise(wahl), ...weg.hinweise] }
 }
 
 const STUFEN_TEXT: Record<number, string> = {
@@ -361,6 +392,37 @@ function App() {
     // Minuten gehoeren zu einem anderen Bahnhof.
     setGehzeiten({})
     gehzeitenRef.current = {}
+    // Haltestellenpfad: zwei Fusswege statt drei Routen und drei Standorte -
+    // MOTIS kennt den Steig, nicht die Stelle am Bahnsteig.
+    const wahl = eingabe.haltestellen
+    if (wahl) {
+      const gewaehlt = wegVariante(eingabe.variante)
+      const amSteig = STANDORT_VOREINSTELLUNG
+      try {
+        const haupt = await rechneWeg(eingabe, wahl, gewaehlt)
+        setLaden(false)
+        setWerte({ ...eingabe, variante: gewaehlt, abschnitt: amSteig })
+        setRoute(haupt)
+        setGewaehlteVariante(gewaehlt)
+        setGewaehlterStandort(amSteig)
+        merkeGehzeit(gewaehlt, amSteig, haupt.gehzeitSek)
+        setVersatz(0)
+        setBildschirm('dashboard')
+      } catch (e) {
+        setLaden(false)
+        const code = e instanceof RouteFehler ? e.code : 'netz'
+        const detail = e instanceof RouteFehler ? e.message : undefined
+        setFehler(FEHLER_TEXTE[code] ?? detail ?? 'Unbekannter Fehler.')
+        return
+      }
+      // Die andere Variante nur fuer die Minuten am Knopf. Scheitert sie,
+      // steht der Knopf ohne Minuten - wie im Bahnhofspfad.
+      const andere: WegVariante = gewaehlt === 'schnellste' ? 'barrierefrei' : 'schnellste'
+      await rechneWeg(eingabe, wahl, andere)
+        .then((w) => merkeGehzeit(andere, amSteig, w.gehzeitSek))
+        .catch(() => undefined)
+      return
+    }
     const ohneStandort = {
       eva: eingabe.eva,
       gleisAn: eingabe.gleisAn,
@@ -431,8 +493,27 @@ function App() {
     (v: RoutenVariante) => {
       if (!werte || v === gewaehlteVariante || variantenLaden !== undefined) return
       const standortAmGleis = werte.abschnitt
+      const wahl = werte.haltestellen
+      if (wahl && v === 'mit-stopp') return
       setVariantenLaden(v)
       setVariantenFehler(null)
+      if (wahl) {
+        void rechneWeg(werte, wahl, wegVariante(v))
+          .then((neu) => {
+            setRoute(neu)
+            setWerte({ ...werte, variante: v })
+            setGewaehlteVariante(v)
+            merkeGehzeit(v, standortAmGleis, neu.gehzeitSek)
+            setVersatz(0)
+          })
+          .catch((e: unknown) => {
+            const code = e instanceof RouteFehler ? e.code : 'netz'
+            const detail = e instanceof RouteFehler ? e.message : undefined
+            setVariantenFehler(detail || FEHLER_TEXTE[code] || 'Dieser Weg liess sich nicht berechnen.')
+          })
+          .finally(() => setVariantenLaden(undefined))
+        return
+      }
       void holeRoute({
         eva: werte.eva,
         gleisAn: werte.gleisAn,
@@ -494,6 +575,8 @@ function App() {
   const waehleStandort = useCallback(
     (a: Bahnsteigabschnitt) => {
       if (!werte || a === gewaehlterStandort || standortLaden !== undefined) return
+      // An Haltestellen gibt es keinen Standort am Bahnsteig (keine Knoepfe).
+      if (werte.haltestellen) return
       const variante = gewaehlteVariante
       const ohneStandort = {
         eva: werte.eva,
@@ -543,28 +626,117 @@ function App() {
     // hingehoert wird, und der Zeitstempel daneben belegt es. Waere der Strom
     // dort geschlossen, waere beides unwahr, sobald jemand die Seite offen
     // laesst.
-    if (!AUF_REISE.includes(bildschirm) || !werte?.eva) return
+    if (!AUF_REISE.includes(bildschirm) || !werte) return
+    const wahl = werte.haltestellen
+    if (!wahl && !werte.eva) return
+
+    /** Herzschlag und Quellenstand - fuer beide Pfade gleich. `true` = erledigt. */
+    const zustand = (ereignis: LiveEreignis): boolean => {
+      if (ereignis.typ === 'heartbeat') {
+        setStand(ereignis.zeitstempel)
+        return true
+      }
+      // Der Quellenausfall ist ein Zustand, keine Meldung: kein Ruetteln,
+      // kein Eintrag im Verlauf, keine Stoermeldung ueber der Seite. Er
+      // steht, bis die Quelle wieder antwortet (Degradationstabelle Z. 2).
+      if (ereignis.typ === 'quelle-weg') {
+        setQuelleWegSeit(ereignis.zeitstempel)
+        return true
+      }
+      if (ereignis.typ === 'quelle-da') {
+        setQuelleWegSeit(null)
+        return true
+      }
+      return false
+    }
+    const vermerke = (ereignis: LiveEreignis) =>
+      setMeldungen((liste) => {
+        const ergaenzt = ergaenze(liste, ereignis)
+        return bildschirm === 'meldungen' ? alleGelesen(ergaenzt) : ergaenzt
+      })
+
+    // Haltestellenpfad (Umstieg 2.0): EIN Strom fuer beide Haltestellen. Die
+    // Ereignisse tragen die Fahrt-ID; welche der beiden Fahrten gemeint ist,
+    // entscheidet, was sich aendert.
+    if (wahl) {
+      return verbindeHaltestelleLive({
+        an: wahl.ankunft.ort,
+        ab: wahl.anschluss.ort,
+        fahrtAn: wahl.ankunft.fahrt.fahrtId,
+        fahrtAb: wahl.anschluss.fahrt.fahrtId,
+        onWiederverbunden: () => void berechne(werte),
+        onEreignis: (roh) => {
+          if (zustand(roh)) return
+          const seite =
+            roh.zug === wahl.anschluss.fahrt.fahrtId
+              ? 'anschluss'
+              : roh.zug === wahl.ankunft.fahrt.fahrtId
+                ? 'ankunft'
+                : null
+          if (!seite) return
+          // „Bus 245“ statt „245“ - die Meldung steht ohne Tafel daneben.
+          const ereignis: LiveEreignis = { ...roh, anzeige: linienName(wahl[seite].fahrt) }
+          setLiveEreignis(ereignis)
+          navigator.vibrate?.([200, 100, 200])
+
+          if (ereignis.typ === 'verspaetung' && ereignis.neu) {
+            // Wie im Bahnhofspfad auf dem letzten Vorschlag aufsetzen. Eine
+            // verspaetete Ankunft aendert die Ankunftszeit, nicht die Abfahrt.
+            const feld = seite === 'anschluss' ? 'abfahrtZeit' : 'ankunftZeit'
+            setMeldungen((liste) => {
+              const basis = liste[0]?.vorschlag
+              const ergaenzt = ergaenze(liste, ereignis, {
+                route: basis?.route ?? routeRef.current!,
+                werte: { ...(basis?.werte ?? werte), [feld]: ereignis.neu! },
+                anlass: ereignis,
+              })
+              return bildschirm === 'meldungen' ? alleGelesen(ergaenzt) : ergaenzt
+            })
+            return
+          }
+          // Ein Ausfall hat keinen Ersatzweg - nur die Meldung.
+          if (ereignis.typ === 'ausfall') {
+            vermerke(ereignis)
+            return
+          }
+          if (ereignis.typ !== 'gleiswechsel') return
+          // Steigwechsel: Das Ereignis nennt nur den Namen des neuen Steigs,
+          // der Weg braucht seine Koordinate - also die Tafel neu holen und
+          // die Fahrt darin wiederfinden. Die Meldung steht sofort.
+          vermerke(ereignis)
+          const { ort, fahrt } = wahl[seite]
+          void holeHaltestellenTafel(ort, seite === 'ankunft' ? 'arr' : 'dep')
+            .then(async (tafel) => {
+              const neueFahrt = tafel.ok ? tafel.eintraege.find((e) => e.fahrtId === fahrt.fahrtId) : undefined
+              if (!neueFahrt) return
+              const neueWahl: HaltestellenWahl = { ...wahl, [seite]: { ort, fahrt: neueFahrt } }
+              const steig = neueFahrt.steigIst ?? neueFahrt.steigSoll ?? ''
+              const neueWerte: EingabeWerte = {
+                ...werte,
+                haltestellen: neueWahl,
+                ...(seite === 'ankunft' ? { gleisAn: steig } : { gleisAb: steig }),
+              }
+              const neueRoute = await rechneWeg(neueWerte, neueWahl, wegVariante(werte.variante))
+              setMeldungen((liste) =>
+                setzeVorschlag(liste, liste.find((m) => m.ereignis === ereignis)?.nr ?? -1, {
+                  route: neueRoute,
+                  werte: neueWerte,
+                  anlass: ereignis,
+                }),
+              )
+            })
+            .catch(() => undefined)
+        },
+      })
+    }
+
     return verbindeLive({
       eva: werte.eva,
       zugAn: werte.zugAnName,
       zugAb: werte.zugAbName,
       onWiederverbunden: () => void berechne(werte),
       onEreignis: (ereignis) => {
-        if (ereignis.typ === 'heartbeat') {
-          setStand(ereignis.zeitstempel)
-          return
-        }
-        // Der Quellenausfall ist ein Zustand, keine Meldung: kein Ruetteln,
-        // kein Eintrag im Verlauf, keine Stoermeldung ueber der Seite. Er
-        // steht, bis die Quelle wieder antwortet (Degradationstabelle Z. 2).
-        if (ereignis.typ === 'quelle-weg') {
-          setQuelleWegSeit(ereignis.zeitstempel)
-          return
-        }
-        if (ereignis.typ === 'quelle-da') {
-          setQuelleWegSeit(null)
-          return
-        }
+        if (zustand(ereignis)) return
         setLiveEreignis(ereignis)
         navigator.vibrate?.([200, 100, 200])
 
@@ -600,10 +772,7 @@ function App() {
         // sie erst mit der Route, zaehlte ein fehlgeschlagener Abruf gar
         // nicht - und der Reisende erfuehre vom Wechsel allein aus dem
         // Banner, das er wegwischen kann.
-        setMeldungen((liste) => {
-          const ergaenzt = ergaenze(liste, ereignis)
-          return bildschirm === 'meldungen' ? alleGelesen(ergaenzt) : ergaenzt
-        })
+        vermerke(ereignis)
         // Berechnen ja, anwenden nein. Schlägt es fehl, bleibt die Meldung
         // ohne Route stehen und sagt das auch.
         void holeRoute({
@@ -685,6 +854,7 @@ function App() {
         {meldung}
         <Angekommen
           gleis={werte.gleisAb}
+          {...(werte.haltestellen ? { ortText: ortsangabe(werte, 'ab') } : {})}
           abfahrt={werte.abfahrtZeit}
           // Der Wagenkasten gehoert zum ANSCHLUSSzug: Der Bildschirm sagt,
           // wo du einsteigst, nicht wo du ausgestiegen bist. Bis zum
@@ -771,6 +941,7 @@ function App() {
         {meldung}
         <Dashboard
           werte={werte}
+          pfad={werte.haltestellen ? 'haltestelle' : 'bahnhof'}
           route={route}
           restSek={restSek}
           abgefahren={abgefahren}
@@ -813,7 +984,7 @@ function App() {
               <span className="stufen-tag">{STUFEN_TEXT[route.stufe]}</span>
             </div>
             <h2>
-              Gleis {werte.gleisAn} → Gleis {werte.gleisAb}
+              {ortsangabe(werte, 'an')} → {ortsangabe(werte, 'ab')}
             </h2>
           </div>
         </div>
@@ -849,7 +1020,11 @@ function App() {
             : {})}
         />
         {ankunftVorschlag && (
-          <StandortStreifen gleis={werte.gleisAb} onBestaetigen={bestaetigeAnkunft} />
+          <StandortStreifen
+            gleis={werte.gleisAb}
+            {...(werte.haltestellen ? { ortText: ortsangabe(werte, 'ab') } : {})}
+            onBestaetigen={bestaetigeAnkunft}
+          />
         )}
         <Navileiste
           aktuell={bildschirm}

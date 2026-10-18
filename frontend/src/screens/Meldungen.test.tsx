@@ -190,3 +190,19 @@ describe('Meldungen: der Verlauf', () => {
     expect(screen.queryByRole('listitem')).toBeNull()
   })
 })
+
+describe('Meldungen: Haltestellenpfad (Umstieg 2.0)', () => {
+  const ausfall: LiveEreignis = { typ: 'ausfall', zug: 'trip-7f3a', anzeige: 'Bus 245', zeitstempel: '2026-10-18T12:32:10.000Z' }
+  it('ein Ausfall stellt nichts gegenueber und verspricht keine neue Route', () => {
+    zeige(ergaenze([], ausfall))
+    expect(screen.getByText('Fahrt fällt aus')).toBeDefined()
+    expect(screen.queryByText('Gehzeit offen')).toBeNull()
+    expect(screen.queryByText(/lässt sich gerade nicht berechnen/)).toBeNull()
+  })
+  it('der Verlauf nennt die Linie, nicht die Fahrt-ID', () => {
+    const liste = ergaenze(ergaenze([], { ...ausfall, typ: 'verspaetung', alt: '10:20', neu: '10:24' }), ausfall)
+    zeige(liste)
+    expect(screen.getByText('Bus 245', { selector: '.meldungen-zug' })).toBeDefined()
+    expect(screen.queryByText('trip-7f3a')).toBeNull()
+  })
+})

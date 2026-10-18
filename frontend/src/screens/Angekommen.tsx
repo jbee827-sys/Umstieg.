@@ -2,6 +2,8 @@ import { istFernverkehr } from '../navigation/meldung'
 
 interface AngekommenProps {
   gleis: string
+  /** Statt „Gleis <gleis>“ – an Haltestellen „Steig A“ (Umstieg 2.0). */
+  ortText?: string
   /** Gleisabschnitt aus der Wagenreihung, falls bekannt. */
   abschnitt?: string
   abfahrt?: string
@@ -24,6 +26,7 @@ function pufferText(sek?: number): string | null {
 // ueberall, damit die untere Leiste gleich bleibt.
 export function Angekommen({
   gleis,
+  ortText,
   abschnitt,
   abfahrt,
   wagen,
@@ -51,7 +54,7 @@ export function Angekommen({
         </svg>
         <h1>Du bist da.</h1>
         <p className="angekommen-satz">
-          Gleis {gleis}
+          {ortText ?? `Gleis ${gleis}`}
           {abschnitt ? `, Abschnitt ${abschnitt}` : ''}
         </p>
       </section>

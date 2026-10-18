@@ -4,6 +4,7 @@ import type { Ampelfarbe, Bahnsteigabschnitt, RouteErgebnis, RoutenVariante } fr
 import { ampelFarbe } from '../navigation/ampel'
 import { ABSCHNITTE, ankunftsRichtung, standortNamen } from '../api/standorte'
 import { ebenenZahl, gleisEbenen } from '../schema/bandmodell'
+import { linienName, ortsangabe } from '../ort/anzeige'
 
 /**
  * Gehzeit je Variante in Sekunden. `undefined` heisst: konnte nicht berechnet
@@ -29,6 +30,12 @@ export interface StandortStand {
 
 interface DashboardProps {
   werte: EingabeWerte
+  /**
+   * Haltestellenpfad (Umstieg 2.0): kein Standort am Bahnsteig - MOTIS kennt
+   * nur den Steig - und kein „Mit Stopp“, WC und Kiosk kommen aus dem
+   * Bahnhofsgraphen. Fehlt = Bahnhofspfad.
+   */
+  pfad?: 'bahnhof' | 'haltestelle'
   route: RouteErgebnis
   /** Sekunden bis zur Abfahrt; undefiniert ohne Zugauswahl. */
   restSek?: number
@@ -89,6 +96,7 @@ function farbeVon(
 // Falz (`BRIEF.md`, Dashboard c). Die Spalte dazu ist `.app-dashboard`.
 export function Dashboard({
   werte,
+  pfad = 'bahnhof',
   route,
   restSek,
   startPufferSek,
@@ -109,6 +117,13 @@ export function Dashboard({
   const standortNamenJetzt = standortNamen(ankunftsRichtung(route.schema))
   // Im Standardmodell `undefined` - dort waeren die Ebenen geraten.
   const ebenen = gleisEbenen(route)
+  const halt = pfad === 'haltestelle' ? werte.haltestellen : undefined
+  const knoepfe = halt ? KNOEPFE.filter((k) => k.wert !== 'mit-stopp') : KNOEPFE
+  // Bahnhofspfad wie immer „Gl. 7“; an Haltestellen „Steig A“ oder „Gleis 7“.
+  const ortAn = halt ? ortsangabe(werte, 'an') : `Gl. ${werte.gleisAn}`
+  const ortAb = halt ? ortsangabe(werte, 'ab') : `Gl. ${werte.gleisAb}`
+  const zugAn = halt ? linienName(halt.ankunft.fahrt) : werte.zugAnName
+  const zugAb = halt ? linienName(halt.anschluss.fahrt) : werte.zugAbName
   return (
     <div className="dashboard-flaeche">
       <div className="dashboard-rollbereich">
@@ -130,8 +145,8 @@ export function Dashboard({
         <div className="dashboard-bloecke">
           <section className="dashboard-block">
             <div className="kicker">Du kommst an</div>
-            {werte.zugAnName && <div className="dashboard-zug">{werte.zugAnName}</div>}
-            <div className="dashboard-gleis">Gl. {werte.gleisAn}</div>
+            {zugAn && <div className="dashboard-zug">{zugAn}</div>}
+            <div className="dashboard-gleis">{ortAn}</div>
             {ebenen && <div className="dashboard-ebene">{`Ebene ${ebenenZahl(ebenen.an)}`}</div>}
             {werte.ankunftZeit && <div className="dashboard-zeit">an {werte.ankunftZeit}</div>}
           </section>
@@ -143,8 +158,8 @@ export function Dashboard({
             */}
           <section className="dashboard-block ziel">
             <div className="kicker">Dein Anschluss</div>
-            {werte.zugAbName && <div className="dashboard-zug">{werte.zugAbName}</div>}
-            <div className="dashboard-gleis">Gl. {werte.gleisAb}</div>
+            {zugAb && <div className="dashboard-zug">{zugAb}</div>}
+            <div className="dashboard-gleis">{ortAb}</div>
             {ebenen && <div className="dashboard-ebene">{`Ebene ${ebenenZahl(ebenen.ab)}`}</div>}
             {werte.abfahrtZeit && <div className="dashboard-zeit">ab {werte.abfahrtZeit}</div>}
           </section>
@@ -164,59 +179,61 @@ export function Dashboard({
           * Fuer Screenreader bleiben es drei Knoepfe mit `aria-pressed`; der
           * Streifen und der Punkt sind nur Bild.
           */}
-        <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
-          <label id="standortwahl-label">Wo stehst du auf Gleis {werte.gleisAn}?</label>
-          <div
-            className="standortwahl bahnsteigstreifen"
-            role="group"
-            aria-labelledby="standortwahl-label"
-          >
-            {ABSCHNITTE.map((a) => {
-              const gewaehlt = standorte.gewaehlt === a
-              const laedtDieser = standortLaedt === a
-              return (
-                <button
-                  key={a}
-                  type="button"
-                  className={`standortwahl-knopf${gewaehlt ? ' gewaehlt' : ''}${
-                    laedtDieser ? ' laedt' : ''
-                  }`}
-                  aria-pressed={gewaehlt}
-                  aria-busy={laedtDieser || undefined}
-                  // Wie bei der Routenwahl: waehrend ein Wechsel laeuft, nimmt
-                  // kein Knopf einen zweiten entgegen.
-                  disabled={standortLaedt !== undefined || laedt !== undefined}
-                  onClick={() => onStandort(a)}
-                >
-                  {/* Das Stueck Bahnsteig unter dieser Stelle, mit ihrem Ring. */}
-                  <span className="bahnsteigstreifen-stueck" aria-hidden="true">
-                    <span className="bahnsteigstreifen-ring" />
-                  </span>
-                  <span className="standortwahl-name">{standortNamenJetzt[a]}</span>
-                  <span className="standortwahl-min">
-                    {laedtDieser ? 'lädt …' : minuten(standorte[a])}
-                  </span>
-                </button>
-              )
-            })}
-            {/*
-              * EIN Punkt fuer alle drei Stellen, nicht einer je Knopf: So wandert
-              * er beim Wechsel an die neue Stelle, statt an der alten zu
-              * verschwinden und an der neuen aufzutauchen (DESIGN.md 6,
-              * „Auswahl").
-              */}
-            <span className="standortpunkt" data-stelle={standorte.gewaehlt} aria-hidden="true" />
-          </div>
-          <p className="standortwahl-hinweis">
-            Der Punkt am Bahnsteig entscheidet den Weg – ohne Wagenreihung weiß die App
-            sonst nicht, wo du aussteigst.
-          </p>
-        </fieldset>
+        {!halt && (
+          <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
+            <label id="standortwahl-label">Wo stehst du auf Gleis {werte.gleisAn}?</label>
+            <div
+              className="standortwahl bahnsteigstreifen"
+              role="group"
+              aria-labelledby="standortwahl-label"
+            >
+              {ABSCHNITTE.map((a) => {
+                const gewaehlt = standorte.gewaehlt === a
+                const laedtDieser = standortLaedt === a
+                return (
+                  <button
+                    key={a}
+                    type="button"
+                    className={`standortwahl-knopf${gewaehlt ? ' gewaehlt' : ''}${
+                      laedtDieser ? ' laedt' : ''
+                    }`}
+                    aria-pressed={gewaehlt}
+                    aria-busy={laedtDieser || undefined}
+                    // Wie bei der Routenwahl: waehrend ein Wechsel laeuft, nimmt
+                    // kein Knopf einen zweiten entgegen.
+                    disabled={standortLaedt !== undefined || laedt !== undefined}
+                    onClick={() => onStandort(a)}
+                  >
+                    {/* Das Stueck Bahnsteig unter dieser Stelle, mit ihrem Ring. */}
+                    <span className="bahnsteigstreifen-stueck" aria-hidden="true">
+                      <span className="bahnsteigstreifen-ring" />
+                    </span>
+                    <span className="standortwahl-name">{standortNamenJetzt[a]}</span>
+                    <span className="standortwahl-min">
+                      {laedtDieser ? 'lädt …' : minuten(standorte[a])}
+                    </span>
+                  </button>
+                )
+              })}
+              {/*
+                * EIN Punkt fuer alle drei Stellen, nicht einer je Knopf: So wandert
+                * er beim Wechsel an die neue Stelle, statt an der alten zu
+                * verschwinden und an der neuen aufzutauchen (DESIGN.md 6,
+                * „Auswahl").
+                */}
+              <span className="standortpunkt" data-stelle={standorte.gewaehlt} aria-hidden="true" />
+            </div>
+            <p className="standortwahl-hinweis">
+              Der Punkt am Bahnsteig entscheidet den Weg – ohne Wagenreihung weiß die App
+              sonst nicht, wo du aussteigst.
+            </p>
+          </fieldset>
+        )}
 
         <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
           <label>Route</label>
           <div className="routenwahl" role="group" aria-label="Routenvariante">
-            {KNOEPFE.map((k) => {
+            {knoepfe.map((k) => {
               const gewaehlt = varianten.gewaehlt === k.wert
               const laedtDiese = laedt === k.wert
               return (

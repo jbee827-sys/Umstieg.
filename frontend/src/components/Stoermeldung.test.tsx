@@ -53,3 +53,33 @@ describe('Stoermeldung', () => {
     expect(screen.getByText(/Stand: /)).toBeDefined()
   })
 })
+
+describe('meldungsText im Haltestellenpfad (Umstieg 2.0)', () => {
+  const stamp = '2026-10-18T12:32:10.000Z'
+  it('nennt beim Ausfall die Linie, nicht die Fahrt-ID', () => {
+    expect(meldungsText({ typ: 'ausfall', zug: 'trip-7f3a', anzeige: 'Bus 245', zeitstempel: stamp })).toEqual({
+      titel: 'Fahrt fällt aus',
+      text: 'Bus 245 fällt aus. Bitte eine andere Verbindung wählen.',
+    })
+  })
+  it('heisst den Wechsel an einer Haltestelle Steigwechsel', () => {
+    expect(
+      meldungsText({ typ: 'gleiswechsel', zug: 'trip-7f3a', anzeige: 'Bus 245', alt: 'A', neu: 'B', zeitstempel: stamp }),
+    ).toEqual({ titel: 'Steigwechsel', text: 'Bus 245 fährt heute von Steig B statt A.' })
+  })
+  it('nennt bei der Verspaetung die Linie', () => {
+    expect(
+      meldungsText({ typ: 'verspaetung', zug: 'trip-7f3a', anzeige: 'Bus 245', alt: '10:20', neu: '10:24', zeitstempel: stamp }).text,
+    ).toBe('Bus 245 fährt um 10:24 statt 10:20.')
+  })
+  it('die Stoermeldung zeigt den Ausfall', () => {
+    render(
+      <Stoermeldung
+        ereignis={{ typ: 'ausfall', zug: 'trip-7f3a', anzeige: 'Bus 245', zeitstempel: stamp }}
+        onAnsehen={vi.fn()}
+        onSchliessen={vi.fn()}
+      />,
+    )
+    expect(screen.getByText('Bus 245 fällt aus. Bitte eine andere Verbindung wählen.')).toBeDefined()
+  })
+})
