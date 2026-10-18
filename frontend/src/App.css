@@ -315,6 +315,7 @@
    Satz; die Rotschrift stuetzt ihn nur (DESIGN.md 2: Rot allein bedeutet
    nichts). */
 .kennzeichen-fahrplan {
+  flex-shrink: 0;
   margin-left: 6px;
   font-size: var(--schrift-label);
   font-weight: 500;
@@ -323,6 +324,7 @@
 }
 
 .kennzeichen-ausfall {
+  flex-shrink: 0;
   margin-left: 6px;
   font-size: var(--schrift-label);
   font-weight: 700;
@@ -2738,7 +2740,24 @@ html[data-uebergang='zurueck']::view-transition-old(root) {
   }
 }
 
-/* Haltestellenpfad (Umstieg 2.0): Karte statt Ebenenschema im festen Bildbereich. */
+/* Haltestellenpfad (Umstieg 2.0): Karte statt Ebenenschema im festen
+   Bildbereich. Sie fuellt ihn - mit ihren festen 380 px lag der Weg in der
+   Kartenmitte unter dem sichtbaren Teil (Browserpruefung 18.10.2026). */
 .app-navigation .haltestellen-bild {
-  overflow: auto;
+  overflow: hidden;
+}
+.app-navigation .haltestellen-bild .karte-bereich {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.app-navigation .haltestellen-bild .karte-rahmen {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.app-navigation .haltestellen-bild .karte-flaeche {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 160px;
 }

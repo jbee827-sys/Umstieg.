@@ -42,3 +42,15 @@ describe('App.css: Fahrtauswahl an Haltestellen', () => {
     expect(deklarationenVon(css, '.tafel button.faellt-aus')).toContain('cursor: not-allowed')
   })
 })
+
+describe('App.css: Karte im Haltestellenpfad (Browserpruefung 18.10.2026)', () => {
+  it('die Karte fuellt den festen Bildbereich statt fest 380 px hoch zu sein', () => {
+    expect(deklarationenVon(css, '.app-navigation .haltestellen-bild .karte-flaeche')).toContain('flex: 1 1 auto')
+    expect(deklarationenVon(css, '.app-navigation .haltestellen-bild .karte-rahmen')).toContain('display: flex')
+    expect(deklarationenVon(css, '.app-navigation .haltestellen-bild .karte-bereich')).toContain('min-height: 0')
+  })
+
+  it('das Kennzeichen schrumpft nicht', () => {
+    expect(deklarationenVon(css, '.kennzeichen-fahrplan')).toContain('flex-shrink: 0')
+  })
+})
