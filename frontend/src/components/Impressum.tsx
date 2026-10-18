@@ -73,6 +73,25 @@ export function Impressum({ onZurueck }: { onZurueck: () => void }) {
           Deutschen Bahn AG und wird von ihr weder betrieben noch unterstützt.
         </p>
 
+        <h2>Fahrplan- und Haltestellendaten</h2>
+        <p>
+          Haltestellen, ihre Abfahrten und Ankünfte und die Wege zwischen zwei
+          Steigen kommen über die offene Schnittstelle von Transitous, einem
+          gemeinschaftlich betriebenen Auskunftsdienst auf Grundlage von MOTIS.
+          Transitous bündelt die Fahrplandaten vieler Verkehrsunternehmen und
+          Verbünde; welche Quelle welche Daten liefert, nennt die{' '}
+          <a href="https://transitous.org/sources" target="_blank" rel="noreferrer noopener">
+            Quellenliste von Transitous
+          </a>
+          .
+        </p>
+        <p>
+          Für Deutschland sind das vor allem die Daten der DELFI e. V. –
+          Fahrpläne unter CC BY 4.0, Echtzeitdaten unter CC BY-SA 4.0 – sowie
+          einzelner Verbünde laut Quellenliste. Die Fußwege an Haltestellen
+          berechnet Transitous aus OpenStreetMap-Daten (ODbL).
+        </p>
+
         <h2>Streitbeilegung</h2>
         <p>
           Zur Teilnahme an einem Streitbeilegungsverfahren vor einer

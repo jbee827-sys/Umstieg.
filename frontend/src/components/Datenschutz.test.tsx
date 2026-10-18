@@ -121,4 +121,17 @@ describe('Datenschutzerklaerung sagt, was die App wirklich tut', () => {
     // Mal fragt jemand wieder nach einem Zustimmungsbanner.
     expect(zeige()).toContain('TTDSG')
   })
+
+  /** Umstieg 2.0: Haltestellensuche und Fusswege laufen ueber Transitous. */
+  it('sagt, dass die gerundete Koordinate ueber unseren Server an Transitous geht', () => {
+    const text = zeige()
+    expect(text).toContain('Haltestellensuche nach Standort')
+    expect(text).toMatch(/drei Nachkommastellen[^.]*an Transitous/)
+    expect(text).toContain('api.transitous.org')
+    expect(text).toMatch(/nicht deine IP-Adresse/)
+  })
+
+  it('nennt Tafel und Fussweg der Haltestellen ebenso', () => {
+    expect(zeige()).toMatch(/Steigkoordinaten/)
+  })
 })
