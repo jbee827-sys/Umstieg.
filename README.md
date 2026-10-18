@@ -19,7 +19,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 18.10.2026)
+## Hier weitermachen (Stand 18.10.2026, abends)
 
 > **Umstieg 2.0: Haltestellen deutschlandweit über Transitous** – Spec
 > `docs/superpowers/specs/2026-10-16-umstieg-2-design.md`, Plan
@@ -124,23 +124,73 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 >   die Verkehrsmittel-Reihenfolge steht dreimal, die zweite Fußweg-Variante
 >   wird erst nach der ersten geholt.
 >
-> Der Zweig ist damit **funktional vollständig**, aber noch nicht gegen
-> Transitous geprüft und nicht ausgeliefert.
+> **Paket 4 – Abnahme (Tasks 20 und 21 erledigt 18.10.2026; Backend 746 von
+> 746, Frontend 668 von 668, nacheinander; Lint und Build sauber):**
 >
-> **Hier weitermachen – nächste Schritte in dieser Reihenfolge** (Einzelheiten
-> im Plan `docs/superpowers/plans/2026-10-16-umstieg-2.md`, Abweichungen mit
-> Begründung im Fortschrittsbuch):
+> - **Task 20 – Gesamtreview** (unabhängiger Reviewer, `2552618..8407aa5`):
+>   0 kritisch, 5 wichtig, 12 klein. Behoben (`8cf2a3a`), je mit vorher rotem
+>   Test: halbe OSM-Ebenen (`level=-0.5`) ließen `/api/weg` mit 400
+>   scheitern; Bahnhöfe verdrängten Haltestellen aus der Vorschlagsliste
+>   (jetzt höchstens vier vorn); Standortsuche ohne Umkreis und dadurch fast
+>   nie eine Vorbelegung (jetzt 1 km, ein einziger Bahnhof zwischen
+>   Haltestellen bleibt eindeutig); Ausfall vor dem ersten Live-Abruf ging
+>   verloren; im Haltestellenpfad stand das Ebenenschema statt der Karte.
+>   Hochgestuft und behoben: Tafel endete bei +1:55 („Keine Fahrten bis
+>   16:00“ war gelogen); Vorschlag nach Steigwechsel konnte zum alten Steig
+>   führen. Die 10 übrigen kleinen stehen im Fortschrittsbuch.
+> - **Task 21 – Prüfung gegen Transitous** (Protokolle unter
+>   `.superpowers/pruefung-2026-10-18/`, gitignored), Kontakt im User-Agent
+>   gesetzt:
+>   - **K1:** 49 von 50 Haltestellen, alle 16 Länder (fehlt: Düsseldorf
+>     Heinrich-Heine-Allee). Über `/api/orte` zusammengeführt stehen bei
+>     „Berlin“, „Kassel“, „Hamburg“ jetzt Haltestellen unter den ersten sechs.
+>   - **K2:** 5 von 5 Tafeln mit Linie, Ziel, Steig, Soll/Ist; Ausfälle
+>     sichtbar (Alexanderplatz, Stachus je 1).
+>   - **K3:** im Browser bestätigt – Bus 245 Washingtonplatz „Anschluss laut
+>     Fahrplan – keine Echtzeitdaten.“ (9 von 13 Abfahrten ohne Echtzeit).
+>   - **K4:** 17 von 20 Fußwegen, von Steig zu Steig wie in der App; alle 17
+>     angefragten Wege kamen zustande. Bremen Domsheide und Kiel ZOB ohne
+>     genaue Steigkoordinate, „Titisee Seestraße“ nicht auffindbar. Erster Lauf
+>     von Ortsmitte zu Ortsmitte ergab 12 von 20 – 7 Paare lagen auf demselben
+>     Punkt (0 m); das Prüfskript rechnet seitdem wie die App.
+>   - **K5:** MOTIS tot (`https://127.0.0.1:9`): Hamburg und Frankfurt Stufe 1,
+>     159 Abfahrten in Hamburg, Haltestellen 503 „nicht verfügbar“, Ortssuche
+>     liefert Bahnhöfe.
+>   - **K6:** alle bestehenden Tests grün; Live-Prüfung nach Auslieferung.
+>   - **K7:** nicht abgeschlossen – der lokale Lauf endete auf Wunsch vor der ersten vollen Stunde. Der Zähler ist getestet; seit `b7b38af` schreibt er die angebrochene Stunde auch beim Herunterfahren. Nachweis nach der Auslieferung: `fly logs -a umstieg-backend | grep motis-anfragen` (spätestens eine Stunde nach dem Deploy oder beim nächsten Deploy).
+> - **Browserprüfung** (`37d27ce`): Die **Karte zeigte seit dem 25.08.2026
+>   nirgends den Weg** – auch im ausgelieferten Bahnhofspfad. MapLibre 6
+>   setzt die Worker-Adresse zur Laufzeit zusammen, kein Bundler legte die
+>   Datei ab, der Browser bekam `index.html`, keine GeoJSON-Quelle lud (keine
+>   Linie, kein Start, kein Ziel, kein Standortpunkt), ohne Fehlermeldung.
+>   Jetzt über `?worker&url` und `setWorkerUrl`. Dazu: Karte füllt im
+>   Haltestellenpfad den Bildbereich, lädt die Ebene des aktiven Schritts,
+>   „laut Fahrplan“ wird nicht mehr zu „la…“ gekürzt.
+> - **Herunterfahren** (`b7b38af`): SIGINT/SIGTERM beenden die Live-Ströme
+>   (Browser verbinden sich neu) und lassen `app.close()` die angebrochene
+>   Zählerstunde schreiben; Notaus nach 4 s. Vorher hing `close()` an jedem
+>   offenen Strom.
+> - **Öffentliches Repository vorbereitet** (`aaf9936`): alle 1587
+>   Git-Objekte der Historie gegen die echten Tresorwerte und gängige
+>   Schlüsselmuster geprüft – 0 Treffer. Spike-Skripte schreiben nicht mehr in
+>   den Temp-Scratchpad, Rechnername aus der Doku, Lizenzhinweis oben.
 >
-> 1. **Paket 4** (Tasks 20–22): Gesamtprüfung mit unabhängigem Reviewer,
->    Prüfskript `backend/scripts/haltestellen-pruefung.ts` gegen Transitous
->    (K1/K2/K4), Ausfalltest K5, Auslieferung Fly/Vercel (Julian hat „komplett
->    ausliefern“ freigegeben) – **vorher die offenen Punkte bei Julian
->    klären**, vor allem `MOTIS_KONTAKT` und die Absprache im Matrix-Kanal.
-> 2. Danach Spec-Abschnitt 3 nachtragen (A1–A5 mit Datum) und die zwei
->    zurückgestellten kleinen Review-Befunde aus Paket 2 entscheiden
->    (Start/Ziel-Punkte der Luftlinien-Karte; doppelte Konstanten und
->    Sicherheitsmeldung `sse-bahnhoefe` auch für Haltestellen) sowie die drei
->    aus Paket 3.
+> **Hier weitermachen – nächste Schritte in dieser Reihenfolge:**
+>
+> 1. **Julian:** Repository öffentlich schalten (GitHub → Settings → General →
+>    Danger Zone → Change visibility). Vorher entscheiden: Impressumsdaten
+>    (`frontend/src/rechtliches/betreiber.json`, Anschrift und Telefon) und
+>    die Commit-Adresse `jbeerbaum827@gmail.com` werden damit durchsuchbar;
+>    beides steht ohnehin auf der Website bzw. ist für Impressum Pflicht.
+> 2. `feat/umstieg-2` pushen (bisher nur lokal) – erst nach Julians Okay.
+> 3. **Task 22 – Auslieferung:** `fly secrets set MOTIS_KONTAKT=… -a
+>    umstieg-backend` (Wert nur dort), `fly deploy --ha=false`, Vercel aus
+>    `feat/umstieg-2`, Live-Prüfung (Hamburg/Frankfurt Stufe 1, CORS, Berlin
+>    Hbf → Washingtonplatz, Kassel Rathaus A → B, **Weglinie auf der Karte**),
+>    K7 im Fly-Protokoll; danach `main`/`feat/mvp` per Fast-Forward.
+> 4. Spec-Abschnitt 3 nachtragen (A1–A5 mit Datum); kleine Befunde aus
+>    Paket 2, 3, Gesamtreview und Browserprüfung entscheiden
+>    (Fortschrittsbuch, `minor (deferred)`).
 >
 > **Rechner (17.10.2026, am 18.10. unverändert – 255 MB frei): Laufwerk C: ist voll** (0 GB frei; 10,5 GB liegen
 > in `C:\Windows\SoftwareDistribution\Download`, dem Download-Speicher von
@@ -160,24 +210,19 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 >
 > **Offen bei Julian:**
 >
-> - Kontakt für `MOTIS_KONTAKT` (nur als Fly-Secret).
-> - Absprache im Transitous-Matrix-Kanal vor dem Produktivbetrieb (Zahlen im
->   Erkundungsbericht 0.3; Live fragt inzwischen je Haltestelle nur die nötige
->   Richtung, also 2 Halte × 15 Abrufe je Umstieg wie dort angenommen).
+> - Absprache mit Transitous ist geklärt (Julian, 18.10.2026); Bedingung:
+>   Der Code wird vor dem Livegang öffentlich (siehe Schritt 1).
 > - Ob der veraltete Overpass-User-Agent `umstiegs-navigator/0.1 (dev)`
 >   angeglichen werden soll (Bahnhofspfad, Overpass sperrt nach User-Agent –
 >   bewusst nicht angefasst).
-> - Ob `server.ts` einen SIGTERM-Handler bekommen soll: Ohne ihn geht bei
->   jedem Deploy die angebrochene Stunde des MOTIS-Zählers (K7-Nachweis)
->   verloren. Ein Handler mit `app.close()` wartet auf offene SSE-Ströme und
->   braucht ein eigenes kleines Design.
 > - Platz auf Laufwerk C: schaffen (siehe oben).
 >
 > **Hinweis Bug-Hunter-Skill:** Auf diesem Rechner fehlen die Hilfsdateien des
 > Skills (nur `SKILL.md` vorhanden); in Paket 1 lief der Bug-Hunt von Hand, in
 > Paket 2 und 3 trat `/code-review high` an seine Stelle.
 >
-> Der Zweig `feat/umstieg-2` ist **nur lokal** (nicht gepusht).
+> Der Zweig `feat/umstieg-2` ist **nur lokal** (nicht gepusht); das
+> Repository ist privat (Stand 18.10.2026).
 
 ### Davor: Overpass von Fly aus (14.10.2026, abends)
 
