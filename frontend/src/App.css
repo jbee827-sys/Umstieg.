@@ -2737,3 +2737,8 @@ html[data-uebergang='zurueck']::view-transition-old(root) {
     opacity: 0;
   }
 }
+
+/* Haltestellenpfad (Umstieg 2.0): Karte statt Ebenenschema im festen Bildbereich. */
+.app-navigation .haltestellen-bild {
+  overflow: auto;
+}

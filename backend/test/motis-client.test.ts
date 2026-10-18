@@ -85,7 +85,8 @@ describe('MOTIS-Kern', () => {
     expect(u.searchParams.get('time')).toBe('2026-10-16T13:45:00.000Z');
     expect(u.searchParams.get('arriveBy')).toBe('true');
     expect(u.searchParams.get('direction')).toBe('LATER');
-    expect(u.searchParams.get('window')).toBe('7200');
+    // Zwei Stunden ab JETZT - die Anfrage beginnt 5 min frueher (Review Focus 2).
+    expect(u.searchParams.get('window')).toBe('7500');
     expect(u.searchParams.get('withAlerts')).toBe('false');
   });
 

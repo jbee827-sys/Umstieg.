@@ -53,7 +53,10 @@ const HOECHSTABSTAND_M = 2000;
 function leseEbene(roh?: string): number | undefined | null {
   if (roh === undefined || roh === '') return undefined;
   const n = Number(roh);
-  return Number.isInteger(n) && Math.abs(n) <= 20 ? n : null;
+  // OSM kennt halbe Ebenen (Zwischengeschosse, `level=-0.5`), MOTIS reicht
+  // sie als Zahl durch. Bis zum 18.10.2026 stand hier `isInteger` - und ein
+  // Steig auf -0.5 bekam gar keinen Weg, nur „parameter-ungueltig“.
+  return Number.isFinite(n) && Math.abs(n) <= 20 ? n : null;
 }
 
 /**
@@ -101,7 +104,11 @@ export function registriereHaltestellenRouten(app: FastifyInstance, o: Haltestel
         : sucheBahnhoefeMitVarianten(o.stations, q!),
       o.haltestellen
         ? punkt
-          ? o.haltestellen.orteNahebei(punkt.lat, punkt.lon)
+          ? // `reverse-geocode` kennt keinen Umkreis: Auf dem Land kaemen sonst
+            // Haltestellen mehrere Kilometer weit als „in deiner Naehe“.
+            o.haltestellen
+              .orteNahebei(punkt.lat, punkt.lon)
+              .then((orte) => orte.filter((h) => haversineM(punkt.lat, punkt.lon, h.lat, h.lon) <= ERKENNUNG_RADIUS_M))
           : o.haltestellen.sucheOrte(q!)
         : Promise.resolve([]),
     ]);

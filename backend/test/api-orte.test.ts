@@ -114,3 +114,18 @@ describe('GET /api/orte', () => {
     },
   );
 });
+
+describe('GET /api/orte?lat&lon: Umkreis (Gesamtreview Umstieg 2.0)', () => {
+  it('laesst Haltestellen weiter als 1 km weg', async () => {
+    const h = haltestellen();
+    h.orteNahebei.mockResolvedValueOnce([
+      { name: 'Nah', haltestelleId: 'n', lat: 52.526, lon: 13.369, verkehrsmittel: ['bus'] },
+      { name: 'Fern', haltestelleId: 'f', lat: 52.6, lon: 13.369, verkehrsmittel: ['bus'] },
+    ]);
+    const s = stations();
+    s.sucheBahnhoefeNahebei.mockResolvedValueOnce([]);
+    const app = buildApp({ stations: s, haltestellen: h });
+    const namen = (await app.inject('/api/orte?lat=52.525&lon=13.369')).json().orte.map((o: { name: string }) => o.name);
+    expect(namen).toEqual(['Nah']);
+  });
+});

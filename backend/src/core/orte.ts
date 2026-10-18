@@ -64,6 +64,9 @@ function namenPassen(a: string, b: string): boolean {
  * Bahnhöfe zuerst: Für einen Bahnhofsnamen ist RIS::Stations die genauere
  * Quelle, und ihr Ablauf (Wagenposition, Ebenenschema) der reichere.
  */
+/** So viele Bahnhöfe stehen vor den Haltestellen. */
+const BAHNHOEFE_VORN = 4;
+
 export function fuehreOrteZusammen(bahnhoefe: BahnhofTreffer[], haltestellen: Ort[], max = 8): Ort[] {
   const vergeben = new Set<Ort>();
   const ergebnis: Ort[] = [];
@@ -82,6 +85,10 @@ export function fuehreOrteZusammen(bahnhoefe: BahnhofTreffer[], haltestellen: Or
       ergebnis.push(bahnhofAlsOrt(b));
     }
   }
-  for (const h of haltestellen) if (!vergeben.has(h)) ergebnis.push(h);
-  return ergebnis.slice(0, max);
+  // Bahnhöfe zuerst, aber höchstens vier vor den Haltestellen: Die Vorschlagsliste
+  // zeigt sechs, und ein Städtename liefert schnell sechs Bahnhöfe – dann wäre
+  // keine einzige Haltestelle mehr zu sehen. Gibt es keine, rücken die
+  // übrigen Bahnhöfe nach.
+  const halte = haltestellen.filter((h) => !vergeben.has(h));
+  return [...ergebnis.slice(0, BAHNHOEFE_VORN), ...halte, ...ergebnis.slice(BAHNHOEFE_VORN)].slice(0, max);
 }

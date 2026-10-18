@@ -167,6 +167,12 @@ export class Ueberwachung {
         if (aktuell.ausfall && !vorher.ausfall) {
           ereignisse.push({ typ: 'ausfall', zug: aktuell.zug, zeitstempel, ...anzeige });
         }
+      } else if (aktuell.ausfall) {
+        // Ein Ausfall braucht keinen Vergleich: Faellt die Fahrt schon beim
+        // ersten Blick aus - zwischen Auswahl und erstem Abruf, oder nach
+        // einer Neuverbindung -, ginge er sonst nie hinaus. Doppelte Meldungen
+        // verwirft das Frontend. Nur der Haltestellenpfad setzt `ausfall`.
+        ereignisse.push({ typ: 'ausfall', zug: aktuell.zug, zeitstempel, ...anzeige });
       }
       eintrag.letzterStand.set(schluessel, aktuell);
     }

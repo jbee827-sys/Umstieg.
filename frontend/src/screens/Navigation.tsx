@@ -21,6 +21,12 @@ interface NavigationProps {
   onAngekommen: () => void
   /** Weiteres für den Aufklapper der Schritt-Box, z. B. die Streckenhinweise. */
   zusatz?: ReactNode
+  /**
+   * Haltestellenpfad (Umstieg 2.0): kein Ebenenschema (Spec 6) - das Bild
+   * stuende aus Schritttexten geraten da und hiesse „Gleis A und B“. An
+   * seiner Stelle steht die Karte, denn der Weg fuehrt meist draussen.
+   */
+  pfad?: 'bahnhof' | 'haltestelle'
 }
 
 // Screen 3 des Entwurfs: oben das Ebenenschema, unten EIN Schritt.
@@ -43,6 +49,7 @@ export function Navigation({
   onWeiter,
   onAngekommen,
   zusatz,
+  pfad = 'bahnhof',
 }: NavigationProps) {
   // Die echte Geometrie, wenn die Antwort sie traegt - sonst das grobe Bild
   // aus den Schritttexten. Beides wird gebaut: `leiteSchemaAb` ist billig,
@@ -54,9 +61,35 @@ export function Navigation({
   // das grobe Bild.
   const bandmodell = route.stufe === 3 ? null : baueBandmodell(route.schema, route.schritte, position)
   const grob = leiteSchemaAb(route.schritte, position, gleisAn, gleisAb)
+  const halt = pfad === 'haltestelle'
+  // Stufe 3 ist hier die Luftlinie - eine Karte darueber zeigte eine
+  // gerade Linie quer durch Haeuser.
+  const mitKarte = route.stufe !== 3 && Boolean(route.karte)
+  const karte = (anfangsOffen: boolean) => (
+    <Suspense fallback={<div className="lade-hinweis">Karte wird geladen …</div>}>
+      <Karte
+        karte={route.karte!}
+        standort={standort}
+        aktiverSchritt={route.schritte[position] ?? null}
+        anfangsOffen={anfangsOffen}
+      />
+    </Suspense>
+  )
   return (
     <>
-      <Ebenenschema modell={bandmodell} ersatz={grob} bahnhofName={bahnhofName} />
+      {halt ? (
+        <section className="schema-bereich haltestellen-bild">
+          {mitKarte ? (
+            karte(true)
+          ) : (
+            <p className="hinweis-box">
+              Für diesen Weg gibt es keine Karte – er ist nur ungefähr bekannt. Folge den Schritten.
+            </p>
+          )}
+        </section>
+      ) : (
+        <Ebenenschema modell={bandmodell} ersatz={grob} bahnhofName={bahnhofName} />
+      )}
 
       <Schrittsheet
         schritte={route.schritte}
@@ -66,26 +99,22 @@ export function Navigation({
         onAngekommen={onAngekommen}
         zusatz={
           <>
-            {route.stufe !== 3 && route.karte && (
+            {!halt && mitKarte && (
               <details className="karte-aufklappbar">
                 <summary>Echte Karte anzeigen</summary>
-                <Suspense fallback={<div className="lade-hinweis">Karte wird geladen …</div>}>
-                  <Karte
-                    karte={route.karte}
-                    standort={standort}
-                    aktiverSchritt={route.schritte[position] ?? null}
-                  />
-                </Suspense>
+                {karte(false)}
               </details>
             )}
             {zusatz}
             {/* ToDo 38: Was das Bild nicht belegt. Zuletzt, weil es sich auf
                 der ganzen Route nicht aendert - aber nicht nirgends. */}
-            <ul className="schema-vorbehalte" aria-label="Zum Bild">
-              {bildVorbehalte(bandmodell).map((v) => (
-                <li key={v}>{v}</li>
-              ))}
-            </ul>
+            {!halt && (
+              <ul className="schema-vorbehalte" aria-label="Zum Bild">
+                {bildVorbehalte(bandmodell).map((v) => (
+                  <li key={v}>{v}</li>
+                ))}
+              </ul>
+            )}
           </>
         }
       />

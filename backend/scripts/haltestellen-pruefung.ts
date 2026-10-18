@@ -15,6 +15,7 @@
 // `.superpowers/pruefung-<Datum>/` (gitignored).
 //
 // Aufruf: cd backend && MOTIS_BASIS_URL=https://api.transitous.org npx tsx scripts/haltestellen-pruefung.ts
+// Nur K4 (spart die 77 Anfragen von K1/K2): PRUEFUNG_NUR=K4 davor setzen.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { erzeugeHaltestellenClient } from '../src/clients/haltestellen.js';
@@ -116,9 +117,10 @@ const PAARE: [von: string, nach: string][] = [
 async function main() {
   const start = new Date();
 
-  console.log(`\nK1 – Suche (${HALTESTELLEN.length} Haltestellen)`);
+  const nurK4 = process.env.PRUEFUNG_NUR === 'K4';
+  console.log(`\nK1 – Suche (${HALTESTELLEN.length} Haltestellen)${nurK4 ? ' – übersprungen' : ''}`);
   const k1: { land: string; text: string; treffer?: string; id?: string; eva?: string; fehler?: string }[] = [];
-  for (const [land, text] of HALTESTELLEN) {
+  for (const [land, text] of nurK4 ? [] : HALTESTELLEN) {
     try {
       const ort = gefunden(text, await suche(text));
       k1.push({ land, text, treffer: ort?.name, id: ort?.haltestelleId, eva: ort?.eva });
@@ -133,7 +135,7 @@ async function main() {
 
   console.log('\nK2 – Tafeln');
   const k2: { text: string; eintraege?: number; mitLinie?: number; mitZiel?: number; mitSteig?: number; mitEchtzeit?: number; mitIst?: number; ausfall?: number; fehler?: string }[] = [];
-  for (const text of TAFELN) {
+  for (const text of nurK4 ? [] : TAFELN) {
     try {
       const ort = gefunden(text, await suche(text));
       if (!ort?.haltestelleId) throw new Error('Haltestelle nicht gefunden');
@@ -160,20 +162,39 @@ async function main() {
     );
   }
 
-  console.log(`\nK4 – Fusswege (${PAARE.length} Paare)`);
-  const k4: { von: string; nach: string; abstandM?: number; wegM?: number; kanten?: number; ebenen?: number[]; fehler?: string }[] = [];
+  console.log(`\nK4 – Fusswege (${PAARE.length} Paare, Steig zu Steig)`);
+  const k4: { von: string; nach: string; steigVon?: string; steigNach?: string; abstandM?: number; wegM?: number; kanten?: number; ebenen?: number[]; fehler?: string }[] = [];
   for (const [vonText, nachText] of PAARE) {
     try {
-      const von = gefunden(vonText, await suche(vonText));
-      const nach = gefunden(nachText, await suche(nachText));
-      if (!von || !nach) throw new Error(`nicht aufgeloest: ${!von ? vonText : nachText}`);
+      const vonOrt = gefunden(vonText, await suche(vonText));
+      const nachOrt = gefunden(nachText, await suche(nachText));
+      if (!vonOrt?.haltestelleId || !nachOrt?.haltestelleId) throw new Error(`nicht aufgeloest: ${!vonOrt ? vonText : nachText}`);
+      // Wie in der App: Der Weg beginnt am Steig der gewaehlten Ankunft und
+      // endet am Steig der gewaehlten Abfahrt - nicht am Mittelpunkt der
+      // Orte. Bis zum 18.10.2026 rechnete K4 von Ort zu Ort; Bahnhof und
+      // Bushaltestelle lagen dabei oft auf demselben Punkt (0 m, kein Weg).
+      await warte(PAUSE_MS);
+      const ankuenfte = await client.tafel({ id: vonOrt.haltestelleId, lat: vonOrt.lat, lon: vonOrt.lon }, 'arr');
+      const an = ankuenfte.find((e) => e.steigGenau && (e.verkehrsmittel === 'bahn' || e.verkehrsmittel === 'sbahn')) ?? ankuenfte.find((e) => e.steigGenau);
+      if (!an) throw new Error(`keine Ankunft mit Steig an ${vonOrt.name}`);
+      await warte(PAUSE_MS);
+      const abfahrten = await client.tafel({ id: nachOrt.haltestelleId, lat: nachOrt.lat, lon: nachOrt.lon }, 'dep');
+      const weitWeg = (e: (typeof abfahrten)[number]) => haversineM(an.steigLat, an.steigLon, e.steigLat, e.steigLon) >= 20;
+      const ab =
+        abfahrten.find((e) => e.steigGenau && e.verkehrsmittel !== an.verkehrsmittel && weitWeg(e)) ??
+        abfahrten.find((e) => e.steigGenau && weitWeg(e));
+      if (!ab) throw new Error(`keine Abfahrt mit eigenem Steig an ${nachOrt.name}`);
+      const von = { lat: an.steigLat, lon: an.steigLon, ...(an.steigLevel !== undefined ? { level: an.steigLevel } : {}) };
+      const nach = { lat: ab.steigLat, lon: ab.steigLon, ...(ab.steigLevel !== undefined ? { level: ab.steigLevel } : {}) };
       const abstand = Math.round(haversineM(von.lat, von.lon, nach.lat, nach.lon));
-      if (abstand > 3000) throw new Error(`zu weit auseinander (${abstand} m)`);
+      if (abstand > 2000) throw new Error(`zu weit auseinander (${abstand} m)`);
       await warte(PAUSE_MS);
       const pfad = await client.fussweg(von, nach, 'FOOT');
       k4.push({
-        von: von.name,
-        nach: nach.name,
+        von: vonOrt.name,
+        nach: nachOrt.name,
+        steigVon: `${an.linie} ${an.steigIst ?? an.steigSoll ?? '?'}`,
+        steigNach: `${ab.linie} ${ab.steigIst ?? ab.steigSoll ?? '?'}`,
         abstandM: abstand,
         wegM: pfad ? Math.round(pfad.laengeM) : undefined,
         kanten: pfad?.kanten.length,
@@ -186,7 +207,7 @@ async function main() {
     const z = k4.at(-1)!;
     console.log(
       z.wegM !== undefined
-        ? `  ✓ ${z.von} → ${z.nach}: ${z.wegM} m (Luftlinie ${z.abstandM} m), ${z.kanten} Kanten, Ebenen ${z.ebenen?.join('/')}`
+        ? `  ✓ ${z.von} (${z.steigVon}) → ${z.nach} (${z.steigNach}): ${z.wegM} m (Luftlinie ${z.abstandM} m), ${z.kanten} Kanten, Ebenen ${z.ebenen?.join('/')}`
         : `  ✗ ${z.von} → ${z.nach}: ${z.fehler}`,
     );
   }

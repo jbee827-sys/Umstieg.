@@ -69,3 +69,18 @@ describe('GET /api/weg', () => {
     expect((await a.inject(url)).statusCode).toBe(400);
   });
 });
+
+describe('GET /api/weg: halbe Ebenen (Gesamtreview Umstieg 2.0)', () => {
+  it('nimmt eine halbe OSM-Ebene an (level=-0.5, Zwischengeschoss)', async () => {
+    const { a, haltestellen } = app(async () => KASSEL);
+    const res = await a.inject('/api/weg?vonLat=52.52498&vonLon=13.36911&vonLevel=-0.5&nachLat=52.52334&nachLon=13.37022&nachLevel=0.5&profil=normal&variante=schnellste');
+    expect(res.statusCode).toBe(200);
+    expect(haltestellen.fussweg).toHaveBeenCalledWith({ lat: 52.52498, lon: 13.36911, level: -0.5 }, { lat: 52.52334, lon: 13.37022, level: 0.5 }, 'FOOT');
+  });
+
+  it.each(['abc', '21', 'Infinity'])('lehnt Ebene %s weiter ab', async (ebene) => {
+    const { a } = app(async () => KASSEL);
+    const res = await a.inject(`/api/weg?vonLat=52.52498&vonLon=13.36911&vonLevel=${ebene}&nachLat=52.52334&nachLon=13.37022&profil=normal&variante=schnellste`);
+    expect(res.statusCode).toBe(400);
+  });
+});

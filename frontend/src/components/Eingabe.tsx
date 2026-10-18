@@ -248,9 +248,14 @@ export function Eingabe({
   const [zuletztErkannt, setZuletztErkannt] = useState<Ort[] | undefined | null>(null)
   if (erkannt !== zuletztErkannt) {
     setZuletztErkannt(erkannt)
-    if (!erkennungVerworfen && !gewaehlt && suchtext === '' && erkannt?.length === 1) {
-      setGewaehlt(erkannt[0])
-      setSuchtext(erkannt[0].name)
+    // Seit Umstieg 2.0 stehen Haltestellen mit in der Liste. Ein einziger
+    // Bahnhof darunter bleibt eindeutig - sonst fiele die Vorbelegung genau
+    // dort weg, wo es Haltestellen gibt, also fast ueberall.
+    const bahnhoefe = erkannt?.filter((o) => o.eva) ?? []
+    const eindeutig = bahnhoefe.length === 1 ? bahnhoefe[0] : erkannt?.length === 1 ? erkannt[0] : undefined
+    if (!erkennungVerworfen && !gewaehlt && suchtext === '' && eindeutig) {
+      setGewaehlt(eindeutig)
+      setSuchtext(eindeutig.name)
     }
   }
 

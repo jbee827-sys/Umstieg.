@@ -24,6 +24,8 @@ interface KarteProps {
   standort?: Standort | null
   /** Aktiver Schritt – bestimmt Ebene und Ausschnitt. */
   aktiverSchritt?: Schritt | null
+  /** Offen beginnen - im Haltestellenpfad ist die Karte das Hauptbild. */
+  anfangsOffen?: boolean
 }
 
 const LEER: FeatureCollection = { type: 'FeatureCollection', features: [] }
@@ -52,8 +54,8 @@ function alleKoordinaten(sammlung: FeatureCollection): [number, number][] {
 
 // Einklappbare Karte (Text vor Karte, Konzept): MapLibre über OSM-Rasterkacheln
 // mit ODbL-Attribution, Routenlinie + Start-/Zielmarker je Ebene, Umschalter.
-export function Karte({ karte, standort, aktiverSchritt }: KarteProps) {
-  const [offen, setOffen] = useState(false)
+export function Karte({ karte, standort, aktiverSchritt, anfangsOffen = false }: KarteProps) {
+  const [offen, setOffen] = useState(anfangsOffen)
   const ebenen = useMemo(
     () => Object.keys(karte).sort((a, b) => Number(a) - Number(b)),
     [karte],

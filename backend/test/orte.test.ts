@@ -53,3 +53,21 @@ describe('fuehreOrteZusammen', () => {
     expect(fuehreOrteZusammen([BERLIN_HBF], motis('geocode-berlin-hbf'), 3)).toHaveLength(3);
   });
 });
+
+describe('fuehreOrteZusammen: Platz fuer Haltestellen (Gesamtreview Umstieg 2.0)', () => {
+  const bahnhof = (i: number) => ({ name: `Bahnhof ${i}`, eva: `80000${i}`, lat: 50 + i, lon: 10 });
+  const halt = (i: number): Ort => ({ name: `Haltestelle ${i}`, haltestelleId: `h${i}`, lat: 40 + i, lon: 5, verkehrsmittel: ['bus'] });
+
+  it('viele Bahnhoefe verdraengen die Haltestellen nicht aus den ersten sechs', () => {
+    const orte = fuehreOrteZusammen([1, 2, 3, 4, 5, 6, 7, 8].map(bahnhof), [1, 2, 3].map(halt));
+    expect(orte).toHaveLength(8);
+    expect(orte.slice(0, 6).filter((o) => !o.eva).length).toBeGreaterThanOrEqual(2);
+    expect(orte[0].eva).toBe('800001');
+  });
+
+  it('ohne Haltestellen bleiben alle acht Plaetze den Bahnhoefen', () => {
+    expect(fuehreOrteZusammen([1, 2, 3, 4, 5, 6, 7, 8, 9].map(bahnhof), []).map((o) => o.eva)).toEqual(
+      [1, 2, 3, 4, 5, 6, 7, 8].map((i) => `80000${i}`),
+    );
+  });
+});

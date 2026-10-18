@@ -33,11 +33,12 @@ export const MOTIS_PFADE = {
 export const MOTIS_ZEITGRENZEN_MS = { suche: 4000, tafel: 4000, fussweg: 8000, fahrt: 4000 } as const;
 
 /**
- * Zwei Stunden ab dem Anfragezeitpunkt (der Client fragt ab jetzt − 5 min).
+ * Zwei Stunden ab JETZT. Der Client fragt ab jetzt − 5 min, das Fenster
+ * zählt ab dort – deshalb die fünf Minuten obendrauf.
  * Das breite Layout zeigt bis zum Ende der nächsten vollen Stunde – das sind
  * höchstens zwei Stunden.
  */
-const TAFEL_FENSTER_S = 2 * 60 * 60;
+const TAFEL_FENSTER_S = 2 * 60 * 60 + 5 * 60; // + Vorlauf: sonst endet sie bei +1:55
 
 /**
  * Umkreis für den Rückfall über die Koordinate (A5): Ist die ID nach einem
