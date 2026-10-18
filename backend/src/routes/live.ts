@@ -175,6 +175,17 @@ export function registriereLiveRouten(
   let offen = 0;
   const jeAufrufer = new Map<string, number>();
 
+  /*
+   * Offene Stroeme, damit `app.close()` sie beenden kann. Ohne das wartete
+   * das Schliessen auf Verbindungen, die von sich aus nie enden - und die
+   * `onClose`-Hooks (MOTIS-Zaehler, K7) liefen beim Deploy nie. Der Browser
+   * verbindet sich nach dem Ende selbst neu, dann mit der neuen Maschine.
+   */
+  const stroeme = new Set<FastifyReply['raw']>();
+  app.addHook('preClose', async () => {
+    for (const strom of stroeme) strom.end();
+  });
+
   /** Ein Strom für einen oder mehrere Schlüssel derselben Überwachung. */
   function oeffneStrom(
     req: FastifyRequest,
@@ -256,6 +267,7 @@ export function registriereLiveRouten(
     // Fastify soll die Antwort nicht selbst abschließen – der Strom bleibt offen.
     reply.hijack();
     reply.raw.writeHead(200, kopf);
+    stroeme.add(reply.raw);
 
     quelle.vorAnmeldung?.();
     const abmelden = abonniereStrom(quelle.ueberwachung, quelle.abos, (ereignis) => {
@@ -276,6 +288,7 @@ export function registriereLiveRouten(
     req.raw.on('close', () => {
       if (beendet) return;
       beendet = true;
+      stroeme.delete(reply.raw);
       abmelden();
       offen--;
       const rest = (jeAufrufer.get(aufrufer) ?? 1) - 1;

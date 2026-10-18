@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { buildApp } from './app.js';
+import { registriereHerunterfahren } from './herunterfahren.js';
 import { LISTEN_HOST } from './server-host.js';
 import type { ApiClients } from './routes/api.js';
 import type { OverpassAntwort } from './core/typen.js';
@@ -53,6 +54,8 @@ function fixtureClients(): Partial<ApiClients> {
 }
 
 const app = buildApp(fixtureClients());
+// SIGINT (Fly) und SIGTERM: Stroeme beenden, Zaehlerstunde schreiben, dann aus.
+registriereHerunterfahren(app);
 
 app
   .listen({ port, host: LISTEN_HOST })
