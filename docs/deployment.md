@@ -206,7 +206,12 @@ davon, hilft nur Warten oder eine eigene Adresse
 **Last:** Das Backend schreibt stündlich `ereignis: motis-anfragen` mit Summen
 je Endpunkt ins Protokoll (`fly logs | grep motis-anfragen`), beim Herunterfahren
 auch die angebrochene Stunde. Grundlage für die Absprache im
-Transitous-Matrix-Kanal (K7).
+Transitous-Matrix-Kanal (K7). Das Herunterfahren hängt an SIGINT (Flys
+Standard-`kill_signal`) und SIGTERM (`src/herunterfahren.ts`): offene
+Live-Ströme werden beendet – die Browser verbinden sich selbst neu –, dann
+läuft `app.close()` mit dem Zähler; nach 4 s endet der Prozess in jedem Fall,
+vor Flys `kill_timeout` von 5 s. Bis zum 18.10.2026 gab es diesen Handler
+nicht, die angebrochene Stunde ging bei jedem Deploy verloren.
 
 **Ausfalltest (K5):** lokal
 `MOTIS_BASIS_URL=https://127.0.0.1:9 npx tsx src/server.ts`, auf Fly die Zeile in
