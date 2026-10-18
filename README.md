@@ -11,6 +11,8 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 **UI-Design (Claude Design Import):** [`design/Umstieg.dc.html`](./design/Umstieg.dc.html)
 **Designregeln (Farben, Schrift, Bauteile):** [`design/DESIGN.md`](./design/DESIGN.md), Begründungen in [`BRIEF.md`](./BRIEF.md)
 
+**Lizenz:** Quellcode unter MIT ([`LICENSE`](./LICENSE)); die zur Laufzeit abgerufenen Daten (DB, Transitous/DELFI, OpenStreetMap) stehen unter eigenen Lizenzen, siehe [`NOTICE`](./NOTICE). Zugangsdaten liegen nie im Repository – welche nötig sind, zeigt [`.env.example`](./.env.example).
+
 ## Architektur
 
 - **Backend:** Node.js ≥ 20, Fastify 5, TypeScript (strict). Zustandslos, keine Datenbank, RAM-LRU-Cache. Holt zur Laufzeit OSM-Geometrie (Overpass) und DB-Live-Daten (Marketplace-APIs).

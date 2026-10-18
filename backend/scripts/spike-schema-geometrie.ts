@@ -9,7 +9,6 @@
 //
 // Aufruf: npx tsx scripts/spike-schema-geometrie.ts
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildApp } from '../src/app.js';
@@ -21,17 +20,9 @@ import type { OsmElement, OverpassAntwort, StationGraph } from '../src/core/type
 import { ladeSecrets } from './secrets.js';
 
 const HIER = dirname(fileURLToPath(import.meta.url));
-const AUSGABE = join(
-  homedir(),
-  'AppData',
-  'Local',
-  'Temp',
-  'claude',
-  'D--Claude-code',
-  '6db04a47-3c2c-491e-84a8-985fc6d8dc06',
-  'scratchpad',
-  'schema-geometrie',
-);
+// Rohdaten in den gitignorierten Spike-Ordner, nie in den Temp-Scratchpad
+// einer Sitzung - der ist kein Ablageort und verschwindet (Regel seit 14.09.2026).
+const AUSGABE = fileURLToPath(new URL('../test/fixtures/spike/schema-geometrie/', import.meta.url));
 
 const BERLIN_EVA = '8011160';
 const GLEIS_AN = '14';
