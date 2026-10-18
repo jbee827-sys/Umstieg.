@@ -17,7 +17,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 17.10.2026)
+## Hier weitermachen (Stand 18.10.2026)
 
 > **Umstieg 2.0: Haltestellen deutschlandweit über Transitous** – Spec
 > `docs/superpowers/specs/2026-10-16-umstieg-2-design.md`, Plan
@@ -70,8 +70,9 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > Zählerstunde geht bei Deploy verloren – `server.ts` hat keinen
 > SIGTERM-Handler), 2 kleine zurückgestellt.
 >
-> **Paket 3 – Frontend (Stand 17.10.2026, angehalten nach Task 17 auf
-> Wunsch; 617 von 617 Frontend-Tests, Lint und Build sauber):**
+> **Paket 3 – Frontend (abgeschlossen 18.10.2026; 658 von 658
+> Frontend-Tests, 733 von 733 Backend-Tests, nacheinander gelaufen; Lint und
+> Build sauber):**
 >
 > - Task 14: Typen gespiegelt, `api/orte.ts`, `api/haltestellen.ts`,
 >   `api/zeit.ts` (Uhrzeit immer deutsche Ortszeit), `verbindeHaltestelleLive`
@@ -87,37 +88,59 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 >   Verkehrsmittel, „laut Fahrplan“ (K3), „fällt aus“ (nicht wählbar),
 >   Steigzeile statt Gleisfeldern; Bahnhof ohne Haltestellen-ID wird
 >   nachgeschlagen.
+> - Task 18 (`a18883d`): `App.tsx` rechnet den Haltestellenumstieg über
+>   `holeWeg` (schnellste, danach barrierefrei für die Minuten am Knopf) und
+>   hängt am Strom `verbindeHaltestelleLive`. Verspätung ändert je nach Fahrt
+>   Abfahrts- oder Ankunftszeit im Vorschlag; **Steigwechsel** holt die Tafel
+>   neu, findet die Fahrt per ID und rechnet den Weg zum neuen Steig als
+>   Vorschlag; **Ausfall** wird nur Meldung („Bus 245 fällt aus. Bitte eine
+>   andere Verbindung wählen.“). `ort/anzeige.ts`: `ortsangabe` („Gleis 7“,
+>   „Steig Pos. 11“, „Haltestelle“), `linienName` („245“ → „Bus 245“),
+>   Hinweise „Steig unbekannt …“ und „Anschluss laut Fahrplan …“. Dashboard
+>   ohne Standortwahl und ohne „Mit Stopp“; Meldungsseite zeigt beim Ausfall
+>   keine Alt/Neu-Gegenüberstellung. Ende-zu-Ende-Test
+>   `App.haltestelle.test.tsx` (8 Fälle, auch Neuladen aus dem Reisespeicher).
+> - Task 19 (`2772bf8`): Fußzeile auf jeder Seite mit Link auf
+>   `transitous.org/sources`, DELFI, OSM (F7); Impressum-Abschnitt
+>   „Fahrplan- und Haltestellendaten“; Datenschutz-Abschnitt
+>   „Haltestellensuche nach Standort“ (nennt auch, was 24 h bzw. 30 s im
+>   Zwischenspeicher liegt – der Plan sagte „nichts gespeichert“, das wäre
+>   unwahr gewesen); `NOTICE`.
 >
-> **Achtung, Zwischenstand:** Die Eingabe kann einen Haltestellenumstieg
-> schon absenden (`werte.haltestellen`), `App.tsx` rechnet ihn aber noch
-> **nicht** (ruft `holeRoute` mit leerer EVA) – das ist Task 18. Den Zweig in
-> diesem Stand **nicht ausliefern**. Der Bahnhofsablauf ist unverändert und
-> durch alle bestehenden Tests gedeckt.
+> - Code-Review Paket 3 (`b1d757c`, `/code-review high` über
+>   `feat/mvp...HEAD -- frontend`): 10 Befunde, am Code geprüft. **6 behoben**,
+>   je mit einem Test, der vorher rot war: offene Fahrtliste zeigte nach einem
+>   Ortswechsel die Fahrten des alten Ortes; späte Suchantwort überschrieb die
+>   neuere (samt falschem Ausfallhinweis); ein Netzloch beim Nachschlagen hieß
+>   dauerhaft „fehlen Haltestellendaten“ (jetzt Hinweis mit „Erneut
+>   versuchen“); eine verspätete **Ankunft** wurde zur neuen Abfahrtszeit –
+>   **auch im Bahnhofspfad**, dort älter als Umstieg 2.0; Text „Neue
+>   Ankunftszeit“; S-Bahn-Gleise an Haltestellen hießen „Steig“. 1 bewusst
+>   nicht behoben: gespeicherte Haltestellen-IDs werden beim Laden nicht neu
+>   aufgelöst (die Tafel findet sie über die Koordinate, Wirkung keine).
+>   3 kleine zurückgestellt: zwei `uhrzeit`-Helfer (Berlin bzw. Gerätezeit),
+>   die Verkehrsmittel-Reihenfolge steht dreimal, die zweite Fußweg-Variante
+>   wird erst nach der ersten geholt.
 >
-> **Hier weitermachen – nächste Schritte in dieser Reihenfolge** (Einzelheiten,
-> Tests und Code je Task im Plan `docs/superpowers/plans/2026-10-16-umstieg-2.md`,
-> Abweichungen im Fortschrittsbuch):
+> Der Zweig ist damit **funktional vollständig**, aber noch nicht gegen
+> Transitous geprüft und nicht ausgeliefert.
 >
-> 1. **Task 18** Weg-Ansicht und Live für Haltestellen: in `App.tsx` bei
->    `werte.haltestellen` `holeWeg` statt `holeRoute`, `verbindeHaltestelleLive`
->    statt `verbindeLive`, Ereignis `ausfall` anzeigen; Reisespeicher-Pfad
->    Ende-zu-Ende testen.
-> 2. **Task 19** Quellenangaben (Transitous mit Link auf
->    `transitous.org/sources`, DELFI, OpenStreetMap) in Fußzeile und
->    Impressum, Datenschutzerklärung (Koordinaten gehen gerundet an
->    Transitous), `NOTICE`.
-> 3. **Paketabschluss 3:** ganze Suiten (Backend und Frontend **nacheinander**,
->    nicht parallel), `/code-review` über das Frontend, README.
-> 4. **Paket 4** (Tasks 20–22): Gesamtprüfung, Prüfskript
->    `backend/scripts/haltestellen-pruefung.ts` gegen Transitous (K1/K2/K4),
->    Ausfalltest K5, Auslieferung Fly/Vercel (Julian hat „komplett
->    ausliefern“ freigegeben) – vorher die offenen Punkte bei Julian klären.
-> 5. Danach Spec-Abschnitt 3 nachtragen (A1–A5 mit Datum) und die zwei
+> **Hier weitermachen – nächste Schritte in dieser Reihenfolge** (Einzelheiten
+> im Plan `docs/superpowers/plans/2026-10-16-umstieg-2.md`, Abweichungen mit
+> Begründung im Fortschrittsbuch):
+>
+> 1. **Paket 4** (Tasks 20–22): Gesamtprüfung mit unabhängigem Reviewer,
+>    Prüfskript `backend/scripts/haltestellen-pruefung.ts` gegen Transitous
+>    (K1/K2/K4), Ausfalltest K5, Auslieferung Fly/Vercel (Julian hat „komplett
+>    ausliefern“ freigegeben) – **vorher die offenen Punkte bei Julian
+>    klären**, vor allem `MOTIS_KONTAKT` und die Absprache im Matrix-Kanal.
+> 2. Danach Spec-Abschnitt 3 nachtragen (A1–A5 mit Datum) und die zwei
 >    zurückgestellten kleinen Review-Befunde aus Paket 2 entscheiden
 >    (Start/Ziel-Punkte der Luftlinien-Karte; doppelte Konstanten und
->    Sicherheitsmeldung `sse-bahnhoefe` auch für Haltestellen).
+>    Sicherheitsmeldung `sse-bahnhoefe` auch für Haltestellen) sowie die drei
+>    aus Paket 3.
 >
-> **Rechner (17.10.2026): Laufwerk C: ist voll** (0 GB frei; 10,5 GB liegen
+> **Rechner (17.10.2026, am 18.10. unverändert – 255 MB frei): Laufwerk C: ist voll** (0 GB frei; 10,5 GB liegen
 > in `C:\Windows\SoftwareDistribution\Download`, dem Download-Speicher von
 > Windows Update). Vitest und npm brachen mit `ENOSPC` ab. Seitdem laufen die
 > Befehle mit `source .superpowers/env-d.sh` (Temp und npm-Cache unter
@@ -149,7 +172,8 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > - Platz auf Laufwerk C: schaffen (siehe oben).
 >
 > **Hinweis Bug-Hunter-Skill:** Auf diesem Rechner fehlen die Hilfsdateien des
-> Skills (nur `SKILL.md` vorhanden); der Bug-Hunt lief deshalb von Hand.
+> Skills (nur `SKILL.md` vorhanden); in Paket 1 lief der Bug-Hunt von Hand, in
+> Paket 2 und 3 trat `/code-review high` an seine Stelle.
 >
 > Der Zweig `feat/umstieg-2` ist **nur lokal** (nicht gepusht).
 
