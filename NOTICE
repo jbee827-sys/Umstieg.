@@ -11,6 +11,14 @@ sind NICHT Teil dieses Repositorys - sie werden zur Laufzeit abgerufen.
 - Deutsche Bahn (Fahrplan-, Wagenreihungs-, Stations- und FaSta-Daten):
   Nutzungsbedingungen des DB API Marketplace, überwiegend CC BY 4.0.
   https://developers.deutschebahn.com
+- Transitous / MOTIS (Haltestellen, Abfahrten, Ankuenfte, Fusswege an
+  Haltestellen, seit Umstieg 2.0): Daten der Quellen laut
+  https://transitous.org/sources unter deren jeweiligen Lizenzen. Fuer
+  Deutschland vor allem DELFI e. V. - Fahrplaene CC BY 4.0, Echtzeit
+  (GTFS-RT ueber die Mobilithek) CC BY-SA 4.0 - sowie einzelne Verbuende.
+  Fusswege aus OpenStreetMap (ODbL). Abgerufen ueber die API von Transitous
+  (https://transitous.org/api/) nach deren Bedingungen; MOTIS selbst steht
+  unter der MIT-Lizenz.
 
 Mitgelieferte Schriften
 =======================

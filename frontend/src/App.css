@@ -1123,6 +1123,7 @@
 
 .fusszeile {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   justify-content: center;
   align-items: center;
@@ -1138,6 +1139,14 @@
   text-decoration: underline;
   /* Grosse Beruehrflaeche, wie alle Ziele in dieser App. */
   padding: 8px 4px;
+}
+
+/* Die Quellenzeile steht unter den beiden Rechtslinks, eigene Zeile. */
+.fusszeile-quellen {
+  flex-basis: 100%;
+  margin: 0;
+  text-align: center;
+  font-size: 0.8rem;
 }
 
 /* Aktiver Schritt: kraeftig, erledigte gedaempft – der Weg bleibt im Ganzen

@@ -3,6 +3,9 @@ import { BETREIBER } from '../rechtliches/betreiber'
 // Beschreibt ausschliesslich, was der Code tatsaechlich tut. Bei Aenderungen
 // an der Datenverarbeitung ist diese Seite mitzupflegen:
 // - Standort: standort/useStandort.ts, standort/bahnhofErkennung.ts (Rundung)
+// - Haltestellen ueber Transitous, seit Umstieg 2.0: backend/src/clients/
+//   haltestellen.ts (Standortsuche ohne Zwischenspeicher), clients/motis.ts
+//   (rundeKoordinate), abgesichert in backend/test/datenschutz.test.ts
 // - Eingabe im sessionStorage: sitzung/eingabespeicher.ts, abgesichert in
 //   sitzung/eingabespeicher.test.ts ("fasst localStorage nicht an") und
 //   components/Datenschutz.test.tsx
@@ -56,7 +59,7 @@ export function Datenschutz({ onZurueck }: { onZurueck: () => void }) {
           Diese App setzt keine Cookies und bindet keine Werbedienste ein. Zur
           Reichweitenmessung zählen wir Seitenaufrufe – ohne Cookies, ohne
           Kennung und ohne Profil. Es gibt kein Nutzerkonto. Auf deinem Gerät bleibt
-          allein deine eigene Eingabe – Bahnhof, Gleise, Zug – und nur so
+          allein deine eigene Eingabe – Bahnhof oder Haltestelle, Gleise, Zug – und nur so
           lange, wie dieser Browser-Tab offen ist. Dein Standort wird nur mit
           deiner Erlaubnis verwendet, bereits im Browser auf etwa 110 Meter
           gerundet und nirgends gespeichert.
@@ -91,14 +94,15 @@ export function Datenschutz({ onZurueck }: { onZurueck: () => void }) {
           unseren Server gesendet – das entspricht einem Raster von rund 110
           Metern und reicht, um einen Bahnhof zuzuordnen, nicht aber, um einen
           Weg nachzuvollziehen. Die Rundung geschieht im Browser, bevor gesendet
-          wird. Die genaue Position bleibt ausschließlich auf deinem Gerät und
+          wird. Für die Suche nach Haltestellen reicht unser Server die
+          gerundete Koordinate weiter (siehe „Haltestellensuche nach Standort“). Die genaue Position bleibt ausschließlich auf deinem Gerät und
           wird dort nur zur Anzeige des Punktes auf der Karte und zur
           Ankunftserkennung verwendet.
         </p>
         <p>
           <strong>Speicherung:</strong> keine. Der Server verarbeitet die
-          gerundete Koordinate im Arbeitsspeicher, um die Bahnhofssuche
-          auszuführen, und verwirft sie danach. Ein Zugriffsprotokoll mit
+          gerundete Koordinate im Arbeitsspeicher, um die Bahnhofs- und
+          Haltestellensuche auszuführen, und verwirft sie danach. Ein Zugriffsprotokoll mit
           Koordinaten wird nicht geführt.
         </p>
 
@@ -171,6 +175,32 @@ export function Datenschutz({ onZurueck }: { onZurueck: () => void }) {
           ausschließlich unser Server, nie dein Browser. Übermittelt werden dabei
           nur Bahnhofsnummer und Zugdaten – keine personenbezogenen Angaben und
           keine Kennung, die auf dich zurückführt.
+        </p>
+
+        <h2>Haltestellensuche nach Standort</h2>
+        <p>
+          Neben den Bahnhöfen sucht Umstieg. auch Haltestellen. Dazu leitet
+          unser Server die bereits im Browser auf drei Nachkommastellen (rund
+          110 Meter) gerundete Koordinate an Transitous weiter
+          (<code>api.transitous.org</code>), einen gemeinschaftlich betriebenen,
+          offenen Auskunftsdienst. Transitous erhält die Anfrage unseres
+          Servers – nicht deine IP-Adresse und keine Kennung, die auf dich
+          zurückführt.
+        </p>
+        <p>
+          Denselben Weg über unseren Server nehmen ein Suchtext, wenn du einen
+          Ort von Hand suchst, die Kennungen der gewählten Haltestellen für ihre
+          Abfahrtstafel und die Steigkoordinaten für den Fußweg zwischen zwei
+          Steigen. Auch hier fragt nie dein Browser selbst bei Transitous an.
+        </p>
+        <p>
+          <strong>Speicherung:</strong> Die Koordinate deines Standorts
+          speichert der Server nicht, auch nicht vorübergehend. Suchtexte,
+          Tafeln und Fußwege hält er kurz im Arbeitsspeicher vor – die Suche
+          und den Fußweg bis zu 24 Stunden, die Tafel 30 Sekunden –, damit nicht
+          jede gleiche Anfrage erneut an Transitous geht. Diese Einträge
+          tragen keinen Bezug zu dir. Gezählt wird nur, wie viele Anfragen je
+          Stunde an Transitous gingen, ohne ihren Inhalt.
         </p>
 
         <h2>Reichweitenmessung</h2>

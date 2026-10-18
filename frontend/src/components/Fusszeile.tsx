@@ -7,6 +7,15 @@ export function Fusszeile() {
       <a href="#impressum">Impressum</a>
       <span aria-hidden="true">·</span>
       <a href="#datenschutz">Datenschutz</a>
+      {/* F7: Transitous verlangt einen sichtbaren Link auf die Quellenliste -
+          auf jeder Seite, nicht erst im Impressum. */}
+      <p className="fusszeile-quellen">
+        Haltestellendaten:{' '}
+        <a href="https://transitous.org/sources" target="_blank" rel="noreferrer noopener">
+          Transitous
+        </a>{' '}
+        · DELFI · © OpenStreetMap-Mitwirkende
+      </p>
     </footer>
   )
 }
