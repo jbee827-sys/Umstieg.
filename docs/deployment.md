@@ -53,7 +53,7 @@ E: erbt der Ordner (Stand 02.10.2026: SYSTEM, Administratoren, Benutzer). So
 wird er wieder so eng wie zuvor:
 
 ```powershell
-icacls "E:\jbeer\.secrets" /inheritance:r /grant:r "MATEBOOK-JULIAN\jbeer:(OI)(CI)F"
+icacls "E:\jbeer\.secrets" /inheritance:r /grant:r "${env:USERDOMAIN}\${env:USERNAME}:(OI)(CI)F"
 ```
 
 Lokal starten (Git Bash, aus `backend/`):

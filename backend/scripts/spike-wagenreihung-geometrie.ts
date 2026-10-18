@@ -8,24 +8,16 @@
 // Bahnhoefen greift).
 //
 // Aufruf: npx tsx scripts/spike-wagenreihung-geometrie.ts
+import { fileURLToPath } from 'node:url';
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { epWagenreihung } from '../src/clients/db-endpunkte.js';
 import { holeTafel } from '../src/clients/timetables.js';
 import { ladeSecrets } from './secrets.js';
 
-const AUSGABE = join(
-  homedir(),
-  'AppData',
-  'Local',
-  'Temp',
-  'claude',
-  'D--Claude-code',
-  '6db04a47-3c2c-491e-84a8-985fc6d8dc06',
-  'scratchpad',
-  'schema-geometrie',
-);
+// Rohdaten in den gitignorierten Spike-Ordner, nie in den Temp-Scratchpad
+// einer Sitzung - der ist kein Ablageort und verschwindet (Regel seit 14.09.2026).
+const AUSGABE = fileURLToPath(new URL('../test/fixtures/spike/schema-geometrie/', import.meta.url));
 
 // Berlin Hbf tief - dort haengen die Fernzuege (Gleis 1-8).
 const EVA_TIEF = '8098160';

@@ -6,26 +6,18 @@
 // zeichnet (Abschnittsmarker, Anzeigetafeln, Gleisachsen), stehen ueberhaupt
 // nicht in der heutigen Abfrage.
 //
-// Genau EIN Overpass-Aufruf; das Ergebnis wird im Scratchpad abgelegt und bei
+// Genau EIN Overpass-Aufruf; das Ergebnis wird im Spike-Ordner abgelegt und bei
 // Wiederholung von dort gelesen (Fairness gegenueber der oeffentlichen Instanz).
 //
 // Aufruf: npx tsx scripts/spike-schema-overpass-live.ts
+import { fileURLToPath } from 'node:url';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { OsmElement, OverpassAntwort } from '../src/core/typen.js';
 
-const AUSGABE = join(
-  homedir(),
-  'AppData',
-  'Local',
-  'Temp',
-  'claude',
-  'D--Claude-code',
-  '6db04a47-3c2c-491e-84a8-985fc6d8dc06',
-  'scratchpad',
-  'schema-geometrie',
-);
+// Rohdaten in den gitignorierten Spike-Ordner, nie in den Temp-Scratchpad
+// einer Sitzung - der ist kein Ablageort und verschwindet (Regel seit 14.09.2026).
+const AUSGABE = fileURLToPath(new URL('../test/fixtures/spike/schema-geometrie/', import.meta.url));
 const CACHE = join(AUSGABE, 'g-overpass-erweitert.json');
 
 const LAT = 52.5251;
@@ -60,7 +52,7 @@ out tags center;`;
 
 async function holeOderCache(): Promise<OverpassAntwort> {
   if (existsSync(CACHE)) {
-    console.log('Aus dem Scratchpad-Cache gelesen (kein Overpass-Aufruf).');
+    console.log('Aus dem Spike-Ordner gelesen (kein Overpass-Aufruf).');
     return JSON.parse(readFileSync(CACHE, 'utf8')) as OverpassAntwort;
   }
   const url = process.env.OVERPASS_URL_PRIMARY ?? 'https://overpass-api.de/api/interpreter';
