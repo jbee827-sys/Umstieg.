@@ -52,7 +52,9 @@ function ampelAussage(restSek: number | undefined, gehzeitSek: number): string {
 /** Der geänderte Wert selbst – beim Gleiswechsel das Gleis, sonst die Uhrzeit. */
 function wert(ereignis: LiveEreignis, welcher: 'alt' | 'neu'): string {
   const roh = ereignis[welcher] ?? '–'
-  return ereignis.typ === 'gleiswechsel' ? `Gl. ${roh}` : roh
+  if (ereignis.typ !== 'gleiswechsel') return roh
+  // `anzeige` traegt nur der Haltestellenpfad - dort ist es ein Steig.
+  return ereignis.anzeige !== undefined ? `Steig ${roh}` : `Gl. ${roh}`
 }
 
 // Nachfolger von Screen 4 des Entwurfs. Screen 4 war eine Entscheidungsseite
@@ -94,6 +96,9 @@ export function Meldungen({
   }
 
   const { titel, text } = meldungsText(neueste.ereignis)
+  // Ein Ausfall hat kein „neu“ und keine neue Route - es gibt nichts
+  // gegenueberzustellen und nichts nachzurechnen.
+  const ausfall = neueste.ereignis.typ === 'ausfall'
   const vorschlag = neueste.vorschlag
   const zeitversatz = vorschlag
     ? verschiebung(alteWerte.abfahrtZeit, vorschlag.werte.abfahrtZeit)
@@ -108,25 +113,27 @@ export function Meldungen({
         {vorschlag ? ' Die neue Route ist berechnet – übernehmen musst du sie selbst.' : ''}
       </p>
 
-      <div className="stoerung-gegenueber">
-        <div className="stoerung-seite">
-          <div className="kicker">Alt</div>
-          <div className="stoerung-gleis">
-            <s className="tafel-alt">{wert(neueste.ereignis, 'alt')}</s>
+      {!ausfall && (
+        <div className="stoerung-gegenueber">
+          <div className="stoerung-seite">
+            <div className="kicker">Alt</div>
+            <div className="stoerung-gleis">
+              <s className="tafel-alt">{wert(neueste.ereignis, 'alt')}</s>
+            </div>
+            <div className="stoerung-detail">{minutenText(alteRoute.gehzeitSek)} Gehzeit</div>
           </div>
-          <div className="stoerung-detail">{minutenText(alteRoute.gehzeitSek)} Gehzeit</div>
-        </div>
-        <div className="stoerung-pfeil" aria-hidden="true">
-          →
-        </div>
-        <div className="stoerung-seite stoerung-neu">
-          <div className="kicker">Neu</div>
-          <div className="stoerung-gleis meldung-neu">{wert(neueste.ereignis, 'neu')}</div>
-          <div className="stoerung-detail">
-            {vorschlag ? `${minutenText(vorschlag.route.gehzeitSek)} Gehzeit` : 'Gehzeit offen'}
+          <div className="stoerung-pfeil" aria-hidden="true">
+            →
+          </div>
+          <div className="stoerung-seite stoerung-neu">
+            <div className="kicker">Neu</div>
+            <div className="stoerung-gleis meldung-neu">{wert(neueste.ereignis, 'neu')}</div>
+            <div className="stoerung-detail">
+              {vorschlag ? `${minutenText(vorschlag.route.gehzeitSek)} Gehzeit` : 'Gehzeit offen'}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {vorschlag && (
         <>
@@ -163,7 +170,7 @@ export function Meldungen({
           Ampelaussage entfaellt mit: Sie haengt an der neuen Gehzeit, und die
           alte an ihre Stelle zu setzen hiesse, eine Vermutung als Tatsache
           auszugeben. */}
-      {!vorschlag && (
+      {!vorschlag && !ausfall && (
         <p className="meldung-ohne-route">
           Die neue Route lässt sich gerade nicht berechnen – die Änderung gilt trotzdem. Versuch
           es gleich noch einmal.
@@ -177,9 +184,15 @@ export function Meldungen({
             {verlauf.map((m) => (
               <li key={m.nr}>
                 <span className="meldungen-zeit">{uhrzeit(m.ereignis.zeitstempel)}</span>
-                <span className="meldungen-zug">{m.ereignis.zug ?? 'Dein Zug'}</span>
+                <span className="meldungen-zug">{m.ereignis.anzeige ?? m.ereignis.zug ?? 'Dein Zug'}</span>
                 <span className="meldungen-wechsel">
-                  <s className="tafel-alt">{m.ereignis.alt}</s> → {m.ereignis.neu}
+                  {m.ereignis.typ === 'ausfall' ? (
+                    'fällt aus'
+                  ) : (
+                    <>
+                      <s className="tafel-alt">{m.ereignis.alt}</s> → {m.ereignis.neu}
+                    </>
+                  )}
                 </span>
               </li>
             ))}

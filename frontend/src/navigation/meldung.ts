@@ -2,11 +2,21 @@ import type { LiveEreignis } from '../api/typen'
 
 /** Text der Störmeldung – eigene Datei, damit die Komponente nur sich selbst exportiert. */
 export function meldungsText(ereignis: LiveEreignis): { titel: string; text: string } {
-  const zug = ereignis.zug ? `${ereignis.zug} ` : ''
-  if (ereignis.typ === 'gleiswechsel') {
+  // Im Haltestellenpfad ist `zug` eine Fahrt-ID; zu lesen ist `anzeige`.
+  const name = ereignis.anzeige ?? ereignis.zug
+  const zug = name ? `${name} ` : ''
+  if (ereignis.typ === 'ausfall') {
     return {
-      titel: 'Gleiswechsel',
-      text: `${zug}fährt heute von Gleis ${ereignis.neu} statt ${ereignis.alt}.`,
+      titel: 'Fahrt fällt aus',
+      text: `${name ?? 'Deine Fahrt'} fällt aus. Bitte eine andere Verbindung wählen.`,
+    }
+  }
+  if (ereignis.typ === 'gleiswechsel') {
+    // `anzeige` traegt nur der Haltestellenpfad - dort ist es ein Steig.
+    const ort = ereignis.anzeige !== undefined ? 'Steig' : 'Gleis'
+    return {
+      titel: `${ort}wechsel`,
+      text: `${zug}fährt heute von ${ort} ${ereignis.neu} statt ${ereignis.alt}.`,
     }
   }
   return {

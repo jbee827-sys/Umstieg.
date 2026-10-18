@@ -339,3 +339,40 @@ describe('Dashboard: der Hauptknopf bleibt stehen', () => {
     expect(flaeche.querySelector(':scope > .dashboard-rollbereich')).not.toBeNull()
   })
 })
+
+describe('Dashboard: Haltestellenpfad (Umstieg 2.0)', () => {
+  const ort = { name: 'Washingtonplatz', haltestelleId: 'h', lat: 1, lon: 2, verkehrsmittel: ['bus' as const] }
+  const eintrag = {
+    fahrtId: 'x', zeitSoll: '2026-10-18T10:00:00Z', steigLat: 1, steigLon: 2, steigGenau: true, echtzeit: true, ausfall: false, ziel: 'Zoo',
+  }
+  const halteWerte: EingabeWerte = {
+    ...werte,
+    eva: '',
+    bahnhofName: 'Berlin Hbf → Washingtonplatz',
+    gleisAn: '7',
+    gleisAb: 'Pos. 11',
+    zugAnName: 'ICE 1206',
+    zugAbName: '245',
+    haltestellen: {
+      ankunft: { ort, fahrt: { ...eintrag, linie: 'ICE 1206', verkehrsmittel: 'bahn', steigSoll: '7' } },
+      anschluss: { ort, fahrt: { ...eintrag, linie: '245', verkehrsmittel: 'bus', steigSoll: 'Pos. 11' } },
+    },
+  }
+
+  it('ohne Standortwahl und ohne „Mit Stopp“, Steig statt Gleis', () => {
+    zeige({ werte: halteWerte, pfad: 'haltestelle' })
+    expect(screen.queryByRole('group', { name: /Wo stehst du/ })).toBeNull()
+    expect(screen.queryByText(/Wo stehst du/)).toBeNull()
+    expect(screen.queryByRole('button', { name: /Mit Stopp/ })).toBeNull()
+    expect(screen.getByRole('button', { name: /Barrierefrei/ })).toBeDefined()
+    expect(screen.getByText('Gleis 7')).toBeDefined()
+    expect(screen.getByText('Steig Pos. 11')).toBeDefined()
+    expect(screen.getByText('Bus 245')).toBeDefined()
+  })
+
+  it('der Bahnhofspfad bleibt, wie er war', () => {
+    zeige()
+    expect(screen.getByText('Gl. 6')).toBeDefined()
+    expect(screen.getByRole('button', { name: /Mit Stopp/ })).toBeDefined()
+  })
+})
