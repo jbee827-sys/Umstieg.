@@ -1,7 +1,18 @@
 Datenlizenzen
 =============
 
-Die MIT-Lizenz in LICENSE gilt fuer den QUELLCODE dieses Projekts.
+Copyright (C) 2026 Julian Beerbaum
+
+Der QUELLCODE dieses Projekts steht unter der GNU Affero General Public
+License, Version 3 (AGPL-3.0-only), Volltext in LICENSE. Wer eine
+veraenderte Fassung ueber ein Netzwerk anbietet, muss deren Quellcode
+den Nutzern zugaenglich machen (§ 13 AGPL). Quellcode dieser Fassung:
+https://github.com/jbee827-sys/Umstieg.
+
+Bis einschliesslich Commit 2552618 (16.10.2026) stand der Code unter der
+MIT-Lizenz; diese Staende waren nicht oeffentlich.
+
+Die AGPL gilt fuer den Code dieses Projekts.
 Die zur Laufzeit verarbeiteten Daten stehen unter eigenen Lizenzen und
 sind NICHT Teil dieses Repositorys - sie werden zur Laufzeit abgerufen.
 
