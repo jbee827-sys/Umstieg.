@@ -19,6 +19,8 @@ describe('Fahrtauswahl', () => {
     const onAuswahl = vi.fn()
     render(<Fahrtauswahl ort={ORT} typ="dep" label="Anschluss wählen" auswahl={null} onAuswahl={onAuswahl} />)
     await userEvent.click(screen.getByRole('button', { name: 'Anschluss wählen' }))
+    await userEvent.click(await screen.findByRole('heading', { name: 'Bus' }))
+    await userEvent.click(screen.getByRole('heading', { name: 'Tram' }))
     const bus = await screen.findByRole('button', { name: /245/ })
     expect(within(bus).getByText('laut Fahrplan')).toBeDefined()
     expect((screen.getByRole('button', { name: /fällt aus/ }) as HTMLButtonElement).disabled).toBe(true)
@@ -61,5 +63,22 @@ describe('Fahrtauswahl: Kennzeichen sichtbar (Browserpruefung 18.10.2026)', () =
     await userEvent.click(screen.getByRole('button', { name: 'Anschluss wählen' }))
     const kennzeichen = within(await screen.findByRole('button', { name: /245/ })).getByText('laut Fahrplan')
     expect(kennzeichen.closest('.tafel-zug')).toBeNull()
+  })
+})
+
+describe('Fahrtauswahl: Verkehrsmittel zum Aufklappen (Julian, 19.10.2026)', () => {
+  it('mehrere Verkehrsmittel: alle zu; aufgeklappt steht nur das eine offen', async () => {
+    vi.mocked(holeHaltestellenTafel).mockResolvedValue({ ok: true, stand: new Date().toISOString(), eintraege: [
+      basis, { ...basis, fahrtId: 'f2', linie: '245', verkehrsmittel: 'bus' }, { ...basis, fahrtId: 'f3', linie: '100', verkehrsmittel: 'bus' },
+    ] })
+    render(<Fahrtauswahl ort={ORT} typ="dep" label="Abfahrt · Kassel Rathaus" auswahl={null} onAuswahl={vi.fn()} immerOffen />)
+    const bus = (await screen.findByRole('group', { name: 'Bus' })) as HTMLDetailsElement
+    const tram = screen.getByRole('group', { name: 'Tram' }) as HTMLDetailsElement
+    expect([tram.open, bus.open]).toEqual([false, false])
+    expect(bus.querySelector('summary')!.textContent).toContain('2')
+
+    await userEvent.click(screen.getByRole('heading', { name: 'Bus' }))
+    expect(within(bus).getAllByRole('button', { name: /Bus/ })).toHaveLength(2)
+    expect(tram.open).toBe(false)
   })
 })

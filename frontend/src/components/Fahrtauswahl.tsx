@@ -11,6 +11,7 @@ import { uhrzeit } from '../api/zeit'
 import { ortSchluessel } from '../ort/ortmodell'
 import { steigText } from '../ort/steig'
 import { VerkehrsmittelSymbole } from '../ort/verkehrsmittel'
+import { Tafelkategorie } from './Tafelkategorie'
 
 interface FahrtauswahlProps {
   ort: Ort
@@ -69,8 +70,13 @@ function FahrtBloecke({ bloecke, typ, auswahl, markiere, onTipp }: BloeckeProps)
   return (
     <div className="tafel-bloecke">
       {bloecke.map((block) => (
-        <section key={block.verkehrsmittel} className="tafel-block" role="group" aria-label={block.titel}>
-          <h3 className="tafel-block-titel">{block.titel}</h3>
+        <Tafelkategorie
+          key={block.verkehrsmittel}
+          titel={block.titel}
+          anzahl={block.eintraege.length}
+          // Wie in `Zugauswahl`: eine einzige Kategorie und die mit der Wahl offen.
+          anfangsOffen={bloecke.length === 1 || block.eintraege.some((e) => istAuswahl(e, auswahl))}
+        >
           <ul className="tafel">
             {block.eintraege.map((e) => (
               <li key={e.fahrtId}>
@@ -94,7 +100,7 @@ function FahrtBloecke({ bloecke, typ, auswahl, markiere, onTipp }: BloeckeProps)
               </li>
             ))}
           </ul>
-        </section>
+        </Tafelkategorie>
       ))}
     </div>
   )

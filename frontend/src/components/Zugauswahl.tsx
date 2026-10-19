@@ -7,6 +7,7 @@ import {
   type Kategorieblock,
 } from '../api/tafelauswahl'
 import type { TafelEintrag } from '../api/typen'
+import { Tafelkategorie } from './Tafelkategorie'
 
 interface ZugauswahlProps {
   eva: string
@@ -60,13 +61,15 @@ function TafelBloecke({ bloecke, typ, auswahl, markiere, onTipp }: TafelBloeckeP
   return (
     <div className="tafel-bloecke">
       {bloecke.map((block) => (
-        <section
+        <Tafelkategorie
           key={block.kategorie}
-          className="tafel-block"
-          role="group"
-          aria-label={block.titel}
+          titel={block.titel}
+          anzahl={block.eintraege.length}
+          // Eine einzige Kategorie zuzuklappen hiesse nur einen Klick mehr;
+          // die mit der gewaehlten Fahrt bleibt offen, sonst saehe man die
+          // Markierung nicht.
+          anfangsOffen={bloecke.length === 1 || block.eintraege.some((e) => istAuswahl(e, auswahl))}
         >
-          <h3 className="tafel-block-titel">{block.titel}</h3>
           {/* Jede Kategorie rollt fuer sich: Sonst schoebe der
               Regionalverkehr die S-Bahn aus dem Bild, und man muesste an
               einer Kategorie vorbeiscrollen, die einen nicht angeht. */}
@@ -93,7 +96,7 @@ function TafelBloecke({ bloecke, typ, auswahl, markiere, onTipp }: TafelBloeckeP
               </li>
             ))}
           </ul>
-        </section>
+        </Tafelkategorie>
       ))}
     </div>
   )
