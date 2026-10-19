@@ -11,7 +11,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 **UI-Design (Claude Design Import):** [`design/Umstieg.dc.html`](./design/Umstieg.dc.html)
 **Designregeln (Farben, Schrift, Bauteile):** [`design/DESIGN.md`](./design/DESIGN.md), Begründungen in [`BRIEF.md`](./BRIEF.md)
 
-**Lizenz:** Quellcode unter MIT ([`LICENSE`](./LICENSE)); die zur Laufzeit abgerufenen Daten (DB, Transitous/DELFI, OpenStreetMap) stehen unter eigenen Lizenzen, siehe [`NOTICE`](./NOTICE). Zugangsdaten liegen nie im Repository – welche nötig sind, zeigt [`.env.example`](./.env.example).
+**Lizenz:** Quellcode unter AGPL-3.0-only für alle Stände ([`LICENSE`](./LICENSE), zur früheren MIT-Datei siehe [`NOTICE`](./NOTICE)); die zur Laufzeit abgerufenen Daten (DB, Transitous/DELFI, OpenStreetMap) stehen unter eigenen Lizenzen, siehe [`NOTICE`](./NOTICE). Zugangsdaten liegen nie im Repository – welche nötig sind, zeigt [`.env.example`](./.env.example).
 
 ## Architektur
 

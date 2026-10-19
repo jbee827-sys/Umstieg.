@@ -1,10 +1,9 @@
 {
-  "_hinweis": "Diese sechs Werte ausfuellen und die eckigen Klammern samt Text ersetzen. Paragraph 5 DDG verlangt Name, ladungsfaehige Anschrift (kein Postfach) und neben der E-Mail einen zweiten Kontaktweg, in der Regel eine Telefonnummer. Solange hier Platzhalter stehen, zeigt die Impressumsseite eine rote Warnung. Diese Datei ist die einzige Stelle im Projekt mit personenbezogenen Angaben; Impressum und Datenschutzerklaerung lesen beide von hier.",
+  "_hinweis": "Diese fuenf Werte ausfuellen und die eckigen Klammern samt Text ersetzen. Paragraph 5 DDG verlangt Name, ladungsfaehige Anschrift (kein Postfach) und neben der E-Mail einen zweiten schnellen Kontaktweg; eine Telefonnummer ist nicht Pflicht (EuGH C-649/17). Das optionale Feld \"telefon\" erscheint nur, wenn es gesetzt ist. Solange hier Platzhalter stehen, zeigt die Impressumsseite eine rote Warnung. Diese Datei ist die einzige Stelle im Projekt mit personenbezogenen Angaben; Impressum und Datenschutzerklaerung lesen beide von hier.",
 
   "name": "Julian Beerbaum",
   "strasse": "Alexander-von-Humboldt Str. 18",
   "ort": "16225 Eberswalde",
   "land": "Deutschland",
-  "email": "jbeerbaum827@gmail.com",
-  "telefon": "01734806363"
+  "email": "jbeerbaum827@gmail.com"
 }

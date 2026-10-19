@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
-import { Fusszeile } from './Fusszeile'
+import { Fusszeile, QUELLCODE_URL } from './Fusszeile'
 
 describe('Fusszeile', () => {
   it('nennt Transitous mit Link auf die Quellenliste (F7)', () => {
@@ -14,5 +14,12 @@ describe('Fusszeile', () => {
     render(<Fusszeile />)
     expect(screen.getByRole('link', { name: 'Impressum' }).getAttribute('href')).toBe('#impressum')
     expect(screen.getByRole('link', { name: 'Datenschutz' }).getAttribute('href')).toBe('#datenschutz')
+  })
+
+  it('verlinkt den Quellcode (§ 13 AGPL)', () => {
+    render(<Fusszeile />)
+    const link = screen.getByRole('link', { name: 'Quellcode' })
+    expect(link.getAttribute('href')).toBe(QUELLCODE_URL)
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer')
   })
 })

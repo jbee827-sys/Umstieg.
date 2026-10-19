@@ -12,12 +12,13 @@ export interface Betreiber {
   ort: string;
   land: string;
   email: string;
-  telefon: string;
+  /** Optional; die Telefonnummer ist im Impressum nicht Pflicht. */
+  telefon?: string;
 }
 
 export const BETREIBER: Betreiber = daten;
 
 /** true, solange noch Platzhalter drinstehen – blendet die Warnung ein. */
 export const ANGABEN_FEHLEN: boolean = (
-  [daten.name, daten.strasse, daten.ort, daten.land, daten.email, daten.telefon] as string[]
+  [daten.name, daten.strasse, daten.ort, daten.land, daten.email] as string[]
 ).some((wert) => wert.startsWith('[BITTE'));
