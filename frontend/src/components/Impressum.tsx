@@ -31,8 +31,12 @@ export function Impressum({ onZurueck }: { onZurueck: () => void }) {
         <h2>Kontakt</h2>
         <p>
           E-Mail: {BETREIBER.email}
-          <br />
-          Telefon: {BETREIBER.telefon}
+          {BETREIBER.telefon && (
+            <>
+              <br />
+              Telefon: {BETREIBER.telefon}
+            </>
+          )}
         </p>
 
         <h2>Verantwortlich für den Inhalt</h2>
