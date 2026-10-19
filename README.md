@@ -208,14 +208,57 @@ jeder Ebene sichtbar. Drei Befunde, zwei behoben:
 > 1. ~~Repository öffentlich schalten~~ – erledigt (Julian, 19.10.2026).
 > 2. ~~`feat/umstieg-2` pushen~~ – erledigt 19.10.2026 nach der
 >    Browser-Simulation (siehe oben).
-> 3. **Task 22 – Auslieferung:** `fly secrets set MOTIS_KONTAKT=… -a
->    umstieg-backend` (Wert nur dort), `fly deploy --ha=false`, Vercel aus
->    `feat/umstieg-2`, Live-Prüfung (Hamburg/Frankfurt Stufe 1, CORS, Berlin
->    Hbf → Washingtonplatz, Kassel Rathaus A → B, **Weglinie auf der Karte**),
->    K7 im Fly-Protokoll; danach `main`/`feat/mvp` per Fast-Forward.
-> 4. Spec-Abschnitt 3 nachtragen (A1–A5 mit Datum); kleine Befunde aus
+> 3. **Task 22 – Auslieferung, Stand 19.10.2026 abends – teilweise erledigt:**
+>    - ~~`MOTIS_KONTAKT` auf Fly~~ gesetzt; ~~`fly deploy --ha=false`~~ – v24
+>      läuft seit 18:54 UTC (ein Health-Check schlug im Start fehl, danach
+>      lauscht der Server).
+>    - ~~Vercel aus `feat/umstieg-2`~~ für **83823df** – Produktion per CLI.
+>    - ~~Live-Prüfung über die API~~ (83823df/v24): Hamburg und Frankfurt
+>      Stufe 1 (7 bzw. 5 Schritte), CORS für `www.umstieg.online`, Ortssuche
+>      beide Quellen `ok`, Berlin Hbf → Washingtonplatz und Kassel Rathaus →
+>      Rathaus/Fünffensterstraße als echter Fußweg mit Kartengeometrie
+>      (`herkunft: fussweg`, Kassel 148 m). Der MapLibre-Worker kommt live als
+>      JavaScript (200, 478 KB), nicht als `index.html`.
+> 4. **Offen – Produktion auf `bcf4691` bringen.** Der Lizenz-Zweig
+>    `claude/project-thread-e1m9gx` ist in `feat/umstieg-2` gemergt und
+>    gepusht (`bcf4691`: AGPL-3.0-only für alle Stände, Quellcode-Link in der
+>    Fußzeile neben dem Transitous-Hinweis, Impressum ohne Telefon; Frontend
+>    685/685, Lint, Build grün). **Live ist noch 83823df** – MIT, kein
+>    Quellcode-Link, Telefon im Impressum. Der Push baute nur eine Vorschau.
+>    - **Die Vorschau NICHT promoten:** `VITE_API_BASE` ist für Vorschauen
+>      nur für den Zweig `feat/mvp` gesetzt; die Vorschau von
+>      `feat/umstieg-2` hat keine Backend-Adresse, und Promote baut nicht neu.
+>    - Weg: im Dashboard die Vorschau `bcf4691` (`dpl_76eKqK3PzqnZAVCPB5YnC7G6Yrjh`)
+>      → „Redeploy“ → Umgebung *Production*. Ein Produktions-Build über das
+>      Vercel-MCP wurde von der Rechteprüfung blockiert (bewusst nicht umgangen).
+>    - Vor einem `vercel deploy --prod` von diesem Rechner: `.vercelignore`
+>      ergänzen – `.superpowers/` (12 MB Protokolle), `.claude/`, `dev.log`,
+>      `Beispiel Ticket`, `frontend/.abzug`, `frontend/.entwurf` sind nicht
+>      ausgeschlossen und landeten in der Quelle im Dashboard. Ob der
+>      CLI-Deploy von 83823df sie schon mitnahm, ist ungeprüft.
+>    - Danach in Chrome prüfen (nicht per `curl`, siehe unten): Fußzeile mit
+>      „Quellcode“ und Transitous, Impressum ohne Telefon, **Weglinie auf der
+>      Karte** am Gerät.
+> 5. **Offen – K7 im Fly-Protokoll:** `fly logs -a umstieg-backend | grep
+>    motis-anfragen`, frühestens nach 20:00 UTC des 19.10. (Deploy 18:54 UTC).
+> 6. **Offen – `main`/`feat/mvp` per Fast-Forward** auf den ausgelieferten
+>    Stand (beide auf 2552618, Fast-Forward möglich). Der Push auf `main` baut
+>    die Produktion selbst – erst nach Schritt 4.
+> 7. Spec-Abschnitt 3 nachtragen (A1–A5 mit Datum); kleine Befunde aus
 >    Paket 2, 3, Gesamtreview und Browserprüfung entscheiden
 >    (Fortschrittsbuch, `minor (deferred)`).
+>
+> **Vercel-Bot-Abwehr (19.10.2026, ~19:10 UTC):** Nach einer Abfrage alle 10 s
+> beantwortet Vercel `curl` auf `www.umstieg.online` mit „Security
+> Checkpoint“. Browser kommen durch. Live-Prüfungen des Frontends deshalb im
+> Browser; das Backend auf Fly ist nicht betroffen.
+>
+> **Lizenz (entschieden, Julian, 19.10.2026):** AGPL-3.0-only für den gesamten
+> Code einschließlich früherer Stände; bis 83823df lag eine MIT-Datei bei,
+> in dieser Zeit erworbene MIT-Rechte bleiben unberührt (`NOTICE`). Stand
+> 19.10.: 0 Forks, 0 Sterne; Klonzahlen unter GitHub *Insights → Traffic*
+> ansehen. Die entfernte Telefonnummer bleibt in der öffentlichen
+> Git-Historie.
 >
 > **Rechner (17.10.2026, am 18.10. unverändert – 255 MB frei): Laufwerk C: ist voll** (0 GB frei; 10,5 GB liegen
 > in `C:\Windows\SoftwareDistribution\Download`, dem Download-Speicher von
