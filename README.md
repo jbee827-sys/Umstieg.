@@ -19,7 +19,35 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 18.10.2026, abends)
+## Hier weitermachen (Stand 19.10.2026, abends)
+
+### Browser-Simulation 19.10.2026
+
+Lokal gegen echte Quellen (DB, Transitous, Overpass), drei Abläufe: Berlin Hbf
+→ Washingtonplatz (Bahnhof → Bus 245), Kassel Rathaus Gl. B → Gl. A, Hamburg
+Hbf 6D-F → 13A-C (Bahnhofspfad). Alle drei Ende-zu-Ende, die Weglinie auf
+jeder Ebene sichtbar. Drei Befunde, zwei behoben:
+
+- **Kacheln der Stufe 20.** Die Karte zoomte beim Schritt auf 19; MapLibre
+  holt 256er-Kacheln eine Stufe tiefer, tile.openstreetmap.org liefert nur
+  bis 19. Jetzt Kartenzoom höchstens 18 (`Karte.tsx`, `MAX_ZOOM`), Kacheln
+  höchstens 19 – im Browser nachgeprüft, keine Anfrage auf 20 mehr.
+- **Live-Strom abgewiesen, Umstieg ohne Live-Daten.** Zweimal 503 „zu viele
+  Verbindungen“. Drei Ursachen, alle behoben: (1) Die Grenze von **2 Strömen
+  je Adresse** zählt Adressen, nicht Geräte – im ICE-WLAN und hinter dem NAT
+  der Mobilfunker teilen sich viele Reisende eine, und nach einem Funkloch
+  zählt der alte Strom weiter, bis der Server den Abbruch merkt. Jetzt
+  **10 je Adresse**, 140 gesamt unverändert; die teure Seite (gepollte
+  Bahnhöfe und Haltestellen) begrenzt weiterhin die Überwachung mit 35.
+  (2) Jeder Reiterwechsel baute den Strom ab und neu auf – **4 Öffnungen je
+  Reise**, im Dev-Betrieb mit StrictMode doppelt so viele. Jetzt hängt der
+  Effekt an „auf Reise“, nicht am Bildschirm: eine Öffnung. (3) Nach einer
+  Antwort außer 200 gibt EventSource endgültig auf. `api/sse.ts` baut dann
+  selbst neu auf: nach 5 s, danach doppelt so lange, höchstens 1 min, und
+  fordert beim Öffnen die Route neu an. Mit Verkehrsmitteln hat die Grenze
+  nichts zu tun – ein Umstieg ist immer ein Strom.
+- **Bewusst offen (Julian, 19.10.2026):** „Eberswalde Markt“ (EVA 8071488)
+  – Timetables antwortet 400, die Tafel wird zum Serverfehler 500.
 
 > **Umstieg 2.0: Haltestellen deutschlandweit über Transitous** – Spec
 > `docs/superpowers/specs/2026-10-16-umstieg-2-design.md`, Plan
@@ -177,12 +205,9 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 >
 > **Hier weitermachen – nächste Schritte in dieser Reihenfolge:**
 >
-> 1. **Julian:** Repository öffentlich schalten (GitHub → Settings → General →
->    Danger Zone → Change visibility). Vorher entscheiden: Impressumsdaten
->    (`frontend/src/rechtliches/betreiber.json`, Anschrift und Telefon) und
->    die Commit-Adresse `jbeerbaum827@gmail.com` werden damit durchsuchbar;
->    beides steht ohnehin auf der Website bzw. ist für Impressum Pflicht.
-> 2. `feat/umstieg-2` pushen (bisher nur lokal) – erst nach Julians Okay.
+> 1. ~~Repository öffentlich schalten~~ – erledigt (Julian, 19.10.2026).
+> 2. ~~`feat/umstieg-2` pushen~~ – erledigt 19.10.2026 nach der
+>    Browser-Simulation (siehe oben).
 > 3. **Task 22 – Auslieferung:** `fly secrets set MOTIS_KONTAKT=… -a
 >    umstieg-backend` (Wert nur dort), `fly deploy --ha=false`, Vercel aus
 >    `feat/umstieg-2`, Live-Prüfung (Hamburg/Frankfurt Stufe 1, CORS, Berlin
@@ -221,8 +246,8 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 > Skills (nur `SKILL.md` vorhanden); in Paket 1 lief der Bug-Hunt von Hand, in
 > Paket 2 und 3 trat `/code-review high` an seine Stelle.
 >
-> Der Zweig `feat/umstieg-2` ist **nur lokal** (nicht gepusht); das
-> Repository ist privat (Stand 18.10.2026).
+> Der Zweig `feat/umstieg-2` liegt auf GitHub; das Repository ist öffentlich
+> (Stand 19.10.2026).
 
 ### Davor: Overpass von Fly aus (14.10.2026, abends)
 
@@ -3106,7 +3131,8 @@ Vier Maßnahmen:
   Routenberechnung mit aus. `/api/health` bleibt ausgenommen: Liefe Flys
   Gesundheitsprüfung in die Grenze, hätte die Schutzmaßnahme den Ausfall
   selbst erzeugt.
-- **Obergrenzen für den Live-Strom** (140 gesamt, 2 je Aufrufer, 35 EVAs).
+- **Obergrenzen für den Live-Strom** (140 gesamt, 10 je Aufrufer – bis
+  19.10.2026 waren es 2, siehe „Browser-Simulation 19.10.2026“ –, 35 EVAs).
   Nicht die Verbindung kostet, sondern der Poller dahinter: Jede neue EVA ist
   eine weitere Abfrage gegen Timetables, alle 30 Sekunden, dauerhaft.
 - **Zwischenspeicher mit Bündelung** für Stammdaten (24 h), Suche (10 min),
