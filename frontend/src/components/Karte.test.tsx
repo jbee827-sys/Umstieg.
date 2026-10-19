@@ -8,12 +8,21 @@ import { Karte } from './Karte'
  */
 // vi.mock wird nach oben gehoben - die Liste muss es auch.
 const { workerAdressen } = vi.hoisted(() => ({ workerAdressen: [] as string[] }))
-const karten: { quellen: Record<string, unknown>; laden?: () => void; grenzen: unknown[] }[] = []
+const karten: {
+  quellen: Record<string, unknown>
+  laden?: () => void
+  grenzen: unknown[]
+  einpassungen: { maxZoom?: number }[]
+  optionen: { maxZoom?: number }
+}[] = []
 vi.mock('maplibre-gl', () => {
   class Map {
     quellen: Record<string, unknown> = {}
     grenzen: unknown[] = []
-    constructor() {
+    einpassungen: unknown[] = []
+    optionen: unknown
+    constructor(optionen: unknown) {
+      this.optionen = optionen
       karten.push(this as never)
     }
     on(ereignis: string, f: () => void) {
@@ -26,8 +35,9 @@ vi.mock('maplibre-gl', () => {
     getSource() {
       return undefined
     }
-    fitBounds(b: unknown) {
+    fitBounds(b: unknown, o: unknown) {
       this.grenzen.push(b)
+      this.einpassungen.push(o)
     }
     remove() {}
   }
@@ -57,6 +67,30 @@ describe('Karte (Browserpruefung 18.10.2026)', () => {
     const map = karten[0] as unknown as { laden: () => void; quellen: Record<string, unknown> }
     map.laden()
     expect(map.quellen.route).toEqual(linie(13.369))
+  })
+})
+
+/*
+ * Browserpruefung 19.10.2026: Beim Schritt zoomte die Karte auf 19. MapLibre
+ * holt 256er-Kacheln eine Stufe tiefer - also Stufe 20, und die liefert
+ * tile.openstreetmap.org nicht. Jeder Schritt endete mit fehlgeschlagenen
+ * Kachelabrufen. Hoechstens 18 heisst: Kacheln hoechstens Stufe 19.
+ */
+describe('Karte: Zoom hoechstens 18 (Browserpruefung 19.10.2026)', () => {
+  it('weder die Karte noch ein Einpassen geht ueber 18', () => {
+    karten.length = 0
+    render(
+      <Karte
+        karte={{ '0': linie(13.37) }}
+        aktiverSchritt={{ text: 'Nach Ausstieg 80 m geradeaus', typ: 'eben', sekunden: 75, level: 0, knotenVon: 0, knotenBis: 1 }}
+        anfangsOffen
+      />,
+    )
+    const map = karten[0]
+    map.laden!()
+    expect(map.optionen.maxZoom).toBe(18)
+    expect(map.einpassungen.length).toBeGreaterThan(0)
+    for (const e of map.einpassungen) expect(e.maxZoom).toBeLessThanOrEqual(18)
   })
 })
 
