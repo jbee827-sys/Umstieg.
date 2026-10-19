@@ -626,12 +626,19 @@ function App() {
   // neu und schrieb das neue Gleis in die Eingabewerte – der Nutzer erfuhr es
   // hinterher aus einem Banner. Jetzt entsteht ein Vorschlag, den er auf dem
   // Störungsbildschirm annimmt oder verwirft.
+  //
+  // Abhaengig von „auf Reise“, nicht vom Bildschirm selbst: Bis zum 19.10.2026
+  // baute jeder Reiterwechsel den Strom ab und neu auf. Kamen die neuen
+  // Verbindungen schneller an als die Abmeldungen, wies der Server den Strom
+  // ab (Browserpruefung). Welche Seite gerade offen ist, lesen die Behandler
+  // ueber `bildschirmRef`.
+  const aufReise = AUF_REISE.includes(bildschirm)
   useEffect(() => {
     // Auch auf der Meldungsseite - ihr leerer Zustand sagt zu, dass noch
     // hingehoert wird, und der Zeitstempel daneben belegt es. Waere der Strom
     // dort geschlossen, waere beides unwahr, sobald jemand die Seite offen
     // laesst.
-    if (!AUF_REISE.includes(bildschirm) || !werte) return
+    if (!aufReise || !werte) return
     const wahl = werte.haltestellen
     if (!wahl && !werte.eva) return
 
@@ -657,7 +664,7 @@ function App() {
     const vermerke = (ereignis: LiveEreignis) =>
       setMeldungen((liste) => {
         const ergaenzt = ergaenze(liste, ereignis)
-        return bildschirm === 'meldungen' ? alleGelesen(ergaenzt) : ergaenzt
+        return bildschirmRef.current === 'meldungen' ? alleGelesen(ergaenzt) : ergaenzt
       })
 
     // Haltestellenpfad (Umstieg 2.0): EIN Strom fuer beide Haltestellen. Die
@@ -711,7 +718,7 @@ function App() {
                 werte: { ...(basis?.werte ?? werte), [feld]: ereignis.neu! },
                 anlass: ereignis,
               })
-              return bildschirm === 'meldungen' ? alleGelesen(ergaenzt) : ergaenzt
+              return bildschirmRef.current === 'meldungen' ? alleGelesen(ergaenzt) : ergaenzt
             })
             return
           }
@@ -786,7 +793,7 @@ function App() {
               anlass: ereignis,
             })
             // Wer die Seite offen hat, liest mit.
-            return bildschirm === 'meldungen' ? alleGelesen(ergaenzt) : ergaenzt
+            return bildschirmRef.current === 'meldungen' ? alleGelesen(ergaenzt) : ergaenzt
           })
           return
         }
@@ -832,7 +839,7 @@ function App() {
           .catch(() => undefined)
       },
     })
-  }, [bildschirm, werte, berechne])
+  }, [aufReise, werte, berechne])
 
   if (rechtsseite === 'impressum') return <Impressum onZurueck={schliesseRechtsseite} />
   if (rechtsseite === 'datenschutz') return <Datenschutz onZurueck={schliesseRechtsseite} />

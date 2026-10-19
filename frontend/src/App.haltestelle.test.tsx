@@ -32,7 +32,13 @@ vi.mock('./api/haltestellen', async () => ({
   holeHaltestellenTafel: vi.fn(),
   holeWeg: vi.fn(),
 }))
-const strom: { sende?: (e: LiveEreignis) => void; optionen?: Record<string, unknown>; bahnhof: number } = { bahnhof: 0 }
+const strom: {
+  sende?: (e: LiveEreignis) => void
+  optionen?: Record<string, unknown>
+  bahnhof: number
+  haltestelle: number
+  offen: number
+} = { bahnhof: 0, haltestelle: 0, offen: 0 }
 vi.mock('./api/sse', () => ({
   verbindeLive: () => {
     strom.bahnhof += 1
@@ -41,7 +47,11 @@ vi.mock('./api/sse', () => ({
   verbindeHaltestelleLive: (o: { onEreignis: (e: LiveEreignis) => void }) => {
     strom.sende = o.onEreignis
     strom.optionen = o as unknown as Record<string, unknown>
-    return () => undefined
+    strom.haltestelle += 1
+    strom.offen += 1
+    return () => {
+      strom.offen -= 1
+    }
   },
 }))
 
@@ -58,6 +68,8 @@ beforeEach(() => {
   strom.sende = undefined
   strom.optionen = undefined
   strom.bahnhof = 0
+  strom.haltestelle = 0
+  strom.offen = 0
   vi.mocked(sucheOrte).mockImplementation(async (q) => ({ ok: true, antwort: { orte: q.startsWith('Wash') ? [BUS] : [HBF], quellen: { bahnhoefe: 'ok', haltestellen: 'ok' } } }))
   vi.mocked(holeHaltestellenTafel).mockReset()
   vi.mocked(holeHaltestellenTafel).mockImplementation(async (ort, typ) => ({ ok: true, stand: new Date().toISOString(), eintraege: typ === 'arr' && ort.haltestelleId === 'h-hbf' ? [ICE] : [BUS245] }))
@@ -92,7 +104,9 @@ describe('Haltestellenpfad Ende-zu-Ende (Paket 3.5)', () => {
     expect(strom.bahnhof).toBe(0)
     // Die zweite Variante kommt nach, ueber denselben Fussweg-Abruf.
     await waitFor(() => expect(screen.getByRole('button', { name: /Barrierefrei/ }).textContent).toContain('7 min'))
-  })
+    // Der erste Test der Datei zahlt den Kaltstart; in der vollen Suite riss
+    // er zweimal knapp die 5 s (19.10.2026) - wie der erste in App.test.tsx.
+  }, 15_000)
 
   it('ein Ausfall des Anschlusses kommt als Stoermeldung mit der Linie', async () => {
     await starteUmstieg()
@@ -173,6 +187,35 @@ describe('Haltestellenpfad: Review Paket 3', () => {
     await screen.findByText('Gehzeit 5 min', {}, { timeout: 3000 })
     act(() => strom.sende!({ typ: 'gleiswechsel', zug: 'ice', anzeige: 'ICE 1206', alt: '7', neu: '8', zeitstempel: new Date().toISOString() }))
     expect(await screen.findByText('ICE 1206 fährt heute von Gleis 8 statt 7.')).toBeDefined()
+  })
+})
+
+/*
+ * Browserpruefung 19.10.2026: Der Strom wurde bei jedem Reiterwechsel und bei
+ * jeder nachgeladenen Gehzeit geschlossen und neu geoeffnet. Kamen die neuen
+ * Verbindungen schneller an als die Abmeldungen der alten, wies der Server
+ * den Strom ab - und der Umstieg lief ohne Live-Daten.
+ */
+describe('Haltestellenpfad: ein Strom je Reise', () => {
+  it('Gehzeiten nachladen und zwischen den Reitern wechseln oeffnet keinen neuen Strom', async () => {
+    await starteUmstieg()
+    await screen.findByText('Gehzeit 5 min', {}, { timeout: 3000 })
+    await waitFor(() => expect(screen.getByRole('button', { name: /Barrierefrei/ }).textContent).toContain('7 min'))
+    await userEvent.click(screen.getByRole('button', { name: 'Navigation starten' }))
+    await screen.findByRole('heading', { name: 'Gleis 7 → Steig Pos. 11' })
+    await userEvent.click(screen.getByRole('button', { name: /Meldungen/ }))
+    await userEvent.click(screen.getByRole('button', { name: /Übersicht/ }))
+    await screen.findByText('Gehzeit 5 min')
+
+    expect(strom.haltestelle).toBe(1)
+    expect(strom.offen).toBe(1)
+  })
+
+  it('zurueck zur Eingabe schliesst den Strom', async () => {
+    await starteUmstieg()
+    await screen.findByText('Gehzeit 5 min', {}, { timeout: 3000 })
+    await userEvent.click(screen.getByRole('button', { name: /Eingabe/ }))
+    expect(strom.offen).toBe(0)
   })
 })
 

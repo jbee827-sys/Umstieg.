@@ -27,10 +27,16 @@ export interface SseGrenzen {
 }
 
 /**
- * Bewusst niedrig. Ein Umstieg braucht EINEN Strom; zwei sind Reserve fuer den
- * Moment, in dem ein Reload den alten noch nicht abgeraeumt hat.
+ * Ein Umstieg braucht EINEN Strom - gezaehlt wird aber je Adresse, nicht je
+ * Geraet. Zwei waren zu knapp (Browserpruefung 19.10.2026): Im ICE-WLAN und
+ * hinter dem NAT der Mobilfunker teilen sich viele Reisende eine Adresse, und
+ * nach einem Funkloch zaehlt der alte Strom weiter, bis der Server merkt, dass
+ * niemand mehr zuhoert - der neue wurde dann abgewiesen. Zehn decken ein Geraet
+ * mit zwei solchen Resten und einige Mitreisende. Die teure Seite bleibt
+ * begrenzt wie bisher: Wie viele Bahnhoefe und Haltestellen gepollt werden,
+ * entscheidet die Obergrenze der Ueberwachung, nicht diese Zahl.
  */
-export const SSE_GRENZEN_STANDARD: SseGrenzen = { gesamt: 140, jeAufrufer: 2 };
+export const SSE_GRENZEN_STANDARD: SseGrenzen = { gesamt: 140, jeAufrufer: 10 };
 
 /**
  * Live-Überwachung des Haltestellenpfads (Umstieg 2.0, Spec 5.4): eine eigene
@@ -317,8 +323,8 @@ export function registriereLiveRouten(
 
   /*
    * Haltestellenpfad: EIN Strom fuer Ankunfts- und Abfahrtshaltestelle
-   * (Review Focus 5). Zwei Stroeme wuerden bei der Grenze von zwei je
-   * Aufrufer schon den Reload-Puffer aufbrauchen. Die Route steht auch ohne
+   * (Review Focus 5). Zwei Stroeme wuerden je Umstieg zwei Plaetze der Grenze
+   * je Aufrufer belegen. Die Route steht auch ohne
    * Einrichtung - sonst fiele `/api/live/haltestelle` auf `/api/live/:eva`
    * und wuerde als EVA „haltestelle“ ueberwacht.
    */

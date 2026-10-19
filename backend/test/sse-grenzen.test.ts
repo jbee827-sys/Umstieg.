@@ -95,6 +95,25 @@ describe('Obergrenzen des SSE-Stroms', () => {
     await app.close();
   });
 
+  // Browserpruefung 19.10.2026: Mit zwei je Aufrufer wies der Server einen
+  // Strom ab, und der Umstieg lief ohne Live-Daten weiter. Eine Adresse ist
+  // kein Geraet - im ICE-WLAN und hinter dem NAT der Mobilfunker teilen sich
+  // viele eine. Und nach einem Funkloch zaehlt der alte Strom weiter, bis
+  // der Server merkt, dass niemand mehr zuhoert.
+  it('laesst im Standard zehn Stroeme je Aufrufer zu, den elften nicht', async () => {
+    const app = buildApp({ ueberwachung: new Ueberwachung(async () => [], 30_000) });
+    await app.listen({ port: 0, host: '127.0.0.1' });
+    const { port } = app.server.address() as AddressInfo;
+    const stroeme = [];
+    for (let i = 0; i < 11; i++) stroeme.push(await oeffneStrom(port, '8011160', '203.0.113.1'));
+
+    expect(stroeme.slice(0, 10).map((s) => s.status)).toEqual(Array(10).fill(200));
+    expect(stroeme[10].status).toBe(503);
+
+    for (const s of stroeme) s.schliesse();
+    await app.close();
+  });
+
   it('weist ab, wenn die Gesamtzahl erreicht ist', async () => {
     const { app, port } = await starteApp(2, 5);
     const a = await oeffneStrom(port, '8011160', '203.0.113.1');
