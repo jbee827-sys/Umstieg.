@@ -11,26 +11,27 @@ export interface LiveOptionen {
   onWiederverbunden: () => void;
 }
 
+/** Erste Pause vor einem eigenen neuen Versuch; sie verdoppelt sich bis zur Obergrenze. */
+const ERSTE_PAUSE_MS = 5_000;
+const LAENGSTE_PAUSE_MS = 60_000;
+
 /**
  * Öffnet einen SSE-Strom des Backends. EventSource verbindet nach einem
  * Abbruch selbsttätig neu – im Bahnhof ist das der Normalfall, nicht die
  * Ausnahme. Rückgabe ist die Trennfunktion.
+ *
+ * Nach einer Antwort außer 200 dagegen gibt EventSource endgültig auf
+ * (Browserprüfung 19.10.2026: 503, zu viele Verbindungen). Der Umstieg lief
+ * dann ohne Live-Daten weiter, und nichts sagte es. Diesen Fall übernimmt die
+ * Funktion selbst: neuer Strom nach 5 s, danach doppelt so lange, höchstens
+ * eine Minute – ein abweisender Server soll nicht im Sekundentakt getroffen
+ * werden.
  */
 function oeffneStrom(
   pfad: string,
   onEreignis: (ereignis: LiveEreignis) => void,
   onWiederverbunden: () => void,
 ): () => void {
-  const quelle = new EventSource(apiUrl(pfad));
-
-  let warSchonOffen = false;
-  quelle.onopen = () => {
-    // Beim ZWEITEN Öffnen lag eine Unterbrechung dazwischen; in dieser Zeit
-    // können Ereignisse verloren gegangen sein – deshalb Route neu anfordern.
-    if (warSchonOffen) onWiederverbunden();
-    warSchonOffen = true;
-  };
-
   const nimm = (typ: LiveEreignis['typ']) => (nachricht: MessageEvent<string>) => {
     try {
       onEreignis({ ...(JSON.parse(nachricht.data) as LiveEreignis), typ });
@@ -39,16 +40,44 @@ function oeffneStrom(
     }
   };
 
-  quelle.addEventListener('gleiswechsel', nimm('gleiswechsel'));
-  quelle.addEventListener('verspaetung', nimm('verspaetung'));
-  quelle.addEventListener('heartbeat', nimm('heartbeat'));
-  // Degradationstabelle Zeile 2: Ausfall der Tafel und ihre Rueckkehr.
-  quelle.addEventListener('quelle-weg', nimm('quelle-weg'));
-  quelle.addEventListener('quelle-da', nimm('quelle-da'));
-  // Fahrt fällt aus – sendet heute nur der Haltestellenpfad.
-  quelle.addEventListener('ausfall', nimm('ausfall'));
+  let quelle: EventSource;
+  let neuerVersuch: ReturnType<typeof setTimeout> | undefined;
+  let abweisungen = 0;
+  // Nach einer Unterbrechung oder Abweisung können Ereignisse verloren
+  // gegangen sein – beim nächsten Öffnen deshalb Route neu anfordern.
+  let nachLuecke = false;
 
-  return () => quelle.close();
+  const verbinde = () => {
+    quelle = new EventSource(apiUrl(pfad));
+    quelle.onopen = () => {
+      if (nachLuecke) onWiederverbunden();
+      nachLuecke = true;
+      abweisungen = 0;
+    };
+    quelle.onerror = () => {
+      // CONNECTING heißt: EventSource versucht es selbst wieder.
+      if (quelle.readyState !== EventSource.CLOSED) return;
+      nachLuecke = true;
+      const pause = Math.min(ERSTE_PAUSE_MS * 2 ** abweisungen, LAENGSTE_PAUSE_MS);
+      abweisungen++;
+      neuerVersuch = setTimeout(verbinde, pause);
+    };
+
+    quelle.addEventListener('gleiswechsel', nimm('gleiswechsel'));
+    quelle.addEventListener('verspaetung', nimm('verspaetung'));
+    quelle.addEventListener('heartbeat', nimm('heartbeat'));
+    // Degradationstabelle Zeile 2: Ausfall der Tafel und ihre Rueckkehr.
+    quelle.addEventListener('quelle-weg', nimm('quelle-weg'));
+    quelle.addEventListener('quelle-da', nimm('quelle-da'));
+    // Fahrt fällt aus – sendet heute nur der Haltestellenpfad.
+    quelle.addEventListener('ausfall', nimm('ausfall'));
+  };
+  verbinde();
+
+  return () => {
+    clearTimeout(neuerVersuch);
+    quelle.close();
+  };
 }
 
 /** Live-Strom eines DB-Bahnhofs (Bahnhofspfad). */
