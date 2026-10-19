@@ -40,6 +40,9 @@ interface KarteProps {
 
 const LEER: FeatureCollection = { type: 'FeatureCollection', features: [] }
 
+/** Naeher geht die Karte nicht heran - Begruendung beim Erzeugen der Karte. */
+const MAX_ZOOM = 18
+
 function ebenenLabel(ebene: string): string {
   const n = Number(ebene)
   if (n === -1) return 'Unterführung (−1)'
@@ -114,6 +117,11 @@ export function Karte({ karte, standort, aktiverSchritt, anfangsOffen = false }:
     if (!offen || !behaelter.current) return
     const map = new MapLibreMap({
       container: behaelter.current,
+      // MapLibre holt 256er-Kacheln eine Stufe tiefer als der Kartenzoom. Bei
+      // 19 waren das Kacheln der Stufe 20 - die liefert tile.openstreetmap.org
+      // nicht, jeder Schritt endete mit fehlgeschlagenen Abrufen
+      // (Browserpruefung 19.10.2026). Bei 18 sind es hoechstens Stufe 19.
+      maxZoom: MAX_ZOOM,
       attributionControl: { compact: false },
       style: {
         version: 8,
@@ -236,7 +244,7 @@ export function Karte({ karte, standort, aktiverSchritt, anfangsOffen = false }:
     const stueck = linie.slice(von, bis + 1)
     if (stueck.length === 0) return
     const grenzen = stueck.reduce((b, p) => b.extend(p), new LngLatBounds(stueck[0], stueck[0]))
-    map.fitBounds(grenzen, { padding: 64, maxZoom: 19 })
+    map.fitBounds(grenzen, { padding: 64, maxZoom: MAX_ZOOM })
     // eslint-disable-next-line react-hooks/exhaustive-deps -- nur auf Schrittwechsel reagieren
   }, [aktiverSchritt, ebene])
 
