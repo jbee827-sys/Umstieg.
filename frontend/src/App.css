@@ -834,20 +834,77 @@
   border-top: 1px solid var(--color-neutral-300);
 }
 
-.tafel-block-titel {
-  margin: 0;
-  padding: 10px 14px 6px;
-  font-family: var(--font-heading);
-  font-size: var(--schrift-label);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--color-neutral-700);
+/*
+ * Kopf einer Kategorie zum Aufklappen (19.10.2026): Titel links, rechts die
+ * Zahl der Fahrten und ein Pfeil. Die ganze Zeile ist die Klickflaeche, 48 px
+ * hoch - auf dem Handy der Daumen, nicht das Dreieck des Browsers.
+ */
+.tafel-block-kopf {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 14px;
+  list-style: none;
+  cursor: pointer;
   background: var(--color-neutral-100);
   /* Bleibt beim Rollen der eigenen Kategorie stehen: Wer mitten in einer
      langen S-Bahn-Liste steht, soll noch sehen, worin er blaettert. */
   position: sticky;
   top: 0;
   z-index: 1;
+}
+.tafel-block-kopf::-webkit-details-marker {
+  display: none;
+}
+.tafel-block-kopf::after {
+  content: '';
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin: 0 2px 4px;
+  border-right: 2px solid var(--color-neutral-700);
+  border-bottom: 2px solid var(--color-neutral-700);
+  transform: rotate(45deg);
+}
+.tafel-block[open] > .tafel-block-kopf::after {
+  margin-bottom: -4px;
+  transform: rotate(-135deg);
+}
+.tafel-block[open] > .tafel-block-kopf {
+  border-bottom: 1px solid var(--color-neutral-300);
+}
+.tafel-block-kopf:focus-visible {
+  outline: 2px solid var(--color-text);
+  outline-offset: -2px;
+}
+@media (hover: hover) {
+  .tafel-block-kopf:hover {
+    background: color-mix(in srgb, var(--color-text) 6%, var(--color-neutral-100));
+  }
+}
+
+.tafel-block-titel {
+  flex: 1;
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--schrift-label);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-neutral-700);
+}
+
+.tafel-block-anzahl {
+  flex: none;
+  min-width: 24px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pille);
+  background: var(--color-neutral-300);
+  color: var(--color-text);
+  font-size: var(--schrift-label);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
 .tafel {

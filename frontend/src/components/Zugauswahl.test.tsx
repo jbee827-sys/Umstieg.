@@ -101,6 +101,7 @@ describe('Zugauswahl: Kategorien und Zeitfenster', () => {
     await aufklappen()
 
     const fern = await screen.findByRole('group', { name: 'Fernverkehr' })
+    await userEvent.click(within(fern).getByRole('heading', { name: 'Fernverkehr' }))
     expect(within(fern).getAllByRole('button').map((b) => b.textContent)).toHaveLength(2)
     // Der RE gehoert nicht dazu, auch wenn er zeitlich dazwischenliegt.
     expect(within(fern).queryByText(/RE 9/)).toBeNull()
@@ -240,5 +241,73 @@ describe('Zugauswahl: immer offen (breites Layout)', () => {
     loese({ ok: true, eintraege: [ICE] })
     await new Promise((r) => setTimeout(r, 0))
     expect(screen.queryByText(/ICE 1006/)).toBeNull()
+  })
+})
+
+/*
+ * Die Tafel wurde zu unuebersichtlich (Julian, 19.10.2026): Jede Kategorie
+ * ist jetzt ein Aufklappblock - man oeffnet nur die, die man braucht.
+ */
+describe('Zugauswahl: Kategorien zum Aufklappen', () => {
+  beforeEach(() => holeTafelMock.mockReset())
+
+  const DREI = [zug('ICE 1', 5), zug('ICE 2', 15), zug('RE 9', 10), zug('S 5', 12)]
+
+  function zeigeOffen(auswahl: TafelEintrag | null = null) {
+    render(
+      <Zugauswahl eva="8011160" typ="dep" label="Abfahrt · Berlin Hbf" auswahl={auswahl} onAuswahl={vi.fn()} immerOffen />,
+    )
+  }
+  const block = (titel: string) => screen.getByRole('group', { name: titel }) as HTMLDetailsElement
+
+  it('mehrere Kategorien: alle zu, die Zuege erst nach dem Aufklappen', async () => {
+    holeTafelMock.mockResolvedValue({ ok: true, eintraege: DREI })
+    zeigeOffen()
+    await screen.findByRole('heading', { name: 'Fernverkehr' })
+
+    expect([block('Regionalverkehr').open, block('Fernverkehr').open, block('S-Bahn').open]).toEqual([false, false, false])
+    expect(screen.queryByRole('button', { name: /ICE 1/ })).toBeNull()
+
+    await userEvent.click(screen.getByRole('heading', { name: 'Fernverkehr' }))
+
+    expect(block('Fernverkehr').open).toBe(true)
+    expect(within(block('Fernverkehr')).getAllByRole('button', { name: /ICE/ })).toHaveLength(2)
+    // Die anderen bleiben zu.
+    expect(block('Regionalverkehr').open).toBe(false)
+  })
+
+  it('nennt im Kopf, wie viele Zuege darin stehen', async () => {
+    holeTafelMock.mockResolvedValue({ ok: true, eintraege: DREI })
+    zeigeOffen()
+    await screen.findByRole('heading', { name: 'Fernverkehr' })
+    expect(block('Fernverkehr').querySelector('summary')!.textContent).toContain('2')
+    expect(block('S-Bahn').querySelector('summary')!.textContent).toContain('1')
+  })
+
+  it('eine einzige Kategorie ist sofort offen - ein Klick mehr braechte nichts', async () => {
+    holeTafelMock.mockResolvedValue({ ok: true, eintraege: [zug('RE 1', 5), zug('RE 2', 10)] })
+    zeigeOffen()
+    expect(await screen.findByRole('button', { name: /RE 2/ })).toBeDefined()
+    expect(block('Regionalverkehr').open).toBe(true)
+  })
+
+  it('die Kategorie der gewaehlten Fahrt ist offen, damit die Markierung zu sehen ist', async () => {
+    const gewaehlt = DREI[3]
+    holeTafelMock.mockResolvedValue({ ok: true, eintraege: DREI })
+    zeigeOffen(gewaehlt)
+    const zeile = await screen.findByRole('button', { name: /S 5/ })
+    expect(zeile.getAttribute('aria-pressed')).toBe('true')
+    expect(block('S-Bahn').open).toBe(true)
+    expect(block('Fernverkehr').open).toBe(false)
+  })
+
+  it('auch die Tafel zum Aufklappen (Handy) gliedert sich so', async () => {
+    holeTafelMock.mockResolvedValue({ ok: true, eintraege: DREI })
+    zeige()
+    await aufklappen()
+    await screen.findByRole('heading', { name: 'S-Bahn' })
+    expect(block('S-Bahn').open).toBe(false)
+    await userEvent.click(screen.getByRole('heading', { name: 'S-Bahn' }))
+    expect(await screen.findByRole('button', { name: /S 5/ })).toBeDefined()
   })
 })
