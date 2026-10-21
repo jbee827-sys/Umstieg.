@@ -189,6 +189,9 @@ export function berechneBahnhof(
 ): Bahnhofsdaten | null {
   if (graph.stufe === 3) return null;
   const gleise = graph.gleise.filter((g) => !ohne.has(g));
+  // Unter zwei Gleisen gibt es keinen Umstieg - die Seite waere leer
+  // (Saarlouis Hbf: OSM kennt nur Gleis 1).
+  if (gleise.length < 2) return null;
   const paare: Gleispaar[] = [];
   for (const von of gleise) {
     const start = findeStartknoten(graph, von, 'mitte');
@@ -245,9 +248,11 @@ async function main(): Promise<void> {
   );
 
   const alle: Bahnhofsdaten[] = [];
+  const zuWenigGleise: string[] = [];
   for (const { eintrag, graph } of geladen) {
     const daten = berechneBahnhof(eintrag, graph, fremd.get(eintrag.schluessel));
     if (daten) alle.push(daten);
+    else zuWenigGleise.push(`${eintrag.name} (${eintrag.schluessel})`);
   }
   pruefeSlugs(alle);
 
@@ -268,6 +273,9 @@ async function main(): Promise<void> {
   console.log(`  Stufe 1: ${alle.filter((d) => d.stufe === 1).length}`);
   console.log(`  Stufe 2: ${alle.filter((d) => d.stufe === 2).length}`);
   console.log(`  Stufe 3 (keine Seite): ${stufe3.length}${stufe3.length ? ` - ${stufe3.join(', ')}` : ''}`);
+  console.log(
+    `  unter zwei Gleisen (keine Seite): ${zuWenigGleise.length}${zuWenigGleise.length ? ` - ${zuWenigGleise.join(', ')}` : ''}`,
+  );
   for (const [schluessel, gleise] of fremd) {
     const name = geladen.find((g) => g.eintrag.schluessel === schluessel)?.eintrag.name ?? schluessel;
     console.log(`  Gleise einem groesseren Bahnhof ueberlassen: ${name} - ${[...gleise].join(' ')}`);
