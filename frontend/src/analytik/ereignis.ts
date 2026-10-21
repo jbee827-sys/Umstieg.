@@ -1,4 +1,28 @@
-import type { BeforeSendEvent } from '@vercel/analytics'
+import { track, type BeforeSendEvent } from '@vercel/analytics'
+
+/**
+ * Die vier Messpunkte aus BRIEF.md 3 (Konzept Nutzergewinnung AP 4).
+ *
+ * Drei davon sieht die Messung schon als Seitenaufruf (/uebersicht, /weg,
+ * /angekommen). Als Ereignis kommen sie zusaetzlich, damit auch Schritt 1
+ * zaehlbar ist - abrufbar sind eigene Ereignisse erst im Pro-Tarif von
+ * Vercel; gesendet werden sie trotzdem, damit die Zahlen bei einem
+ * Tarifwechsel sofort da sind (Konzept Abschnitt 7).
+ */
+export type Messpunkt = 'eingabe-fertig' | 'navigation-start' | 'schritt-1' | 'ziel'
+
+/**
+ * Sendet NUR den Namen des Ereignisses. Keine Eigenschaften: kein Bahnhof,
+ * kein Gleis, keine Uhrzeit, kein Standort - so sagt es die
+ * Datenschutzerklaerung, und analytik/messpunkte.test.ts haelt es fest.
+ */
+export function melde(name: Messpunkt): void {
+  try {
+    track(name)
+  } catch {
+    // Die Messung darf die App nie stoeren.
+  }
+}
 
 /**
  * Was die Reichweitenmessung sehen darf.

@@ -42,6 +42,7 @@ import { leere as leereEntwurf, lies as liesEntwurf, schreibe as schreibeEntwurf
 import type { Bildschirm } from './navigation/bildschirme'
 import { PFAD, bildschirmAusPfad, brauchtReise, startBildschirm } from './navigation/adressen'
 import { rechtsseiteAusPfad, schliesseRechtsseite, useRechtsseite } from './navigation/rechtsseiten'
+import { useMesspunkte } from './analytik/messpunkte'
 import { leereReise, liesReise, schreibeReise } from './sitzung/reisespeicher'
 import { mitUebergang, uebergangsart, type Ausloeser } from './navigation/uebergang'
 import { erkenneBahnhof } from './standort/bahnhofErkennung'
@@ -345,6 +346,12 @@ function App() {
   // Wie weit der Nutzer sich durchgetippt hat. Summe der Weiter- und
   // Zurueck-Tipps; die Uhr redet hier nicht mehr mit (siehe fortschritt.ts).
   const [versatz, setVersatz] = useState(start.reise?.versatz ?? 0)
+  // Die vier Messpunkte aus BRIEF.md 3, je Reise genau einmal (analytik/messpunkte.ts).
+  const { neueReise } = useMesspunkte(
+    bildschirm,
+    route ? schrittPosition(versatz, route.schritte.length) : 0,
+    start,
+  )
 
   // Gesichert wird nur auf den Reise-Bildschirmen - nach „Angekommen"
   // schriebe sonst schon das Leeren der Meldungen die eben geloeschte Reise
@@ -1119,6 +1126,7 @@ function App() {
           // Eingabe trotzdem noch da. Sie ist die Arbeit des Nutzers, nicht
           // das Ergebnis der Rechnung.
           schreibeEntwurf(entwurf)
+          neueReise()
           void berechne(neueWerte)
         }}
       />

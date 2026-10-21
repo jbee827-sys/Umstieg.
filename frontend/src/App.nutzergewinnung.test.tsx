@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { track } from '@vercel/analytics'
 import App from './App'
 import { holeRoute } from './api/client'
 import { sucheOrte } from './api/orte'
@@ -28,9 +29,31 @@ vi.mock('./api/orte', () => ({
 vi.mock('./api/sse', () => ({
   verbindeLive: () => () => undefined,
 }))
+vi.mock('@vercel/analytics', () => ({ track: vi.fn() }))
 
 const sucheMock = vi.mocked(sucheOrte)
 const routeMock = vi.mocked(holeRoute)
+const trackMock = vi.mocked(track)
+
+/**
+ * Die Ablauftests tippen sich durch Eingabe, Uebersicht und Weg. In der
+ * vollen, parallelen Suite auf diesem Rechner reissen sie die 5 s
+ * (21.10.2026: 5,08 s) - wie der erste Test in `App.test.tsx`.
+ */
+const ABLAUF_MS = 20_000
+
+/** Die gesendeten Messpunkte, in der Reihenfolge des Sendens. */
+const gemeldet = () => trackMock.mock.calls.map(([name]) => name)
+
+async function bisZumDashboard(): Promise<void> {
+  render(<App />)
+  await userEvent.type(screen.getByLabelText('Ankunft: Bahnhof oder Haltestelle'), 'Leip')
+  await userEvent.click(await screen.findByRole('button', { name: /^Leipzig Hbf/ }, { timeout: 3000 }))
+  await userEvent.type(screen.getByLabelText('Ankunft: Gleis'), '6')
+  await userEvent.type(screen.getByLabelText('Anschluss: Gleis'), '16')
+  await userEvent.click(screen.getByRole('button', { name: /Umstieg starten/ }))
+  expect(await screen.findByRole('button', { name: /Navigation starten/ })).toBeDefined()
+}
 
 function antwort(p: RouteParameter): RouteErgebnis {
   return {
@@ -80,8 +103,77 @@ beforeEach(() => {
   })
   routeMock.mockReset()
   routeMock.mockImplementation(async (p: RouteParameter) => antwort(p))
+  trackMock.mockReset()
   window.sessionStorage.clear()
   window.history.replaceState(null, '', '/')
+})
+
+/**
+ * Die vier Messpunkte aus BRIEF.md 3 (AP 4). Drei davon sind zugleich
+ * Seitenaufrufe (/uebersicht, /weg, /angekommen); die zaehlt
+ * `@vercel/analytics` nur, wenn sie per pushState entstehen - replaceState
+ * sieht die Messung nicht.
+ */
+describe('App: die vier Messpunkte (AP 4)', () => {
+  it('meldet jeden Punkt einer Reise genau einmal, in der Reihenfolge des Ablaufs', async () => {
+    await bisZumDashboard()
+    expect(gemeldet()).toEqual(['eingabe-fertig'])
+    await userEvent.click(screen.getByRole('button', { name: /Navigation starten/ }))
+    expect(gemeldet()).toEqual(['eingabe-fertig', 'navigation-start'])
+    await userEvent.click(screen.getByRole('button', { name: 'Weiter' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Weiter' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Zurück' }))
+    expect(gemeldet()).toEqual(['eingabe-fertig', 'navigation-start', 'schritt-1'])
+    // „Angekommen" steht erst am letzten Schritt.
+    await userEvent.click(screen.getByRole('button', { name: 'Weiter' }))
+    await userEvent.click(screen.getByRole('button', { name: /Angekommen/ }))
+    expect(gemeldet()).toEqual(['eingabe-fertig', 'navigation-start', 'schritt-1', 'ziel'])
+  }, ABLAUF_MS)
+
+  it('zaehlt Hin und Her ueber die Leiste nicht doppelt', async () => {
+    await bisZumDashboard()
+    await userEvent.click(screen.getByRole('button', { name: /Navigation starten/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Übersicht' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Weg' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Eingabe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Übersicht' }))
+    expect(gemeldet()).toEqual(['eingabe-fertig', 'navigation-start'])
+  }, ABLAUF_MS)
+
+  it('zaehlt eine neue Reise neu', async () => {
+    await bisZumDashboard()
+    await userEvent.click(screen.getByRole('button', { name: 'Eingabe' }))
+    await userEvent.click(screen.getByRole('button', { name: /Umstieg starten/ }))
+    expect(await screen.findByRole('button', { name: /Navigation starten/ })).toBeDefined()
+    expect(gemeldet()).toEqual(['eingabe-fertig', 'eingabe-fertig'])
+  }, ABLAUF_MS)
+
+  // Nach dem Neuladen mitten im Weg ist die Navigation schon gestartet.
+  it('zaehlt nach dem Neuladen nicht nach, was schon geschehen ist', () => {
+    sichereReise(1)
+    window.history.replaceState(null, '', '/weg')
+    render(<App />)
+    expect(screen.getByRole('button', { name: 'Weiter' })).toBeDefined()
+    expect(gemeldet()).toEqual([])
+  })
+
+  it('erzeugt Uebersicht, Weg und Angekommen per pushState', async () => {
+    await bisZumDashboard()
+    const push = vi.spyOn(window.history, 'pushState')
+    await userEvent.click(screen.getByRole('button', { name: /Navigation starten/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Weiter' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Weiter' }))
+    await userEvent.click(screen.getByRole('button', { name: /Angekommen/ }))
+    expect(push.mock.calls.map(([, , adresse]) => adresse)).toEqual(['/weg', '/angekommen'])
+    push.mockRestore()
+  }, ABLAUF_MS)
+
+  it('traegt die Uebersicht per pushState ein', async () => {
+    const push = vi.spyOn(window.history, 'pushState')
+    await bisZumDashboard()
+    expect(push.mock.calls.map(([, , adresse]) => adresse)).toContain('/uebersicht')
+    push.mockRestore()
+  }, ABLAUF_MS)
 })
 
 describe('App: Rechtsseiten mit eigener Adresse (AP 3)', () => {
