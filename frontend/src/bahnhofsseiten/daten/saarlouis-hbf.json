@@ -1,0 +1,15 @@
+{
+  "name": "Saarlouis Hbf",
+  "eva": "8005247",
+  "slug": "saarlouis-hbf",
+  "lat": 49.32783,
+  "lon": 6.750169,
+  "stufe": 2,
+  "geholtAm": "2026-10-14T13:04:54.895Z",
+  "gleise": [
+    "1"
+  ],
+  "paare": [
+
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "Gotha",
+  "eva": "8010136",
+  "slug": "gotha",
+  "lat": 50.93907,
+  "lon": 10.712568,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:09:18.385Z",
+  "gleise": [
+    "1",
+    "1a",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"1a","gleicherBahnsteig":true,"sek":11,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":11},
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":190,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":218},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":190,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":218},
+    {"von":"1a","nach":"1","gleicherBahnsteig":true,"sek":11,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":11},
+    {"von":"1a","nach":"2","gleicherBahnsteig":false,"sek":190,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":218},
+    {"von":"1a","nach":"3","gleicherBahnsteig":false,"sek":190,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":218},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":190,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":218},
+    {"von":"2","nach":"1a","gleicherBahnsteig":false,"sek":190,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":218},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":7,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":7},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":190,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":218},
+    {"von":"3","nach":"1a","gleicherBahnsteig":false,"sek":190,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":218},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":7,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":7}
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "name": "Dachau Bahnhof",
+  "eva": "8001354",
+  "slug": "dachau-bahnhof",
+  "lat": 48.254652,
+  "lon": 11.44426,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T17:13:29.876Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "7"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":33,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":33},
+    {"von":"1","nach":"3","gleicherBahnsteig":true,"sek":33,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":33},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":108,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":197},
+    {"von":"1","nach":"7","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":33,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":33},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":33,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":33},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":108,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":197},
+    {"von":"2","nach":"7","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"1","gleicherBahnsteig":true,"sek":33,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":33},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":33,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":33},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":108,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":197},
+    {"von":"3","nach":"7","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":108,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":197},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":108,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":197},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":108,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":197},
+    {"von":"4","nach":"7","gleicherBahnsteig":false,"sek":118,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"7","nach":"1","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"7","nach":"2","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"7","nach":"3","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"7","nach":"4","gleicherBahnsteig":false,"sek":118,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null}
+  ]
+}

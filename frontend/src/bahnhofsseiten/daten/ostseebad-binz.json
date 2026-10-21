@@ -1,0 +1,22 @@
+{
+  "name": "Ostseebad Binz",
+  "eva": "8011191",
+  "slug": "ostseebad-binz",
+  "lat": 54.404819,
+  "lon": 13.600507,
+  "stufe": 2,
+  "geholtAm": "2026-10-12T20:24:39.083Z",
+  "gleise": [
+    "1",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":89,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":89},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":343,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":343},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":89,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":89},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":343,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":343},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":343,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":343},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":343,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":343}
+  ]
+}

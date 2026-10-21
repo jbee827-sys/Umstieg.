@@ -1,0 +1,29 @@
+{
+  "name": "Niebüll",
+  "eva": "8004343",
+  "slug": "niebuell",
+  "lat": 54.789605,
+  "lon": 8.834572,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T12:16:41.931Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":52,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":52},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":52,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":52},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"3","nach":"4","gleicherBahnsteig":true,"sek":50,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":50},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"4","nach":"3","gleicherBahnsteig":true,"sek":50,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":50}
+  ]
+}

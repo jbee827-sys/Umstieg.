@@ -1,0 +1,22 @@
+{
+  "name": "Leonberg",
+  "eva": "8003652",
+  "slug": "leonberg",
+  "lat": 48.799646,
+  "lon": 9.003853,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:48:47.562Z",
+  "gleise": [
+    "1",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":132,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":231},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":132,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":231},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":132,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":231},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":18,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":18},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":132,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":231},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":18,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":18}
+  ]
+}

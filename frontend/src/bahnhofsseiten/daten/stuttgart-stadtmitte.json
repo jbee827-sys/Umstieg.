@@ -1,0 +1,17 @@
+{
+  "name": "Stuttgart Stadtmitte",
+  "eva": "8006700",
+  "slug": "stuttgart-stadtmitte",
+  "lat": 48.776229,
+  "lon": 9.172925,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T13:23:55.338Z",
+  "gleise": [
+    "1",
+    "2"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":210,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":210},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":210,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":210}
+  ]
+}

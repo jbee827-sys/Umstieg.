@@ -1,0 +1,22 @@
+{
+  "name": "Greven",
+  "eva": "8002369",
+  "slug": "greven",
+  "lat": 52.0899457,
+  "lon": 7.5993526,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:10:51.143Z",
+  "gleise": [
+    "1",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":38,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":38},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":38,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":38},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":38,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":38},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":43,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":43},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":38,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":38},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":43,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":43}
+  ]
+}

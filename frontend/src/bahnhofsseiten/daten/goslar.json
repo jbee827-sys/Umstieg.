@@ -1,0 +1,38 @@
+{
+  "name": "Goslar",
+  "eva": "8000130",
+  "slug": "goslar",
+  "lat": 51.911573,
+  "lon": 10.421436,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:08:57.703Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":158,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":158},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":158,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":158},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":266,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":341},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":266,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":341},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":158,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":158},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":52,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":52},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":219,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":321},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":219,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":321},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":158,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":158},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":52,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":52},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":219,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":321},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":219,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":321},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":266,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":341},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":219,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":321},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":219,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":321},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":47,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":47},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":266,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":341},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":219,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":321},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":219,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":321},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":47,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":47}
+  ]
+}

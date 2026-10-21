@@ -1,0 +1,22 @@
+{
+  "name": "Neudietendorf",
+  "eva": "8010242",
+  "slug": "neudietendorf",
+  "lat": 50.913898,
+  "lon": 10.909685,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T12:12:13.725Z",
+  "gleise": [
+    "1",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":281,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":342},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":281,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":342},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":281,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":342},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":135,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":135},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":281,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":342},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":135,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":135}
+  ]
+}

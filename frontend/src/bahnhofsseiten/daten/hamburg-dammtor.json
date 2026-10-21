@@ -1,0 +1,29 @@
+{
+  "name": "Hamburg Dammtor",
+  "eva": "8002548",
+  "slug": "hamburg-dammtor",
+  "lat": 53.560751,
+  "lon": 9.989566,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:13:56.417Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":9,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":9},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":109,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":109},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":109,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":109},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":9,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":9},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":109,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":109},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":109,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":109},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":109,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":109},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":109,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":109},
+    {"von":"3","nach":"4","gleicherBahnsteig":true,"sek":15,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":15},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":109,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":109},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":109,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":109},
+    {"von":"4","nach":"3","gleicherBahnsteig":true,"sek":15,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":15}
+  ]
+}

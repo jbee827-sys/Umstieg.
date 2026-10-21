@@ -1,0 +1,29 @@
+{
+  "name": "Berlin Bornholmer Str.",
+  "eva": "8089008",
+  "slug": "berlin-bornholmer-str",
+  "lat": 52.554491,
+  "lon": 13.397943,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T20:27:31.767Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":16,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":16},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":20,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":20},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":20,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":20},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":16,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":16},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":20,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":20},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":20,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":20},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":20,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":20},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":20,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":20},
+    {"von":"3","nach":"4","gleicherBahnsteig":true,"sek":14,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":14},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":20,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":20},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":20,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":20},
+    {"von":"4","nach":"3","gleicherBahnsteig":true,"sek":14,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":14}
+  ]
+}

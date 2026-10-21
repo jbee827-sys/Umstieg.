@@ -1,0 +1,38 @@
+{
+  "name": "Bad Oldesloe",
+  "eva": "8000023",
+  "slug": "bad-oldesloe",
+  "lat": 53.8053902,
+  "lon": 10.3825414,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T20:00:20.749Z",
+  "gleise": [
+    "3",
+    "4",
+    "5",
+    "6",
+    "7"
+  ],
+  "paare": [
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":186,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":213},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":137,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":191},
+    {"von":"3","nach":"6","gleicherBahnsteig":false,"sek":143,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":196},
+    {"von":"3","nach":"7","gleicherBahnsteig":false,"sek":143,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":196},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":186,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":213},
+    {"von":"4","nach":"5","gleicherBahnsteig":false,"sek":107,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":107},
+    {"von":"4","nach":"6","gleicherBahnsteig":false,"sek":186,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":240},
+    {"von":"4","nach":"7","gleicherBahnsteig":false,"sek":186,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":240},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":137,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":191},
+    {"von":"5","nach":"4","gleicherBahnsteig":false,"sek":107,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":107},
+    {"von":"5","nach":"6","gleicherBahnsteig":false,"sek":137,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":218},
+    {"von":"5","nach":"7","gleicherBahnsteig":false,"sek":137,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":218},
+    {"von":"6","nach":"3","gleicherBahnsteig":false,"sek":143,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":196},
+    {"von":"6","nach":"4","gleicherBahnsteig":false,"sek":186,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":240},
+    {"von":"6","nach":"5","gleicherBahnsteig":false,"sek":137,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":218},
+    {"von":"6","nach":"7","gleicherBahnsteig":true,"sek":5,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":5},
+    {"von":"7","nach":"3","gleicherBahnsteig":false,"sek":143,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":196},
+    {"von":"7","nach":"4","gleicherBahnsteig":false,"sek":186,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":240},
+    {"von":"7","nach":"5","gleicherBahnsteig":false,"sek":137,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":218},
+    {"von":"7","nach":"6","gleicherBahnsteig":true,"sek":5,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":5}
+  ]
+}

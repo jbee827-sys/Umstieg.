@@ -1,0 +1,22 @@
+{
+  "name": "Castrop-Rauxel Hbf",
+  "eva": "8001327",
+  "slug": "castrop-rauxel-hbf",
+  "lat": 51.573526,
+  "lon": 7.30398,
+  "stufe": 2,
+  "geholtAm": "2026-10-13T17:11:05.800Z",
+  "gleise": [
+    "1",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":35,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":35},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":35,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":35}
+  ]
+}

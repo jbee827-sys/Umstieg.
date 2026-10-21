@@ -1,0 +1,29 @@
+{
+  "name": "Berlin Alexanderplatz",
+  "eva": "8011155",
+  "slug": "berlin-alexanderplatz",
+  "lat": 52.521481,
+  "lon": 13.410961,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T19:52:45.241Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":26,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":26},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":118,"wechsel":2,"anlagen":["treppe","rolltreppe"],"lage":"unterfuehrung","stufenfreiSek":350},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":118,"wechsel":2,"anlagen":["treppe","rolltreppe"],"lage":"unterfuehrung","stufenfreiSek":350},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":26,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":26},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":118,"wechsel":2,"anlagen":["treppe","rolltreppe"],"lage":"unterfuehrung","stufenfreiSek":350},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":118,"wechsel":2,"anlagen":["treppe","rolltreppe"],"lage":"unterfuehrung","stufenfreiSek":350},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":118,"wechsel":2,"anlagen":["rolltreppe","treppe"],"lage":"unterfuehrung","stufenfreiSek":350},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":118,"wechsel":2,"anlagen":["rolltreppe","treppe"],"lage":"unterfuehrung","stufenfreiSek":350},
+    {"von":"3","nach":"4","gleicherBahnsteig":true,"sek":30,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":30},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":118,"wechsel":2,"anlagen":["rolltreppe","treppe"],"lage":"unterfuehrung","stufenfreiSek":350},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":118,"wechsel":2,"anlagen":["rolltreppe","treppe"],"lage":"unterfuehrung","stufenfreiSek":350},
+    {"von":"4","nach":"3","gleicherBahnsteig":true,"sek":30,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":30}
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "name": "Minden(Westf)",
+  "eva": "8000252",
+  "slug": "minden-westf",
+  "lat": 52.290138,
+  "lon": 8.934728,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T19:13:18.005Z",
+  "gleise": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13"
+  ],
+  "paare": [
+    {"von":"1","nach":"10","gleicherBahnsteig":false,"sek":119,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":119},
+    {"von":"1","nach":"11","gleicherBahnsteig":false,"sek":119,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":119},
+    {"von":"1","nach":"12","gleicherBahnsteig":false,"sek":240,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"13","gleicherBahnsteig":false,"sek":240,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"10","nach":"1","gleicherBahnsteig":false,"sek":119,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":119},
+    {"von":"10","nach":"11","gleicherBahnsteig":true,"sek":16,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":16},
+    {"von":"10","nach":"12","gleicherBahnsteig":false,"sek":202,"wechsel":3,"anlagen":["aufzug","treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"10","nach":"13","gleicherBahnsteig":false,"sek":202,"wechsel":3,"anlagen":["aufzug","treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"11","nach":"1","gleicherBahnsteig":false,"sek":119,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":119},
+    {"von":"11","nach":"10","gleicherBahnsteig":true,"sek":16,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":16},
+    {"von":"11","nach":"12","gleicherBahnsteig":false,"sek":202,"wechsel":3,"anlagen":["aufzug","treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"11","nach":"13","gleicherBahnsteig":false,"sek":202,"wechsel":3,"anlagen":["aufzug","treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"12","nach":"1","gleicherBahnsteig":false,"sek":240,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"12","nach":"10","gleicherBahnsteig":false,"sek":202,"wechsel":3,"anlagen":["treppe","aufzug"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"12","nach":"11","gleicherBahnsteig":false,"sek":202,"wechsel":3,"anlagen":["treppe","aufzug"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"12","nach":"13","gleicherBahnsteig":true,"sek":11,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":11},
+    {"von":"13","nach":"1","gleicherBahnsteig":false,"sek":240,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"13","nach":"10","gleicherBahnsteig":false,"sek":202,"wechsel":3,"anlagen":["treppe","aufzug"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"13","nach":"11","gleicherBahnsteig":false,"sek":202,"wechsel":3,"anlagen":["treppe","aufzug"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"13","nach":"12","gleicherBahnsteig":true,"sek":11,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":11}
+  ]
+}

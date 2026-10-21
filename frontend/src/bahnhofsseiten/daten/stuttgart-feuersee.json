@@ -1,0 +1,17 @@
+{
+  "name": "Stuttgart Feuersee",
+  "eva": "8006699",
+  "slug": "stuttgart-feuersee",
+  "lat": 48.772768,
+  "lon": 9.166273,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T13:22:50.672Z",
+  "gleise": [
+    "1",
+    "2"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":33,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":33},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":33,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":33}
+  ]
+}

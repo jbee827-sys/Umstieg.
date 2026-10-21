@@ -1,0 +1,22 @@
+{
+  "name": "Mainz-Gustavsburg",
+  "eva": "8003818",
+  "slug": "mainz-gustavsburg",
+  "lat": 49.994319,
+  "lon": 8.314197,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T19:03:00.629Z",
+  "gleise": [
+    "1",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":102,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":102,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":102,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":9,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":9},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":102,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":9,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":9}
+  ]
+}

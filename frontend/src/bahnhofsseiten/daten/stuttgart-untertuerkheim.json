@@ -1,0 +1,38 @@
+{
+  "name": "Stuttgart-Untertürkheim",
+  "eva": "8005775",
+  "slug": "stuttgart-untertuerkheim",
+  "lat": 48.779751,
+  "lon": 9.250569,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T13:25:42.503Z",
+  "gleise": [
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+  ],
+  "paare": [
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":19,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":19},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":124,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":124},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":124,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":124},
+    {"von":"2","nach":"6","gleicherBahnsteig":false,"sek":134,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":134},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":19,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":19},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":124,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":124},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":124,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":124},
+    {"von":"3","nach":"6","gleicherBahnsteig":false,"sek":134,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":134},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":124,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":124},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":124,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":124},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":7,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":7},
+    {"von":"4","nach":"6","gleicherBahnsteig":false,"sek":15,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":15},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":124,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":124},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":124,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":124},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":7,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":7},
+    {"von":"5","nach":"6","gleicherBahnsteig":false,"sek":15,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":15},
+    {"von":"6","nach":"2","gleicherBahnsteig":false,"sek":134,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":134},
+    {"von":"6","nach":"3","gleicherBahnsteig":false,"sek":134,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":134},
+    {"von":"6","nach":"4","gleicherBahnsteig":false,"sek":15,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":15},
+    {"von":"6","nach":"5","gleicherBahnsteig":false,"sek":15,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":15}
+  ]
+}

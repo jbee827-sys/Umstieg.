@@ -1,0 +1,22 @@
+{
+  "name": "Völklingen",
+  "eva": "8000175",
+  "slug": "voelklingen",
+  "lat": 49.249091,
+  "lon": 6.848156,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T13:33:23.430Z",
+  "gleise": [
+    "1",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":41,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":41},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":41,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":41},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":41,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":41},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":1,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":1},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":41,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":41},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":1,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":1}
+  ]
+}

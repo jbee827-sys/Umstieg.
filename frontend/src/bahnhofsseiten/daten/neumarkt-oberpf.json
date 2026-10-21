@@ -1,0 +1,29 @@
+{
+  "name": "Neumarkt(Oberpf)",
+  "eva": "8004305",
+  "slug": "neumarkt-oberpf",
+  "lat": 49.273221,
+  "lon": 11.456987,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T12:12:26.668Z",
+  "gleise": [
+    "1",
+    "2",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":122,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":209},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":122,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":209},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":176,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":262},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":122,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":209},
+    {"von":"2","nach":"4","gleicherBahnsteig":true,"sek":3,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":3},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":126,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":221},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":122,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":209},
+    {"von":"4","nach":"2","gleicherBahnsteig":true,"sek":3,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":3},
+    {"von":"4","nach":"5","gleicherBahnsteig":false,"sek":126,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":221},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":176,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":262},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":126,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":221},
+    {"von":"5","nach":"4","gleicherBahnsteig":false,"sek":126,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":221}
+  ]
+}

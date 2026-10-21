@@ -1,0 +1,22 @@
+{
+  "name": "Leer(Ostfriesl)",
+  "eva": "8000225",
+  "slug": "leer-ostfriesl",
+  "lat": 53.23165,
+  "lon": 7.465283,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:47:09.602Z",
+  "gleise": [
+    "1",
+    "2",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":14,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":14},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":144,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":144},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":14,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":14},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":154,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":154},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":144,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":144},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":154,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":154}
+  ]
+}

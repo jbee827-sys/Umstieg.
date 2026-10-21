@@ -1,0 +1,17 @@
+{
+  "name": "Berlin-Neukölln",
+  "eva": "8089077",
+  "slug": "berlin-neukoelln",
+  "lat": 52.46942,
+  "lon": 13.44306,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T20:17:46.812Z",
+  "gleise": [
+    "1",
+    "2"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":101,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":101},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":101,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":101}
+  ]
+}

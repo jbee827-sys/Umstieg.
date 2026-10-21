@@ -1,0 +1,29 @@
+{
+  "name": "Siegburg/Bonn",
+  "eva": "8005556",
+  "slug": "siegburg-bonn",
+  "lat": 50.793915,
+  "lon": 7.203026,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T13:09:20.956Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "6"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":143,"wechsel":2,"anlagen":["treppe"],"lage":"nach-unten","stufenfreiSek":240},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":141,"wechsel":2,"anlagen":["treppe"],"lage":"nach-unten","stufenfreiSek":239},
+    {"von":"1","nach":"6","gleicherBahnsteig":false,"sek":207,"wechsel":2,"anlagen":["treppe"],"lage":"nach-unten","stufenfreiSek":302},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":143,"wechsel":2,"anlagen":["treppe"],"lage":"nach-oben","stufenfreiSek":240},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":7,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":7},
+    {"von":"2","nach":"6","gleicherBahnsteig":false,"sek":157,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":228},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":141,"wechsel":2,"anlagen":["treppe"],"lage":"nach-oben","stufenfreiSek":239},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":7,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":7},
+    {"von":"3","nach":"6","gleicherBahnsteig":false,"sek":155,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":227},
+    {"von":"6","nach":"1","gleicherBahnsteig":false,"sek":207,"wechsel":2,"anlagen":["treppe"],"lage":"nach-oben","stufenfreiSek":302},
+    {"von":"6","nach":"2","gleicherBahnsteig":false,"sek":157,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":228},
+    {"von":"6","nach":"3","gleicherBahnsteig":false,"sek":155,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":227}
+  ]
+}

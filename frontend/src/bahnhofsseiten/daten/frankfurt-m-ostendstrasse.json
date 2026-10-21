@@ -1,0 +1,17 @@
+{
+  "name": "Frankfurt(M)Ostendstraße",
+  "eva": "8002058",
+  "slug": "frankfurt-m-ostendstrasse",
+  "lat": 50.112562,
+  "lon": 8.696987,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T17:54:42.314Z",
+  "gleise": [
+    "1",
+    "2"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":8,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":8},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":8,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":8}
+  ]
+}

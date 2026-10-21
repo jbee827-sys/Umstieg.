@@ -1,0 +1,17 @@
+{
+  "name": "Berlin Frankfurter Allee",
+  "eva": "8089013",
+  "slug": "berlin-frankfurter-allee",
+  "lat": 52.515168,
+  "lon": 13.47441,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T20:09:47.876Z",
+  "gleise": [
+    "1",
+    "2"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":9,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":9},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":9,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":9}
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "name": "Marktredwitz",
+  "eva": "8000247",
+  "slug": "marktredwitz",
+  "lat": 50.004596,
+  "lon": 12.082583,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T19:06:07.336Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":140,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":214},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":140,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":214},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":147,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":215},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":147,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":215},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":140,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":214},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":30,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":30},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":34,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":34},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":34,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":34},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":140,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":214},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":30,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":30},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":34,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":34},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":34,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":34},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":147,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":215},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":34,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":34},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":34,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":34},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":37,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":37},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":147,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":215},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":34,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":34},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":34,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":34},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":37,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":37}
+  ]
+}

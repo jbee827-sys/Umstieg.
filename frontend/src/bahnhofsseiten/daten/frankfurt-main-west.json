@@ -1,0 +1,38 @@
+{
+  "name": "Frankfurt(Main)West",
+  "eva": "8002042",
+  "slug": "frankfurt-main-west",
+  "lat": 50.1192986,
+  "lon": 8.63939524,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T17:57:21.730Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":9,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":9},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":104,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-unten","stufenfreiSek":null},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":353,"wechsel":4,"anlagen":["rolltreppe","treppe"],"lage":"nach-unten","stufenfreiSek":null},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":353,"wechsel":4,"anlagen":["rolltreppe","treppe"],"lage":"nach-unten","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":9,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":9},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":104,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-unten","stufenfreiSek":null},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":353,"wechsel":4,"anlagen":["rolltreppe","treppe"],"lage":"nach-unten","stufenfreiSek":null},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":353,"wechsel":4,"anlagen":["rolltreppe","treppe"],"lage":"nach-unten","stufenfreiSek":null},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":104,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-oben","stufenfreiSek":null},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":104,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-oben","stufenfreiSek":null},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":299,"wechsel":3,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":299,"wechsel":3,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":353,"wechsel":4,"anlagen":["treppe","rolltreppe"],"lage":"nach-oben","stufenfreiSek":null},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":353,"wechsel":4,"anlagen":["treppe","rolltreppe"],"lage":"nach-oben","stufenfreiSek":null},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":299,"wechsel":3,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":93,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":93},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":353,"wechsel":4,"anlagen":["treppe","rolltreppe"],"lage":"nach-oben","stufenfreiSek":null},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":353,"wechsel":4,"anlagen":["treppe","rolltreppe"],"lage":"nach-oben","stufenfreiSek":null},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":299,"wechsel":3,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":93,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":93}
+  ]
+}

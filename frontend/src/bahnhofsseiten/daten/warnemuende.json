@@ -1,0 +1,38 @@
+{
+  "name": "Warnemünde",
+  "eva": "8013236",
+  "slug": "warnemuende",
+  "lat": 54.176852,
+  "lon": 12.091271,
+  "stufe": 2,
+  "geholtAm": "2026-10-14T13:36:52.944Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":23,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":23},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":224,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":224},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":76,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":76},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":528,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":528},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":23,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":23},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":248,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":248},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":99,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":99},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":552,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":552},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":224,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":224},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":248,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":248},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":148,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":148},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":428,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":428},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":76,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":76},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":99,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":99},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":148,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":148},
+    {"von":"4","nach":"5","gleicherBahnsteig":false,"sek":452,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":452},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":528,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":528},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":552,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":552},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":428,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":428},
+    {"von":"5","nach":"4","gleicherBahnsteig":false,"sek":452,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":452}
+  ]
+}
