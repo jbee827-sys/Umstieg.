@@ -12,7 +12,7 @@ import { anderHalt } from '../ort/bahnhofsumfeld'
 import { ortSchluessel } from '../ort/ortmodell'
 import { steigText } from '../ort/steig'
 import { VerkehrsmittelSymbole } from '../ort/verkehrsmittel'
-import { Tafelkategorie } from './Tafelkategorie'
+import { TafelListe, Tafelkategorie } from './Tafelkategorie'
 
 interface FahrtauswahlProps {
   ort: Ort
@@ -72,11 +72,13 @@ interface BloeckeProps {
   bahnhofName?: string
   /** Die einzige Kategorie der ganzen Tafel - dann ist sie gleich offen. Vorgabe: einziger Block hier. */
   einzige?: boolean
+  /** Ohne eigene Liste - sie steht dann schon um mehrere Bloecke (`TafelListe`). */
+  huelle?: boolean
 }
 
-export function FahrtBloecke({ bloecke, typ, auswahl, markiere, onTipp, bahnhofName, einzige }: BloeckeProps) {
+export function FahrtBloecke({ bloecke, typ, auswahl, markiere, onTipp, bahnhofName, einzige, huelle }: BloeckeProps) {
   return (
-    <div className="tafel-bloecke">
+    <TafelListe huelle={huelle}>
       {bloecke.map((block) => (
         <Tafelkategorie
           key={block.verkehrsmittel}
@@ -115,7 +117,7 @@ export function FahrtBloecke({ bloecke, typ, auswahl, markiere, onTipp, bahnhofN
           </ul>
         </Tafelkategorie>
       ))}
-    </div>
+    </TafelListe>
   )
 }
 

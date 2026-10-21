@@ -12,7 +12,7 @@ import type { HaltestellenTafelEintrag, Ort, TafelEintrag } from '../api/typen'
 import { nahverkehrAmBahnhof } from '../ort/bahnhofsumfeld'
 import { ortSchluessel } from '../ort/ortmodell'
 import { FahrtBloecke, GewaehlteFahrt } from './Fahrtauswahl'
-import { Tafelkategorie } from './Tafelkategorie'
+import { TafelListe, Tafelkategorie } from './Tafelkategorie'
 
 /**
  * Bus, Tram, U-Bahn am Bahnhof (Spec 2026-10-21-bus-am-bahnhof): Die DB-Tafel
@@ -88,11 +88,13 @@ interface TafelBloeckeProps {
   onTipp: (eintrag: TafelEintrag) => void
   /** Die einzige Kategorie der ganzen Tafel - auch mit dem Bus darunter. Vorgabe: einziger Block hier. */
   einzige?: boolean
+  /** Ohne eigene Liste - sie steht dann um Zuege und Bus zusammen (`TafelListe`). */
+  huelle?: boolean
 }
 
-function TafelBloecke({ bloecke, typ, auswahl, markiere, onTipp, einzige }: TafelBloeckeProps) {
+function TafelBloecke({ bloecke, typ, auswahl, markiere, onTipp, einzige, huelle }: TafelBloeckeProps) {
   return (
-    <div className="tafel-bloecke">
+    <TafelListe huelle={huelle}>
       {bloecke.map((block) => (
         <Tafelkategorie
           key={block.kategorie}
@@ -131,7 +133,7 @@ function TafelBloecke({ bloecke, typ, auswahl, markiere, onTipp, einzige }: Tafe
           </ul>
         </Tafelkategorie>
       ))}
-    </div>
+    </TafelListe>
   )
 }
 
@@ -262,26 +264,30 @@ export function Zugauswahl({ eva, typ, label, auswahl, onAuswahl, immerOffen, na
         {aktuell?.eintraege && bis && offeneBloecke.length === 0 && offeneNah.length === 0 && (
           <div className="hinweis-box">Keine Züge bis {hhmm(bis)}.</div>
         )}
-        {offeneBloecke.length > 0 && (
-          <TafelBloecke
-            bloecke={offeneBloecke}
-            typ={typ}
-            auswahl={auswahl}
-            markiere
-            onTipp={(e) => onAuswahl(istAuswahl(e, auswahl) ? null : e)}
-            einzige={einzige}
-          />
-        )}
-        {nahverkehr && offeneNah.length > 0 && (
-          <FahrtBloecke
-            bloecke={offeneNah}
-            typ={typ}
-            auswahl={nahverkehr.auswahl}
-            markiere
-            onTipp={(e) => nahverkehr.onAuswahl(istNahAuswahl(e) ? null : e)}
-            bahnhofName={nahverkehr.ort.name}
-            einzige={einzige}
-          />
+        {(offeneBloecke.length > 0 || offeneNah.length > 0) && (
+          <TafelListe>
+            <TafelBloecke
+              bloecke={offeneBloecke}
+              typ={typ}
+              auswahl={auswahl}
+              markiere
+              onTipp={(e) => onAuswahl(istAuswahl(e, auswahl) ? null : e)}
+              einzige={einzige}
+              huelle={false}
+            />
+            {nahverkehr && (
+              <FahrtBloecke
+                bloecke={offeneNah}
+                typ={typ}
+                auswahl={nahverkehr.auswahl}
+                markiere
+                onTipp={(e) => nahverkehr.onAuswahl(istNahAuswahl(e) ? null : e)}
+                bahnhofName={nahverkehr.ort.name}
+                einzige={einzige}
+                huelle={false}
+              />
+            )}
+          </TafelListe>
         )}
       </div>
     )
@@ -334,26 +340,30 @@ export function Zugauswahl({ eva, typ, label, auswahl, onAuswahl, immerOffen, na
           Keine Züge in den nächsten {FENSTER_NACH_MIN} Minuten.
         </div>
       )}
-      {offen && bloecke.length > 0 && (
-        <TafelBloecke
-          bloecke={bloecke}
-          typ={typ}
-          auswahl={auswahl}
-          markiere={false}
-          onTipp={onAuswahl}
-          einzige={einzigeAufgeklappt}
-        />
-      )}
-      {nahverkehr && aufgeklappteNah.length > 0 && (
-        <FahrtBloecke
-          bloecke={aufgeklappteNah}
-          typ={typ}
-          auswahl={null}
-          markiere={false}
-          onTipp={nahverkehr.onAuswahl}
-          bahnhofName={nahverkehr.ort.name}
-          einzige={einzigeAufgeklappt}
-        />
+      {offen && (bloecke.length > 0 || aufgeklappteNah.length > 0) && (
+        <TafelListe>
+          <TafelBloecke
+            bloecke={bloecke}
+            typ={typ}
+            auswahl={auswahl}
+            markiere={false}
+            onTipp={onAuswahl}
+            einzige={einzigeAufgeklappt}
+            huelle={false}
+          />
+          {nahverkehr && (
+            <FahrtBloecke
+              bloecke={aufgeklappteNah}
+              typ={typ}
+              auswahl={null}
+              markiere={false}
+              onTipp={nahverkehr.onAuswahl}
+              bahnhofName={nahverkehr.ort.name}
+              einzige={einzigeAufgeklappt}
+              huelle={false}
+            />
+          )}
+        </TafelListe>
       )}
     </div>
   )

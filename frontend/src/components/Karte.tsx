@@ -113,10 +113,24 @@ export function Karte({ karte, standort, aktiverSchritt, anfangsOffen = false }:
         }
       : LEER
 
+  // Erst nach `load` passt ein Schritt den Ausschnitt an - davor steht der der ganzen Route.
+  const geladen = useRef(false)
+
   useEffect(() => {
     if (!offen || !behaelter.current) return
+    // Gleich beim Erzeugen auf die ganze Route (alle Ebenen, damit der Kontext
+    // stimmt). Bis zum 21.10.2026 begann die Karte bei Zoom 0 und flog erst
+    // nach dem Laden animiert heran - in einem gedrosselten Tab stand sie
+    // Sekunden lang ueber halb Brandenburg (Browserpruefung Eberswalde).
+    const punkte = ebenen.flatMap((e) => alleKoordinaten(daten(e)))
+    const routengrenzen =
+      punkte.length > 0
+        ? punkte.reduce((b, p) => b.extend(p), new LngLatBounds(punkte[0], punkte[0]))
+        : undefined
+    geladen.current = false
     const map = new MapLibreMap({
       container: behaelter.current,
+      ...(routengrenzen ? { bounds: routengrenzen, fitBoundsOptions: { padding: 48, maxZoom: 17.5 } } : {}),
       // MapLibre holt 256er-Kacheln eine Stufe tiefer als der Kartenzoom. Bei
       // 19 waren das Kacheln der Stufe 20 - die liefert tile.openstreetmap.org
       // nicht, jeder Schritt endete mit fehlgeschlagenen Abrufen
@@ -189,15 +203,7 @@ export function Karte({ karte, standort, aktiverSchritt, anfangsOffen = false }:
         },
       })
 
-      // Auf die gesamte Route zoomen (alle Ebenen, damit der Kontext stimmt)
-      const punkte = ebenen.flatMap((e) => alleKoordinaten(daten(e)))
-      if (punkte.length > 0) {
-        const grenzen = punkte.reduce(
-          (b, p) => b.extend(p),
-          new LngLatBounds(punkte[0], punkte[0]),
-        )
-        map.fitBounds(grenzen, { padding: 48, maxZoom: 17.5 })
-      }
+      geladen.current = true
     })
 
     mapRef.current = map
@@ -239,7 +245,7 @@ export function Karte({ karte, standort, aktiverSchritt, anfangsOffen = false }:
     const map = mapRef.current
     const von = aktiverSchritt?.knotenVon
     const bis = aktiverSchritt?.knotenBis
-    if (!map || von === undefined || bis === undefined) return
+    if (!map || !geladen.current || von === undefined || bis === undefined) return
     const linie = alleKoordinaten(daten(ebene))
     const stueck = linie.slice(von, bis + 1)
     if (stueck.length === 0) return

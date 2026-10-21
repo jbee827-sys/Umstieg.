@@ -134,4 +134,13 @@ describe('anderHalt', () => {
     expect(anderHalt(basis, 'Göttingen')).toBeUndefined()
     expect(anderHalt({ ...bus, haltName: undefined }, 'Göttingen')).toBeUndefined()
   })
+
+  it('derselbe Bahnhof anders geschrieben ist kein anderer Halt (Eberswalde, 21.10.2026)', () => {
+    expect(anderHalt({ ...bus, haltName: 'Eberswalde, Hauptbahnhof' }, 'Eberswalde Hbf')).toBeUndefined()
+    expect(anderHalt({ ...bus, haltName: 'S+U Berlin Hauptbahnhof' }, 'Berlin Hbf')).toBeUndefined()
+    expect(anderHalt({ ...bus, haltName: 'Fulda Bahnhof' }, 'Fulda')).toBeUndefined()
+    // Ein Busbahnhof oder ZOB bleibt ein eigener Halt.
+    expect(anderHalt({ ...bus, haltName: 'Eberswalde, Busbahnhof' }, 'Eberswalde Hbf')).toBe('Eberswalde, Busbahnhof')
+    expect(anderHalt({ ...bus, haltName: 'Hannover Hauptbahnhof/ZOB' }, 'Hannover Hbf')).toBe('Hannover Hauptbahnhof/ZOB')
+  })
 })
