@@ -1,4 +1,6 @@
+import type { ReactElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { Daten } from '../components/Daten'
 import { Datenschutz } from '../components/Datenschutz'
 import { Impressum } from '../components/Impressum'
 import { RECHTSPFAD, type Rechtsseite } from '../navigation/rechtsseiten'
@@ -7,6 +9,13 @@ import { setzeKopf, setzeWurzel } from './kopf'
 const TITEL: Record<Rechtsseite, string> = {
   impressum: 'Impressum | Umstieg.',
   datenschutz: 'Datenschutz | Umstieg.',
+  daten: 'Daten und Quellen | Umstieg.',
+}
+
+const INHALT: Record<Rechtsseite, () => ReactElement> = {
+  impressum: () => <Impressum />,
+  datenschutz: () => <Datenschutz />,
+  daten: () => <Daten />,
 }
 
 /**
@@ -19,6 +28,6 @@ const TITEL: Record<Rechtsseite, string> = {
  * Knopf taete ohne JavaScript nichts.
  */
 export function rechtsseiteHtml(vorlage: string, seite: Rechtsseite): string {
-  const inhalt = renderToStaticMarkup(seite === 'impressum' ? <Impressum /> : <Datenschutz />)
+  const inhalt = renderToStaticMarkup(INHALT[seite]())
   return setzeWurzel(setzeKopf(vorlage, { titel: TITEL[seite], pfad: RECHTSPFAD[seite] }), inhalt)
 }

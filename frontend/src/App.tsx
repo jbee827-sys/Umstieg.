@@ -17,6 +17,7 @@ import { haltestellenHinweise, haltWort, linienName, ortsangabe } from './ort/an
 import { Datenschutz } from './components/Datenschutz'
 import { Fusszeile } from './components/Fusszeile'
 import { Impressum } from './components/Impressum'
+import { Daten } from './components/Daten'
 import { Angekommen } from './screens/Angekommen'
 import { Navileiste } from './components/Navileiste'
 import { Dashboard, type StandortStand, type VariantenStand } from './screens/Dashboard'
@@ -849,6 +850,7 @@ function App() {
   const zurueckVonRechtsseite = () => schliesseRechtsseite(PFAD[bildschirm])
   if (rechtsseite === 'impressum') return <Impressum onZurueck={zurueckVonRechtsseite} />
   if (rechtsseite === 'datenschutz') return <Datenschutz onZurueck={zurueckVonRechtsseite} />
+  if (rechtsseite === 'daten') return <Daten onZurueck={zurueckVonRechtsseite} />
 
   // Eine Aenderung an Gleis oder Abfahrtszeit ist zu wichtig, um sie erst
   // beim naechsten Seitenwechsel zu zeigen - die Meldung liegt deshalb ueber

@@ -115,6 +115,7 @@ export function sitemapXml(alle: Bahnhofsdaten[], heute: string): string {
     ...sortiert.map((d) => eintrag(BAHNHOF_PFAD(d.slug), d.geholtAm.slice(0, 10))),
     eintrag('/impressum', heute),
     eintrag('/datenschutz', heute),
+    eintrag('/daten', heute),
     '</urlset>',
     '',
   ].join('\n')

@@ -12,11 +12,13 @@ import { useSyncExternalStore } from 'react'
  * abschliessend) - sie liegen ueber dem Bildschirm, der gerade dran ist, und
  * Zurueck fuehrt wieder auf ihn. Deshalb eine eigene Tabelle neben `PFAD`.
  */
-export type Rechtsseite = 'impressum' | 'datenschutz'
+export type Rechtsseite = 'impressum' | 'datenschutz' | 'daten'
 
+/** „Daten“ (21.10.2026) liegt wie die Rechtsseiten ueber dem Bildschirm. */
 export const RECHTSPFAD: Record<Rechtsseite, string> = {
   impressum: '/impressum',
   datenschutz: '/datenschutz',
+  daten: '/daten',
 }
 
 /** Wird bei jedem Wechsel ausgeloest, den `popstate` nicht meldet. */
@@ -27,6 +29,7 @@ export function rechtsseiteAusPfad(pfad: string): Rechtsseite | null {
   const ohneSchraegstrich = pfad.length > 1 ? pfad.replace(/\/+$/, '') : pfad
   if (ohneSchraegstrich === RECHTSPFAD.impressum) return 'impressum'
   if (ohneSchraegstrich === RECHTSPFAD.datenschutz) return 'datenschutz'
+  if (ohneSchraegstrich === RECHTSPFAD.daten) return 'daten'
   return null
 }
 

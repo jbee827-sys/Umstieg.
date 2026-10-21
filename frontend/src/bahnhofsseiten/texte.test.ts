@@ -13,6 +13,7 @@ import {
   stufenfreiText,
   titelFuer,
   wegText,
+  ohneLuecken,
 } from './texte'
 
 const paar = (p: Partial<Gleispaar>): Gleispaar => ({
@@ -157,5 +158,30 @@ describe('gruppiereNachBuchstabe', () => {
       ['O', ['Offenburg', 'Öhringen']],
       ['U', ['Überlingen', 'Ulm Hbf']],
     ])
+  })
+})
+
+/*
+ * 822 von 19 894 Gleispaaren hatten keinen Weg im Bahnhofsplan (Luecken in
+ * OSM, Scheingleise wie Kaiserslautern „120“). Julian, 21.10.2026: weglassen.
+ */
+describe('ohneLuecken', () => {
+  const luecke = (von: string, nach: string, sek: number | null): Gleispaar => ({
+    von, nach, gleicherBahnsteig: false, sek, wechsel: 1, anlagen: [], lage: 'unterfuehrung', stufenfreiSek: null,
+  })
+  const ort = { name: 'X', eva: '1', slug: 'x', lat: 0, lon: 0, stufe: 2 as const, geholtAm: '2026-10-13T00:00:00Z' }
+
+  it('laesst Paare ohne Weg weg und Gleise, die dann nirgends mehr vorkommen', () => {
+    const d = ohneLuecken({
+      ...ort,
+      gleise: ['1', '2', '120'],
+      paare: [luecke('1', '2', 60), luecke('2', '1', 60), luecke('1', '120', null), luecke('120', '1', null), luecke('2', '120', null), luecke('120', '2', null)],
+    })
+    expect(d?.gleise).toEqual(['1', '2'])
+    expect(d?.paare.map((p) => `${p.von}-${p.nach}`)).toEqual(['1-2', '2-1'])
+  })
+
+  it('ohne zwei verbundene Gleise keine Seite', () => {
+    expect(ohneLuecken({ ...ort, gleise: ['1', '2'], paare: [luecke('1', '2', null), luecke('2', '1', null)] })).toBeNull()
   })
 })

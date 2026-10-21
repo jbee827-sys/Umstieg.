@@ -30,7 +30,13 @@
   width: 160px;
   max-width: 60%;
   height: auto;
-  filter: var(--lockup-filter);
+}
+/* Eine Fassung je Darstellung (index.css), wie in der App. */
+.bs-marke .lockup-hell {
+  display: var(--lockup-hell);
+}
+.bs-marke .lockup-dunkel {
+  display: var(--lockup-dunkel);
 }
 
 .bahnhofsseite {
@@ -175,13 +181,6 @@
   color: var(--color-neutral-700);
   text-decoration: underline;
   padding: 8px 4px;
-}
-
-.fusszeile-quellen {
-  flex-basis: 100%;
-  margin: 0;
-  text-align: center;
-  font-size: 0.8rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

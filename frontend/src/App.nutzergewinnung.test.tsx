@@ -195,9 +195,13 @@ describe('App: von den Bahnhofsseiten in die App (AP 5c)', () => {
     expect(window.location.pathname).toBe('/eingabe')
   })
 
-  it('verlinkt in der Fusszeile der Eingabe die Uebersicht der Bahnhoefe', () => {
+  // Seit dem 21.10.2026 ueber „Daten“ in der Fusszeile (Julian) - zwei Schritte statt einem.
+  it('fuehrt von der Fusszeile der Eingabe ueber „Daten“ zur Uebersicht der Bahnhoefe', async () => {
     render(<App />)
-    expect(screen.getByRole('link', { name: 'Bahnhöfe' }).getAttribute('href')).toBe('/bahnhoefe')
+    await userEvent.click(screen.getByRole('link', { name: 'Daten' }))
+    expect(window.location.pathname).toBe('/daten')
+    expect(screen.getByRole('link', { name: /Umsteigezeiten aller Bahnhöfe/ }).getAttribute('href')).toBe('/bahnhoefe')
+    window.history.replaceState(null, '', '/')
   })
 })
 
