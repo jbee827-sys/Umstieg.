@@ -115,6 +115,13 @@ describe('berechneBahnhof', () => {
     expect(berechneBahnhof(leer, graphAus(leer))).toBeNull();
   });
 
+  // Saarlouis Hbf (Stand 13.10.2026): OSM kennt nur Gleis 1 - eine Seite
+  // ohne ein einziges Gleispaar waere leer.
+  it('liefert nichts fuer weniger als zwei Gleise', () => {
+    const e = eintrag('synthetisch/mini-bahnhof');
+    expect(berechneBahnhof(e, graphAus(e), new Set(['2', '3']))).toBeNull();
+  });
+
   it('laesst Gleise weg, die einem anderen Bahnhof gehoeren', () => {
     const e = eintrag('synthetisch/mini-bahnhof');
     const ohne3 = berechneBahnhof(e, graphAus(e), new Set(['3']))!;
