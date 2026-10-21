@@ -5,10 +5,14 @@ import './index.css'
 import App from './App.tsx'
 import { ohneAbfrage } from './analytik/ereignis'
 import { ladeDarstellung, wendeDarstellungAn } from './einstellungen/darstellung'
+import { leiteRauteUm } from './navigation/rechtsseiten'
 
 // Vor dem ersten Zeichnen: Wer Dunkel gewaehlt hat, soll nicht erst einen
 // weissen Bildschirm sehen.
 wendeDarstellungAn(ladeDarstellung())
+// Ebenfalls vorher: geteilte alte Links (#impressum) auf die echte Adresse,
+// bevor App die Adresse liest.
+leiteRauteUm()
 
 // Die Reichweitenmessung haengt hier und nicht in App.tsx: Sie gehoert nicht
 // zur Anwendung, sondern zur Auslieferung, und die Komponententests sollen

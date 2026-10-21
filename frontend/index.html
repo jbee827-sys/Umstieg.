@@ -65,8 +65,10 @@
     <!-- Der Vortext ist fuer alle, die kein JavaScript ausfuehren: KI-Crawler
          (GPTBot, ClaudeBot, PerplexityBot) und Googles erste Welle. Beim Start
          ersetzt createRoot().render() ihn durch die App - Nutzer sehen ihn
-         nur ohne JavaScript oder fuer einen Augenblick beim Laden. -->
-    <div id="root">
+         nur ohne JavaScript oder fuer einen Augenblick beim Laden.
+         Zwischen den Markierungen setzt der Build auf Unterseiten deren
+         eigenen Inhalt ein (statisch/kopf.ts, setzeWurzel). -->
+    <div id="root"><!-- vortext:anfang -->
       <div class="vortext">
         <h1>Der Weg von Gleis zu Gleis beim Umsteigen</h1>
         <p>
@@ -81,7 +83,7 @@
         </p>
         <p><a href="/bahnhoefe">Umsteigezeiten für alle Bahnhöfe</a></p>
       </div>
-    </div>
+    <!-- vortext:ende --></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

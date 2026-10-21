@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && tsx --tsconfig tsconfig.app.json scripts/statische-seiten.tsx",
     "test": "vitest run",
     "lint": "oxlint && tsc -b --noEmit",
     "preview": "vite preview"
@@ -27,6 +27,7 @@
     "@vitejs/plugin-react": "^6.1.0",
     "jsdom": "^29.1.1",
     "oxlint": "^1.79.0",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.2",
     "vite": "^8.2.2",
     "vitest": "^3.2.7"

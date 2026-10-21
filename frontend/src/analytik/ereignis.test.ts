@@ -10,10 +10,9 @@ describe('ohneAbfrage', () => {
     )
   })
 
-  // Die Rechtsseiten haengen am Hash. Er sagt, welche Seite gelesen wurde -
-  // harmlos und der einzige Grund, warum die Messung hier ueberhaupt etwas
-  // unterscheiden kann.
-  it('behaelt den Hash der Rechtsseiten', () => {
+  // Bis zum 21.10.2026 hingen die Rechtsseiten am Hash; ein alter Link
+  // kommt so noch an. Der Hash ist harmlos und bleibt.
+  it('behaelt den Hash', () => {
     expect(ohneAbfrage(seitenaufruf('https://umstieg.online/#datenschutz'))?.url).toBe(
       'https://umstieg.online/#datenschutz',
     )
