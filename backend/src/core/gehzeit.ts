@@ -47,7 +47,12 @@ export function gehzeitSekunden(pfad: RoutenPfad, profil: Gehprofil): number {
  * widersprechen sich Ampel und Schrittanzeige.
  */
 export function verteileGehzeit(
-  segmente: { laengeM: number; typ: KantenTyp }[],
+  /**
+   * `zuschlagSek`: die Zuschlaege aller Kanten des Segments. Ein Schritt kann
+   * zwei Treppen umfassen (`textgen.ts`, 21.10.2026) - der Zuschlag seines
+   * Typs allein unterschlaege dann eine.
+   */
+  segmente: { laengeM: number; typ: KantenTyp; zuschlagSek?: number }[],
   profil: Gehprofil,
 ): number[] {
   const v = GESCHWINDIGKEIT[profil];
@@ -58,7 +63,7 @@ export function verteileGehzeit(
     const gerundet = Math.round(laengeBisher / v);
     const anteil = gerundet - gerundetBisher;
     gerundetBisher = gerundet;
-    return anteil + (ZUSCHLAG[segment.typ] ?? 0);
+    return anteil + (segment.zuschlagSek ?? ZUSCHLAG[segment.typ] ?? 0);
   });
 }
 

@@ -12,10 +12,21 @@ import type { Gehprofil, RoutenPfad, Steigpunkt, Weg } from './typen.js';
 /** Gegenstück zur Stufe 3 im Bahnhofspfad (Spec 5.6, V: 1,3). */
 export const UMWEGFAKTOR = 1.3;
 
+/** Querabweichung draussen, unter der ein Knick kein Abbiegen ist (drinnen 6 m, `textgen.ts`). */
+export const GLAETTUNG_DRAUSSEN_M = 12;
+
 export function wegAusPfad(pfad: RoutenPfad, profil: Gehprofil, zielZusatz?: string): Weg {
   return {
     stufe: 1,
-    schritte: generiereSchritte(pfad, { profil, ...(zielZusatz ? { zielZusatz } : {}) }),
+    schritte: generiereSchritte(pfad, {
+      profil,
+      // Der Haltestellenpfad hat kein Ebenenschema: Treppen ueber Zwischenebenen
+      // werden ein Schritt. Und er fuehrt meist draussen, wo MOTIS den Weg
+      // zackig ueber Plaetze zeichnet (Goettingen Bahnhofsvorplatz, 21.10.2026).
+      ueberEbenen: true,
+      glaettungM: GLAETTUNG_DRAUSSEN_M,
+      ...(zielZusatz ? { zielZusatz } : {}),
+    }),
     gehzeitSek: gehzeitSekunden(pfad, profil),
     karte: pfadZuGeoJSON(pfad),
     hinweise: [],

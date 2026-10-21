@@ -273,3 +273,116 @@ describe('zielZusatz (Haltestellenpfad, Umstieg 2.0)', () => {
     expect(generiereSchritte(geraderPfad(), { profil: 'normal' }).at(-1)!.text).toMatch(/zu Gleis 7$/);
   });
 });
+
+/*
+ * „Zu viele kleine Schritte“ (Julian, 21.10.2026). Messung ueber 364 Wege aus
+ * dem Startbestand: 14 % aller Schritte waren „wenige Meter“, dazu dieselbe
+ * Rampe dreimal hintereinander (Backnang) und Podeste zwischen zwei Treppen
+ * als eigener Schritt (Aachen). Zusammengefasst wird im Bahnhofspfad nur
+ * INNERHALB einer Ebene - jede Ebene des Wegs ist ein Band im Schema, und
+ * `besuchJeSchritt` ordnet die Schritte ueber genau diese Laeufe zu.
+ */
+describe('generiereSchritte: weniger kleine Schritte', () => {
+  it('dieselbe Rampe dreimal hintereinander ist ein Schritt - die Zeit bleibt dieselbe', () => {
+    const knoten = [
+      xy('a', 0, 0), xy('b', 0, 20), xy('c', 0, 25, -1), xy('d', 0, 30, -1), xy('e', 0, 35, -1), xy('f', 0, 60, -1, '4'),
+    ];
+    const kanten = [
+      kante('a', 'b', 'eben', 20), kante('b', 'c', 'rampe', 5, -1), kante('c', 'd', 'rampe', 5),
+      kante('d', 'e', 'rampe', 5), kante('e', 'f', 'eben', 25),
+    ];
+    const pfad = machePfad(knoten, kanten);
+    const schritte = generiereSchritte(pfad, { profil: 'normal' });
+    expect(schritte.map((s) => s.text)).toEqual([
+      'Nach Ausstieg 20 m geradeaus',
+      'Rampe hinunter zur Unterführung (-1)',
+      '30 m geradeaus zu Gleis 4',
+    ]);
+    expect(schritte[1]).toMatchObject({ knotenVon: 1, knotenBis: 4 });
+  });
+
+  it('Rampe, kurzes Stueck, Rampe auf derselben Ebene ist ein Schritt (Hennef)', () => {
+    const knoten = [xy('a', 0, 0), xy('b', 0, 10), xy('c', 0, 20), xy('d', 8, 20), xy('e', 8, 30), xy('f', 8, 90, 0, '3')];
+    for (const k of knoten.slice(0, 2)) k.level = 0.5;
+    const kanten = [
+      kante('a', 'b', 'eben', 10), kante('b', 'c', 'rampe', 10, -0.5), kante('c', 'd', 'eben', 8),
+      kante('d', 'e', 'rampe', 10), kante('e', 'f', 'eben', 60),
+    ];
+    expect(generiereSchritte(machePfad(knoten, kanten), { profil: 'normal' }).map((x) => x.text)).toEqual([
+      'Nach Ausstieg 10 m geradeaus',
+      'Rampe hinunter zur Ebene 0',
+      '60 m geradeaus zu Gleis 3',
+    ]);
+  });
+
+  it('ein kurzes Podest nach einer Treppe gehoert zur Treppe - die Ebenenlaeufe bleiben', () => {
+    // Aachen Hbf: Treppe hoch zur 0.5, „Wenige Meter rechts“, Treppe hoch zur 1.
+    const knoten = [
+      xy('a', 0, 0), xy('b', 0, 30), xy('c', 0, 35, 0.5), xy('d', 4, 35, 0.5), xy('e', 4, 40, 1), xy('f', 4, 80, 1, '9'),
+    ];
+    const kanten = [
+      kante('a', 'b', 'eben', 30), kante('b', 'c', 'treppe', 5, 0.5), kante('c', 'd', 'eben', 4),
+      kante('d', 'e', 'treppe', 5, 0.5), kante('e', 'f', 'eben', 40),
+    ];
+    const schritte = generiereSchritte(machePfad(knoten, kanten), { profil: 'normal' });
+    expect(schritte.map((s) => s.text)).toEqual([
+      'Nach Ausstieg 30 m geradeaus',
+      'Treppe hoch zur Ebene 0.5',
+      'Treppe hoch zur Ebene 1',
+      '40 m geradeaus zu Gleis 9',
+    ]);
+    // Je Ebene ein Lauf, wie im Schema: 0 · 0.5 · 1.
+    expect(schritte.map((s) => s.level)).toEqual([0, 0.5, 1, 1]);
+  });
+
+  it('ein kurzer Versatz zwischen zwei Wegstuecken ist kein Abbiegen', () => {
+    // Aachen: „70 m geradeaus · 10 m rechts · 30 m links“ - gegangen wird geradeaus.
+    const knoten = [xy('a', 0, 0), xy('b', 0, 70), xy('c', 10, 70), xy('d', 10, 100, 0, '1')];
+    const kanten = [kante('a', 'b', 'eben', 70), kante('b', 'c', 'eben', 10), kante('c', 'd', 'eben', 30)];
+    const schritte = generiereSchritte(machePfad(knoten, kanten), { profil: 'normal' });
+    expect(schritte.map((x) => x.text)).toEqual(['Nach Ausstieg 110 m geradeaus zu Gleis 1']);
+  });
+
+  it('ein kurzes Stueck vor einer echten Abbiegung geht in ihr auf', () => {
+    // 60 m nach Norden, 10 m nach Osten, 40 m nach Osten weiter: rechts.
+    const knoten = [xy('a', 0, 0), xy('b', 0, 60), xy('c', 7, 67), xy('d', 50, 67, 0, '2')];
+    const kanten = [kante('a', 'b', 'eben', 60), kante('b', 'c', 'eben', 10), kante('c', 'd', 'eben', 43)];
+    const schritte = generiereSchritte(machePfad(knoten, kanten), { profil: 'normal' });
+    expect(schritte.map((x) => x.text)).toEqual(['Nach Ausstieg 60 m geradeaus', '50 m rechts zu Gleis 2']);
+    expect(schritte[1]).toMatchObject({ knotenVon: 1, knotenBis: 3 });
+  });
+
+  it('die Schrittzeiten summieren sich weiter genau zur Gehzeit', () => {
+    const knoten = [
+      xy('a', 0, 0), xy('b', 0, 30), xy('c', 0, 35, 0.5), xy('d', 4, 35, 0.5), xy('e', 4, 40, 1), xy('f', 4, 80, 1, '9'),
+    ];
+    const kanten = [
+      kante('a', 'b', 'eben', 30), kante('b', 'c', 'treppe', 5, 0.5), kante('c', 'd', 'eben', 4),
+      kante('d', 'e', 'treppe', 5, 0.5), kante('e', 'f', 'eben', 40),
+    ];
+    const pfad = machePfad(knoten, kanten);
+    for (const ueberEbenen of [false, true]) {
+      const schritte = generiereSchritte(pfad, { profil: 'normal', ueberEbenen });
+      expect(schritte.reduce((s, x) => s + (x.sekunden ?? 0), 0)).toBe(gehzeitSekunden(pfad, 'normal'));
+    }
+  });
+
+  it('Haltestellenpfad (kein Schema): Treppe, Podest, Treppe in dieselbe Richtung ist EIN Schritt', () => {
+    const knoten = [
+      xy('a', 0, 0), xy('b', 0, 50, 1), xy('c', 0, 55, 0.5), xy('d', 3, 55, 0.5), xy('e', 3, 60, 0.25),
+      xy('f', 5, 60, 0.25), xy('g', 5, 65, 0), xy('h', 100, 65, 0),
+    ];
+    for (const k of knoten.slice(0, 2)) k.level = 1;
+    const kanten = [
+      kante('a', 'b', 'eben', 50), kante('b', 'c', 'treppe', 5, -0.5), kante('c', 'd', 'eben', 3),
+      kante('d', 'e', 'treppe', 5, -0.25), kante('e', 'f', 'eben', 2), kante('f', 'g', 'treppe', 5, -0.25),
+      kante('g', 'h', 'eben', 95),
+    ];
+    const schritte = generiereSchritte(machePfad(knoten, kanten), { profil: 'normal', ueberEbenen: true, zielZusatz: 'zu Steig A (Bus 21)' });
+    expect(schritte.map((s) => s.text)).toEqual([
+      'Nach Ausstieg 50 m geradeaus',
+      'Treppe hinunter zur Ebene 0',
+      '100 m rechts zu Steig A (Bus 21)',
+    ]);
+  });
+});
