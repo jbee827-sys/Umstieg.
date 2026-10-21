@@ -140,6 +140,13 @@ describe('laengsteUmstiege', () => {
     ]
     expect(laengsteUmstiege(paare, 3).map((p) => `${p.von}>${p.nach}`)).toEqual(['2>1', '3>1', '2>3'])
   })
+
+  // München Hackerbrücke hat zwei Gleise an einem Bahnsteig - „am längsten
+  // dauert der Umstieg über den Bahnsteig" waere Unsinn.
+  it('laesst Umstiege am gleichen Bahnsteig weg', () => {
+    const paare = [paar({ von: '1', nach: '2', sek: 15, gleicherBahnsteig: true })]
+    expect(laengsteUmstiege(paare, 3)).toEqual([])
+  })
 })
 
 describe('gruppiereNachBuchstabe', () => {

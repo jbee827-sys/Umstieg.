@@ -72,10 +72,10 @@ export function standText(geholtAm: string): string {
   })
 }
 
-/** Die laengsten Umstiege mit bekanntem Weg, laengster zuerst. */
+/** Die laengsten Umstiege mit bekanntem Weg, laengster zuerst - ohne die am gleichen Bahnsteig. */
 export function laengsteUmstiege(paare: Gleispaar[], anzahl: number): Gleispaar[] {
   return paare
-    .filter((p) => p.sek !== null)
+    .filter((p) => p.sek !== null && !p.gleicherBahnsteig)
     .sort((a, b) => b.sek! - a.sek!)
     .slice(0, anzahl)
 }

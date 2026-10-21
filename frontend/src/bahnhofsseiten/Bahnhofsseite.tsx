@@ -38,7 +38,9 @@ function LaengsteUmstiege({ d }: { d: Bahnhofsdaten }) {
   if (!erster) return null
   const weg = wegText(erster)
   return (
-    <p className="bs-laengste">
+    <>
+      <h2>Die längsten Umstiege</h2>
+      <p className="bs-laengste">
       Am längsten dauert der Umstieg in {d.name} von Gleis {erster.von} nach Gleis {erster.nach}:{' '}
       {minutenWort(erster.sek!)}
       {weg !== '–' ? ` (${weg})` : ''}.
@@ -47,7 +49,8 @@ function LaengsteUmstiege({ d }: { d: Bahnhofsdaten }) {
             .map((p) => `Gleis ${p.von} nach Gleis ${p.nach} (${minutenWort(p.sek!)})`)
             .join(' und ')}.`
         : ''}
-    </p>
+      </p>
+    </>
   )
 }
 
@@ -100,7 +103,6 @@ export function Bahnhofsseite({ d }: { d: Bahnhofsdaten }) {
           </details>
         ))}
 
-        <h2>Die längsten Umstiege</h2>
         <LaengsteUmstiege d={d} />
 
         <p className="bs-hinweis">
