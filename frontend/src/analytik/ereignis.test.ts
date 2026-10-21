@@ -28,6 +28,17 @@ describe('ohneAbfrage', () => {
     )
   })
 
+  // Seit dem 21.10.2026 traegt eine Adresse doch eine Abfrage: der Link von
+  // den Bahnhofsseiten in die App (Konzept Nutzergewinnung 5c.1). Er nennt
+  // den Bahnhof - die Messung sieht nur /eingabe.
+  it('schneidet den vorbelegten Bahnhof aus dem Link der Bahnhofsseiten ab', () => {
+    expect(
+      ohneAbfrage(
+        seitenaufruf('https://www.umstieg.online/eingabe?bahnhof=8000152&name=Hannover+Hbf&lat=52.376761&lon=9.741021'),
+      )?.url,
+    ).toBe('https://www.umstieg.online/eingabe')
+  })
+
   it('schneidet die Abfrage ab und behaelt den Hash', () => {
     expect(ohneAbfrage(seitenaufruf('https://umstieg.online/?eva=8011160#impressum'))?.url).toBe(
       'https://umstieg.online/#impressum',

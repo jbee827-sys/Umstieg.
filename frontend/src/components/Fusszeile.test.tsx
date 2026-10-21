@@ -40,6 +40,12 @@ describe('Fusszeile', () => {
     window.history.replaceState(null, '', '/')
   })
 
+  // Konzept Nutzergewinnung 5c.3: die zentrale interne Verlinkung.
+  it('verlinkt die Umsteigezeiten aller Bahnhoefe', () => {
+    render(<Fusszeile />)
+    expect(screen.getByRole('link', { name: 'Bahnhöfe' }).getAttribute('href')).toBe('/bahnhoefe')
+  })
+
   it('verlinkt den Quellcode (§ 13 AGPL)', () => {
     render(<Fusszeile />)
     const link = screen.getByRole('link', { name: 'Quellcode' })

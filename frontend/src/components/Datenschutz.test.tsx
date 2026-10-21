@@ -88,6 +88,16 @@ describe('Datenschutzerklaerung sagt, was die App wirklich tut', () => {
     expect(text).toMatch(/kein Bahnhof, kein Gleis, keine Uhrzeit und kein Standort/)
   })
 
+  // Seit dem 21.10.2026 gibt es oeffentliche Bahnhofsseiten. Ihre Adresse
+  // nennt den Bahnhof der gelesenen Seite - das ist keine Reise, muss aber
+  // dastehen, sonst waere „nie einen Bahnhof" unwahr.
+  it('sagt, dass die Adresse auf den Bahnhofsseiten die gelesene Seite nennt', () => {
+    const text = zeige()
+    expect(text).toMatch(/Bahnhofsseiten/)
+    expect(text).toContain('/bahnhof/hannover-hbf')
+    expect(text).not.toMatch(/nie einen Bahnhof oder ein Gleis/)
+  })
+
   it('behauptet nicht mehr, ohne Analyse und ohne Reichweitenmessung zu arbeiten', () => {
     const text = zeige()
     expect(text).not.toMatch(/bindet keine Analyse-\s*oder\s*Werbedienste ein/)

@@ -6,13 +6,16 @@ import App from './App.tsx'
 import { ohneAbfrage } from './analytik/ereignis'
 import { ladeDarstellung, wendeDarstellungAn } from './einstellungen/darstellung'
 import { leiteRauteUm } from './navigation/rechtsseiten'
+import { uebernimmBahnhofAusAdresse } from './sitzung/vorbelegung'
 
 // Vor dem ersten Zeichnen: Wer Dunkel gewaehlt hat, soll nicht erst einen
 // weissen Bildschirm sehen.
 wendeDarstellungAn(ladeDarstellung())
 // Ebenfalls vorher: geteilte alte Links (#impressum) auf die echte Adresse,
-// bevor App die Adresse liest.
+// bevor App die Adresse liest - und ein Bahnhof aus dem Link einer
+// Bahnhofsseite in die Eingabe (/eingabe?bahnhof=…).
 leiteRauteUm()
+uebernimmBahnhofAusAdresse()
 
 // Die Reichweitenmessung haengt hier und nicht in App.tsx: Sie gehoert nicht
 // zur Anwendung, sondern zur Auslieferung, und die Komponententests sollen
