@@ -1,0 +1,38 @@
+{
+  "name": "Naumburg(Saale)Hbf",
+  "eva": "8010240",
+  "slug": "naumburg-saale-hbf",
+  "lat": 51.163071,
+  "lon": 11.796984,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T20:38:00.870Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":444,"wechsel":3,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":536},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":444,"wechsel":3,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":536},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":375,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":442},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":375,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":442},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":444,"wechsel":3,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":536},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":43,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":43},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":119,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":119},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":119,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":119},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":444,"wechsel":3,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":536},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":43,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":43},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":119,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":119},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":119,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":119},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":375,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":442},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":119,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":119},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":119,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":119},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":126,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":126},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":375,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":442},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":119,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":119},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":119,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":119},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":126,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":126}
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "Freising",
+  "eva": "8002078",
+  "slug": "freising",
+  "lat": 48.395195,
+  "lon": 11.744539,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:00:32.691Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":23,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":23},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":191,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":274},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":191,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":274},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":23,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":23},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":191,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":274},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":191,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":274},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":191,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":274},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":191,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":274},
+    {"von":"3","nach":"4","gleicherBahnsteig":true,"sek":47,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":47},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":191,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":274},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":191,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":274},
+    {"von":"4","nach":"3","gleicherBahnsteig":true,"sek":47,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":47}
+  ]
+}

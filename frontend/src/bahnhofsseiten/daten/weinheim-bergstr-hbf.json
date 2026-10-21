@@ -1,0 +1,29 @@
+{
+  "name": "Weinheim(Bergstr)Hbf",
+  "eva": "8000377",
+  "slug": "weinheim-bergstr-hbf",
+  "lat": 49.553302,
+  "lon": 8.665351,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T13:42:41.538Z",
+  "gleise": [
+    "2",
+    "3",
+    "5",
+    "6"
+  ],
+  "paare": [
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":11,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":11},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":202},
+    {"von":"2","nach":"6","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":202},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":11,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":11},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":202},
+    {"von":"3","nach":"6","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":202},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":202},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":202},
+    {"von":"5","nach":"6","gleicherBahnsteig":true,"sek":3,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":3},
+    {"von":"6","nach":"2","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":202},
+    {"von":"6","nach":"3","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":202},
+    {"von":"6","nach":"5","gleicherBahnsteig":true,"sek":3,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":3}
+  ]
+}

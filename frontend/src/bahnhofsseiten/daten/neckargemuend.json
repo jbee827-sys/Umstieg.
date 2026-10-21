@@ -1,0 +1,29 @@
+{
+  "name": "Neckargemünd",
+  "eva": "8000265",
+  "slug": "neckargemuend",
+  "lat": 49.393678,
+  "lon": 8.788425,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T12:12:01.297Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":143,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":143},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":143,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":143},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":108,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":198},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":143,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":143},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":10,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":10},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":250,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":308},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":143,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":143},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":10,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":10},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":250,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":308},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":108,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":198},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":250,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":308},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":250,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":308}
+  ]
+}

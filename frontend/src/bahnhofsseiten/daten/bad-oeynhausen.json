@@ -1,0 +1,22 @@
+{
+  "name": "Bad Oeynhausen",
+  "eva": "8000732",
+  "slug": "bad-oeynhausen",
+  "lat": 52.205398,
+  "lon": 8.796523,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T19:59:05.186Z",
+  "gleise": [
+    "1",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":320,"wechsel":2,"anlagen":["aufzug","treppe"],"lage":"unterfuehrung","stufenfreiSek":372},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":323,"wechsel":2,"anlagen":["aufzug","treppe"],"lage":"unterfuehrung","stufenfreiSek":375},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":320,"wechsel":2,"anlagen":["treppe","aufzug"],"lage":"unterfuehrung","stufenfreiSek":372},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":179,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":179},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":323,"wechsel":2,"anlagen":["treppe","aufzug"],"lage":"unterfuehrung","stufenfreiSek":375},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":179,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":179}
+  ]
+}

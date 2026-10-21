@@ -1,0 +1,38 @@
+{
+  "name": "Horb",
+  "eva": "8000177",
+  "slug": "horb",
+  "lat": 48.441471,
+  "lon": 8.688982,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:29:44.230Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "5",
+    "6"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":183,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":183},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":183,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":183},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":252,"wechsel":2,"anlagen":["rampe","treppe"],"lage":"unterfuehrung","stufenfreiSek":318},
+    {"von":"1","nach":"6","gleicherBahnsteig":false,"sek":252,"wechsel":2,"anlagen":["rampe","treppe"],"lage":"unterfuehrung","stufenfreiSek":318},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":183,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":183},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":27,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":27},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":135,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":135},
+    {"von":"2","nach":"6","gleicherBahnsteig":false,"sek":135,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":135},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":183,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":183},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":27,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":27},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":135,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":135},
+    {"von":"3","nach":"6","gleicherBahnsteig":false,"sek":135,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":135},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":252,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":318},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":135,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":135},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":135,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":135},
+    {"von":"5","nach":"6","gleicherBahnsteig":true,"sek":45,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":45},
+    {"von":"6","nach":"1","gleicherBahnsteig":false,"sek":252,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":318},
+    {"von":"6","nach":"2","gleicherBahnsteig":false,"sek":135,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":135},
+    {"von":"6","nach":"3","gleicherBahnsteig":false,"sek":135,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":135},
+    {"von":"6","nach":"5","gleicherBahnsteig":true,"sek":45,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":45}
+  ]
+}

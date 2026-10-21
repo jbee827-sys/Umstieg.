@@ -1,0 +1,17 @@
+{
+  "name": "München-Laim",
+  "eva": "8004151",
+  "slug": "muenchen-laim",
+  "lat": 48.144371,
+  "lon": 11.503669,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T19:21:57.318Z",
+  "gleise": [
+    "1",
+    "2"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":75,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":75},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":75,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":75}
+  ]
+}

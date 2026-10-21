@@ -1,0 +1,22 @@
+{
+  "name": "Frankenthal Hbf",
+  "eva": "8000332",
+  "slug": "frankenthal-hbf",
+  "lat": 49.535567,
+  "lon": 8.349702,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T17:53:56.454Z",
+  "gleise": [
+    "1",
+    "2",
+    "3a"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":212,"wechsel":2,"anlagen":["rampe","treppe"],"lage":"unterfuehrung","stufenfreiSek":296},
+    {"von":"1","nach":"3a","gleicherBahnsteig":false,"sek":229,"wechsel":2,"anlagen":["rampe","treppe"],"lage":"unterfuehrung","stufenfreiSek":313},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":212,"wechsel":2,"anlagen":["rampe","treppe"],"lage":"unterfuehrung","stufenfreiSek":296},
+    {"von":"2","nach":"3a","gleicherBahnsteig":false,"sek":17,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":17},
+    {"von":"3a","nach":"1","gleicherBahnsteig":false,"sek":229,"wechsel":2,"anlagen":["rampe","treppe"],"lage":"unterfuehrung","stufenfreiSek":313},
+    {"von":"3a","nach":"2","gleicherBahnsteig":false,"sek":17,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":17}
+  ]
+}

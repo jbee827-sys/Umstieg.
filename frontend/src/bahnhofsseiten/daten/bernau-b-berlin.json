@@ -1,0 +1,29 @@
+{
+  "name": "Bernau(b Berlin)",
+  "eva": "8013470",
+  "slug": "bernau-b-berlin",
+  "lat": 52.6755689,
+  "lon": 13.5926414,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T20:19:55.341Z",
+  "gleise": [
+    "1",
+    "2",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":16,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":16},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":74,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":74},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":74,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":74},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":16,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":16},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":74,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":74},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":74,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":74},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":74,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":74},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":74,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":74},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":15,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":15},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":74,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":74},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":74,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":74},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":15,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":15}
+  ]
+}

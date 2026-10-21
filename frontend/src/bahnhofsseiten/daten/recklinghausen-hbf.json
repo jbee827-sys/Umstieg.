@@ -1,0 +1,22 @@
+{
+  "name": "Recklinghausen Hbf",
+  "eva": "8000307",
+  "slug": "recklinghausen-hbf",
+  "lat": 51.616359,
+  "lon": 7.20349,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T12:46:39.485Z",
+  "gleise": [
+    "1",
+    "2",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":356,"wechsel":3,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":493},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":356,"wechsel":3,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":493},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":356,"wechsel":3,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":493},
+    {"von":"2","nach":"4","gleicherBahnsteig":true,"sek":128,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":128},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":356,"wechsel":3,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":493},
+    {"von":"4","nach":"2","gleicherBahnsteig":true,"sek":128,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":128}
+  ]
+}

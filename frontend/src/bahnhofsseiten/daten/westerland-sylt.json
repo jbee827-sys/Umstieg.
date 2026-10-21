@@ -1,0 +1,38 @@
+{
+  "name": "Westerland(Sylt)",
+  "eva": "8006369",
+  "slug": "westerland-sylt",
+  "lat": 54.906839,
+  "lon": 8.310925,
+  "stufe": 2,
+  "geholtAm": "2026-10-14T13:48:27.057Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":30,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":30},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":116,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":116},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":116,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":116},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":30,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":30},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":116,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":116},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":116,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":116},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":116,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":116},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":116,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":116},
+    {"von":"3","nach":"4","gleicherBahnsteig":true,"sek":31,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":31},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":116,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":116},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":116,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":116},
+    {"von":"4","nach":"3","gleicherBahnsteig":true,"sek":31,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":31},
+    {"von":"4","nach":"5","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"5","nach":"4","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null}
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "name": "Potsdam Park Sanssouci",
+  "eva": "8010377",
+  "slug": "potsdam-park-sanssouci",
+  "lat": 52.394108,
+  "lon": 13.014512,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T12:42:59.078Z",
+  "gleise": [
+    "1",
+    "2",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":212,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":212},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":212,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":212},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":212,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":212},
+    {"von":"2","nach":"4","gleicherBahnsteig":true,"sek":31,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":31},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":212,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":212},
+    {"von":"4","nach":"2","gleicherBahnsteig":true,"sek":31,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":31}
+  ]
+}

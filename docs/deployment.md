@@ -183,6 +183,21 @@ der Test `osm-startbestand.test.ts` schlägt dann an):
 
 Danach `backend/osm-bestand/` committen und deployen.
 
+**Danach jedes Mal auch die Bahnhofsseiten neu rechnen** (seit 21.10.2026,
+Konzept Nutzergewinnung AP 5a). Die vorgerenderten Seiten `/bahnhof/<name>`
+lesen ihre Gehzeiten aus eingecheckten JSON-Dateien, weil Vercel nur
+`frontend/` baut:
+
+    cd backend
+    npm run bahnhofsseiten
+
+Offline, ohne Schlüssel, rund 2,5 Minuten. Schreibt
+`frontend/src/bahnhofsseiten/daten/<slug>.json` neu (alte Dateien werden
+gelöscht) und protokolliert Bahnhöfe je Stufe, die übersprungenen der
+Stufe 3, Gleise, die einem größeren Bahnhof überlassen werden, und die
+Gesamtgröße. Über 5 MB: vor dem Einchecken nachfragen. Danach den Ordner
+committen und das Frontend ausliefern.
+
 **Overpass von Fly aus (seit 14.10.2026):** Ersatzserver ist `maps.mail.ru`
 (`overpass.kumi.systems` antwortet nicht mehr). Wer mit 429, 406 oder
 abgewiesener Verbindung antwortet, bekommt 60 s / 24 h / 30 min keine Anfrage –

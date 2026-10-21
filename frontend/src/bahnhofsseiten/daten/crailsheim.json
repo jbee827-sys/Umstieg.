@@ -1,0 +1,29 @@
+{
+  "name": "Crailsheim",
+  "eva": "8000067",
+  "slug": "crailsheim",
+  "lat": 49.137872,
+  "lon": 10.064326,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T17:13:17.100Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":95,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":95},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":200,"wechsel":2,"anlagen":["rampe","treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":200,"wechsel":2,"anlagen":["rampe","treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":95,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":95},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":105,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":105,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":200,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":105,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"4","gleicherBahnsteig":true,"sek":10,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":10},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":200,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":105,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"3","gleicherBahnsteig":true,"sek":10,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":10}
+  ]
+}

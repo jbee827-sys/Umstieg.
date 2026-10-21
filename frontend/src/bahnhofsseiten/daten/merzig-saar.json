@@ -1,0 +1,22 @@
+{
+  "name": "Merzig(Saar)",
+  "eva": "8003992",
+  "slug": "merzig-saar",
+  "lat": 49.436419,
+  "lon": 6.634192,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T19:11:24.081Z",
+  "gleise": [
+    "1",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":152,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":216},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":152,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":216},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":152,"wechsel":2,"anlagen":["rampe","treppe"],"lage":"unterfuehrung","stufenfreiSek":216},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":25,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":25},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":152,"wechsel":2,"anlagen":["rampe","treppe"],"lage":"unterfuehrung","stufenfreiSek":216},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":25,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":25}
+  ]
+}

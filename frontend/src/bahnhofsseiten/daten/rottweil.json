@@ -1,0 +1,38 @@
+{
+  "name": "Rottweil",
+  "eva": "8000322",
+  "slug": "rottweil",
+  "lat": 48.165304,
+  "lon": 8.639295,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T12:58:46.089Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":105,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":105},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":105,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":105},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":202,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":267},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":202,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":267},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":105,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":105},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":18,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":18},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":198,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":295},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":198,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":295},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":105,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":105},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":18,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":18},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":198,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":295},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":198,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":295},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":202,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":267},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":198,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":295},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":198,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":295},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":12,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":12},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":202,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":267},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":198,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":295},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":198,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":295},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":12,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":12}
+  ]
+}

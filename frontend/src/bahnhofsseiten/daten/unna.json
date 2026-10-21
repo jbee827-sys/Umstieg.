@@ -1,0 +1,38 @@
+{
+  "name": "Unna",
+  "eva": "8000171",
+  "slug": "unna",
+  "lat": 51.538982,
+  "lon": 7.692858,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T13:31:10.583Z",
+  "gleise": [
+    "1",
+    "2",
+    "4",
+    "4 West",
+    "18"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":164,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":164},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":105,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":105},
+    {"von":"1","nach":"4 West","gleicherBahnsteig":false,"sek":330,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":330},
+    {"von":"1","nach":"18","gleicherBahnsteig":false,"sek":14,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":14},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":164,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":164},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"2","nach":"4 West","gleicherBahnsteig":false,"sek":223,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":223},
+    {"von":"2","nach":"18","gleicherBahnsteig":false,"sek":163,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":163},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":105,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":105},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"4","nach":"4 West","gleicherBahnsteig":false,"sek":225,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":225},
+    {"von":"4","nach":"18","gleicherBahnsteig":false,"sek":104,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":104},
+    {"von":"4 West","nach":"1","gleicherBahnsteig":false,"sek":330,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":330},
+    {"von":"4 West","nach":"2","gleicherBahnsteig":false,"sek":223,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":223},
+    {"von":"4 West","nach":"4","gleicherBahnsteig":false,"sek":225,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":225},
+    {"von":"4 West","nach":"18","gleicherBahnsteig":false,"sek":329,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":329},
+    {"von":"18","nach":"1","gleicherBahnsteig":false,"sek":14,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":14},
+    {"von":"18","nach":"2","gleicherBahnsteig":false,"sek":163,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":163},
+    {"von":"18","nach":"4","gleicherBahnsteig":false,"sek":104,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":104},
+    {"von":"18","nach":"4 West","gleicherBahnsteig":false,"sek":329,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":329}
+  ]
+}

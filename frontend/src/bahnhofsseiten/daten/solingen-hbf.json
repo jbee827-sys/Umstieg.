@@ -1,0 +1,38 @@
+{
+  "name": "Solingen Hbf",
+  "eva": "8000087",
+  "slug": "solingen-hbf",
+  "lat": 51.160766,
+  "lon": 7.004187,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T13:11:44.678Z",
+  "gleise": [
+    "1",
+    "3",
+    "8",
+    "9",
+    "10"
+  ],
+  "paare": [
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":139,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":330},
+    {"von":"1","nach":"8","gleicherBahnsteig":false,"sek":139,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":330},
+    {"von":"1","nach":"9","gleicherBahnsteig":false,"sek":163,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":341},
+    {"von":"1","nach":"10","gleicherBahnsteig":false,"sek":163,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":341},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":139,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":330},
+    {"von":"3","nach":"8","gleicherBahnsteig":true,"sek":85,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":85},
+    {"von":"3","nach":"9","gleicherBahnsteig":false,"sek":190,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":307},
+    {"von":"3","nach":"10","gleicherBahnsteig":false,"sek":190,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":307},
+    {"von":"8","nach":"1","gleicherBahnsteig":false,"sek":139,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":330},
+    {"von":"8","nach":"3","gleicherBahnsteig":true,"sek":85,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":85},
+    {"von":"8","nach":"9","gleicherBahnsteig":false,"sek":190,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":307},
+    {"von":"8","nach":"10","gleicherBahnsteig":false,"sek":190,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":307},
+    {"von":"9","nach":"1","gleicherBahnsteig":false,"sek":163,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":341},
+    {"von":"9","nach":"3","gleicherBahnsteig":false,"sek":190,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":307},
+    {"von":"9","nach":"8","gleicherBahnsteig":false,"sek":190,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":307},
+    {"von":"9","nach":"10","gleicherBahnsteig":true,"sek":41,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":41},
+    {"von":"10","nach":"1","gleicherBahnsteig":false,"sek":163,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":341},
+    {"von":"10","nach":"3","gleicherBahnsteig":false,"sek":190,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":307},
+    {"von":"10","nach":"8","gleicherBahnsteig":false,"sek":190,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":307},
+    {"von":"10","nach":"9","gleicherBahnsteig":true,"sek":41,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":41}
+  ]
+}

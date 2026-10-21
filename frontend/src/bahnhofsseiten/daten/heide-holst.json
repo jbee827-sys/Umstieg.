@@ -1,0 +1,38 @@
+{
+  "name": "Heide(Holst)",
+  "eva": "8000155",
+  "slug": "heide-holst",
+  "lat": 54.193563,
+  "lon": 9.101029,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:20:25.829Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":30,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":30},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":30,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":30},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":30,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":30},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":147,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":147},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":30,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":30},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":50,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":50},
+    {"von":"2","nach":"4","gleicherBahnsteig":true,"sek":50,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":50},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":117,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":117},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":30,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":30},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":50,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":50},
+    {"von":"3","nach":"4","gleicherBahnsteig":true,"sek":50,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":50},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":117,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":117},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":30,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":30},
+    {"von":"4","nach":"2","gleicherBahnsteig":true,"sek":50,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":50},
+    {"von":"4","nach":"3","gleicherBahnsteig":true,"sek":50,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":50},
+    {"von":"4","nach":"5","gleicherBahnsteig":false,"sek":117,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":117},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":147,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":147},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":117,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":117},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":117,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":117},
+    {"von":"5","nach":"4","gleicherBahnsteig":false,"sek":117,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":117}
+  ]
+}

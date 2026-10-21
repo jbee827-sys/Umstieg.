@@ -1,0 +1,22 @@
+{
+  "name": "Nürtingen",
+  "eva": "8004488",
+  "slug": "nuertingen",
+  "lat": 48.6280656,
+  "lon": 9.34280187,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T12:28:09.219Z",
+  "gleise": [
+    "1",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":170,"wechsel":3,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":170,"wechsel":3,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":170,"wechsel":3,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":19,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":19},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":170,"wechsel":3,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":19,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":19}
+  ]
+}

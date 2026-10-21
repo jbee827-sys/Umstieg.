@@ -1,0 +1,38 @@
+{
+  "name": "Wendlingen(Neckar)",
+  "eva": "8006331",
+  "slug": "wendlingen-neckar",
+  "lat": 48.672961,
+  "lon": 9.373011,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T13:46:10.579Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "11",
+    "12"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"1","nach":"11","gleicherBahnsteig":false,"sek":187,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":187},
+    {"von":"1","nach":"12","gleicherBahnsteig":false,"sek":201,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":201},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":26,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":26},
+    {"von":"2","nach":"11","gleicherBahnsteig":false,"sek":242,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":242},
+    {"von":"2","nach":"12","gleicherBahnsteig":false,"sek":234,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":234},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":26,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":26},
+    {"von":"3","nach":"11","gleicherBahnsteig":false,"sek":242,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":242},
+    {"von":"3","nach":"12","gleicherBahnsteig":false,"sek":234,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":234},
+    {"von":"11","nach":"1","gleicherBahnsteig":false,"sek":187,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":187},
+    {"von":"11","nach":"2","gleicherBahnsteig":false,"sek":242,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":242},
+    {"von":"11","nach":"3","gleicherBahnsteig":false,"sek":242,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":242},
+    {"von":"11","nach":"12","gleicherBahnsteig":false,"sek":219,"wechsel":0,"anlagen":["treppe"],"lage":"ebenerdig","stufenfreiSek":384},
+    {"von":"12","nach":"1","gleicherBahnsteig":false,"sek":201,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":201},
+    {"von":"12","nach":"2","gleicherBahnsteig":false,"sek":234,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":234},
+    {"von":"12","nach":"3","gleicherBahnsteig":false,"sek":234,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":234},
+    {"von":"12","nach":"11","gleicherBahnsteig":false,"sek":219,"wechsel":0,"anlagen":["treppe"],"lage":"ebenerdig","stufenfreiSek":384}
+  ]
+}

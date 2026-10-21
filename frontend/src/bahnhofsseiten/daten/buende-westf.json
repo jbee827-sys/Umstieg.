@@ -1,0 +1,22 @@
+{
+  "name": "Bünde(Westf)",
+  "eva": "8000059",
+  "slug": "buende-westf",
+  "lat": 52.202075,
+  "lon": 8.573876,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T17:10:24.690Z",
+  "gleise": [
+    "2",
+    "3",
+    "4"
+  ],
+  "paare": [
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":262,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":279},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":262,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":279},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":262,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":279},
+    {"von":"3","nach":"4","gleicherBahnsteig":true,"sek":21,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":21},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":262,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":279},
+    {"von":"4","nach":"3","gleicherBahnsteig":true,"sek":21,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":21}
+  ]
+}

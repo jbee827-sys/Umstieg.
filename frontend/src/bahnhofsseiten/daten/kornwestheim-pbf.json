@@ -1,0 +1,38 @@
+{
+  "name": "Kornwestheim Pbf",
+  "eva": "8003411",
+  "slug": "kornwestheim-pbf",
+  "lat": 48.862219,
+  "lon": 9.179964,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:45:34.161Z",
+  "gleise": [
+    "3",
+    "4",
+    "5",
+    "6",
+    "7"
+  ],
+  "paare": [
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":92,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":218},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":92,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":218},
+    {"von":"3","nach":"6","gleicherBahnsteig":false,"sek":265,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"7","gleicherBahnsteig":false,"sek":265,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":92,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":218},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":17,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":17},
+    {"von":"4","nach":"6","gleicherBahnsteig":false,"sek":255,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"7","gleicherBahnsteig":false,"sek":255,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":92,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":218},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":17,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":17},
+    {"von":"5","nach":"6","gleicherBahnsteig":false,"sek":255,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"7","gleicherBahnsteig":false,"sek":255,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"6","nach":"3","gleicherBahnsteig":false,"sek":265,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"6","nach":"4","gleicherBahnsteig":false,"sek":255,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"6","nach":"5","gleicherBahnsteig":false,"sek":255,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"6","nach":"7","gleicherBahnsteig":true,"sek":82,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":82},
+    {"von":"7","nach":"3","gleicherBahnsteig":false,"sek":265,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"7","nach":"4","gleicherBahnsteig":false,"sek":255,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"7","nach":"5","gleicherBahnsteig":false,"sek":255,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"7","nach":"6","gleicherBahnsteig":true,"sek":82,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":82}
+  ]
+}

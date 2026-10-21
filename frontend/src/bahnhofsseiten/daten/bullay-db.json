@@ -1,0 +1,29 @@
+{
+  "name": "Bullay(DB)",
+  "eva": "8001267",
+  "slug": "bullay-db",
+  "lat": 50.05446,
+  "lon": 7.134584,
+  "stufe": 2,
+  "geholtAm": "2026-10-13T17:09:35.452Z",
+  "gleise": [
+    "1",
+    "2",
+    "5",
+    "7"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":14,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":14},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":187,"wechsel":0,"anlagen":["treppe"],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"1","nach":"7","gleicherBahnsteig":false,"sek":187,"wechsel":0,"anlagen":["treppe"],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":14,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":14},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":187,"wechsel":0,"anlagen":["treppe"],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"2","nach":"7","gleicherBahnsteig":false,"sek":187,"wechsel":0,"anlagen":["treppe"],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":187,"wechsel":0,"anlagen":["treppe"],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":187,"wechsel":0,"anlagen":["treppe"],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"5","nach":"7","gleicherBahnsteig":true,"sek":19,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":19},
+    {"von":"7","nach":"1","gleicherBahnsteig":false,"sek":187,"wechsel":0,"anlagen":["treppe"],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"7","nach":"2","gleicherBahnsteig":false,"sek":187,"wechsel":0,"anlagen":["treppe"],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"7","nach":"5","gleicherBahnsteig":true,"sek":19,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":19}
+  ]
+}

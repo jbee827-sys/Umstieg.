@@ -1,0 +1,29 @@
+{
+  "name": "Berlin-Hohenschönhausen",
+  "eva": "8011901",
+  "slug": "berlin-hohenschoenhausen",
+  "lat": 52.5660016,
+  "lon": 13.5124218,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T20:13:55.790Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":2,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":2},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":48,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":48},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":208,"wechsel":2,"anlagen":["treppe","aufzug"],"lage":"ueberfuehrung","stufenfreiSek":252},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":2,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":2},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":48,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":48},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":208,"wechsel":2,"anlagen":["treppe","aufzug"],"lage":"ueberfuehrung","stufenfreiSek":252},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":48,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":48},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":48,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":48},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":204,"wechsel":2,"anlagen":["aufzug"],"lage":"ueberfuehrung","stufenfreiSek":204},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":208,"wechsel":2,"anlagen":["aufzug","treppe"],"lage":"ueberfuehrung","stufenfreiSek":252},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":208,"wechsel":2,"anlagen":["aufzug","treppe"],"lage":"ueberfuehrung","stufenfreiSek":252},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":204,"wechsel":2,"anlagen":["aufzug"],"lage":"ueberfuehrung","stufenfreiSek":204}
+  ]
+}

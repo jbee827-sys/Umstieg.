@@ -1,0 +1,38 @@
+{
+  "name": "Oberstdorf",
+  "eva": "8004585",
+  "slug": "oberstdorf",
+  "lat": 47.411032,
+  "lon": 10.278097,
+  "stufe": 2,
+  "geholtAm": "2026-10-14T12:29:28.220Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":180,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":180},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":180,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":180},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":91,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":91},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":91,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":91},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":180,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":180},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":150,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":150},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":129,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":129},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":129,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":129},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":180,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":180},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":150,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":150},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":129,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":129},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":129,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":129},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":91,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":91},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":129,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":129},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":129,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":129},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":54,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":54},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":91,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":91},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":129,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":129},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":129,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":129},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":54,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":54}
+  ]
+}

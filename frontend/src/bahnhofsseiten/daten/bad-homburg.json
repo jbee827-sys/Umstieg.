@@ -1,0 +1,29 @@
+{
+  "name": "Bad Homburg",
+  "eva": "8000712",
+  "slug": "bad-homburg",
+  "lat": 50.219904,
+  "lon": 8.620624,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T19:58:05.805Z",
+  "gleise": [
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":27,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":27},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":112,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":112,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":27,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":27},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":112,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":112,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":112,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":112,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":11,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":11},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":112,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":112,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":11,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":11}
+  ]
+}

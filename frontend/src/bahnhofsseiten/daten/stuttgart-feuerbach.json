@@ -1,0 +1,22 @@
+{
+  "name": "Stuttgart-Feuerbach",
+  "eva": "8005770",
+  "slug": "stuttgart-feuerbach",
+  "lat": 48.8136825,
+  "lon": 9.16913332,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T13:18:35.611Z",
+  "gleise": [
+    "1",
+    "1a",
+    "2"
+  ],
+  "paare": [
+    {"von":"1","nach":"1a","gleicherBahnsteig":false,"sek":183,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":183},
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":81,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":81},
+    {"von":"1a","nach":"1","gleicherBahnsteig":false,"sek":183,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":183},
+    {"von":"1a","nach":"2","gleicherBahnsteig":false,"sek":172,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":172},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":81,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":81},
+    {"von":"2","nach":"1a","gleicherBahnsteig":false,"sek":172,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":172}
+  ]
+}

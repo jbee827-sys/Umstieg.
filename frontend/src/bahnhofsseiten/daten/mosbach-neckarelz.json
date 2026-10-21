@@ -1,0 +1,29 @@
+{
+  "name": "Mosbach-Neckarelz",
+  "eva": "8000264",
+  "slug": "mosbach-neckarelz",
+  "lat": 49.348484,
+  "lon": 9.113093,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T12:11:45.298Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "12"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":117,"wechsel":0,"anlagen":["treppe"],"lage":"ebenerdig","stufenfreiSek":219},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":117,"wechsel":0,"anlagen":["treppe"],"lage":"ebenerdig","stufenfreiSek":219},
+    {"von":"1","nach":"12","gleicherBahnsteig":false,"sek":264,"wechsel":0,"anlagen":["treppe"],"lage":"ebenerdig","stufenfreiSek":269},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":117,"wechsel":0,"anlagen":["treppe"],"lage":"ebenerdig","stufenfreiSek":219},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":14,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":14},
+    {"von":"2","nach":"12","gleicherBahnsteig":false,"sek":296,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":363},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":117,"wechsel":0,"anlagen":["treppe"],"lage":"ebenerdig","stufenfreiSek":219},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":14,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":14},
+    {"von":"3","nach":"12","gleicherBahnsteig":false,"sek":296,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":363},
+    {"von":"12","nach":"1","gleicherBahnsteig":false,"sek":264,"wechsel":0,"anlagen":["treppe"],"lage":"ebenerdig","stufenfreiSek":269},
+    {"von":"12","nach":"2","gleicherBahnsteig":false,"sek":296,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":363},
+    {"von":"12","nach":"3","gleicherBahnsteig":false,"sek":296,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":363}
+  ]
+}
