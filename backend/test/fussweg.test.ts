@@ -44,3 +44,15 @@ describe('wegAusLuftlinie', () => {
     expect(w.schritte).toHaveLength(1);
   });
 });
+
+describe('wegAusPfad: Goettingen Gleis 10 -> Bus am ZOB (21.10.2026)', () => {
+  it('aus 14 kleinen Schritten werden hoechstens 7', () => {
+    const plan = JSON.parse(
+      readFileSync(fileURLToPath(new URL('./fixtures/motis/plan-goettingen-gleis10-zob.json', import.meta.url)), 'utf8'),
+    );
+    const weg = wegAusPfad(pfadAusPlan(plan)!, 'normal', 'zu Steig A (Bus 21)');
+    expect(weg.schritte.length).toBeLessThanOrEqual(7);
+    expect(weg.schritte.filter((s) => /Treppe/.test(s.text))).toHaveLength(1);
+    expect(weg.schritte.some((s) => /wenige Meter/i.test(s.text))).toBe(false);
+  });
+});
