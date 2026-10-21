@@ -1,13 +1,43 @@
 import { useEffect, useState } from 'react'
 import { holeTafel } from '../api/client'
+import { holeHaltestellenTafel } from '../api/haltestellen'
 import {
   FENSTER_NACH_MIN,
   endeNaechsteStunde,
+  gruppiereHaltestellenTafel,
   gruppiereTafel,
   type Kategorieblock,
 } from '../api/tafelauswahl'
-import type { TafelEintrag } from '../api/typen'
+import type { HaltestellenTafelEintrag, Ort, TafelEintrag } from '../api/typen'
+import { nahverkehrAmBahnhof } from '../ort/bahnhofsumfeld'
+import { ortSchluessel } from '../ort/ortmodell'
+import { FahrtBloecke, GewaehlteFahrt } from './Fahrtauswahl'
 import { Tafelkategorie } from './Tafelkategorie'
+
+/**
+ * Bus, Tram, U-Bahn am Bahnhof (Spec 2026-10-21-bus-am-bahnhof): Die DB-Tafel
+ * kennt nur Zuege. Was sonst faehrt, kommt aus der Haltestellentafel des
+ * Bahnhofs und steht darunter. Fehlt sie, bleibt es still bei den Zuegen -
+ * die Tafel ist dann so gut wie vor dem 21.10.2026, nicht kaputt.
+ */
+export interface Nahverkehr {
+  /** Der Bahnhof als Haltestelle (mit `haltestelleId`). */
+  ort: Ort
+  auswahl: HaltestellenTafelEintrag | null
+  onAuswahl: (e: HaltestellenTafelEintrag | null) => void
+}
+
+/** Die Fahrten aus Transitous - an den Ort gebunden, fuer den sie geholt wurden. */
+interface NahStand {
+  schluessel: string
+  eintraege: HaltestellenTafelEintrag[]
+}
+
+function holeNahverkehr(ort: Ort, typ: 'arr' | 'dep'): Promise<NahStand | null> {
+  return holeHaltestellenTafel(ort, typ)
+    .then((e) => (e.ok ? { schluessel: `${ortSchluessel(ort)}|${typ}`, eintraege: e.eintraege } : null))
+    .catch(() => null)
+}
 
 interface ZugauswahlProps {
   eva: string
@@ -22,6 +52,7 @@ interface ZugauswahlProps {
    * die gewaehlte Zeile ist markiert, ein zweiter Tipp hebt die Wahl auf.
    */
   immerOffen?: boolean
+  nahverkehr?: Nahverkehr
 }
 
 function fehlertext(fehler: string): string {
@@ -55,9 +86,11 @@ interface TafelBloeckeProps {
   /** Gewaehlte Zeile mit `aria-pressed` kennzeichnen (nur im offenen Modus). */
   markiere: boolean
   onTipp: (eintrag: TafelEintrag) => void
+  /** Die einzige Kategorie der ganzen Tafel - auch mit dem Bus darunter. Vorgabe: einziger Block hier. */
+  einzige?: boolean
 }
 
-function TafelBloecke({ bloecke, typ, auswahl, markiere, onTipp }: TafelBloeckeProps) {
+function TafelBloecke({ bloecke, typ, auswahl, markiere, onTipp, einzige }: TafelBloeckeProps) {
   return (
     <div className="tafel-bloecke">
       {bloecke.map((block) => (
@@ -68,7 +101,7 @@ function TafelBloecke({ bloecke, typ, auswahl, markiere, onTipp }: TafelBloeckeP
           // Eine einzige Kategorie zuzuklappen hiesse nur einen Klick mehr;
           // die mit der gewaehlten Fahrt bleibt offen, sonst saehe man die
           // Markierung nicht.
-          anfangsOffen={bloecke.length === 1 || block.eintraege.some((e) => istAuswahl(e, auswahl))}
+          anfangsOffen={(einzige ?? bloecke.length === 1) || block.eintraege.some((e) => istAuswahl(e, auswahl))}
         >
           {/* Jede Kategorie rollt fuer sich: Sonst schoebe der
               Regionalverkehr die S-Bahn aus dem Bild, und man muesste an
@@ -104,7 +137,7 @@ function TafelBloecke({ bloecke, typ, auswahl, markiere, onTipp }: TafelBloeckeP
 
 // Live-Tafel zum Antippen: übernimmt Zug, Gleis und Zeit inklusive bekannter
 // Änderungen (Gleiswechsel rot markiert). Optional – reine Gleiseingabe bleibt möglich.
-export function Zugauswahl({ eva, typ, label, auswahl, onAuswahl, immerOffen }: ZugauswahlProps) {
+export function Zugauswahl({ eva, typ, label, auswahl, onAuswahl, immerOffen, nahverkehr }: ZugauswahlProps) {
   const [offen, setOffen] = useState(false)
   const [laden, setLaden] = useState(false)
   const [eintraege, setEintraege] = useState<TafelEintrag[] | null>(null)
@@ -126,6 +159,7 @@ export function Zugauswahl({ eva, typ, label, auswahl, onAuswahl, immerOffen }: 
     if (!gehtAuf || eintraege !== null || laden) return
     setLaden(true)
     setGeholtUm(new Date())
+    if (nahverkehr) void holeNahverkehr(nahverkehr.ort, typ).then(setNah)
     holeTafel(eva, typ)
       .then((ergebnis) => {
         setLaden(false)
@@ -151,6 +185,30 @@ export function Zugauswahl({ eva, typ, label, auswahl, onAuswahl, immerOffen }: 
   // Abgeleitet, nicht gespeichert: Die Bloecke haengen an nichts als den
   // Eintraegen und dem Abrufzeitpunkt.
   const bloecke = eintraege && geholtUm ? gruppiereTafel(eintraege, geholtUm) : []
+
+  const [nah, setNah] = useState<NahStand | null>(null)
+  const nahSchluessel = nahverkehr ? `${ortSchluessel(nahverkehr.ort)}|${typ}` : null
+  // Offener Modus: geladen, sobald der Bahnhof als Haltestelle bekannt ist -
+  // die Haltestellen-ID kann spaeter eintreffen als die EVA.
+  useEffect(() => {
+    if (!immerOffen || !nahverkehr) return
+    let gueltig = true
+    void holeNahverkehr(nahverkehr.ort, typ).then((n) => {
+      if (gueltig) setNah(n)
+    })
+    return () => {
+      gueltig = false
+    }
+    // `ort` steckt vollstaendig im Schluessel (wie in `Fahrtauswahl`).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [immerOffen, nahSchluessel])
+  /** Bus, Tram ... zu diesen DB-Bloecken - ohne, was die DB-Tafel schon fuehrt. */
+  function nahBloecke(db: Kategorieblock[], ab: Date, bis?: Date) {
+    if (!nahverkehr || nah?.schluessel !== nahSchluessel) return []
+    const dbHatUbahn = db.some((b) => b.kategorie === 'ubahn')
+    return gruppiereHaltestellenTafel(nahverkehrAmBahnhof(nah.eintraege, dbHatUbahn), ab, bis)
+  }
+  const istNahAuswahl = (e: HaltestellenTafelEintrag) => nahverkehr?.auswahl?.fahrtId === e.fahrtId
 
   // Offener Modus: Es gibt kein Ereignis, das den Abruf ausloest - er haengt
   // an der EVA. Zustand wird nur im Rueckruf gesetzt, nie synchron im Effekt.
@@ -184,6 +242,8 @@ export function Zugauswahl({ eva, typ, label, auswahl, onAuswahl, immerOffen }: 
     const bis = aktuell ? endeNaechsteStunde(aktuell.geholtUm) : null
     const offeneBloecke =
       aktuell?.eintraege && bis ? gruppiereTafel(aktuell.eintraege, aktuell.geholtUm, bis) : []
+    const offeneNah = aktuell && bis ? nahBloecke(offeneBloecke, aktuell.geholtUm, bis) : []
+    const einzige = offeneBloecke.length + offeneNah.length === 1
     return (
       <div className="zugauswahl offen">
         <div className="tafel-spalte-kopf">
@@ -199,7 +259,7 @@ export function Zugauswahl({ eva, typ, label, auswahl, onAuswahl, immerOffen }: 
           </div>
         )}
         {aktuell?.fehler && <div className="hinweis-box">{aktuell.fehler}</div>}
-        {aktuell?.eintraege && bis && offeneBloecke.length === 0 && (
+        {aktuell?.eintraege && bis && offeneBloecke.length === 0 && offeneNah.length === 0 && (
           <div className="hinweis-box">Keine Züge bis {hhmm(bis)}.</div>
         )}
         {offeneBloecke.length > 0 && (
@@ -209,9 +269,27 @@ export function Zugauswahl({ eva, typ, label, auswahl, onAuswahl, immerOffen }: 
             auswahl={auswahl}
             markiere
             onTipp={(e) => onAuswahl(istAuswahl(e, auswahl) ? null : e)}
+            einzige={einzige}
+          />
+        )}
+        {nahverkehr && offeneNah.length > 0 && (
+          <FahrtBloecke
+            bloecke={offeneNah}
+            typ={typ}
+            auswahl={nahverkehr.auswahl}
+            markiere
+            onTipp={(e) => nahverkehr.onAuswahl(istNahAuswahl(e) ? null : e)}
+            bahnhofName={nahverkehr.ort.name}
+            einzige={einzige}
           />
         )}
       </div>
+    )
+  }
+
+  if (nahverkehr?.auswahl) {
+    return (
+      <GewaehlteFahrt auswahl={nahverkehr.auswahl} typ={typ} onAendern={() => nahverkehr.onAuswahl(null)} />
     )
   }
 
@@ -237,6 +315,8 @@ export function Zugauswahl({ eva, typ, label, auswahl, onAuswahl, immerOffen }: 
     )
   }
 
+  const aufgeklappteNah = offen && geholtUm ? nahBloecke(bloecke, geholtUm) : []
+  const einzigeAufgeklappt = bloecke.length + aufgeklappteNah.length === 1
   return (
     <div className="zugauswahl">
       <button
@@ -249,7 +329,7 @@ export function Zugauswahl({ eva, typ, label, auswahl, onAuswahl, immerOffen }: 
       </button>
       {offen && laden && <div className="lade-hinweis">Tafel wird geladen …</div>}
       {offen && fehler && <div className="hinweis-box">{fehler}</div>}
-      {offen && eintraege && bloecke.length === 0 && (
+      {offen && eintraege && bloecke.length === 0 && aufgeklappteNah.length === 0 && (
         <div className="hinweis-box">
           Keine Züge in den nächsten {FENSTER_NACH_MIN} Minuten.
         </div>
@@ -261,6 +341,18 @@ export function Zugauswahl({ eva, typ, label, auswahl, onAuswahl, immerOffen }: 
           auswahl={auswahl}
           markiere={false}
           onTipp={onAuswahl}
+          einzige={einzigeAufgeklappt}
+        />
+      )}
+      {nahverkehr && aufgeklappteNah.length > 0 && (
+        <FahrtBloecke
+          bloecke={aufgeklappteNah}
+          typ={typ}
+          auswahl={null}
+          markiere={false}
+          onTipp={nahverkehr.onAuswahl}
+          bahnhofName={nahverkehr.ort.name}
+          einzige={einzigeAufgeklappt}
         />
       )}
     </div>

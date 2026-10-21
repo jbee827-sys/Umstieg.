@@ -81,6 +81,8 @@ async function starteUmstieg() {
   render(<App />)
   await userEvent.type(screen.getByLabelText('Ankunft: Bahnhof oder Haltestelle'), 'Berlin')
   await userEvent.click(await screen.findByRole('button', { name: /Berlin Hbf/ }, { timeout: 3000 }))
+  // Das zweite Ortsfeld steht seit dem 21.10.2026 hinter „Andere Haltestelle“.
+  await userEvent.click(screen.getByRole('button', { name: 'Andere Haltestelle' }))
   await userEvent.type(screen.getByLabelText('Anschluss: Bahnhof oder Haltestelle'), 'Washington')
   await userEvent.click(await screen.findByRole('button', { name: /Washingtonplatz/ }, { timeout: 3000 }))
   await userEvent.click(screen.getByRole('button', { name: 'Ankunft wählen' }))

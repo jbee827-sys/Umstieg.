@@ -90,10 +90,14 @@ async function rechneWeg(werte: EingabeWerte, wahl: HaltestellenWahl, variante: 
   return { ...weg, hinweise: [...haltestellenHinweise(wahl), ...weg.hinweise] }
 }
 
-const STUFEN_TEXT: Record<number, string> = {
-  1: 'Präzise Karte',
+/**
+ * Was die Datenstufe am Weg einschraenkt. Stufe 1 sagt nichts: Bis zum
+ * 21.10.2026 stand dort „Präzise Karte“ als Pille - sie sah aus wie ein Knopf,
+ * der eine Karte oeffnet, und im Bahnhof gibt es keine (Julian).
+ */
+const STUFEN_VORBEHALT: Record<number, string> = {
   2: 'Teildaten',
-  3: 'Standardmodell (ca.-Angaben)',
+  3: 'ca.-Angaben',
 }
 
 /**
@@ -1010,14 +1014,16 @@ function App() {
       // Bereich, Schritt-Box und Leiste unten am Rand - siehe App.css.
       <main className="app app-navigation">
         {meldung}
-        {/* Das Stufen-Abzeichen steht in der Zeile des Bahnhofsnamens, nicht
-            neben dem Titel: Dort bricht „Gleis 12 → Gleis 104" auf 360 px
-            sonst in zwei Zeilen um, und die nimmt das feste Bild. */}
+        {/* Der Vorbehalt der Datenstufe steht in der Zeile des Bahnhofsnamens,
+            nicht neben dem Titel: Dort bricht „Gleis 12 → Gleis 104" auf
+            360 px sonst in zwei Zeilen um, und die nimmt das feste Bild. */}
         <div className="routen-kopf">
           <div>
             <div className="routen-kopf-zeile">
               <div className="kicker">{werte.bahnhofName || 'Umstieg'}</div>
-              <span className="stufen-tag">{STUFEN_TEXT[route.stufe]}</span>
+              {STUFEN_VORBEHALT[route.stufe] && (
+                <span className="stufen-vorbehalt">{STUFEN_VORBEHALT[route.stufe]}</span>
+              )}
             </div>
             <h2>
               {ortsangabe(werte, 'an')} → {ortsangabe(werte, 'ab')}

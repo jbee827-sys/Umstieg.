@@ -20,6 +20,9 @@ export async function holeHaltestellenTafel(ort: Ort, typ: 'arr' | 'dep'): Promi
     lon: String(ort.lon),
     typ,
   });
+  // Ein Bahnhof: auch die Halte im Umkreis, die anders heissen („Göttingen
+  // Bahnhof/ZOB“) - Spec 2026-10-21-bus-am-bahnhof.
+  if (ort.eva) params.set('umkreis', 'bahnhof');
   try {
     const res = await fetch(apiUrl(`/api/haltestelle/tafel?${params.toString()}`));
     if (res.ok) {

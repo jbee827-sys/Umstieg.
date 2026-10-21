@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { holeHaltestellenTafel } from '../api/haltestellen'
 import { sucheOrte } from '../api/orte'
 import { uhrzeit } from '../api/zeit'
 import type {
@@ -9,6 +10,7 @@ import type {
   RoutenVariante,
   TafelEintrag,
 } from '../api/typen'
+import { anderHalt, ersatzFahrt, ordneZugZu, ortAusHalt } from '../ort/bahnhofsumfeld'
 import { ortSchluessel, pfadFuer, sucheHaltestelleZu } from '../ort/ortmodell'
 import { steigText } from '../ort/steig'
 import { VerkehrsmittelSymbole } from '../ort/verkehrsmittel'
@@ -151,6 +153,12 @@ export function Eingabe({
   // Zweites Ortsfeld (E3): leer heisst „derselbe Ort wie die Ankunft“.
   const [anschlussText, setAnschlussText] = useState(entwurf?.anschlussText ?? '')
   const [anschlussOrt, setAnschlussOrt] = useState<Ort | null>(entwurf?.anschlussOrt ?? null)
+  // Seit dem 21.10.2026 hinter dem Knopf „Andere Haltestelle“ (Julian): Bus
+  // und Tram am Bahnhof stehen schon in dessen Tafeln, das zweite Feld
+  // braucht nur, wer zu einem Halt weiter weg will.
+  const [andereOffen, setAndereOffen] = useState(Boolean(entwurf?.anschlussOrt || entwurf?.anschlussText))
+  // Waehrend der DB-Zug seiner Fahrt aus Transitous zugeordnet wird.
+  const [ordnetZu, setOrdnetZu] = useState(false)
   const [dbFehlt, setDbFehlt] = useState(false)
   const [netzFehlt, setNetzFehlt] = useState(false)
   const [haltestellenAusfall, setHaltestellenAusfall] = useState(false)
@@ -194,6 +202,7 @@ export function Eingabe({
     setGewaehlt(null)
     setSuchtext(u.bahnhof)
     // Ein geteilter Reisetext beschreibt einen Umstieg im Bahnhof.
+    setAndereOffen(false)
     setAnschlussText('')
     setAnschlussOrt(null)
     setFahrtAnkunft(null)
@@ -274,19 +283,23 @@ export function Eingabe({
    * die Suche nicht antwortete - dann gibt es einen neuen Versuch auf Wunsch.
    */
   const [nachgeschlagen, setNachgeschlagen] = useState<Record<string, Ort | null | 'ausfall'>>({})
+  /*
+   * Auch im Bahnhofspfad (21.10.2026): Bus und Tram am Bahnhof kommen aus
+   * seiner Haltestellentafel. Je Ort einmal - ein zweiter Versuch nach einem
+   * Ausfall nur auf Wunsch (`schlageNochmalNach`). Das Ergebnis gilt dem Ort,
+   * nicht der Auswahl; es darf deshalb auch spaet eintreffen.
+   */
+  const nachgeschlagenFuer = useRef(new Set<string>())
   useEffect(() => {
-    if (!haltestellenPfad) return
-    let gueltig = true
+    if (!pfad) return
     for (const ort of [gewaehlt, anschlussOrt]) {
-      if (!ort || ort.haltestelleId) continue
-      void sucheHaltestelleZu(ort, sucheOrte).then((neu) => {
-        if (gueltig) setNachgeschlagen((alt) => ({ ...alt, [ortSchluessel(ort)]: neu }))
-      })
+      if (!ort || ort.haltestelleId || nachgeschlagenFuer.current.has(ortSchluessel(ort))) continue
+      nachgeschlagenFuer.current.add(ortSchluessel(ort))
+      void sucheHaltestelleZu(ort, sucheOrte).then((neu) =>
+        setNachgeschlagen((alt) => ({ ...alt, [ortSchluessel(ort)]: neu })),
+      )
     }
-    return () => {
-      gueltig = false
-    }
-  }, [haltestellenPfad, gewaehlt, anschlussOrt])
+  }, [pfad, gewaehlt, anschlussOrt])
   // Der neue Versuch nach einem Ausfall - nur fuer die Orte, deren Suche
   // nicht antwortete.
   function schlageNochmalNach() {
@@ -312,6 +325,24 @@ export function Eingabe({
   const haltNichtErreichbar = nachschlagStand('ausfall')
   const bahnhof: TafelBahnhof | null =
     pfad !== 'haltestelle' && gewaehlt?.eva ? { name: gewaehlt.name, eva: gewaehlt.eva } : null
+
+  /*
+   * Bus, Tram, U-Bahn am Bahnhof (Spec 2026-10-21-bus-am-bahnhof): der
+   * Bahnhof als Haltestelle - Name, EVA und Lage des Bahnhofs, die ID aus der
+   * Haltestellensuche. Mit der EVA fragt die Tafel im Bahnhofsumkreis.
+   */
+  const stationHalt = pfad === 'bahnhof' && gewaehlt ? mitId(gewaehlt) : null
+  const nahOrt: Ort | null =
+    gewaehlt && stationHalt?.haltestelleId ? { ...gewaehlt, haltestelleId: stationHalt.haltestelleId } : null
+  // Eine Fahrt aus Transitous auf einer Seite: Der Umstieg wird als
+  // Haltestellenumstieg gerechnet, die andere Seite bleibt ein DB-Zug.
+  const gemischt = pfad === 'bahnhof' && Boolean(fahrtAnkunft || fahrtAbfahrt)
+  const nahverkehrAn = nahOrt
+    ? { ort: nahOrt, auswahl: fahrtAnkunft, onAuswahl: waehleFahrtAnkunft }
+    : undefined
+  const nahverkehrAb = nahOrt
+    ? { ort: nahOrt, auswahl: fahrtAbfahrt, onAuswahl: waehleFahrtAbfahrt }
+    : undefined
 
   /*
    * Die Tafeln zeigen den zuletzt gewaehlten Bahnhof - auch noch, waehrend
@@ -355,19 +386,111 @@ export function Eingabe({
           !fahrtAnkunft.ausfall &&
           !fahrtAbfahrt.ausfall,
       ) && !laden
-    : eva !== '' && gleisAn.trim() !== '' && gleisAb.trim() !== '' && !laden
+    : eva !== '' &&
+      seiteBereit(fahrtAnkunft, zugAnkunft, gleisAn) &&
+      seiteBereit(fahrtAbfahrt, zugAbfahrt, gleisAb) &&
+      !laden &&
+      !ordnetZu
 
   // Ab 700 px (iPad, Desktop) stehen die Tafeln offen neben dem Formular.
   const breit = useBreitesLayout()
 
   // Eine Wahl aus der Tafel setzt auch das Gleis; das Aufheben laesst es stehen.
+  // Je Seite gilt EINE Wahl: ein Zug aus der DB-Tafel oder eine Fahrt aus
+  // Transitous (Bus am Bahnhof) - die eine hebt die andere auf.
   const waehleAnkunft = (e: TafelEintrag | null) => {
     setZugAnkunft(e)
-    if (e) setGleisAn(e.gleisIst ?? e.gleisSoll)
+    if (e) {
+      setGleisAn(e.gleisIst ?? e.gleisSoll)
+      setFahrtAnkunft(null)
+    }
   }
   const waehleAbfahrt = (e: TafelEintrag | null) => {
     setZugAbfahrt(e)
-    if (e) setGleisAb(e.gleisIst ?? e.gleisSoll)
+    if (e) {
+      setGleisAb(e.gleisIst ?? e.gleisSoll)
+      setFahrtAbfahrt(null)
+    }
+  }
+  function waehleFahrtAnkunft(e: HaltestellenTafelEintrag | null) {
+    setFahrtAnkunft(e)
+    if (e) setZugAnkunft(null)
+  }
+  function waehleFahrtAbfahrt(e: HaltestellenTafelEintrag | null) {
+    setFahrtAbfahrt(e)
+    if (e) setZugAbfahrt(null)
+  }
+
+  /**
+   * Eine Seite des Bahnhofsablaufs ist fertig: eine Fahrt aus Transitous, die
+   * nicht ausfaellt; neben einem Bus ein Zug AUS DER TAFEL (ohne Zeit findet
+   * sich seine Fahrt nicht, und der Weg begaenne irgendwo im Bahnhof); sonst
+   * ein Gleis wie bisher.
+   */
+  function seiteBereit(fahrt: HaltestellenTafelEintrag | null, zug: TafelEintrag | null, gleis: string): boolean {
+    if (fahrt) return !fahrt.ausfall
+    if (gemischt) return zug !== null
+    return gleis.trim() !== ''
+  }
+
+  /** Werte eines Haltestellenumstiegs, aus den beiden Seiten, wie sie gerechnet werden. */
+  function haltestellenWerte(
+    ankunft: { ort: Ort; fahrt: HaltestellenTafelEintrag },
+    anschluss: { ort: Ort; fahrt: HaltestellenTafelEintrag },
+    bahnhofName: string,
+  ): EingabeWerte {
+    return {
+      eva: '',
+      bahnhofName,
+      // Im Haltestellenpfad nur zur Anzeige: der Steig, wie er auf der Tafel steht.
+      gleisAn: ankunft.fahrt.steigIst ?? ankunft.fahrt.steigSoll ?? '',
+      gleisAb: anschluss.fahrt.steigIst ?? anschluss.fahrt.steigSoll ?? '',
+      wagenAn: '',
+      wagenAb: '',
+      profil,
+      variante: 'schnellste',
+      abschnitt: STANDORT_VOREINSTELLUNG,
+      zugAnName: ankunft.fahrt.linie,
+      zugAbName: anschluss.fahrt.linie,
+      ankunftZeit: uhrzeit(ankunft.fahrt.zeitIst ?? ankunft.fahrt.zeitSoll),
+      abfahrtZeit: uhrzeit(anschluss.fahrt.zeitIst ?? anschluss.fahrt.zeitSoll),
+      haltestellen: { ankunft, anschluss },
+    }
+  }
+
+  /**
+   * Zug und Bus am selben Bahnhof (21.10.2026). Gerechnet wird wie zwischen
+   * zwei Haltestellen - Fussweg von Steig zu Steig, Live je Halt. Der DB-Zug
+   * braucht dafuer seine Fahrt aus Transitous (Steigkoordinate, Ebene,
+   * Fahrt-ID fuer die Ueberwachung). Findet sie sich nicht, beginnt der Weg am
+   * Bahnhof selbst, mit dem Hinweis „Steig unbekannt …“ - lieber ein grober
+   * Weg als keiner.
+   */
+  async function sendeGemischt(abbild: EingabeEntwurf) {
+    if (!nahOrt) return
+    const bahnhofOrt = nahOrt
+    async function seite(fahrt: HaltestellenTafelEintrag | null, zug: TafelEintrag | null, typ: 'arr' | 'dep') {
+      if (fahrt) return { ort: ortAusHalt(fahrt, bahnhofOrt), fahrt }
+      const tafel = await holeHaltestellenTafel(bahnhofOrt, typ).catch(() => null)
+      const gegen = tafel?.ok && zug ? ordneZugZu(zug, tafel.eintraege) : null
+      if (gegen) return { ort: ortAusHalt(gegen, bahnhofOrt), fahrt: gegen }
+      return { ort: bahnhofOrt, fahrt: ersatzFahrt(zug!, bahnhofOrt, new Date()) }
+    }
+    setOrdnetZu(true)
+    try {
+      const [ankunft, anschluss] = await Promise.all([
+        seite(fahrtAnkunft, zugAnkunft, 'arr'),
+        seite(fahrtAbfahrt, zugAbfahrt, 'dep'),
+      ])
+      // Der Bahnhof heisst, wie man ihn gesucht hat; nur ein Halt mit eigenem
+      // Namen („Bahnhof/ZOB“) kommt dazu.
+      const an = anderHalt(ankunft.fahrt, bahnhofOrt.name) ?? bahnhofOrt.name
+      const ab = anderHalt(anschluss.fahrt, bahnhofOrt.name) ?? bahnhofOrt.name
+      const name = an !== ab ? `${an} → ${ab}` : bahnhofOrt.name
+      onBerechnen(haltestellenWerte(ankunft, anschluss, name), abbild)
+    } finally {
+      setOrdnetZu(false)
+    }
   }
 
   function absenden() {
@@ -394,28 +517,19 @@ export function Eingabe({
       if (!gewaehlt || !ankunftHalt || !abfahrtHalt || !fahrtAnkunft || !fahrtAbfahrt) return
       const andererOrt = anschlussOrt && ortSchluessel(anschlussOrt) !== ortSchluessel(gewaehlt)
       onBerechnen(
-        {
-          eva: '',
-          bahnhofName: andererOrt ? `${gewaehlt.name} → ${anschlussOrt.name}` : gewaehlt.name,
-          // Im Haltestellenpfad nur zur Anzeige: der Steig, wie er auf der Tafel steht.
-          gleisAn: fahrtAnkunft.steigIst ?? fahrtAnkunft.steigSoll ?? '',
-          gleisAb: fahrtAbfahrt.steigIst ?? fahrtAbfahrt.steigSoll ?? '',
-          wagenAn: '',
-          wagenAb: '',
-          profil,
-          variante: 'schnellste',
-          abschnitt: STANDORT_VOREINSTELLUNG,
-          zugAnName: fahrtAnkunft.linie,
-          zugAbName: fahrtAbfahrt.linie,
-          ankunftZeit: uhrzeit(fahrtAnkunft.zeitIst ?? fahrtAnkunft.zeitSoll),
-          abfahrtZeit: uhrzeit(fahrtAbfahrt.zeitIst ?? fahrtAbfahrt.zeitSoll),
-          haltestellen: {
-            ankunft: { ort: ankunftHalt, fahrt: fahrtAnkunft },
-            anschluss: { ort: abfahrtHalt, fahrt: fahrtAbfahrt },
-          },
-        },
+        haltestellenWerte(
+          // Ein Bahnhof fragt seine Tafel im Umkreis (Bus vom ZOB) - die
+          // Live-Ueberwachung braucht dann den Halt der Fahrt selbst.
+          { ort: ankunftHalt.eva ? ortAusHalt(fahrtAnkunft, ankunftHalt) : ankunftHalt, fahrt: fahrtAnkunft },
+          { ort: abfahrtHalt.eva ? ortAusHalt(fahrtAbfahrt, abfahrtHalt) : abfahrtHalt, fahrt: fahrtAbfahrt },
+          andererOrt ? `${gewaehlt.name} → ${anschlussOrt.name}` : gewaehlt.name,
+        ),
         abbild,
       )
+      return
+    }
+    if (gemischt) {
+      void sendeGemischt(abbild)
       return
     }
     onBerechnen(
@@ -477,6 +591,7 @@ export function Eingabe({
               label={`${titel} · ${tafelBahnhof.name}`}
               auswahl={auswahl}
               onAuswahl={onAuswahl}
+              nahverkehr={art === 'ankunft' ? nahverkehrAn : nahverkehrAb}
               immerOffen
             />
           </div>
@@ -519,12 +634,21 @@ export function Eingabe({
 
   // Statt der Gleisfelder: die gewaehlte Fahrt mit Steig. Wagen gibt es an
   // Haltestellen nicht.
-  const steigZeile = (f: HaltestellenTafelEintrag | null) =>
-    f && (
-      <p className="steig-zeile">
-        {steigText(f)} · {f.linie}
-      </p>
+  const steigZeile = (f: HaltestellenTafelEintrag | null) => {
+    // Am Bahnhof: Steht der Bus an einem Halt mit eigenem Namen, sagt die Zeile, wo.
+    const halt = f && gewaehlt?.eva ? anderHalt(f, gewaehlt.name) : undefined
+    return (
+      f && (
+        <p className="steig-zeile">
+          {steigText(f)} · {f.linie}
+          {halt && ` · ${halt}`}
+        </p>
+      )
     )
+  }
+  // Neben einem Bus braucht die Zugseite den Zug aus der Tafel (`seiteBereit`).
+  const zugFehlt = (zug: TafelEintrag | null, fahrt: HaltestellenTafelEintrag | null) =>
+    gemischt && !zug && !fahrt && <p className="feld-hinweis">Für den Weg zum Bus bitte den Zug aus der Tafel wählen.</p>
   const haltestellenTeil = (
     <>
       {haltFehlt && <div className="hinweis-box">Für diesen Bahnhof fehlen gerade Haltestellendaten.</div>}
@@ -674,6 +798,9 @@ export function Eingabe({
                               setBewegung(true)
                               setGewaehlt(ort)
                               setSuchtext(ort.name)
+                              // Wie `onWahl`: Eine Fahrt gehoert zu ihrem Ort.
+                              setFahrtAnkunft(null)
+                              if (!anschlussOrt) setFahrtAbfahrt(null)
                             }}
                           >
                             <span className="ort-name">{ort.name}</span>
@@ -719,40 +846,79 @@ export function Eingabe({
         </div>
 
         <div className="ortsfeld">
-          <div className="kicker" aria-hidden="true">Dein Anschluss</div>
-          <Ortsuche
-            id="anschlussort"
-            label={
-              <>
-                <span className="nur-vorlesen">Anschluss: </span>Bahnhof oder Haltestelle
-              </>
-            }
-            platzhalter="Leer = gleicher Ort wie die Ankunft"
-            text={anschlussText}
-            gewaehlt={anschlussOrt}
-            onText={(t) => {
-              setAnschlussText(t)
-              setAnschlussOrt(null)
-              setFahrtAbfahrt(null)
-              setBewegung(true)
-            }}
-            onWahl={(o) => {
-              setBewegung(true)
-              setAnschlussOrt(o)
-              setFahrtAbfahrt(null)
-              if (o) setAnschlussText(o.name)
-            }}
-            onQuellen={merkeQuellen}
-          />
-          {/* Abkuerzung am Rand (BRIEF.md 4), nicht der Einstieg: Statt Bahnhof
-              und zwei Gleise zu tippen, den Text aus „Verbindung teilen"
-              einfuegen. Auf dem Handy heisst sie wie vor dem 11.10.2026
-              „Reise importieren" und steht als Knopf unter den Bloecken. */}
-          {breit && (
+          {/* Hinter einem Knopf seit dem 21.10.2026 (Julian): Bus und Tram am
+              Bahnhof stehen in dessen Tafeln. Das Feld braucht nur, wer zu
+              einem Halt weiter weg umsteigt. */}
+          {andereOffen && (
+            <>
+              <div className="ortsfeld-kopf">
+                <div className="kicker" aria-hidden="true">Andere Haltestelle</div>
+                <button
+                  type="button"
+                  className="textknopf"
+                  aria-label="Andere Haltestelle entfernen"
+                  onClick={() => {
+                    setBewegung(true)
+                    setAndereOffen(false)
+                    setAnschlussText('')
+                    setAnschlussOrt(null)
+                    setFahrtAbfahrt(null)
+                  }}
+                >
+                  Entfernen
+                </button>
+              </div>
+              <Ortsuche
+                id="anschlussort"
+                label={
+                  <>
+                    <span className="nur-vorlesen">Anschluss: </span>Bahnhof oder Haltestelle
+                  </>
+                }
+                platzhalter="z. B. Haltestelle in der Nähe"
+                text={anschlussText}
+                gewaehlt={anschlussOrt}
+                onText={(t) => {
+                  setAnschlussText(t)
+                  setAnschlussOrt(null)
+                  setFahrtAbfahrt(null)
+                  setBewegung(true)
+                }}
+                onWahl={(o) => {
+                  setBewegung(true)
+                  setAnschlussOrt(o)
+                  setFahrtAbfahrt(null)
+                  if (o) setAnschlussText(o.name)
+                }}
+                onQuellen={merkeQuellen}
+              />
+            </>
+          )}
+          {/* „Verbindung einfügen“: Abkuerzung am Rand (BRIEF.md 4), nicht der
+              Einstieg - statt Bahnhof und zwei Gleise zu tippen, den Text aus
+              „Verbindung teilen" einfuegen. Auf dem Handy heisst sie wie vor
+              dem 11.10.2026 „Reise importieren" und steht als Knopf unter den
+              Bloecken. */}
+          {(!andereOffen || breit) && (
             <div className="feld-rand">
-              <button type="button" className="textknopf" onClick={() => setImportOffen(true)}>
-                Verbindung einfügen
-              </button>
+              {!andereOffen && (
+                <button
+                  type="button"
+                  className="textknopf"
+                  aria-expanded={false}
+                  onClick={() => {
+                    setBewegung(true)
+                    setAndereOffen(true)
+                  }}
+                >
+                  Andere Haltestelle
+                </button>
+              )}
+              {breit && (
+                <button type="button" className="textknopf" onClick={() => setImportOffen(true)}>
+                  Verbindung einfügen
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -774,38 +940,53 @@ export function Eingabe({
             <div className="gleiskacheln">
               <div className="gleiskachel">
                 <div className="kicker">Du kommst an</div>
-                <label htmlFor="gleisAn" className="gleiskachel-label">
-                  <span className="nur-vorlesen">Ankunft: </span>Gleis
-                </label>
-                <input
-                  id="gleisAn"
-                  className="eingabefeld gleiskachel-feld"
-                  type="text"
-                  required
-                  value={gleisAn}
-                  onChange={(e) => setGleisAn(e.target.value)}
-                />
-                {zugAnkunft && <p className="gleiskachel-zug">{zugzeile(zugAnkunft, 'an')}</p>}
+                {/* Ein Bus hat kein Gleis: an seiner Stelle der Steig. */}
+                {fahrtAnkunft ? (
+                  steigZeile(fahrtAnkunft)
+                ) : (
+                  <>
+                    <label htmlFor="gleisAn" className="gleiskachel-label">
+                      <span className="nur-vorlesen">Ankunft: </span>Gleis
+                    </label>
+                    <input
+                      id="gleisAn"
+                      className="eingabefeld gleiskachel-feld"
+                      type="text"
+                      required
+                      value={gleisAn}
+                      onChange={(e) => setGleisAn(e.target.value)}
+                    />
+                    {zugAnkunft && <p className="gleiskachel-zug">{zugzeile(zugAnkunft, 'an')}</p>}
+                    {zugFehlt(zugAnkunft, fahrtAnkunft)}
+                  </>
+                )}
               </div>
               <div className="gleiskachel ziel">
                 <div className="kicker">Dein Anschluss</div>
-                <label htmlFor="gleisAb" className="gleiskachel-label">
-                  <span className="nur-vorlesen">Anschluss: </span>Gleis
-                </label>
-                <input
-                  id="gleisAb"
-                  className="eingabefeld gleiskachel-feld"
-                  type="text"
-                  required
-                  value={gleisAb}
-                  onChange={(e) => setGleisAb(e.target.value)}
-                />
-                {zugAbfahrt && <p className="gleiskachel-zug">{zugzeile(zugAbfahrt, 'ab')}</p>}
+                {fahrtAbfahrt ? (
+                  steigZeile(fahrtAbfahrt)
+                ) : (
+                  <>
+                    <label htmlFor="gleisAb" className="gleiskachel-label">
+                      <span className="nur-vorlesen">Anschluss: </span>Gleis
+                    </label>
+                    <input
+                      id="gleisAb"
+                      className="eingabefeld gleiskachel-feld"
+                      type="text"
+                      required
+                      value={gleisAb}
+                      onChange={(e) => setGleisAb(e.target.value)}
+                    />
+                    {zugAbfahrt && <p className="gleiskachel-zug">{zugzeile(zugAbfahrt, 'ab')}</p>}
+                    {zugFehlt(zugAbfahrt, fahrtAbfahrt)}
+                  </>
+                )}
               </div>
             </div>
             <div className="gleis-zeile">
-              {wagenAnFeld}
-              {wagenAbFeld}
+              {!fahrtAnkunft && wagenAnFeld}
+              {!fahrtAbfahrt && wagenAbFeld}
             </div>
           </>
         ) : (
@@ -819,23 +1000,30 @@ export function Eingabe({
                   label="Ankunftszug wählen"
                   auswahl={zugAnkunft}
                   onAuswahl={waehleAnkunft}
+                  nahverkehr={nahverkehrAn}
                 />
               )}
-              <div className="gleis-zeile">
-                <div className="feld">
-                  <label htmlFor="gleisAn">Ankunft: Gleis</label>
-                  <input
-                    id="gleisAn"
-                    className="eingabefeld"
-                    type="text"
-                    required
-                    placeholder="z. B. 6"
-                    value={gleisAn}
-                    onChange={(e) => setGleisAn(e.target.value)}
-                  />
+              {/* Ein Bus hat kein Gleis und keinen Wagen: an ihrer Stelle der Steig. */}
+              {fahrtAnkunft ? (
+                steigZeile(fahrtAnkunft)
+              ) : (
+                <div className="gleis-zeile">
+                  <div className="feld">
+                    <label htmlFor="gleisAn">Ankunft: Gleis</label>
+                    <input
+                      id="gleisAn"
+                      className="eingabefeld"
+                      type="text"
+                      required
+                      placeholder="z. B. 6"
+                      value={gleisAn}
+                      onChange={(e) => setGleisAn(e.target.value)}
+                    />
+                  </div>
+                  {wagenAnFeld}
                 </div>
-                {wagenAnFeld}
-              </div>
+              )}
+              {zugFehlt(zugAnkunft, fahrtAnkunft)}
             </fieldset>
 
             <fieldset className="reiseblock">
@@ -847,23 +1035,29 @@ export function Eingabe({
                   label="Anschlusszug wählen"
                   auswahl={zugAbfahrt}
                   onAuswahl={waehleAbfahrt}
+                  nahverkehr={nahverkehrAb}
                 />
               )}
-              <div className="gleis-zeile">
-                <div className="feld">
-                  <label htmlFor="gleisAb">Anschluss: Gleis</label>
-                  <input
-                    id="gleisAb"
-                    className="eingabefeld"
-                    type="text"
-                    required
-                    placeholder="z. B. 14"
-                    value={gleisAb}
-                    onChange={(e) => setGleisAb(e.target.value)}
-                  />
+              {fahrtAbfahrt ? (
+                steigZeile(fahrtAbfahrt)
+              ) : (
+                <div className="gleis-zeile">
+                  <div className="feld">
+                    <label htmlFor="gleisAb">Anschluss: Gleis</label>
+                    <input
+                      id="gleisAb"
+                      className="eingabefeld"
+                      type="text"
+                      required
+                      placeholder="z. B. 14"
+                      value={gleisAb}
+                      onChange={(e) => setGleisAb(e.target.value)}
+                    />
+                  </div>
+                  {wagenAbFeld}
                 </div>
-                {wagenAbFeld}
-              </div>
+              )}
+              {zugFehlt(zugAbfahrt, fahrtAbfahrt)}
             </fieldset>
 
             <div className="feld">
@@ -949,8 +1143,8 @@ export function Eingabe({
           Text". „Wird berechnet", nicht „Route wird berechnet": Das brach
           auf 360 px in zwei Zeilen. */}
       <button className="knopf-primaer knopf-schwebend" type="submit" disabled={!bereit}>
-        <span>{laden ? 'Wird berechnet …' : 'Umstieg starten'}</span>
-        {laden && <span className="lade-kreisel" aria-hidden="true" />}
+        <span>{laden || ordnetZu ? 'Wird berechnet …' : 'Umstieg starten'}</span>
+        {(laden || ordnetZu) && <span className="lade-kreisel" aria-hidden="true" />}
       </button>
     </form>
   )

@@ -8,6 +8,7 @@ import {
 } from '../api/tafelauswahl'
 import type { HaltestellenTafelEintrag, Ort } from '../api/typen'
 import { uhrzeit } from '../api/zeit'
+import { anderHalt } from '../ort/bahnhofsumfeld'
 import { ortSchluessel } from '../ort/ortmodell'
 import { steigText } from '../ort/steig'
 import { VerkehrsmittelSymbole } from '../ort/verkehrsmittel'
@@ -64,9 +65,16 @@ interface BloeckeProps {
   auswahl: HaltestellenTafelEintrag | null
   markiere: boolean
   onTipp: (e: HaltestellenTafelEintrag) => void
+  /**
+   * Unter der Bahnhofstafel: Heisst der Halt anders als der Bahnhof („Bahnhof/ZOB“),
+   * steht er in der Zeile - sonst suchte man den Bus am Bahnsteig.
+   */
+  bahnhofName?: string
+  /** Die einzige Kategorie der ganzen Tafel - dann ist sie gleich offen. Vorgabe: einziger Block hier. */
+  einzige?: boolean
 }
 
-function FahrtBloecke({ bloecke, typ, auswahl, markiere, onTipp }: BloeckeProps) {
+export function FahrtBloecke({ bloecke, typ, auswahl, markiere, onTipp, bahnhofName, einzige }: BloeckeProps) {
   return (
     <div className="tafel-bloecke">
       {bloecke.map((block) => (
@@ -75,7 +83,7 @@ function FahrtBloecke({ bloecke, typ, auswahl, markiere, onTipp }: BloeckeProps)
           titel={block.titel}
           anzahl={block.eintraege.length}
           // Wie in `Zugauswahl`: eine einzige Kategorie und die mit der Wahl offen.
-          anfangsOffen={bloecke.length === 1 || block.eintraege.some((e) => istAuswahl(e, auswahl))}
+          anfangsOffen={(einzige ?? bloecke.length === 1) || block.eintraege.some((e) => istAuswahl(e, auswahl))}
         >
           <ul className="tafel">
             {block.eintraege.map((e) => (
@@ -91,6 +99,11 @@ function FahrtBloecke({ bloecke, typ, auswahl, markiere, onTipp }: BloeckeProps)
                   <span className="tafel-zug">
                     <VerkehrsmittelSymbole liste={[e.verkehrsmittel]} /> <strong>{e.linie}</strong>{' '}
                     {typ === 'arr' ? 'aus' : 'nach'} {e.ziel}
+                    {bahnhofName && anderHalt(e, bahnhofName) && (
+                      <span className="tafel-halt">
+                        {typ === 'arr' ? 'an' : 'ab'} {anderHalt(e, bahnhofName)}
+                      </span>
+                    )}
                   </span>
                   {/* Neben, nicht in der Zeile: Die wird bei langem Ziel mit
                       „…“ gekuerzt - und „laut Fahrplan“ (F5) ging mit. */}
@@ -102,6 +115,34 @@ function FahrtBloecke({ bloecke, typ, auswahl, markiere, onTipp }: BloeckeProps)
           </ul>
         </Tafelkategorie>
       ))}
+    </div>
+  )
+}
+
+/** Die gewaehlte Fahrt mit „Ändern“ - auch unter der Bahnhofstafel (`Zugauswahl`). */
+export function GewaehlteFahrt({
+  auswahl,
+  typ,
+  onAendern,
+}: {
+  auswahl: HaltestellenTafelEintrag
+  typ: 'arr' | 'dep'
+  onAendern: () => void
+}) {
+  return (
+    <div className="zug-gewaehlt">
+      <div className="zug-gewaehlt-text">
+        <strong>
+          <VerkehrsmittelSymbole liste={[auswahl.verkehrsmittel]} /> {auswahl.linie}
+        </strong>
+        <span>
+          {typ === 'arr' ? 'aus' : 'nach'} {auswahl.ziel} · {uhrzeit(auswahl.zeitIst ?? auswahl.zeitSoll)} ·{' '}
+          {steigText(auswahl)} <Kennzeichen e={auswahl} />
+        </span>
+      </div>
+      <button type="button" className="knopf-sekundaer" onClick={onAendern}>
+        Ändern
+      </button>
     </div>
   )
 }
@@ -205,6 +246,7 @@ export function Fahrtauswahl({ ort, typ, label, auswahl, onAuswahl, immerOffen }
         {offeneBloecke.length > 0 && (
           <FahrtBloecke
             bloecke={offeneBloecke}
+            bahnhofName={ort.eva ? ort.name : undefined}
             typ={typ}
             auswahl={auswahl}
             markiere
@@ -215,24 +257,7 @@ export function Fahrtauswahl({ ort, typ, label, auswahl, onAuswahl, immerOffen }
     )
   }
 
-  if (auswahl) {
-    return (
-      <div className="zug-gewaehlt">
-        <div className="zug-gewaehlt-text">
-          <strong>
-            <VerkehrsmittelSymbole liste={[auswahl.verkehrsmittel]} /> {auswahl.linie}
-          </strong>
-          <span>
-            {typ === 'arr' ? 'aus' : 'nach'} {auswahl.ziel} · {uhrzeit(auswahl.zeitIst ?? auswahl.zeitSoll)} ·{' '}
-            {steigText(auswahl)} <Kennzeichen e={auswahl} />
-          </span>
-        </div>
-        <button type="button" className="knopf-sekundaer" onClick={() => onAuswahl(null)}>
-          Ändern
-        </button>
-      </div>
-    )
-  }
+  if (auswahl) return <GewaehlteFahrt auswahl={auswahl} typ={typ} onAendern={() => onAuswahl(null)} />
 
   return (
     <div className="zugauswahl">
@@ -245,7 +270,14 @@ export function Fahrtauswahl({ ort, typ, label, auswahl, onAuswahl, immerOffen }
         <div className="hinweis-box">Keine Fahrten in den nächsten {FENSTER_NACH_MIN} Minuten.</div>
       )}
       {offen && bloecke.length > 0 && (
-        <FahrtBloecke bloecke={bloecke} typ={typ} auswahl={auswahl} markiere={false} onTipp={onAuswahl} />
+        <FahrtBloecke
+          bloecke={bloecke}
+          typ={typ}
+          auswahl={auswahl}
+          markiere={false}
+          onTipp={onAuswahl}
+          bahnhofName={ort.eva ? ort.name : undefined}
+        />
       )}
     </div>
   )
