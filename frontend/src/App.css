@@ -227,22 +227,37 @@
  * also „Ankunft – Gleis" statt zweimal nur „Gleis". Der mitgelieferte
  * Browserrahmen muss dafuer weg.
  */
+/* „Ankunft“ und „Abfahrt“ stehen gross UEBER der Box, nicht in ihrem Rand
+   (Julian, 21.10.2026): Das fieldset ist nur noch Gruppe, die Box ist
+   `.reiseblock-box`. */
 .reiseblock {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
   margin: 0;
-  padding: 14px 16px;
-  border: 1px solid var(--color-neutral-300);
-  border-radius: var(--radius-mittel);
-  background: var(--color-surface);
+  padding: 0;
+  border: 0;
   min-width: 0; /* sonst sprengt ein fieldset das Grid darin auf Handybreite */
 }
 
 .reiseblock > legend {
-  padding: 0 6px;
-  font-size: var(--schrift-label);
-  font-weight: 600;
+  padding: 0;
+  margin-bottom: 8px;
+  font-family: var(--font-heading);
+  font-size: var(--schrift-anweisung);
+  font-weight: 800;
+}
+
+.reiseblock-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-mittel);
+  background: var(--color-surface);
+}
+
+/* Die Tafel-Knoepfe heben sich hell von der grauen Box ab (Julian, 21.10.2026). */
+.reiseblock-box .zugauswahl > .knopf-sekundaer {
+  background: var(--color-neutral-100);
 }
 
 .vorschlaege {
@@ -347,8 +362,20 @@
 }
 
 /* Zwei Ortsfelder untereinander, je mit Kicker wie die Gleiskacheln. */
+/* Ueberschrift der Ortsfelder: gross, fett, im Rot von „Umstieg starten“ und
+   vom Logo (Julian, 21.10.2026). Signalrot als Schrift erst ab 22 px - dort
+   ist es grosse Schrift, 3:1 genuegt, es hat 4,2:1 (DESIGN.md 2). */
 .ortsfeld .kicker {
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  font-family: var(--font-heading);
+  font-size: var(--schrift-anweisung);
+  font-weight: 800;
+  color: var(--color-accent);
+}
+
+/* Die Beschriftung im Feld ist nur fuer Vorleser da - ohne Abstand. */
+.ortsfeld > .feld > label {
+  margin: 0;
 }
 
 /* Das Abzeichen „✓ Bahnhof" unter dem Suchfeld. Bis zum 07.10.2026 hiess die

@@ -675,33 +675,37 @@ export function Eingabe({
         <>
           <fieldset className="reiseblock">
             <legend>Ankunft</legend>
-            {ankunftHalt && (
-              <Fahrtauswahl
-                // Je Ort eine eigene Tafel - sonst zeigte die geoeffnete Liste
-                // nach einem Ortswechsel die Fahrten des alten Ortes.
-                key={`${ortSchluessel(ankunftHalt)}|arr`}
-                ort={ankunftHalt}
-                typ="arr"
-                label="Ankunft wählen"
-                auswahl={fahrtAnkunft}
-                onAuswahl={setFahrtAnkunft}
-              />
-            )}
-            {steigZeile(fahrtAnkunft)}
+            <div className="reiseblock-box">
+              {ankunftHalt && (
+                <Fahrtauswahl
+                  // Je Ort eine eigene Tafel - sonst zeigte die geoeffnete Liste
+                  // nach einem Ortswechsel die Fahrten des alten Ortes.
+                  key={`${ortSchluessel(ankunftHalt)}|arr`}
+                  ort={ankunftHalt}
+                  typ="arr"
+                  label="Ankunft wählen"
+                  auswahl={fahrtAnkunft}
+                  onAuswahl={setFahrtAnkunft}
+                />
+              )}
+              {steigZeile(fahrtAnkunft)}
+            </div>
           </fieldset>
           <fieldset className="reiseblock">
             <legend>Abfahrt</legend>
-            {abfahrtHalt && (
-              <Fahrtauswahl
-                key={`${ortSchluessel(abfahrtHalt)}|dep`}
-                ort={abfahrtHalt}
-                typ="dep"
-                label="Anschluss wählen"
-                auswahl={fahrtAbfahrt}
-                onAuswahl={setFahrtAbfahrt}
-              />
-            )}
-            {steigZeile(fahrtAbfahrt)}
+            <div className="reiseblock-box">
+              {abfahrtHalt && (
+                <Fahrtauswahl
+                  key={`${ortSchluessel(abfahrtHalt)}|dep`}
+                  ort={abfahrtHalt}
+                  typ="dep"
+                  label="Anschluss wählen"
+                  auswahl={fahrtAbfahrt}
+                  onAuswahl={setFahrtAbfahrt}
+                />
+              )}
+              {steigZeile(fahrtAbfahrt)}
+            </div>
           </fieldset>
         </>
       )}
@@ -752,11 +756,10 @@ export function Eingabe({
           <div className="kicker" aria-hidden="true">Du kommst an</div>
           <Ortsuche
             id="bahnhof"
-            label={
-              <>
-                <span className="nur-vorlesen">Ankunft: </span>Bahnhof oder Haltestelle
-              </>
-            }
+            // Sichtbar steht nur die Ueberschrift darueber - die Unterzeile
+            // „Bahnhof oder Haltestelle" war zu viel Text (Julian, 21.10.2026).
+            // Vorleser hoeren weiter, was ins Feld gehoert.
+            label={<span className="nur-vorlesen">Ankunft: Bahnhof oder Haltestelle</span>}
             platzhalter="z. B. Berlin Hbf oder Kassel Rathaus"
             text={suchtext}
             gewaehlt={gewaehlt}
@@ -870,11 +873,7 @@ export function Eingabe({
               </div>
               <Ortsuche
                 id="anschlussort"
-                label={
-                  <>
-                    <span className="nur-vorlesen">Anschluss: </span>Bahnhof oder Haltestelle
-                  </>
-                }
+                label={<span className="nur-vorlesen">Anschluss: Bahnhof oder Haltestelle</span>}
                 platzhalter="z. B. Haltestelle in der Nähe"
                 text={anschlussText}
                 gewaehlt={anschlussOrt}
@@ -991,73 +990,79 @@ export function Eingabe({
           </>
         ) : (
           <>
+            {/* Die Ueberschrift steht UEBER der Box, nicht in ihrem Rand
+                (Julian, 21.10.2026) - darum die innere `reiseblock-box`. */}
             <fieldset className="reiseblock">
               <legend>Ankunft</legend>
-              {eva !== '' && (
-                <Zugauswahl
-                  eva={eva}
-                  typ="arr"
-                  label="Ankunftszug wählen"
-                  auswahl={zugAnkunft}
-                  onAuswahl={waehleAnkunft}
-                  nahverkehr={nahverkehrAn}
-                />
-              )}
-              {/* Ein Bus hat kein Gleis und keinen Wagen: an ihrer Stelle der Steig. */}
-              {fahrtAnkunft ? (
-                steigZeile(fahrtAnkunft)
-              ) : (
-                <div className="gleis-zeile">
-                  <div className="feld">
-                    <label htmlFor="gleisAn">Ankunft: Gleis</label>
-                    <input
-                      id="gleisAn"
-                      className="eingabefeld"
-                      type="text"
-                      required
-                      placeholder="z. B. 6"
-                      value={gleisAn}
-                      onChange={(e) => setGleisAn(e.target.value)}
-                    />
+              <div className="reiseblock-box">
+                {eva !== '' && (
+                  <Zugauswahl
+                    eva={eva}
+                    typ="arr"
+                    label="Ankunftszug wählen"
+                    auswahl={zugAnkunft}
+                    onAuswahl={waehleAnkunft}
+                    nahverkehr={nahverkehrAn}
+                  />
+                )}
+                {/* Ein Bus hat kein Gleis und keinen Wagen: an ihrer Stelle der Steig. */}
+                {fahrtAnkunft ? (
+                  steigZeile(fahrtAnkunft)
+                ) : (
+                  <div className="gleis-zeile">
+                    <div className="feld">
+                      <label htmlFor="gleisAn">Ankunft: Gleis</label>
+                      <input
+                        id="gleisAn"
+                        className="eingabefeld"
+                        type="text"
+                        required
+                        placeholder="z. B. 6"
+                        value={gleisAn}
+                        onChange={(e) => setGleisAn(e.target.value)}
+                      />
+                    </div>
+                    {wagenAnFeld}
                   </div>
-                  {wagenAnFeld}
-                </div>
-              )}
-              {zugFehlt(zugAnkunft, fahrtAnkunft)}
+                )}
+                {zugFehlt(zugAnkunft, fahrtAnkunft)}
+              </div>
             </fieldset>
 
             <fieldset className="reiseblock">
               <legend>Abfahrt</legend>
-              {eva !== '' && (
-                <Zugauswahl
-                  eva={eva}
-                  typ="dep"
-                  label="Anschlusszug wählen"
-                  auswahl={zugAbfahrt}
-                  onAuswahl={waehleAbfahrt}
-                  nahverkehr={nahverkehrAb}
-                />
-              )}
-              {fahrtAbfahrt ? (
-                steigZeile(fahrtAbfahrt)
-              ) : (
-                <div className="gleis-zeile">
-                  <div className="feld">
-                    <label htmlFor="gleisAb">Anschluss: Gleis</label>
-                    <input
-                      id="gleisAb"
-                      className="eingabefeld"
-                      type="text"
-                      required
-                      placeholder="z. B. 14"
-                      value={gleisAb}
-                      onChange={(e) => setGleisAb(e.target.value)}
-                    />
+              <div className="reiseblock-box">
+                {eva !== '' && (
+                  <Zugauswahl
+                    eva={eva}
+                    typ="dep"
+                    label="Anschlusszug wählen"
+                    auswahl={zugAbfahrt}
+                    onAuswahl={waehleAbfahrt}
+                    nahverkehr={nahverkehrAb}
+                  />
+                )}
+                {fahrtAbfahrt ? (
+                  steigZeile(fahrtAbfahrt)
+                ) : (
+                  <div className="gleis-zeile">
+                    <div className="feld">
+                      <label htmlFor="gleisAb">Anschluss: Gleis</label>
+                      <input
+                        id="gleisAb"
+                        className="eingabefeld"
+                        type="text"
+                        required
+                        placeholder="z. B. 14"
+                        value={gleisAb}
+                        onChange={(e) => setGleisAb(e.target.value)}
+                      />
+                    </div>
+                    {wagenAbFeld}
                   </div>
-                  {wagenAbFeld}
-                </div>
-              )}
-              {zugFehlt(zugAbfahrt, fahrtAbfahrt)}
+                )}
+                {zugFehlt(zugAbfahrt, fahrtAbfahrt)}
+              </div>
             </fieldset>
 
             <div className="feld">
