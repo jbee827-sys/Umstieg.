@@ -400,6 +400,17 @@ describe('Zugauswahl: Bus und Tram am Bahnhof', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Ändern' }))
   })
 
+  it('Zuege und Bus stehen in EINER Liste - sonst begann „Bus“ zugeklappt mitten in der Spalte (21.10.2026)', async () => {
+    const { container } = render(
+      <Zugauswahl eva="8000128" typ="dep" label="Abfahrt" auswahl={null} onAuswahl={vi.fn()} nahverkehr={{ ort: GOE, auswahl: null, onAuswahl: vi.fn() }} immerOffen />,
+    )
+    const bus = await screen.findByRole('group', { name: 'Bus' })
+    const listen = container.querySelectorAll('.tafel-bloecke')
+    expect(listen).toHaveLength(1)
+    expect(listen[0].contains(bus)).toBe(true)
+    expect(listen[0].contains(screen.getByRole('group', { name: 'Regionalverkehr' }))).toBe(true)
+  })
+
   it('faellt die Haltestellentafel aus, bleibt es still bei den Zuegen', async () => {
     haltestellenTafelMock.mockResolvedValue({ ok: false, fehler: 'nicht-verfuegbar' })
     zeigeMitBus({ immerOffen: true })

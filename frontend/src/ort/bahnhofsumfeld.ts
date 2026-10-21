@@ -95,8 +95,32 @@ export function ortAusHalt(e: HaltestellenTafelEintrag, bahnhof: Ort): Ort {
   }
 }
 
-/** Der Name des Halts, wenn er nicht der des Bahnhofs ist - dann steht er in der Tafel. */
+const UMLAUTE: Record<string, string> = { ä: 'ae', ö: 'oe', ü: 'ue', ß: 'ss' }
+/** Vorsilben und Bahnhofswoerter - dieselben wie `namensSchluessel` im Backend (core/orte.ts). */
+const STOERWORTE = new Set(['s', 'u', 's+u', 'u+s', 's+bus', 'bus', 'tram', 'str', 'bahnhof', 'bhf', 'bf'])
+
+/**
+ * Vergleichbarer Name: „Eberswalde, Hauptbahnhof“ und „Eberswalde Hbf“
+ * ergeben beide „eberswalde hbf“. Busbahnhof und ZOB bleiben Woerter - sie
+ * SIND ein anderer Halt.
+ */
+function namensSchluessel(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[äöüß]/g, (z) => UMLAUTE[z])
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/hauptbahnhof/g, 'hbf')
+    .split(/[^a-z0-9+]+/)
+    .filter((w) => w && !STOERWORTE.has(w))
+    .join(' ')
+}
+
+/**
+ * Der Name des Halts, wenn er nicht der des Bahnhofs ist - dann steht er in
+ * der Tafel. Bis zum 21.10.2026 hiess „Eberswalde, Hauptbahnhof“ hier anders
+ * als „Eberswalde Hbf“, und der Kopf der Uebersicht nannte den Bahnhof zweimal.
+ */
 export function anderHalt(e: HaltestellenTafelEintrag, bahnhofName: string): string | undefined {
   if (!e.haltName) return undefined
-  return kompakt(e.haltName) === kompakt(bahnhofName) ? undefined : e.haltName
+  return namensSchluessel(e.haltName) === namensSchluessel(bahnhofName) ? undefined : e.haltName
 }

@@ -1,5 +1,15 @@
 import { useState, type ReactNode } from 'react'
 
+/**
+ * Die Liste der Kategorien. `huelle={false}`: Der Aufrufer legt die Liste
+ * selbst um mehrere Bloecke - die Bahnhofstafel um Zuege UND Bus. Zwei
+ * Listen nebeneinander teilten sich im breiten Layout die Hoehe, und „Bus“
+ * begann zugeklappt mitten in der Spalte (21.10.2026).
+ */
+export function TafelListe({ huelle = true, children }: { huelle?: boolean; children: ReactNode }) {
+  return huelle ? <div className="tafel-bloecke">{children}</div> : <>{children}</>
+}
+
 interface TafelkategorieProps {
   titel: string
   /** Zahl der Zuege oder Fahrten darin - steht im Kopf, auch zugeklappt. */

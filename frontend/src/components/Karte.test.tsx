@@ -13,7 +13,7 @@ const karten: {
   laden?: () => void
   grenzen: unknown[]
   einpassungen: { maxZoom?: number }[]
-  optionen: { maxZoom?: number }
+  optionen: { maxZoom?: number; bounds?: unknown; fitBoundsOptions?: { maxZoom?: number; padding?: number } }
 }[] = []
 vi.mock('maplibre-gl', () => {
   class Map {
@@ -89,8 +89,29 @@ describe('Karte: Zoom hoechstens 18 (Browserpruefung 19.10.2026)', () => {
     const map = karten[0]
     map.laden!()
     expect(map.optionen.maxZoom).toBe(18)
-    expect(map.einpassungen.length).toBeGreaterThan(0)
+    expect(map.optionen.fitBoundsOptions!.maxZoom).toBeLessThanOrEqual(18)
     for (const e of map.einpassungen) expect(e.maxZoom).toBeLessThanOrEqual(18)
+  })
+})
+
+/*
+ * Browserpruefung 21.10.2026 (Eberswalde): Die Karte startete bei Zoom 0 -
+ * der ganzen Welt - und flog erst nach dem Laden animiert auf die Route. In
+ * einem gedrosselten Tab stand sie Sekunden lang ueber halb Brandenburg.
+ */
+describe('Karte: beginnt beim Weg, nicht bei der Welt (21.10.2026)', () => {
+  it('der Ausschnitt der Route ist schon beim Erzeugen gesetzt; vor dem Laden wird nichts eingepasst', () => {
+    karten.length = 0
+    render(
+      <Karte
+        karte={{ '0': linie(13.37) }}
+        aktiverSchritt={{ text: 'Nach Ausstieg 80 m geradeaus', typ: 'eben', sekunden: 75, level: 0, knotenVon: 0, knotenBis: 1 }}
+        anfangsOffen
+      />,
+    )
+    const map = karten[0]
+    expect(map.optionen.bounds).toBeDefined()
+    expect(map.einpassungen).toHaveLength(0)
   })
 })
 
