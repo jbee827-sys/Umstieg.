@@ -111,6 +111,13 @@ describe('bahnhofsseiteHtml: Inhalt', () => {
     expect(absatz).toMatch(/3 Minuten/)
   })
 
+  it('laesst den Abschnitt weg, wenn alle Gleise an einem Bahnsteig liegen', () => {
+    const einBahnsteig: Bahnhofsdaten = { ...HANNOVER, gleise: ['1', '2'], paare: HANNOVER.paare.filter((p) => p.gleicherBahnsteig) }
+    const d = new DOMParser().parseFromString(bahnhofsseiteHtml(einBahnsteig, BAUTEILE), 'text/html')
+    expect(d.querySelector('.bs-laengste')).toBeNull()
+    expect([...d.querySelectorAll('h2')].map((h) => h.textContent)).not.toContain('Die längsten Umstiege')
+  })
+
   it('weist auf Richtwerte, Stand und OpenStreetMap hin', () => {
     const text = doc.body.textContent ?? ''
     expect(text).toContain('Richtwerte. Mit Gepäck oder wenig Ortskenntnis mehr Zeit einplanen.')
