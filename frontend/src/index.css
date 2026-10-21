@@ -140,7 +140,10 @@
   --shadow-lg: 0 12px 32px color-mix(in srgb, #2d2b2b 22%, transparent);
 
   /* Das Lockup im Kopf ist ein Bild mit dunkler Wortmarke. */
-  --lockup-filter: none;
+  /* Hell- und Nachtfassung des Lockups: Welche zu sehen ist, entscheidet die
+     Darstellung (App.css, `.lockup-hell`/`.lockup-dunkel`). */
+  --lockup-hell: inline;
+  --lockup-dunkel: none;
 }
 
 /* Ausdruecklich Hell gewaehlt (Einstellungen → Darstellung). */
@@ -211,10 +214,11 @@
     --shadow-md: 0 3px 10px color-mix(in srgb, #000000 50%, transparent);
     --shadow-lg: 0 12px 32px color-mix(in srgb, #000000 60%, transparent);
 
-    /* Kehrt die dunkle Wortmarke um; die Drehung um 180 Grad holt das Rot
-       zurueck (es landet nahe am Nachtrot). Bis zum 05.10.2026 stand die
-       Wortmarke nachts dunkel auf dem Nachtgrund und war nicht zu lesen. */
-    --lockup-filter: invert(1) hue-rotate(180deg);
+    /* Nachts die eigene Fassung des Lockups: helle Schrift, Rot im Nachtrot
+       wie Knopf und Ueberschriften. Bis zum 21.10.2026 kehrte ein Filter das
+       helle Bild um - das Rot landete rosa, nicht beim Nachtrot (Julian). */
+    --lockup-hell: none;
+    --lockup-dunkel: inline;
   }
 }
 
@@ -268,10 +272,11 @@
   --shadow-md: 0 3px 10px color-mix(in srgb, #000000 50%, transparent);
   --shadow-lg: 0 12px 32px color-mix(in srgb, #000000 60%, transparent);
 
-  /* Kehrt die dunkle Wortmarke um; die Drehung um 180 Grad holt das Rot
-     zurueck (es landet nahe am Nachtrot). Bis zum 05.10.2026 stand die
-     Wortmarke nachts dunkel auf dem Nachtgrund und war nicht zu lesen. */
-  --lockup-filter: invert(1) hue-rotate(180deg);
+  /* Nachts die eigene Fassung des Lockups: helle Schrift, Rot im Nachtrot
+     wie Knopf und Ueberschriften. Bis zum 21.10.2026 kehrte ein Filter das
+     helle Bild um - das Rot landete rosa, nicht beim Nachtrot (Julian). */
+  --lockup-hell: none;
+  --lockup-dunkel: inline;
 }
 
 *,

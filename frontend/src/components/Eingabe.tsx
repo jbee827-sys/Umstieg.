@@ -849,28 +849,27 @@ export function Eingabe({
         </div>
 
         <div className="ortsfeld">
-          {/* Hinter einem Knopf seit dem 21.10.2026 (Julian): Bus und Tram am
-              Bahnhof stehen in dessen Tafeln. Das Feld braucht nur, wer zu
-              einem Halt weiter weg umsteigt. */}
-          {andereOffen && (
-            <>
-              <div className="ortsfeld-kopf">
-                <div className="kicker" aria-hidden="true">Andere Haltestelle</div>
-                <button
-                  type="button"
-                  className="textknopf"
-                  aria-label="Andere Haltestelle entfernen"
-                  onClick={() => {
-                    setBewegung(true)
-                    setAndereOffen(false)
-                    setAnschlussText('')
-                    setAnschlussOrt(null)
-                    setFahrtAbfahrt(null)
-                  }}
-                >
-                  Entfernen
-                </button>
-              </div>
+          {/* Zum Aufklappen wie die Einstellungen (Julian, 21.10.2026): Bus und
+              Tram am Bahnhof stehen in dessen Tafeln, das Feld braucht nur,
+              wer zu einem Halt weiter weg umsteigt. Zuklappen heisst „keine
+              andere Haltestelle“ - dann wird es geleert. */}
+          <details
+            className="andere-haltestelle"
+            open={andereOffen}
+            onToggle={(e) => {
+              const offen = e.currentTarget.open
+              if (offen === andereOffen) return
+              setBewegung(true)
+              setAndereOffen(offen)
+              if (!offen) {
+                setAnschlussText('')
+                setAnschlussOrt(null)
+                setFahrtAbfahrt(null)
+              }
+            }}
+          >
+            <summary>Andere Haltestelle als Ankunft</summary>
+            {andereOffen && (
               <Ortsuche
                 id="anschlussort"
                 label={<span className="nur-vorlesen">Anschluss: Bahnhof oder Haltestelle</span>}
@@ -891,33 +890,18 @@ export function Eingabe({
                 }}
                 onQuellen={merkeQuellen}
               />
-            </>
-          )}
+            )}
+          </details>
           {/* „Verbindung einfügen“: Abkuerzung am Rand (BRIEF.md 4), nicht der
               Einstieg - statt Bahnhof und zwei Gleise zu tippen, den Text aus
               „Verbindung teilen" einfuegen. Auf dem Handy heisst sie wie vor
               dem 11.10.2026 „Reise importieren" und steht als Knopf unter den
               Bloecken. */}
-          {(!andereOffen || breit) && (
+          {breit && (
             <div className="feld-rand">
-              {!andereOffen && (
-                <button
-                  type="button"
-                  className="textknopf"
-                  aria-expanded={false}
-                  onClick={() => {
-                    setBewegung(true)
-                    setAndereOffen(true)
-                  }}
-                >
-                  Andere Haltestelle
-                </button>
-              )}
-              {breit && (
-                <button type="button" className="textknopf" onClick={() => setImportOffen(true)}>
-                  Verbindung einfügen
-                </button>
-              )}
+              <button type="button" className="textknopf" onClick={() => setImportOffen(true)}>
+                Verbindung einfügen
+              </button>
             </div>
           )}
         </div>

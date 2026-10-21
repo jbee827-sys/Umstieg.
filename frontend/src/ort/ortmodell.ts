@@ -59,7 +59,10 @@ export async function sucheHaltestelleZu(
 ): Promise<Ort | null | 'ausfall'> {
   // Auch ohne ID: Ein Bahnhof, zu dem die letzte Suche keine Haltestelle
   // kannte, bekommt hier seine (gleiche EVA).
-  const ergebnis = await suche(ort.name).catch(() => null);
+  // Auch ein Wurf VOR dem Versprechen ist ein Ausfall, kein unbehandelter Fehler.
+  const ergebnis = await Promise.resolve()
+    .then(() => suche(ort.name))
+    .catch(() => null);
   if (!ergebnis || !ergebnis.ok) return 'ausfall';
   const treffer = ergebnis.antwort.orte.find(
     (o) =>
