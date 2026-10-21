@@ -1,0 +1,22 @@
+{
+  "name": "Königs Wusterhausen",
+  "eva": "8010193",
+  "slug": "koenigs-wusterhausen",
+  "lat": 52.296635,
+  "lon": 13.631472,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:44:37.287Z",
+  "gleise": [
+    "1",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":204,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":314},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":204,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":314},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":204,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":314},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":37,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":37},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":204,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":314},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":37,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":37}
+  ]
+}

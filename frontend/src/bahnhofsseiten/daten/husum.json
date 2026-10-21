@@ -1,0 +1,29 @@
+{
+  "name": "Husum",
+  "eva": "8000181",
+  "slug": "husum",
+  "lat": 54.4720826,
+  "lon": 9.05595303,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:31:45.095Z",
+  "gleise": [
+    "1",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"3","gleicherBahnsteig":true,"sek":25,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":25},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":387,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":482},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":387,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":482},
+    {"von":"3","nach":"1","gleicherBahnsteig":true,"sek":25,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":25},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":387,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":482},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":387,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":482},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":387,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":482},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":387,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":482},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":67,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":67},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":387,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":482},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":387,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":482},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":67,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":67}
+  ]
+}

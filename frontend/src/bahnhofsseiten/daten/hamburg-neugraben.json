@@ -1,0 +1,38 @@
+{
+  "name": "Hamburg-Neugraben",
+  "eva": "8002557",
+  "slug": "hamburg-neugraben",
+  "lat": 53.474143,
+  "lon": 9.852048,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:16:29.646Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":284,"wechsel":2,"anlagen":["rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":851},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":284,"wechsel":2,"anlagen":["rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":851},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":337,"wechsel":2,"anlagen":["rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":792},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":337,"wechsel":2,"anlagen":["rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":792},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":284,"wechsel":2,"anlagen":["rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":851},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":74,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":74},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":284,"wechsel":2,"anlagen":["rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":851},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":74,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":74},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":337,"wechsel":2,"anlagen":["rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":792},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":29,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":29},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":337,"wechsel":2,"anlagen":["rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":792},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":59,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":59},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":29,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":29}
+  ]
+}

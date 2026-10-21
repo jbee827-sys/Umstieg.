@@ -1,0 +1,29 @@
+{
+  "name": "Esslingen-Mettingen",
+  "eva": "8001921",
+  "slug": "esslingen-mettingen",
+  "lat": 48.747083,
+  "lon": 9.27583,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T17:49:46.196Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":15,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":15},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":70,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":84},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":70,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":84},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":15,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":15},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":70,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":84},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":70,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":84},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":70,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":84},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":70,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":84},
+    {"von":"3","nach":"4","gleicherBahnsteig":true,"sek":4,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":4},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":70,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":84},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":70,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":84},
+    {"von":"4","nach":"3","gleicherBahnsteig":true,"sek":4,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":4}
+  ]
+}

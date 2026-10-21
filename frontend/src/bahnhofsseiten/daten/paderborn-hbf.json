@@ -1,0 +1,38 @@
+{
+  "name": "Paderborn Hbf",
+  "eva": "8000297",
+  "slug": "paderborn-hbf",
+  "lat": 51.712979,
+  "lon": 8.740505,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T12:37:12.546Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":94,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":94},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":97,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":97},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":177,"wechsel":3,"anlagen":["aufzug","treppe"],"lage":"unterfuehrung","stufenfreiSek":212},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":177,"wechsel":3,"anlagen":["aufzug","treppe"],"lage":"unterfuehrung","stufenfreiSek":212},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":94,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":94},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":29,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":29},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":205,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":273},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":204,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":273},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":97,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":97},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":29,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":29},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":206,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":274},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":206,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":274},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":177,"wechsel":3,"anlagen":["treppe","aufzug"],"lage":"unterfuehrung","stufenfreiSek":212},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":205,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":273},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":206,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":274},
+    {"von":"4","nach":"5","gleicherBahnsteig":false,"sek":31,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":31},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":177,"wechsel":3,"anlagen":["treppe","aufzug"],"lage":"unterfuehrung","stufenfreiSek":212},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":204,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":273},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":206,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":274},
+    {"von":"5","nach":"4","gleicherBahnsteig":false,"sek":31,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":31}
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "Mering",
+  "eva": "8003982",
+  "slug": "mering",
+  "lat": 48.262698,
+  "lon": 10.988291,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T19:09:07.054Z",
+  "gleise": [
+    "3",
+    "4",
+    "5",
+    "6"
+  ],
+  "paare": [
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":53,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":53},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":175,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":279},
+    {"von":"3","nach":"6","gleicherBahnsteig":false,"sek":173,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":280},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":53,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":53},
+    {"von":"4","nach":"5","gleicherBahnsteig":false,"sek":171,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":278},
+    {"von":"4","nach":"6","gleicherBahnsteig":false,"sek":169,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":279},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":175,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":279},
+    {"von":"5","nach":"4","gleicherBahnsteig":false,"sek":171,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":278},
+    {"von":"5","nach":"6","gleicherBahnsteig":false,"sek":113,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":113},
+    {"von":"6","nach":"3","gleicherBahnsteig":false,"sek":173,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":280},
+    {"von":"6","nach":"4","gleicherBahnsteig":false,"sek":169,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":279},
+    {"von":"6","nach":"5","gleicherBahnsteig":false,"sek":113,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":113}
+  ]
+}

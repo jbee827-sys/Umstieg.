@@ -1,0 +1,29 @@
+{
+  "name": "Köln-Ehrenfeld",
+  "eva": "8000208",
+  "slug": "koeln-ehrenfeld",
+  "lat": 50.951533,
+  "lon": 6.917276,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:41:51.866Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":162,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":162},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":66,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":66},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":45,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":45},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":162,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":162},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":229,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":229},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":207,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":207},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":66,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":66},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":229,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":229},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":22,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":22},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":45,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":45},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":207,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":207},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":22,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":22}
+  ]
+}

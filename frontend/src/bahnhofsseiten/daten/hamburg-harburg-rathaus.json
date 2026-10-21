@@ -1,0 +1,22 @@
+{
+  "name": "Hamburg-Harburg Rathaus",
+  "eva": "8004267",
+  "slug": "hamburg-harburg-rathaus",
+  "lat": 53.460694,
+  "lon": 9.980463,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:19:30.890Z",
+  "gleise": [
+    "1",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":6,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":6},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":207,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":207},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":6,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":6},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":207,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":207},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":207,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":207},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":207,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":207}
+  ]
+}

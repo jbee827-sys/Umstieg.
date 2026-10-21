@@ -1,0 +1,195 @@
+/*
+ * Vorgerenderte Bahnhofsseiten und /bahnhoefe (Konzept Nutzergewinnung
+ * AP 5b). Der Build haengt diese Datei an index.css an - Schrift (Archivo,
+ * lokal), Farbtoken und Dunkelmodus kommen von dort, dieselben wie in der
+ * App (design/DESIGN.md). Ausgeliefert als EINE Datei mit Hash unter
+ * /assets/: Die CSP erlaubt nur style-src 'self', kein Inline-Stil.
+ *
+ * Eine Spalte, mobil zuerst; auf breiten Schirmen bis 720 px, damit die
+ * Tabellen Luft haben. Keine Bewegung ausser dem Druckgefuehl des Knopfs.
+ */
+
+.bs-kopf,
+.bahnhofsseite {
+  max-width: 720px;
+  margin: 0 auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.bs-kopf {
+  padding-top: 16px;
+}
+
+.bs-marke {
+  display: inline-block;
+  line-height: 0;
+}
+
+.bs-marke img {
+  width: 160px;
+  max-width: 60%;
+  height: auto;
+  filter: var(--lockup-filter);
+}
+
+.bahnhofsseite {
+  padding-bottom: 32px;
+}
+
+.bahnhofsseite h1 {
+  font-size: var(--schrift-titel);
+  margin: 20px 0 8px;
+}
+
+.bahnhofsseite h2 {
+  font-size: var(--schrift-anweisung);
+  margin: 32px 0 12px;
+}
+
+.bahnhofsseite p {
+  margin: 0 0 12px;
+}
+
+.bahnhofsseite a {
+  color: var(--color-accent-700);
+}
+
+.bs-einleitung {
+  color: var(--color-neutral-700);
+}
+
+/* Der Hauptknopf der App (DESIGN.md 4): vollrund, Signalrot, 18 px / 800. */
+.bahnhofsseite a.bs-knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 47px;
+  padding: 0 21px;
+  margin: 4px 0 8px;
+  border-radius: var(--radius-pille);
+  background: var(--color-accent);
+  color: var(--color-auf-akzent);
+  font-size: 1rem;
+  font-weight: 800;
+  text-decoration: none;
+  transition: transform var(--dauer-schnell) var(--verlauf-ein);
+}
+
+.bahnhofsseite a.bs-knopf:active {
+  transform: scale(0.97);
+  background: var(--color-druckrot);
+}
+
+/* Je Ankunftsgleis ein Block zum Aufklappen - ohne JavaScript. */
+.bs-gleis {
+  margin: 0 0 10px;
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-mittel);
+  background: var(--color-papier);
+  overflow: hidden;
+}
+
+.bs-gleis summary {
+  min-height: 48px;
+  padding: 12px 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bs-gleis[open] summary {
+  border-bottom: 1px solid var(--color-neutral-300);
+}
+
+/* Feste Spaltenbreiten und Umbruch: kein waagerechtes Rollen, auch auf 320 px. */
+.bs-tabelle {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: var(--schrift-label);
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+.bs-tabelle th,
+.bs-tabelle td {
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.bs-tabelle thead th {
+  font-weight: 600;
+  color: var(--color-neutral-700);
+}
+
+.bs-tabelle tbody th {
+  font-weight: 700;
+}
+
+.bs-tabelle tbody tr {
+  border-top: 1px solid var(--color-neutral-300);
+}
+
+.bs-hinweis {
+  padding: 14px 16px;
+  border-radius: var(--radius-mittel);
+  background: var(--color-surface);
+}
+
+.bs-stand,
+.bs-gleiszahl {
+  font-size: var(--schrift-label);
+  color: var(--color-neutral-700);
+}
+
+.bs-liste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bs-liste li {
+  padding: 6px 0;
+}
+
+/*
+ * Fusszeile wie in der App (App.css, `.fusszeile`) - hier wiederholt, weil
+ * diese Seiten App.css nicht laden. Impressum und Datenschutz muessen von
+ * jeder Seite aus erreichbar sein (§ 5 DDG).
+ */
+.fusszeile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-neutral-300);
+  font-size: 0.85rem;
+  color: var(--color-neutral-700);
+}
+
+.bahnhofsseite .fusszeile a {
+  color: var(--color-neutral-700);
+  text-decoration: underline;
+  padding: 8px 4px;
+}
+
+.fusszeile-quellen {
+  flex-basis: 100%;
+  margin: 0;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bahnhofsseite a.bs-knopf {
+    transition: none;
+  }
+
+  .bahnhofsseite a.bs-knopf:active {
+    transform: none;
+  }
+}

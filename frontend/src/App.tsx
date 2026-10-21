@@ -41,6 +41,8 @@ import {
 import { leere as leereEntwurf, lies as liesEntwurf, schreibe as schreibeEntwurf } from './sitzung/eingabespeicher'
 import type { Bildschirm } from './navigation/bildschirme'
 import { PFAD, bildschirmAusPfad, brauchtReise, startBildschirm } from './navigation/adressen'
+import { rechtsseiteAusPfad, schliesseRechtsseite, useRechtsseite } from './navigation/rechtsseiten'
+import { useMesspunkte } from './analytik/messpunkte'
 import { leereReise, liesReise, schreibeReise } from './sitzung/reisespeicher'
 import { mitUebergang, uebergangsart, type Ausloeser } from './navigation/uebergang'
 import { erkenneBahnhof } from './standort/bahnhofErkennung'
@@ -177,11 +179,11 @@ function App() {
   // Die Adresse folgt dem Bildschirm: beim ersten Mal ersetzt (aus / wird
   // /eingabe, aus /weg ohne Reise auch), danach ein neuer Eintrag je Wechsel.
   // Kam der Wechsel von der Zurueck-Taste, stimmt die Adresse schon - dann
-  // geschieht nichts.
+  // geschieht nichts. Eine Rechtsseite (/impressum) behaelt ihre Adresse.
   const ersteAdresse = useRef(true)
   useEffect(() => {
     const soll = PFAD[bildschirm]
-    if (window.location.pathname !== soll) {
+    if (window.location.pathname !== soll && !rechtsseiteAusPfad(window.location.pathname)) {
       if (ersteAdresse.current) {
         window.history.replaceState({ bildschirm }, '', soll + window.location.hash)
       } else {
@@ -258,6 +260,9 @@ function App() {
       // zwei uebereinander waeren schlimmer als keine.
       const browserAnimiert =
         (e as PopStateEvent & { hasUAVisualTransition?: boolean }).hasUAVisualTransition === true
+      // Vorwaerts auf eine Rechtsseite: Sie liegt ueber dem Bildschirm, der
+      // bleibt, wie er ist (navigation/rechtsseiten.ts).
+      if (rechtsseiteAusPfad(window.location.pathname)) return
       const ziel = bildschirmAusPfad(window.location.pathname) ?? 'eingabe'
       if (brauchtReise(ziel) && !routeRef.current) {
         window.history.replaceState(
@@ -345,6 +350,12 @@ function App() {
   // Wie weit der Nutzer sich durchgetippt hat. Summe der Weiter- und
   // Zurueck-Tipps; die Uhr redet hier nicht mehr mit (siehe fortschritt.ts).
   const [versatz, setVersatz] = useState(start.reise?.versatz ?? 0)
+  // Die vier Messpunkte aus BRIEF.md 3, je Reise genau einmal (analytik/messpunkte.ts).
+  const { neueReise } = useMesspunkte(
+    bildschirm,
+    route ? schrittPosition(versatz, route.schritte.length) : 0,
+    start,
+  )
 
   // Gesichert wird nur auf den Reise-Bildschirmen - nach „Angekommen"
   // schriebe sonst schon das Leeren der Meldungen die eben geloeschte Reise
@@ -377,19 +388,9 @@ function App() {
     setAnkunftVorschlag(ergebnis.vorschlagen)
   }, [bildschirm, standort, route])
 
-  // Rechtsseiten ueber den URL-Hash, damit sie eine stabile, verlinkbare
-  // Adresse haben und der Zurueck-Knopf des Browsers funktioniert.
-  const [rechtsseite, setRechtsseite] = useState(() => window.location.hash.slice(1))
-  useEffect(() => {
-    const beiWechsel = () => setRechtsseite(window.location.hash.slice(1))
-    window.addEventListener('hashchange', beiWechsel)
-    return () => window.removeEventListener('hashchange', beiWechsel)
-  }, [])
-
-  function schliesseRechtsseite() {
-    window.history.replaceState('', '', window.location.pathname)
-    setRechtsseite('')
-  }
+  // Rechtsseiten mit eigener Adresse (/impressum, /datenschutz) - bis zum
+  // 21.10.2026 ueber den Hash, den die Reichweitenmessung nicht sah.
+  const rechtsseite = useRechtsseite()
 
   const berechne = useCallback(async (eingabe: EingabeWerte) => {
     setLaden(true)
@@ -845,8 +846,9 @@ function App() {
     })
   }, [aufReise, werte, berechne])
 
-  if (rechtsseite === 'impressum') return <Impressum onZurueck={schliesseRechtsseite} />
-  if (rechtsseite === 'datenschutz') return <Datenschutz onZurueck={schliesseRechtsseite} />
+  const zurueckVonRechtsseite = () => schliesseRechtsseite(PFAD[bildschirm])
+  if (rechtsseite === 'impressum') return <Impressum onZurueck={zurueckVonRechtsseite} />
+  if (rechtsseite === 'datenschutz') return <Datenschutz onZurueck={zurueckVonRechtsseite} />
 
   // Eine Aenderung an Gleis oder Abfahrtszeit ist zu wichtig, um sie erst
   // beim naechsten Seitenwechsel zu zeigen - die Meldung liegt deshalb ueber
@@ -1134,6 +1136,7 @@ function App() {
           // Eingabe trotzdem noch da. Sie ist die Arbeit des Nutzers, nicht
           // das Ergebnis der Rechnung.
           schreibeEntwurf(entwurf)
+          neueReise()
           void berechne(neueWerte)
         }}
       />

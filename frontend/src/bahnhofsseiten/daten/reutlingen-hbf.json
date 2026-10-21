@@ -1,0 +1,22 @@
+{
+  "name": "Reutlingen Hbf",
+  "eva": "8000314",
+  "slug": "reutlingen-hbf",
+  "lat": 48.496079,
+  "lon": 9.209116,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T12:50:11.120Z",
+  "gleise": [
+    "1",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":37,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":37},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":37,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":37},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":37,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":37},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":42,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":42},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":37,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":37},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":42,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":42}
+  ]
+}

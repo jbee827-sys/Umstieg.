@@ -1,0 +1,22 @@
+{
+  "name": "St Ingbert",
+  "eva": "8005649",
+  "slug": "st-ingbert",
+  "lat": 49.274763,
+  "lon": 7.110814,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T13:12:02.909Z",
+  "gleise": [
+    "1",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":110,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":110},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":110,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":110},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":110,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":110},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":33,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":33},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":110,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":110},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":33,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":33}
+  ]
+}

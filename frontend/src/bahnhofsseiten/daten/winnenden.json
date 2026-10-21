@@ -1,0 +1,22 @@
+{
+  "name": "Winnenden",
+  "eva": "8006479",
+  "slug": "winnenden",
+  "lat": 48.879583,
+  "lon": 9.39229,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T13:56:01.260Z",
+  "gleise": [
+    "1",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":144,"wechsel":2,"anlagen":["treppe"],"lage":"ueberfuehrung","stufenfreiSek":191},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":144,"wechsel":2,"anlagen":["treppe"],"lage":"ueberfuehrung","stufenfreiSek":191},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":144,"wechsel":2,"anlagen":["treppe"],"lage":"ueberfuehrung","stufenfreiSek":191},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":7,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":7},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":144,"wechsel":2,"anlagen":["treppe"],"lage":"ueberfuehrung","stufenfreiSek":191},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":7,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":7}
+  ]
+}

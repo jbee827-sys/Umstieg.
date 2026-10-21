@@ -1,0 +1,38 @@
+{
+  "name": "Neu-Edingen/Friedrichsfeld",
+  "eva": "8000631",
+  "slug": "neu-edingen-friedrichsfeld",
+  "lat": 49.44867,
+  "lon": 8.580125,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T19:03:25.127Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":187,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":250},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":187,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":250},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":190,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":251},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":190,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":251},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":187,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":250},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":25,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":25},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":21,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":21},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":21,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":21},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":187,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":250},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":25,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":25},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":21,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":21},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":21,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":21},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":190,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":251},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":21,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":21},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":21,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":21},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":17,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":17},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":190,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":251},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":21,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":21},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":21,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":21},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":17,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":17}
+  ]
+}

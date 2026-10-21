@@ -24,6 +24,12 @@ import { BETREIBER } from '../rechtliches/betreiber'
 // - Reichweitenmessung: main.tsx (<Analytics>), analytik/ereignis.ts
 //   (schneidet die Abfragezeichenkette ab), abgesichert in
 //   analytik/ereignis.test.ts und components/Datenschutz.test.tsx
+// - Vorgerenderte Bahnhofsseiten, seit 21.10.2026: dieselbe Messung ohne
+//   React (bahnhofsseiten/messung.js, schneidet die Abfrage ebenso ab),
+//   abgesichert in bahnhofsseiten/messung.test.ts
+// - Vier Ereignisse je Umstieg, seit 21.10.2026: analytik/ereignis.ts
+//   (melde - nur der Name), analytik/messpunkte.ts, abgesichert in
+//   analytik/messpunkte.test.ts und App.nutzergewinnung.test.tsx
 // - Backend ohne Zugriffsprotokoll: backend/src/app.ts
 //   (disableRequestLogging), abgesichert in backend/test/datenschutz.test.ts
 // - Ratenbegrenzung und Sicherheitsprotokoll: backend/src/app.ts (GRENZEN,
@@ -44,7 +50,7 @@ import { BETREIBER } from '../rechtliches/betreiber'
 //   Anfrageprotokoll: Es traegt `url` und `remoteAddress`, und die URL der
 //   Bahnhofssuche IST die Koordinate. Genau dieser Satz auf dieser Seite
 //   waere damit unwahr geworden.
-export function Datenschutz({ onZurueck }: { onZurueck: () => void }) {
+export function Datenschutz({ onZurueck }: { onZurueck?: () => void }) {
   return (
     <main className="app">
       <header className="kopf">
@@ -217,14 +223,25 @@ export function Datenschutz({ onZurueck }: { onZurueck: () => void }) {
           Webseiten hinweg wiedererkennt.
         </p>
         <p>
-          <strong>Was übermittelt wird:</strong> die aufgerufene Adresse – sie
-          nennt nur den Bildschirm (etwa <code>/weg</code>), nie einen Bahnhof
-          oder ein Gleis –, der
+          <strong>Was übermittelt wird:</strong> die aufgerufene Adresse – die
+          Adresse der App nennt nur den Bildschirm (etwa <code>/weg</code>),
+          nie deinen Bahnhof oder dein Gleis; auf unseren öffentlichen
+          Bahnhofsseiten ist es die gelesene Seite (etwa{' '}
+          <code>/bahnhof/hannover-hbf</code>) –, der
           Verweis, aus dem du kamst, sowie Land, Betriebssystem und Browser in
           grober Form. Die <strong>Abfragezeichenkette der Adresse wird vorher
           abgeschnitten</strong> – sie könnte künftig Angaben tragen, die die
           Messung nichts angehen. Deine IP-Adresse wird zur Bestimmung des
           Landes verarbeitet und nicht gespeichert.
+        </p>
+        <p>
+          <strong>Vier Ereignisse je Umstieg:</strong> Damit wir sehen, an
+          welcher Stelle Menschen aufgeben, zählen wir zusätzlich, wenn eine
+          Eingabe abgeschlossen ist, die Navigation gestartet wurde, der
+          erste Schritt erreicht ist und das Ziel erreicht ist – jedes
+          höchstens einmal je Umstieg. Übermittelt wird dabei nur der Name des
+          Ereignisses: kein Bahnhof, kein Gleis, keine Uhrzeit und kein
+          Standort.
         </p>
         <p>
           <strong>Rechtsgrundlage:</strong> unser berechtigtes Interesse an
@@ -284,9 +301,16 @@ export function Datenschutz({ onZurueck }: { onZurueck: () => void }) {
         </p>
       </div>
 
-      <button type="button" className="knopf-sekundaer" onClick={onZurueck}>
-        Zurück
-      </button>
+      {/* Vorgerendert (ohne Rueckruf) ein Link - ohne JavaScript taete ein Knopf nichts. */}
+      {onZurueck ? (
+        <button type="button" className="knopf-sekundaer" onClick={onZurueck}>
+          Zurück
+        </button>
+      ) : (
+        <a className="knopf-sekundaer" href="/">
+          Zur Startseite
+        </a>
+      )}
     </main>
   )
 }

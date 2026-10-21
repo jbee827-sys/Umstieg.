@@ -1,0 +1,29 @@
+{
+  "name": "München Marienplatz",
+  "eva": "8004135",
+  "slug": "muenchen-marienplatz",
+  "lat": 48.137048,
+  "lon": 11.575386,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T19:19:39.713Z",
+  "gleise": [
+    "51",
+    "52",
+    "81",
+    "82"
+  ],
+  "paare": [
+    {"von":"51","nach":"52","gleicherBahnsteig":false,"sek":179,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":179},
+    {"von":"51","nach":"81","gleicherBahnsteig":false,"sek":192,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-oben","stufenfreiSek":318},
+    {"von":"51","nach":"82","gleicherBahnsteig":false,"sek":201,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-oben","stufenfreiSek":257},
+    {"von":"52","nach":"51","gleicherBahnsteig":false,"sek":179,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":179},
+    {"von":"52","nach":"81","gleicherBahnsteig":false,"sek":179,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-oben","stufenfreiSek":346},
+    {"von":"52","nach":"82","gleicherBahnsteig":false,"sek":188,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-oben","stufenfreiSek":266},
+    {"von":"81","nach":"51","gleicherBahnsteig":false,"sek":192,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-unten","stufenfreiSek":318},
+    {"von":"81","nach":"52","gleicherBahnsteig":false,"sek":179,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-unten","stufenfreiSek":346},
+    {"von":"81","nach":"82","gleicherBahnsteig":false,"sek":165,"wechsel":2,"anlagen":["rolltreppe"],"lage":"nach-unten","stufenfreiSek":272},
+    {"von":"82","nach":"51","gleicherBahnsteig":false,"sek":201,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-unten","stufenfreiSek":257},
+    {"von":"82","nach":"52","gleicherBahnsteig":false,"sek":188,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-unten","stufenfreiSek":266},
+    {"von":"82","nach":"81","gleicherBahnsteig":false,"sek":165,"wechsel":2,"anlagen":["rolltreppe"],"lage":"nach-oben","stufenfreiSek":272}
+  ]
+}

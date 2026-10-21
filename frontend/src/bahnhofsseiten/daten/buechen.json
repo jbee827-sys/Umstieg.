@@ -1,0 +1,29 @@
+{
+  "name": "Büchen",
+  "eva": "8000058",
+  "slug": "buechen",
+  "lat": 53.474972,
+  "lon": 10.623298,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T17:08:18.827Z",
+  "gleise": [
+    "1",
+    "4",
+    "21",
+    "22"
+  ],
+  "paare": [
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":532,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":601},
+    {"von":"1","nach":"21","gleicherBahnsteig":false,"sek":225,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":225},
+    {"von":"1","nach":"22","gleicherBahnsteig":false,"sek":516,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":532,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":601},
+    {"von":"4","nach":"21","gleicherBahnsteig":false,"sek":429,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":514},
+    {"von":"4","nach":"22","gleicherBahnsteig":false,"sek":554,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"21","nach":"1","gleicherBahnsteig":false,"sek":225,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":225},
+    {"von":"21","nach":"4","gleicherBahnsteig":false,"sek":429,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":514},
+    {"von":"21","nach":"22","gleicherBahnsteig":false,"sek":413,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"22","nach":"1","gleicherBahnsteig":false,"sek":516,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"22","nach":"4","gleicherBahnsteig":false,"sek":554,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"22","nach":"21","gleicherBahnsteig":false,"sek":413,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null}
+  ]
+}

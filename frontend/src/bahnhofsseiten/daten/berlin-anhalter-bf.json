@@ -1,0 +1,29 @@
+{
+  "name": "Berlin Anhalter Bf",
+  "eva": "8089002",
+  "slug": "berlin-anhalter-bf",
+  "lat": 52.503486,
+  "lon": 13.381362,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T20:08:54.628Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":5,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":5},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":157,"wechsel":2,"anlagen":["aufzug"],"lage":"ueberfuehrung","stufenfreiSek":157},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":157,"wechsel":2,"anlagen":["aufzug"],"lage":"ueberfuehrung","stufenfreiSek":157},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":5,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":5},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":157,"wechsel":2,"anlagen":["aufzug"],"lage":"ueberfuehrung","stufenfreiSek":157},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":157,"wechsel":2,"anlagen":["aufzug"],"lage":"ueberfuehrung","stufenfreiSek":157},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":157,"wechsel":2,"anlagen":["aufzug"],"lage":"ueberfuehrung","stufenfreiSek":157},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":157,"wechsel":2,"anlagen":["aufzug"],"lage":"ueberfuehrung","stufenfreiSek":157},
+    {"von":"3","nach":"4","gleicherBahnsteig":true,"sek":7,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":7},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":157,"wechsel":2,"anlagen":["aufzug"],"lage":"ueberfuehrung","stufenfreiSek":157},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":157,"wechsel":2,"anlagen":["aufzug"],"lage":"ueberfuehrung","stufenfreiSek":157},
+    {"von":"4","nach":"3","gleicherBahnsteig":true,"sek":7,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":7}
+  ]
+}

@@ -11,7 +11,8 @@
     "start:prod": "node dist/server.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "oxlint && tsc --noEmit"
+    "lint": "oxlint && tsc --noEmit",
+    "bahnhofsseiten": "tsx scripts/bahnhofsseiten-daten.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.0",

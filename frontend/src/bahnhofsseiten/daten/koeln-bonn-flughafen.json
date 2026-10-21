@@ -1,0 +1,29 @@
+{
+  "name": "Köln/Bonn Flughafen",
+  "eva": "8003330",
+  "slug": "koeln-bonn-flughafen",
+  "lat": 50.878901,
+  "lon": 7.119302,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T12:33:17.985Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":70,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":70},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":163,"wechsel":2,"anlagen":["treppe"],"lage":"ueberfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":163,"wechsel":2,"anlagen":["treppe"],"lage":"ueberfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":70,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":70},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":163,"wechsel":2,"anlagen":["treppe"],"lage":"ueberfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":163,"wechsel":2,"anlagen":["treppe"],"lage":"ueberfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":163,"wechsel":2,"anlagen":["treppe"],"lage":"ueberfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":163,"wechsel":2,"anlagen":["treppe"],"lage":"ueberfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"4","gleicherBahnsteig":true,"sek":67,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":67},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":163,"wechsel":2,"anlagen":["treppe"],"lage":"ueberfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":163,"wechsel":2,"anlagen":["treppe"],"lage":"ueberfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"3","gleicherBahnsteig":true,"sek":67,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":67}
+  ]
+}

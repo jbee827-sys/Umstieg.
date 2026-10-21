@@ -1,0 +1,38 @@
+{
+  "name": "Bad Kreuznach",
+  "eva": "8000021",
+  "slug": "bad-kreuznach",
+  "lat": 49.842399,
+  "lon": 7.866435,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T19:58:51.461Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":191,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":191},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":191,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":191},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":205,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":205},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":205,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":205},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":191,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":191},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":3,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":3},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":16,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":16},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":16,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":16},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":191,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":191},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":3,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":3},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":16,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":16},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":16,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":16},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":205,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":205},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":16,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":16},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":16,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":16},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":13,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":13},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":205,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":205},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":16,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":16},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":16,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":16},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":13,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":13}
+  ]
+}

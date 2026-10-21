@@ -1,0 +1,29 @@
+{
+  "name": "Itzehoe",
+  "eva": "8003102",
+  "slug": "itzehoe",
+  "lat": 53.923873,
+  "lon": 9.510287,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:37:10.677Z",
+  "gleise": [
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":27,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":27},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":149,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":250},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":149,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":250},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":27,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":27},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":149,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":250},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":149,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":250},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":149,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":250},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":149,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":250},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":95,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":95},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":149,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":250},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":149,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":250},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":95,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":95}
+  ]
+}

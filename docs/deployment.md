@@ -183,6 +183,21 @@ der Test `osm-startbestand.test.ts` schlägt dann an):
 
 Danach `backend/osm-bestand/` committen und deployen.
 
+**Danach jedes Mal auch die Bahnhofsseiten neu rechnen** (seit 21.10.2026,
+Konzept Nutzergewinnung AP 5a). Die vorgerenderten Seiten `/bahnhof/<name>`
+lesen ihre Gehzeiten aus eingecheckten JSON-Dateien, weil Vercel nur
+`frontend/` baut:
+
+    cd backend
+    npm run bahnhofsseiten
+
+Offline, ohne Schlüssel, rund 2,5 Minuten. Schreibt
+`frontend/src/bahnhofsseiten/daten/<slug>.json` neu (alte Dateien werden
+gelöscht) und protokolliert Bahnhöfe je Stufe, die übersprungenen der
+Stufe 3, Gleise, die einem größeren Bahnhof überlassen werden, und die
+Gesamtgröße. Über 5 MB: vor dem Einchecken nachfragen. Danach den Ordner
+committen und das Frontend ausliefern.
+
 **Overpass von Fly aus (seit 14.10.2026):** Ersatzserver ist `maps.mail.ru`
 (`overpass.kumi.systems` antwortet nicht mehr). Wer mit 429, 406 oder
 abgewiesener Verbindung antwortet, bekommt 60 s / 24 h / 30 min keine Anfrage –
@@ -248,6 +263,73 @@ vercel deploy --prod
 aus und setzt Sicherheits-Header. Beachte darin:
 `Permissions-Policy: geolocation=(self)` – ohne diese Erlaubnis wäre die
 gesamte Standortfunktion (P1) im Browser blockiert.
+
+### Vorgerenderte Seiten (seit 21.10.2026, Konzept Nutzergewinnung)
+
+`npm run build` laeuft dreistufig: `tsc -b`, `vite build`, dann
+`tsx scripts/statische-seiten.tsx`. Der letzte Schritt schreibt nach
+`frontend/dist/`:
+
+| Pfad | Quelle |
+|---|---|
+| `/impressum/`, `/datenschutz/` | dieselben Komponenten wie in der App, auf Grundlage der gebauten `index.html` (mit JavaScript startet darauf die App) |
+| `/bahnhof/<slug>/` (379), `/bahnhoefe/` | `frontend/src/bahnhofsseiten/daten/*.json` (aus `npm run bahnhofsseiten` im Backend) |
+| `/sitemap.xml` | alle oeffentlichen Seiten |
+| `/assets/bahnhofsseiten-<hash>.css`, `/assets/messung-<hash>.js` | CSS und Reichweitenmessung der Bahnhofsseiten - als Dateien, weil die CSP nichts Inline erlaubt |
+
+`robots.txt` liegt in `frontend/public/`. `vercel.json` setzt
+`"trailingSlash": false`; vorhandene Dateien gehen vor der Umschreibung
+`/(.*) → /index.html`, unbekannte `/bahnhof/...` landen in der App.
+
+**Vor der ersten Auslieferung in der Vorschau pruefen:** Liefert Vercel
+`/bahnhof/hannover-hbf` (ohne Schraegstrich) die Datei
+`bahnhof/hannover-hbf/index.html` - Titel „Umsteigen in Hannover Hbf …" -
+oder die App? `vite preview` tut es nur mit Schraegstrich, die Doku von
+Vercel sagt dazu nichts Ausdrueckliches. Faellt es auf die App: in
+`scripts/statische-seiten.tsx` die Seiten als `bahnhof/<slug>.html`
+schreiben und in `vercel.json` `"cleanUrls": true` setzen (Rewrite-Ziel
+dann `/index`, laut Vercel-Doku ohne `.html`). Ebenso fuer `/bahnhoefe`,
+`/impressum`, `/datenschutz`.
+
+Pruefen ohne JavaScript (Vercel beantwortet `curl` nach einigen Abfragen mit
+„Security Checkpoint" - einzeln und mit Abstand abfragen, sonst im Browser):
+
+```bash
+curl -s https://www.umstieg.online/ | grep -c "von Gleis zu Gleis"          # >= 2
+curl -s https://www.umstieg.online/bahnhof/hannover-hbf | grep -c "Gleis"    # Treffer
+curl -s -o /dev/null -w "%{http_code}\n" https://www.umstieg.online/robots.txt
+curl -s https://www.umstieg.online/sitemap.xml | grep -c "<url>"             # 383
+```
+
+Im Browser: Konsole ohne CSP-Verstoesse (auch nicht beim JSON-LD-Block),
+mobil und im Dunkelmodus; Lighthouse-SEO >= 90 fuer drei Bahnhofsseiten
+(gross, mittel, klein, etwa Hannover Hbf, Gütersloh Hbf, Berlin-Neukölln).
+
+## Suchmaschinen anmelden (Konzept Nutzergewinnung AP 6)
+
+Braucht Julians Konten und die DNS-Einstellungen von `umstieg.online` -
+deshalb nicht von Claude Code ausgefuehrt. Erst nach der Auslieferung der
+vorgerenderten Seiten (die Sitemap muss live sein).
+
+1. **Google Search Console:** <https://search.google.com/search-console> →
+   „Property hinzufügen" → Typ **Domain** → `umstieg.online`. Den angezeigten
+   TXT-Eintrag beim Domain-Anbieter im DNS hinterlegen, „Bestätigen" (kann
+   einige Minuten bis Stunden dauern).
+2. **Sitemap einreichen:** links „Sitemaps" →
+   `https://www.umstieg.online/sitemap.xml` → „Senden". Erwartet: Status
+   „Erfolgreich", 383 gefundene URLs.
+3. **Bing Webmaster Tools:** <https://www.bing.com/webmasters> → „Aus der
+   Google Search Console importieren" (ein Klick, keine zweite Bestätigung).
+   Bing speist auch Copilot und DuckDuckGo.
+4. **Indexierung anstoßen:** in der Search Console „URL-Prüfung" für
+   `https://www.umstieg.online/` und zwei Bahnhofsseiten (etwa
+   `/bahnhof/hannover-hbf`, `/bahnhof/koeln-hbf`) → „Indexierung beantragen".
+5. **Nach zwei Wochen:** Indexierungsbericht („Seiten") und „Leistung" →
+   Suchanfragen als Export an Claude Code geben; daraus wird ausgewertet,
+   welche Bahnhofsseiten gefunden werden und mit welchen Suchwoertern.
+
+Abnahme: Sitemap-Status „Erfolgreich", erste Bahnhofsseiten unter
+„Indexiert".
 
 ## Reihenfolge beim ersten Mal
 

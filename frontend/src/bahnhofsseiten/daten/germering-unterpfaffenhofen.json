@@ -1,0 +1,22 @@
+{
+  "name": "Germering-Unterpfaffenhofen",
+  "eva": "8006006",
+  "slug": "germering-unterpfaffenhofen",
+  "lat": 48.12887,
+  "lon": 11.364023,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:07:39.472Z",
+  "gleise": [
+    "1",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":164,"wechsel":3,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":164,"wechsel":3,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":164,"wechsel":3,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":15,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":15},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":164,"wechsel":3,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":15,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":15}
+  ]
+}

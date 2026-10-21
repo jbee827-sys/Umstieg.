@@ -1,0 +1,22 @@
+{
+  "name": "Opladen",
+  "eva": "8000853",
+  "slug": "opladen",
+  "lat": 51.066175,
+  "lon": 7.008775,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T12:33:53.678Z",
+  "gleise": [
+    "1",
+    "2",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":164,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":165,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":164,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":13,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":13},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":165,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":13,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":13}
+  ]
+}

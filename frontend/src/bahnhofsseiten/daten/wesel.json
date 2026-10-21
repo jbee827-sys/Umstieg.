@@ -1,0 +1,29 @@
+{
+  "name": "Wesel",
+  "eva": "8000242",
+  "slug": "wesel",
+  "lat": 51.65584,
+  "lon": 6.627134,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T13:47:09.567Z",
+  "gleise": [
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":25,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":25},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":371,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":468},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":371,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":468},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":25,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":25},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":371,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":468},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":371,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":468},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":371,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":468},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":371,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":468},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":46,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":46},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":371,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":468},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":371,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":468},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":46,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":46}
+  ]
+}

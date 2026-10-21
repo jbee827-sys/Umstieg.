@@ -1,0 +1,22 @@
+{
+  "name": "Landstuhl",
+  "eva": "8003515",
+  "slug": "landstuhl",
+  "lat": 49.416287,
+  "lon": 7.565931,
+  "stufe": 2,
+  "geholtAm": "2026-10-13T18:46:59.247Z",
+  "gleise": [
+    "1",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":37,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":37},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":37,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":37}
+  ]
+}

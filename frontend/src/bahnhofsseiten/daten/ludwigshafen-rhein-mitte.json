@@ -1,0 +1,22 @@
+{
+  "name": "Ludwigshafen(Rhein) Mitte",
+  "eva": "8003759",
+  "slug": "ludwigshafen-rhein-mitte",
+  "lat": 49.479005,
+  "lon": 8.452152,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T14:10:09.470Z",
+  "gleise": [
+    "1",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":171,"wechsel":2,"anlagen":["rolltreppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":171,"wechsel":2,"anlagen":["rolltreppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":171,"wechsel":2,"anlagen":["rolltreppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":108,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":108},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":171,"wechsel":2,"anlagen":["rolltreppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":108,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":108}
+  ]
+}

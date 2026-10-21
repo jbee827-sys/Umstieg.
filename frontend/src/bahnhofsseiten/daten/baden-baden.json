@@ -1,0 +1,38 @@
+{
+  "name": "Baden-Baden",
+  "eva": "8000774",
+  "slug": "baden-baden",
+  "lat": 48.790327,
+  "lon": 8.190831,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T20:03:56.746Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "7"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":176,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":261},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":176,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":261},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":194,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"7","gleicherBahnsteig":false,"sek":188,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":176,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":261},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":2,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":2},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":111,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"7","gleicherBahnsteig":false,"sek":155,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":176,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":261},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":2,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":2},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":111,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"7","gleicherBahnsteig":false,"sek":155,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":194,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":111,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":111,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"7","gleicherBahnsteig":false,"sek":136,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"7","nach":"1","gleicherBahnsteig":false,"sek":188,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"7","nach":"2","gleicherBahnsteig":false,"sek":155,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"7","nach":"3","gleicherBahnsteig":false,"sek":155,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"7","nach":"4","gleicherBahnsteig":false,"sek":136,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null}
+  ]
+}

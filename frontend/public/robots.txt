@@ -1,0 +1,13 @@
+# Umstieg. - Konzept Nutzergewinnung AP 2 (21.10.2026)
+#
+# Die vier gesperrten Pfade zeigen ohne gespeicherte Reise nur die Eingabe
+# und waeren doppelte Inhalte. Alles andere ist offen - ausdruecklich auch
+# fuer KI-Crawler (GPTBot, ClaudeBot, PerplexityBot).
+User-agent: *
+Allow: /
+Disallow: /uebersicht
+Disallow: /weg
+Disallow: /meldungen
+Disallow: /angekommen
+
+Sitemap: https://www.umstieg.online/sitemap.xml

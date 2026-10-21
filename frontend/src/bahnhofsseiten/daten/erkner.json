@@ -1,0 +1,38 @@
+{
+  "name": "Erkner",
+  "eva": "8013477",
+  "slug": "erkner",
+  "lat": 52.4275606,
+  "lon": 13.7522435,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T17:47:38.156Z",
+  "gleise": [
+    "1",
+    "2",
+    "31",
+    "32",
+    "34"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":133,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":133},
+    {"von":"1","nach":"31","gleicherBahnsteig":false,"sek":317,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":317},
+    {"von":"1","nach":"32","gleicherBahnsteig":false,"sek":317,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":317},
+    {"von":"1","nach":"34","gleicherBahnsteig":false,"sek":298,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":298},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":133,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":133},
+    {"von":"2","nach":"31","gleicherBahnsteig":false,"sek":188,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":188},
+    {"von":"2","nach":"32","gleicherBahnsteig":false,"sek":188,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":188},
+    {"von":"2","nach":"34","gleicherBahnsteig":false,"sek":169,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":169},
+    {"von":"31","nach":"1","gleicherBahnsteig":false,"sek":317,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":317},
+    {"von":"31","nach":"2","gleicherBahnsteig":false,"sek":188,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":188},
+    {"von":"31","nach":"32","gleicherBahnsteig":true,"sek":56,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":56},
+    {"von":"31","nach":"34","gleicherBahnsteig":false,"sek":225,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":225},
+    {"von":"32","nach":"1","gleicherBahnsteig":false,"sek":317,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":317},
+    {"von":"32","nach":"2","gleicherBahnsteig":false,"sek":188,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":188},
+    {"von":"32","nach":"31","gleicherBahnsteig":true,"sek":56,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":56},
+    {"von":"32","nach":"34","gleicherBahnsteig":false,"sek":225,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":225},
+    {"von":"34","nach":"1","gleicherBahnsteig":false,"sek":298,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":298},
+    {"von":"34","nach":"2","gleicherBahnsteig":false,"sek":169,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":169},
+    {"von":"34","nach":"31","gleicherBahnsteig":false,"sek":225,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":225},
+    {"von":"34","nach":"32","gleicherBahnsteig":false,"sek":225,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":225}
+  ]
+}

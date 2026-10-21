@@ -1,0 +1,22 @@
+{
+  "name": "Hamburg-Blankenese",
+  "eva": "8001007",
+  "slug": "hamburg-blankenese",
+  "lat": 53.564364,
+  "lon": 9.814607,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T20:25:53.662Z",
+  "gleise": [
+    "1",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":193,"wechsel":1,"anlagen":["treppe"],"lage":"nach-unten","stufenfreiSek":289},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":193,"wechsel":1,"anlagen":["treppe"],"lage":"nach-unten","stufenfreiSek":289},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":193,"wechsel":1,"anlagen":["treppe"],"lage":"nach-oben","stufenfreiSek":289},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":42,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":42},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":193,"wechsel":1,"anlagen":["treppe"],"lage":"nach-oben","stufenfreiSek":289},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":42,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":42}
+  ]
+}

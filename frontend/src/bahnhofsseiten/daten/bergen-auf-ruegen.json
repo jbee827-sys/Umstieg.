@@ -1,0 +1,29 @@
+{
+  "name": "Bergen auf Rügen",
+  "eva": "8010033",
+  "slug": "bergen-auf-ruegen",
+  "lat": 54.4205,
+  "lon": 13.417821,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T20:06:28.129Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":13,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":13},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":294,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":361},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":294,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":361},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":13,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":13},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":294,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":361},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":294,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":361},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":294,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":361},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":294,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":361},
+    {"von":"3","nach":"4","gleicherBahnsteig":true,"sek":47,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":47},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":294,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":361},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":294,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":361},
+    {"von":"4","nach":"3","gleicherBahnsteig":true,"sek":47,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":47}
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "München Hackerbrücke",
+  "eva": "8004129",
+  "slug": "muenchen-hackerbruecke",
+  "lat": 48.141969,
+  "lon": 11.548572,
+  "stufe": 2,
+  "geholtAm": "2026-10-13T19:17:35.414Z",
+  "gleise": [
+    "1",
+    "2"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":11,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":11},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":11,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":11}
+  ]
+}

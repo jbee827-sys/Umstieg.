@@ -1,0 +1,17 @@
+{
+  "name": "Jena West",
+  "eva": "8011957",
+  "slug": "jena-west",
+  "lat": 50.923286,
+  "lon": 11.577848,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:37:41.997Z",
+  "gleise": [
+    "1",
+    "2"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":240,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":240},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":240,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":240}
+  ]
+}

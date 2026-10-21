@@ -1,0 +1,17 @@
+{
+  "name": "München-Giesing",
+  "eva": "8004148",
+  "slug": "muenchen-giesing",
+  "lat": 48.110803,
+  "lon": 11.596346,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T19:21:12.120Z",
+  "gleise": [
+    "51",
+    "52"
+  ],
+  "paare": [
+    {"von":"51","nach":"52","gleicherBahnsteig":true,"sek":30,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":30},
+    {"von":"52","nach":"51","gleicherBahnsteig":true,"sek":30,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":30}
+  ]
+}

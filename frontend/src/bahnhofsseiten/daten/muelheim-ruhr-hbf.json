@@ -1,0 +1,29 @@
+{
+  "name": "Mülheim(Ruhr)Hbf",
+  "eva": "8000259",
+  "slug": "muelheim-ruhr-hbf",
+  "lat": 51.431342,
+  "lon": 6.88651,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T19:14:40.356Z",
+  "gleise": [
+    "1",
+    "2",
+    "5",
+    "6"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":25,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":25},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":62,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":62},
+    {"von":"1","nach":"6","gleicherBahnsteig":false,"sek":62,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":62},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":25,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":25},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":49,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":49},
+    {"von":"2","nach":"6","gleicherBahnsteig":false,"sek":49,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":49},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":62,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":62},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":49,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":49},
+    {"von":"5","nach":"6","gleicherBahnsteig":true,"sek":21,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":21},
+    {"von":"6","nach":"1","gleicherBahnsteig":false,"sek":62,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":62},
+    {"von":"6","nach":"2","gleicherBahnsteig":false,"sek":49,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":49},
+    {"von":"6","nach":"5","gleicherBahnsteig":true,"sek":21,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":21}
+  ]
+}

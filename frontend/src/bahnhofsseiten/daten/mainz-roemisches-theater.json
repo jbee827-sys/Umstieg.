@@ -1,0 +1,29 @@
+{
+  "name": "Mainz Römisches Theater",
+  "eva": "8003816",
+  "slug": "mainz-roemisches-theater",
+  "lat": 49.993465,
+  "lon": 8.277565,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:59:18.241Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":215,"wechsel":3,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":215,"wechsel":3,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":241,"wechsel":3,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":215,"wechsel":3,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":8,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":8},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":152,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":215,"wechsel":3,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":8,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":8},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":152,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":241,"wechsel":3,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":152,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":152,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null}
+  ]
+}
