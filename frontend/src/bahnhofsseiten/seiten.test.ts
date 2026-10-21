@@ -76,7 +76,7 @@ describe('bahnhofsseiteHtml: Inhalt', () => {
   it('beginnt mit der Ueberschrift und dem Einleitungssatz', () => {
     expect(doc.querySelector('h1')?.textContent).toBe('Umsteigen in Hannover Hbf')
     expect(doc.body.textContent).toContain(
-      'Gehzeiten zwischen allen 3 Gleisen, berechnet aus dem Bahnhofsplan, bei normalem Gehtempo ab Bahnsteigmitte.',
+      'Gehzeiten zwischen 3 Gleisen, berechnet aus dem Bahnhofsplan, bei normalem Gehtempo ab Bahnsteigmitte.',
     )
   })
 
@@ -180,6 +180,7 @@ describe('sitemapXml (Konzept AP 2)', () => {
       'https://www.umstieg.online/bahnhof/hannover-hbf',
       'https://www.umstieg.online/impressum',
       'https://www.umstieg.online/datenschutz',
+      'https://www.umstieg.online/daten',
     ])
   })
 

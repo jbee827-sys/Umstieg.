@@ -1,7 +1,7 @@
 // Schreibt nach `vite build` die vorgerenderten Seiten nach dist/ (Konzept
 // Nutzergewinnung, 21.10.2026):
 //
-// - /impressum, /datenschutz (AP 3.4) - auf Grundlage der gebauten
+// - /impressum, /datenschutz (AP 3.4), /daten (21.10.2026) - auf Grundlage der gebauten
 //   index.html, mit JavaScript startet darauf die App
 // - /bahnhof/<slug> je Bahnhof aus src/bahnhofsseiten/daten/ und die
 //   Uebersicht /bahnhoefe (AP 5b) - eigenstaendig, ohne App
@@ -23,6 +23,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { bahnhofsseiteHtml, BAHNHOF_PFAD, sitemapXml, uebersichtHtml, type Bauteile } from '../src/bahnhofsseiten/seiten'
 import type { Bahnhofsdaten } from '../src/bahnhofsseiten/typen'
+import { ohneLuecken } from '../src/bahnhofsseiten/texte'
 import { rechtsseiteHtml } from '../src/statisch/rechtsseiten'
 
 const DIST = fileURLToPath(new URL('../dist/', import.meta.url))
@@ -79,10 +80,13 @@ function ladeDaten(): Bahnhofsdaten[] {
     // Stufe 3 hat keine Seite (Konzept 5a.2) - das Skript schreibt sie gar
     // nicht erst; doppelt haelt besser.
     .filter((d) => d.stufe !== 3)
+    // Gleispaare ohne Weg im Plan fallen weg (Julian, 21.10.2026).
+    .map(ohneLuecken)
+    .filter((d): d is Bahnhofsdaten => d !== null)
 }
 
 const vorlage = readFileSync(join(DIST, 'index.html'), 'utf8')
-for (const seite of ['impressum', 'datenschutz'] as const) {
+for (const seite of ['impressum', 'datenschutz', 'daten'] as const) {
   schreibeSeite(seite, rechtsseiteHtml(vorlage, seite))
 }
 
@@ -93,5 +97,5 @@ schreibeSeite('bahnhoefe', uebersichtHtml(alle, teile))
 writeFileSync(join(DIST, 'sitemap.xml'), sitemapXml(alle, new Date().toISOString().slice(0, 10)), 'utf8')
 
 console.log(
-  `statische Seiten: impressum, datenschutz, bahnhoefe, ${alle.length} Bahnhofsseiten, sitemap.xml (${teile.css}, ${teile.messung})`,
+  `statische Seiten: impressum, datenschutz, daten, bahnhoefe, ${alle.length} Bahnhofsseiten, sitemap.xml (${teile.css}, ${teile.messung})`,
 )

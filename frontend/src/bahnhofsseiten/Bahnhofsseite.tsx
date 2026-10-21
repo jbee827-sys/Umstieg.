@@ -20,8 +20,11 @@ import type { Bahnhofsdaten, Gleispaar } from './typen'
 function Seitenkopf() {
   return (
     <header className="bs-kopf">
-      <a href="/" className="bs-marke">
-        <img src="/lockup-zwei-gleise.png" alt="Umstieg." width={1003} height={181} />
+      {/* Hell- und Nachtfassung wie in der App (App.tsx, 21.10.2026); der
+          Name steht deshalb am Link, nicht an den Bildern. */}
+      <a href="/" className="bs-marke" aria-label="Umstieg.">
+        <img className="lockup-hell" src="/lockup-zwei-gleise.png" alt="" width={1003} height={181} />
+        <img className="lockup-dunkel" src="/lockup-zwei-gleise-dunkel.png" alt="" width={1003} height={181} />
       </a>
     </header>
   )
@@ -72,7 +75,7 @@ export function Bahnhofsseite({ d }: { d: Bahnhofsdaten }) {
       <main className="bahnhofsseite">
         <h1>Umsteigen in {d.name}</h1>
         <p className="bs-einleitung">
-          Gehzeiten zwischen allen {d.gleise.length} Gleisen, berechnet aus dem Bahnhofsplan, bei
+          Gehzeiten zwischen {d.gleise.length} Gleisen, berechnet aus dem Bahnhofsplan, bei
           normalem Gehtempo ab Bahnsteigmitte.
         </p>
         <a className="bs-knopf" href={eingabeLink(d)}>

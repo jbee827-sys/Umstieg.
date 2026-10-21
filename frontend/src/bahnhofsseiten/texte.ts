@@ -1,4 +1,16 @@
-import type { Anlage, Gleispaar, Lage } from './typen'
+import type { Anlage, Bahnhofsdaten, Gleispaar, Lage } from './typen'
+
+/**
+ * Nur, was der Bahnhofsplan kennt (Julian, 21.10.2026). 822 von 19 894
+ * Gleispaaren hatten keinen Weg - Luecken in OSM oder Scheingleise wie
+ * Kaiserslautern „120“. Sie fallen weg, ebenso Gleise, die danach nirgends
+ * mehr vorkommen. Bleiben keine zwei verbundenen Gleise, gibt es keine Seite.
+ */
+export function ohneLuecken(d: Bahnhofsdaten): Bahnhofsdaten | null {
+  const paare = d.paare.filter((p) => p.sek !== null)
+  const gleise = d.gleise.filter((g) => paare.some((p) => p.von === g || p.nach === g))
+  return gleise.length < 2 ? null : { ...d, gleise, paare }
+}
 
 /** Aufgerundet - wer 61 Sekunden braucht, braucht nicht „1 min". */
 export function minuten(sek: number): number {

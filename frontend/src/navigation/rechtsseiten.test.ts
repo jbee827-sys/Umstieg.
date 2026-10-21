@@ -28,7 +28,7 @@ describe('rechtsseiteAusPfad', () => {
   })
 
   it('nennt die Pfade wie die Seiten', () => {
-    expect(RECHTSPFAD).toEqual({ impressum: '/impressum', datenschutz: '/datenschutz' })
+    expect(RECHTSPFAD).toEqual({ impressum: '/impressum', datenschutz: '/datenschutz', daten: '/daten' })
   })
 })
 
