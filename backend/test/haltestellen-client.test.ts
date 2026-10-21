@@ -44,6 +44,15 @@ describe('HaltestellenClient', () => {
     expect(k.stoptimes).toHaveBeenCalledTimes(2);
   });
 
+  it('Bahnhofsumkreis: eigene Tafel, Umkreis geht an MOTIS (21.10.2026)', async () => {
+    const k = kern();
+    const c = erzeugeHaltestellenClient(alsKern(k), { jetzt: () => new Date('2026-10-16T14:00:00Z') });
+    await c.tafel(KASSEL, 'dep');
+    await c.tafel({ ...KASSEL, umkreisM: 250 }, 'dep');
+    expect(k.stoptimes).toHaveBeenCalledTimes(2);
+    expect(k.stoptimes).toHaveBeenLastCalledWith({ stopId: KASSEL.id, lat: KASSEL.lat, lon: KASSEL.lon, typ: 'dep', ab: new Date('2026-10-16T13:55:00Z'), radiusM: 250 });
+  });
+
   it('Tafel fuer den Poller geht immer hinaus', async () => {
     const k = kern();
     const c = erzeugeHaltestellenClient(alsKern(k));

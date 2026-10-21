@@ -470,6 +470,13 @@ export interface HaltestellenTafelEintrag {
   /** F5: Ohne Echtzeit zeigt die Oberfläche „laut Fahrplan“. */
   echtzeit: boolean;
   ausfall: boolean;
+  /**
+   * Der Halt dieser Fahrt. Im Bahnhofsumkreis steht der Bus oft an einem Halt
+   * mit eigenem Namen („Göttingen Bahnhof/ZOB“) – die Oberfläche nennt ihn,
+   * und die Live-Überwachung fragt genau ihn ab.
+   */
+  haltId?: string;
+  haltName?: string;
 }
 
 /** Ein Punkt, zwischen dem und einem anderen ein Fußweg gesucht wird. */

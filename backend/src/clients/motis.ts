@@ -70,6 +70,8 @@ export interface MotisKern {
     lon: number;
     typ: 'arr' | 'dep';
     ab: Date;
+    /** Vorgabe `RUECKFALL_RADIUS_M`; der Bahnhofsumkreis fragt weiter. */
+    radiusM?: number;
   }): Promise<MotisStoptimesAntwort>;
   trip(tripId: string): Promise<MotisItinerary>;
   plan(a: { von: Steigpunkt; nach: Steigpunkt; profil: 'FOOT' | 'WHEELCHAIR' }): Promise<MotisPlanAntwort>;
@@ -135,13 +137,13 @@ export function erzeugeMotisKern(o: {
         { place: `${rundeKoordinate(lat)},${rundeKoordinate(lon)}`, type: 'STOP', numResults: '10' },
         MOTIS_ZEITGRENZEN_MS.suche,
       ),
-    stoptimes: ({ stopId, lat, lon, typ, ab }) =>
+    stoptimes: ({ stopId, lat, lon, typ, ab, radiusM }) =>
       hole<MotisStoptimesAntwort>(
         'stoptimes',
         {
           stopId,
           center: `${lat},${lon}`,
-          radius: String(RUECKFALL_RADIUS_M),
+          radius: String(radiusM ?? RUECKFALL_RADIUS_M),
           time: ab.toISOString(),
           arriveBy: typ === 'arr' ? 'true' : 'false',
           // Ohne das zählt MOTIS bei arriveBy=true RÜCKWÄRTS (OpenAPI:
