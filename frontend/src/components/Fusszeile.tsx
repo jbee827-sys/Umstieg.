@@ -35,6 +35,10 @@ export function Fusszeile() {
         Datenschutz
       </a>
       <span aria-hidden="true">·</span>
+      {/* Die vorgerenderte Uebersicht - ein gewoehnlicher Seitenwechsel aus
+          der App heraus (Konzept Nutzergewinnung 5c.3). */}
+      <a href="/bahnhoefe">Bahnhöfe</a>
+      <span aria-hidden="true">·</span>
       <a href={QUELLCODE_URL} target="_blank" rel="noopener noreferrer">
         Quellcode
       </a>

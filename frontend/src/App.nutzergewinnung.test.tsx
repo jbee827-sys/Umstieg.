@@ -8,6 +8,7 @@ import { sucheOrte } from './api/orte'
 import type { RouteErgebnis, RouteParameter } from './api/typen'
 import { leiteRauteUm, oeffneRechtsseite } from './navigation/rechtsseiten'
 import { schreibeReise } from './sitzung/reisespeicher'
+import { uebernimmBahnhofAusAdresse } from './sitzung/vorbelegung'
 
 /**
  * Konzept Nutzergewinnung (21.10.2026) am echten `App`: Rechtsseiten mit
@@ -174,6 +175,30 @@ describe('App: die vier Messpunkte (AP 4)', () => {
     expect(push.mock.calls.map(([, , adresse]) => adresse)).toContain('/uebersicht')
     push.mockRestore()
   }, ABLAUF_MS)
+})
+
+describe('App: von den Bahnhofsseiten in die App (AP 5c)', () => {
+  it('uebernimmt den Bahnhof aus dem Link der Bahnhofsseite in die Eingabe', () => {
+    window.history.replaceState(null, '', '/eingabe?bahnhof=8010205&name=Leipzig+Hbf&lat=51.345&lon=12.381')
+    uebernimmBahnhofAusAdresse()
+    render(<App />)
+    expect((screen.getByLabelText('Ankunft: Bahnhof oder Haltestelle') as HTMLInputElement).value).toBe('Leipzig Hbf')
+    expect(window.location.pathname + window.location.search).toBe('/eingabe')
+  })
+
+  // Vercel liefert /bahnhof/<slug> als Datei aus; gibt es sie nicht, greift
+  // die Umschreibung auf index.html - die App darf dann nicht leer bleiben.
+  it('zeigt fuer einen unbekannten Bahnhof die Eingabe', () => {
+    window.history.replaceState(null, '', '/bahnhof/gibt-es-nicht')
+    render(<App />)
+    expect(screen.getByLabelText('Ankunft: Bahnhof oder Haltestelle')).toBeDefined()
+    expect(window.location.pathname).toBe('/eingabe')
+  })
+
+  it('verlinkt in der Fusszeile der Eingabe die Uebersicht der Bahnhoefe', () => {
+    render(<App />)
+    expect(screen.getByRole('link', { name: 'Bahnhöfe' }).getAttribute('href')).toBe('/bahnhoefe')
+  })
 })
 
 describe('App: Rechtsseiten mit eigener Adresse (AP 3)', () => {
