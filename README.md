@@ -19,14 +19,52 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 19.10.2026, abends)
+## Hier weitermachen (Stand 21.10.2026, abends)
 
-### Nutzergewinnung (21.10.2026) – fertig im Zweig, NICHT ausgeliefert
+### Ausgeliefert am 21.10.2026
+
+**Live:** Frontend aus `main` (Vercel baut die Produktion beim Push auf
+`main`), Backend auf Fly (eine Maschine, `--ha=false`). `main`, `feat/mvp`
+und `feat/umstieg-2` stehen gleich (Fast-Forward). Geprüft im Browser auf
+www.umstieg.online: Göttingen-Bahnhofsseite → „Weg für meinen Umstieg
+anzeigen" belegt Göttingen vor, Tafeln mit Bus vom ZOB; `/daten`; Hannover
+ohne doppelte Fahrten (Fly-API).
+
+- **Bus, Tram, U-Bahn am Bahnhof** (Spec
+  `docs/superpowers/specs/2026-10-21-bus-am-bahnhof-design.md`): Die
+  Bahnhofstafeln zeigen unter den Zügen die Haltestellentafel des Bahnhofs
+  im Umkreis 250 m (`umkreis=bahnhof`), auch Halte mit anderem Namen
+  („Göttingen Bahnhof/ZOB"). Zug ↔ Bus wird als Haltestellenumstieg
+  gerechnet; der DB-Zug wird seiner Transitous-Fahrt zugeordnet
+  (`ort/bahnhofsumfeld.ts`). Je Fahrt-ID ein Eintrag (früher Halt).
+- **Eingabe:** „Andere Haltestelle als Ankunft" zum Aufklappen; große rote
+  Ortsüberschriften; „Ankunft"/„Abfahrt" über den Boxen; Logo nachts in
+  eigener Fassung (`lockup-zwei-gleise-dunkel.png`, Nachtrot #ff5233).
+- **Navigation:** weniger kleine Schritte (`textgen.ts`, `fasseZusammen`;
+  Messung `backend/scripts/schritte-messung.ts`: 1884 → 1526 Schritte über
+  364 Wege, Schema-Zuordnung 0 Abweichungen); kein Abzeichen „Präzise
+  Karte" mehr; Karte startet beim Weg statt bei Zoom 0.
+- **Nutzergewinnung** (Konzept AP 1–5, Abschnitt unten): zusammengeführt
+  und live. Gleispaare ohne Weg im Plan fallen weg (`ohneLuecken`, 377
+  Bahnhofsseiten). Fußzeile nur noch „Impressum · Datenschutz · Daten";
+  `/daten` führt Bahnhofsliste, Quellcode (§ 13 AGPL), Transitous, DELFI,
+  DB und OSM zusammen (Julian, 21.10.2026). **Transitous verlangt einen
+  Link auf transitous.org/sources „in a visible place"** – er steht jetzt
+  nur auf `/daten`; so entschieden (Julian, 21.10.2026).
+
+**Offen:** Search Console und Bing (AP 6, Julian, Anleitung in
+`docs/deployment.md`); Lighthouse-SEO; Treppen über Zwischenebenen im
+Bahnhofspfad (Minden) bleiben zwei Schritte, weil das Ebenenschema jede
+Ebene als Band zeigt; Vercel-Freigabelink für die Vorschau von
+`feat/nutzergewinnung` läuft am 22.10.2026, 18:07 ab.
+
+### Nutzergewinnung (21.10.2026) – seit dem Abend live (siehe oben)
 
 Konzept: `D:\Claude-code\03-konzept-Nutzergewinnung.md`. Umgesetzt auf
 Zweig **`feat/nutzergewinnung`** (abgezweigt von `feat/umstieg-2` bei
-`80b6a2b`, nicht `feat/mvp` wie im Konzept). Nichts gepusht, nichts
-ausgeliefert, keine Vercel-Einstellung geändert.
+`80b6a2b`, nicht `feat/mvp` wie im Konzept), am 21.10.2026 in
+`feat/umstieg-2` zusammengeführt und ausgeliefert. Die Tabelle beschreibt
+den Stand im Zweig.
 
 | Paket | Stand im Zweig |
 |---|---|
