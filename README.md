@@ -52,8 +52,20 @@ ohne doppelte Fahrten (Fly-API).
   Link auf transitous.org/sources „in a visible place"** – er steht jetzt
   nur auf `/daten`; so entschieden (Julian, 21.10.2026).
 
-**Offen:** Search Console und Bing (AP 6, Julian, Anleitung in
-`docs/deployment.md`); Lighthouse-SEO; Treppen über Zwischenebenen im
+**Search Console (AP 6, Julian, 21.10.2026 abends):** Domain-Property
+`umstieg.online` angelegt; der TXT-Eintrag `google-site-verification=…`
+steht im **Vercel-DNS** (Nameserver `ns1/ns2.vercel-dns.com` – DNS-Einträge
+werden bei Vercel unter Domains → umstieg.online gepflegt, nicht beim
+Registrar) und ist öffentlich sichtbar (geprüft über 8.8.8.8). Live geprüft:
+`/sitemap.xml` HTTP 200 mit 382 Adressen, in `robots.txt` genannt.
+Nächste Schritte bei Julian: Sitemap als
+`https://www.umstieg.online/sitemap.xml` einreichen (bei der Domain-Property
+mit voller Adresse), „Indexierung beantragen" für `/`, `/bahnhoefe`,
+`/bahnhof/hannover-hbf`, Bing Webmaster Tools per Import aus der Search
+Console. Nach ein bis zwei Wochen Bericht „Seiten" und „Leistung" auswerten
+(Export an Claude).
+
+**Offen:** Lighthouse-SEO; Treppen über Zwischenebenen im
 Bahnhofspfad (Minden) bleiben zwei Schritte, weil das Ebenenschema jede
 Ebene als Band zeigt; Vercel-Freigabelink für die Vorschau von
 `feat/nutzergewinnung` läuft am 22.10.2026, 18:07 ab.
