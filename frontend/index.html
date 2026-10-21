@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Umstieg.</title>
+    <title>Umstieg. – Der Weg von Gleis zu Gleis beim Umsteigen</title>
 
     <!-- Logo nur als Kopfdaten: Die Marke steht bewusst NICHT in der
          Oberflaeche, sondern allein dort, wo Suchmaschinen, geteilte Links
@@ -16,27 +16,72 @@
     <link rel="icon" type="image/png" sizes="512x512" href="/umstieg-logo-512.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
+    <!-- Titel und Beschreibung sind der Text im Suchergebnis (Konzept
+         Nutzergewinnung, Abschnitt 4.1). Google kuerzt Titel ab etwa 60,
+         Beschreibungen ab etwa 155 Zeichen - startseite.test.ts haelt beides. -->
     <meta
       name="description"
-      content="Zeigt beim Umsteigen den Weg vom Ankunfts- zum Abfahrtsgleis – mit Gehzeit und Ebenenwechseln."
+      content="Ankunftsgleis und Abfahrtsgleis eingeben: Umstieg. zeigt den Weg durch den Bahnhof mit Treppen, Aufzügen und Gehzeit und sagt, ob der Anschluss klappt."
     />
+    <!-- Gilt fuer / und die Bildschirm-Pfade der App (/eingabe ...). Die
+         vorgerenderten Seiten (/bahnhof/..., /impressum ...) setzen ihre
+         eigene. -->
     <link rel="canonical" href="https://www.umstieg.online/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Umstieg." />
-    <meta property="og:title" content="Umstieg." />
+    <meta property="og:title" content="Umstieg. – Der Weg von Gleis zu Gleis beim Umsteigen" />
     <meta
       property="og:description"
-      content="Zeigt beim Umsteigen den Weg vom Ankunfts- zum Abfahrtsgleis – mit Gehzeit und Ebenenwechseln."
+      content="Ankunftsgleis und Abfahrtsgleis eingeben: Umstieg. zeigt den Weg durch den Bahnhof mit Treppen, Aufzügen und Gehzeit und sagt, ob der Anschluss klappt."
     />
     <meta property="og:url" content="https://www.umstieg.online/" />
     <meta property="og:image" content="https://www.umstieg.online/umstieg-og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Umstieg. – Der Weg von Gleis zu Gleis beim Umsteigen" />
+    <meta
+      name="twitter:description"
+      content="Ankunftsgleis und Abfahrtsgleis eingeben: Umstieg. zeigt den Weg durch den Bahnhof mit Treppen, Aufzügen und Gehzeit und sagt, ob der Anschluss klappt."
+    />
     <meta name="twitter:image" content="https://www.umstieg.online/umstieg-og.png" />
+    <!-- Ein Datenblock, kein Skript: Die CSP (script-src 'self') fuehrt ihn
+         nicht aus und muss es auch nicht. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Umstieg.",
+        "url": "https://www.umstieg.online/",
+        "description": "Ankunftsgleis und Abfahrtsgleis eingeben: Umstieg. zeigt den Weg durch den Bahnhof mit Treppen, Aufzügen und Gehzeit und sagt, ob der Anschluss klappt.",
+        "applicationCategory": "TravelApplication",
+        "operatingSystem": "Web",
+        "inLanguage": "de",
+        "offers": { "@type": "Offer", "price": 0, "priceCurrency": "EUR" }
+      }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Der Vortext ist fuer alle, die kein JavaScript ausfuehren: KI-Crawler
+         (GPTBot, ClaudeBot, PerplexityBot) und Googles erste Welle. Beim Start
+         ersetzt createRoot().render() ihn durch die App - Nutzer sehen ihn
+         nur ohne JavaScript oder fuer einen Augenblick beim Laden. -->
+    <div id="root">
+      <div class="vortext">
+        <h1>Der Weg von Gleis zu Gleis beim Umsteigen</h1>
+        <p>
+          Umstieg. zeigt dir im Bahnhof den Weg vom Ankunftsgleis zum
+          Abfahrtsgleis – ab der Stelle, an der dein Wagen hält, über Treppe,
+          Aufzug oder Unterführung, Schritt für Schritt.
+        </p>
+        <p>
+          Aus der Gehzeit und den Live-Daten der Bahn errechnet die App, wie
+          viel Zeit dir bis zur Abfahrt bleibt und ob der Anschluss klappt.
+          Kostenlos und ohne Anmeldung.
+        </p>
+        <p><a href="/bahnhoefe">Umsteigezeiten für alle Bahnhöfe</a></p>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
