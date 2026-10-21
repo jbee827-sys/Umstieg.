@@ -1,6 +1,6 @@
 import { ANGABEN_FEHLEN, BETREIBER } from '../rechtliches/betreiber'
 
-export function Impressum({ onZurueck }: { onZurueck: () => void }) {
+export function Impressum({ onZurueck }: { onZurueck?: () => void }) {
   return (
     <main className="app">
       <header className="kopf">
@@ -104,9 +104,16 @@ export function Impressum({ onZurueck }: { onZurueck: () => void }) {
         </p>
       </div>
 
-      <button type="button" className="knopf-sekundaer" onClick={onZurueck}>
-        Zurück
-      </button>
+      {/* Vorgerendert (ohne Rueckruf) ein Link - ohne JavaScript taete ein Knopf nichts. */}
+      {onZurueck ? (
+        <button type="button" className="knopf-sekundaer" onClick={onZurueck}>
+          Zurück
+        </button>
+      ) : (
+        <a className="knopf-sekundaer" href="/">
+          Zur Startseite
+        </a>
+      )}
     </main>
   )
 }

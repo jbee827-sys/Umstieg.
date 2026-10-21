@@ -44,7 +44,7 @@ import { BETREIBER } from '../rechtliches/betreiber'
 //   Anfrageprotokoll: Es traegt `url` und `remoteAddress`, und die URL der
 //   Bahnhofssuche IST die Koordinate. Genau dieser Satz auf dieser Seite
 //   waere damit unwahr geworden.
-export function Datenschutz({ onZurueck }: { onZurueck: () => void }) {
+export function Datenschutz({ onZurueck }: { onZurueck?: () => void }) {
   return (
     <main className="app">
       <header className="kopf">
@@ -284,9 +284,16 @@ export function Datenschutz({ onZurueck }: { onZurueck: () => void }) {
         </p>
       </div>
 
-      <button type="button" className="knopf-sekundaer" onClick={onZurueck}>
-        Zurück
-      </button>
+      {/* Vorgerendert (ohne Rueckruf) ein Link - ohne JavaScript taete ein Knopf nichts. */}
+      {onZurueck ? (
+        <button type="button" className="knopf-sekundaer" onClick={onZurueck}>
+          Zurück
+        </button>
+      ) : (
+        <a className="knopf-sekundaer" href="/">
+          Zur Startseite
+        </a>
+      )}
     </main>
   )
 }

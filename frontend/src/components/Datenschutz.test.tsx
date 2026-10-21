@@ -18,6 +18,14 @@ function zeige() {
   return document.body.textContent ?? ''
 }
 
+describe('Datenschutz ohne Rueckruf (vorgerendert)', () => {
+  it('fuehrt per Link zur Startseite statt per Knopf', () => {
+    const { container } = render(<Datenschutz />)
+    expect(container.querySelector('a[href="/"]')?.textContent).toBe('Zur Startseite')
+    expect(container.querySelector('button')).toBeNull()
+  })
+})
+
 describe('Datenschutzerklaerung sagt, was die App wirklich tut', () => {
   it('benennt den Sitzungsspeicher fuer die Eingabe', () => {
     const text = zeige()

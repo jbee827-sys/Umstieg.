@@ -4,14 +4,36 @@
 //
 // Der Link zum Quellcode erfuellt § 13 AGPL: Wer die App ueber das Netz
 // nutzt, muss den Quellcode der laufenden Fassung erreichen koennen.
+//
+// Seit dem 21.10.2026 haben Impressum und Datenschutz eigene Adressen
+// (Konzept Nutzergewinnung AP 3). Ein Klick bleibt in der App (pushState);
+// ohne JavaScript - etwa auf den vorgerenderten Seiten - ist es ein
+// gewoehnlicher Link.
+import type { MouseEvent } from 'react'
+import { RECHTSPFAD, oeffneRechtsseite, type Rechtsseite } from '../navigation/rechtsseiten'
+
 export const QUELLCODE_URL = 'https://github.com/jbee827-sys/Umstieg.'
+
+function inDerApp(seite: Rechtsseite) {
+  return (e: MouseEvent<HTMLAnchorElement>) => {
+    // Strg-, Cmd-, Umschalt- und Mittelklick oeffnen wie ueberall einen
+    // neuen Tab oder ein neues Fenster - das bleibt dem Browser.
+    if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return
+    e.preventDefault()
+    oeffneRechtsseite(seite)
+  }
+}
 
 export function Fusszeile() {
   return (
     <footer className="fusszeile">
-      <a href="#impressum">Impressum</a>
+      <a href={RECHTSPFAD.impressum} onClick={inDerApp('impressum')}>
+        Impressum
+      </a>
       <span aria-hidden="true">·</span>
-      <a href="#datenschutz">Datenschutz</a>
+      <a href={RECHTSPFAD.datenschutz} onClick={inDerApp('datenschutz')}>
+        Datenschutz
+      </a>
       <span aria-hidden="true">·</span>
       <a href={QUELLCODE_URL} target="_blank" rel="noopener noreferrer">
         Quellcode

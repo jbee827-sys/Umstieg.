@@ -15,8 +15,9 @@ import type { BeforeSendEvent } from '@vercel/analytics'
  * Routen*muster* protokolliert statt der Adresse. Hier ist die Entsprechung,
  * dass die Abfragezeichenkette gar nicht erst mitgeht.
  *
- * Der Hash bleibt: Er unterscheidet die Rechtsseiten und ist der einzige
- * Grund, warum die Messung überhaupt mehr als eine Seite sieht.
+ * Der Hash bleibt; er trägt keine Angaben. (Bis zum 21.10.2026 unterschied
+ * er die Rechtsseiten - seitdem haben sie eigene Pfade, `/impressum` und
+ * `/datenschutz`, siehe navigation/rechtsseiten.ts.)
  *
  * `null` bedeutet „nicht senden". Eine unlesbare Adresse ist kein Grund,
  * etwas Ungeprüftes zu senden.
