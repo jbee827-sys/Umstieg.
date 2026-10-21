@@ -143,6 +143,8 @@ function eintragAus(s: MotisStopTime, typ: 'arr' | 'dep'): HaltestellenTafelEint
     steigGenau: Boolean(p.track || p.scheduledTrack || p.parentId || dhid),
     echtzeit: s.realTime === true,
     ausfall: s.cancelled === true || s.tripCancelled === true,
+    ...(p.stopId ? { haltId: p.stopId } : {}),
+    ...(p.name ? { haltName: p.name } : {}),
   };
 }
 

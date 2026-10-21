@@ -90,6 +90,13 @@ describe('MOTIS-Kern', () => {
     expect(u.searchParams.get('withAlerts')).toBe('false');
   });
 
+  it('Tafel am Bahnhof: eigener Umkreis statt 30 m (Busbahnhof mit anderem Namen, 21.10.2026)', async () => {
+    const fetchFn = vi.fn(async () => antwort(fixture('stoptimes-dep-kassel-rathaus')));
+    const { kern } = pruefstand(fetchFn);
+    await kern.stoptimes({ stopId: 'x', lat: 1, lon: 2, typ: 'dep', ab: new Date(), radiusM: 250 });
+    expect(aufruf(fetchFn).searchParams.get('radius')).toBe('250');
+  });
+
   it('Abfahrtstafel: arriveBy false', async () => {
     const fetchFn = vi.fn(async () => antwort(fixture('stoptimes-dep-kassel-rathaus')));
     const { kern } = pruefstand(fetchFn);

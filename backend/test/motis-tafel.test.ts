@@ -39,6 +39,14 @@ describe('tafelAusStoptimes', () => {
     expect(ausfaelle.every((e) => e.linie === 'S3' || e.linie === 'S5')).toBe(true);
   });
 
+  it('jeder Eintrag nennt seinen Halt - Name und ID (Bus am Bahnhof, 21.10.2026)', () => {
+    const roh = lade<MotisStoptimesAntwort>('stoptimes-dep-berlin-hbf-bus');
+    const [e] = tafelAusStoptimes(roh, 'dep');
+    const p = roh.stopTimes[0].place;
+    expect(e.haltName).toBe(p.name);
+    expect(e.haltId).toBe(p.stopId);
+  });
+
   it('planmaessig nicht bedienbarer Halt ohne Ausfall faellt weg', () => {
     const roh = lade<MotisStoptimesAntwort>('stoptimes-dep-berlin-hbf-bus');
     roh.stopTimes = [{ ...roh.stopTimes[0], pickupDropoffType: 'NOT_ALLOWED', cancelled: false, tripCancelled: false }];

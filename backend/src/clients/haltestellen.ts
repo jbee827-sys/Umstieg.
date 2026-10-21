@@ -29,7 +29,21 @@ export interface HaltestelleAnfrage {
   id: string;
   lat: number;
   lon: number;
+  /**
+   * Umkreis in Metern, nur für die Tafel eines Bahnhofs (`BAHNHOF_UMKREIS_M`).
+   * Ohne ihn liefert MOTIS den Halt, seine Steige und gleichnamige Halte.
+   */
+  umkreisM?: number;
 }
+
+/**
+ * Busbahnhöfe heißen oft anders als der Bahnhof und liegen weiter weg, als
+ * MOTIS gleichnamige Halte zusammenfasst – gemessen am 21.10.2026: Göttingen
+ * Bahnhof/ZOB 120–205 m, Fulda Bahnhof/ZOB 128–190 m, Erfurt Busbahnhof
+ * 137–166 m (Spec 2026-10-21-bus-am-bahnhof). Bei 250 m ist Erfurt Thomaseck
+ * (257 m) die Grenze; weiter wäre es kein Umstieg am Bahnhof mehr.
+ */
+export const BAHNHOF_UMKREIS_M = 250;
 
 /**
  * Der Haltestellenpfad, so wie Routen und Überwachung ihn sehen: nur eigene
@@ -59,7 +73,14 @@ export function erzeugeHaltestellenClient(kern: MotisKern, o: { jetzt?: () => Da
 
   const tafelFrisch = async (h: HaltestelleAnfrage, typ: 'arr' | 'dep'): Promise<HaltestellenTafelEintrag[]> =>
     tafelAusStoptimes(
-      await kern.stoptimes({ stopId: h.id, lat: h.lat, lon: h.lon, typ, ab: new Date(jetzt().getTime() - TAFEL_VORLAUF_MS) }),
+      await kern.stoptimes({
+        stopId: h.id,
+        lat: h.lat,
+        lon: h.lon,
+        typ,
+        ab: new Date(jetzt().getTime() - TAFEL_VORLAUF_MS),
+        ...(h.umkreisM !== undefined ? { radiusM: h.umkreisM } : {}),
+      }),
       typ,
     );
 
@@ -75,7 +96,7 @@ export function erzeugeHaltestellenClient(kern: MotisKern, o: { jetzt?: () => Da
      * Nutzers – gleiche Begründung wie `sucheBahnhoefeNahebei` in `app.ts`.
      */
     orteNahebei: async (lat, lon) => orteAusTreffern(await kern.reverseGeocode(lat, lon)),
-    tafel: mitCache(tafelFrisch, (h, typ) => `${h.id}|${typ}`, HALTESTELLEN_TAFEL_TTL_MS, 300),
+    tafel: mitCache(tafelFrisch, (h, typ) => `${h.id}|${typ}|${h.umkreisM ?? ''}`, HALTESTELLEN_TAFEL_TTL_MS, 300),
     tafelFrisch,
     /*
      * Auch `null` wird gespeichert: Ein Steigpaar ohne Weg im Kartenmaterial

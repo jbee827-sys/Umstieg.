@@ -1,5 +1,5 @@
 import type { FastifyBaseLogger, FastifyInstance, FastifyReply } from 'fastify';
-import type { HaltestellenClient } from '../clients/haltestellen.js';
+import { BAHNHOF_UMKREIS_M, type HaltestellenClient } from '../clients/haltestellen.js';
 import { HaltestellenAnfrageFehler, HaltestellenNichtVerfuegbarError } from '../clients/motis-pausen.js';
 import { FehlendeZugangsdatenError } from '../clients/stations.js';
 import { wegAusLuftlinie, wegAusPfad } from '../core/fussweg.js';
@@ -149,17 +149,26 @@ export function registriereHaltestellenRouten(app: FastifyInstance, o: Haltestel
     return { orte: fuehreOrteZusammen(bahnhoefe, haltestellen), quellen } satisfies OrteAntwort;
   });
 
-  app.get<{ Querystring: { id?: string; lat?: string; lon?: string; typ?: string } }>(
+  app.get<{ Querystring: { id?: string; lat?: string; lon?: string; typ?: string; umkreis?: string } }>(
     '/api/haltestelle/tafel',
     async (req, reply) => {
-      const { id, typ } = req.query;
+      const { id, typ, umkreis } = req.query;
       const punkt = leseKoordinaten(req.query.lat, req.query.lon);
-      if (!id || id.length > 300 || !punkt || (typ !== 'arr' && typ !== 'dep')) {
+      if (
+        !id ||
+        id.length > 300 ||
+        !punkt ||
+        (typ !== 'arr' && typ !== 'dep') ||
+        (umkreis !== undefined && umkreis !== 'bahnhof')
+      ) {
         return reply.code(400).send({ fehler: 'parameter-ungueltig', detail: 'id, lat, lon und typ (arr|dep) sind erforderlich' });
       }
       if (!o.haltestellen) return reply.code(503).send(NICHT_EINGERICHTET);
       try {
-        const eintraege = await o.haltestellen.tafel({ id, ...punkt }, typ);
+        // Nur ein benannter Umkreis, keine freie Zahl: Ein Aufrufer soll
+        // MOTIS nicht nach einem ganzen Stadtteil fragen können.
+        const anfrage = umkreis === 'bahnhof' ? { id, ...punkt, umkreisM: BAHNHOF_UMKREIS_M } : { id, ...punkt };
+        const eintraege = await o.haltestellen.tafel(anfrage, typ);
         // `stand` ist die Antwortzeit (F5); die Einträge können bis zu
         // HALTESTELLEN_TAFEL_TTL_MS (30 s) aus dem Zwischenspeicher stammen.
         return { eintraege, stand: new Date().toISOString() };
