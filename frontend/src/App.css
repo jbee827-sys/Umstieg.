@@ -168,7 +168,15 @@
   width: 200px;
   max-width: 70%;
   height: auto;
-  filter: var(--lockup-filter);
+}
+
+/* Eine Fassung je Darstellung (index.css). Zwei Bilder statt eines Filters:
+   `invert` + `hue-rotate` traf das Nachtrot nicht. */
+.lockup .lockup-hell {
+  display: var(--lockup-hell);
+}
+.lockup .lockup-dunkel {
+  display: var(--lockup-dunkel);
 }
 
 .kopf p {
@@ -374,7 +382,7 @@
 }
 
 /* Die Beschriftung im Feld ist nur fuer Vorleser da - ohne Abstand. */
-.ortsfeld > .feld > label {
+.ortsfeld .feld > label {
   margin: 0;
 }
 
@@ -2070,7 +2078,8 @@
   line-height: 1.4;
 }
 
-.einstellungen > summary {
+.einstellungen > summary,
+.andere-haltestelle > summary {
   cursor: pointer;
   min-height: 44px;
   padding: 12px 0;
@@ -2583,14 +2592,9 @@
   gap: 12px;
   margin-top: 4px;
 }
-/* Zweites Ortsfeld hinter „Andere Haltestelle“ (21.10.2026): Titel und „Entfernen“ in einer Zeile. */
-.ortsfeld-kopf {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.ortsfeld-kopf .kicker {
-  margin-bottom: 0;
+/* Zweites Ortsfeld: aufklappbar wie die Einstellungen, linksbuendig (21.10.2026). */
+.andere-haltestelle {
+  margin-top: 4px;
 }
 /* Was zum Absenden noch fehlt - neben dem Feld, an dem es fehlt. */
 .feld-hinweis {

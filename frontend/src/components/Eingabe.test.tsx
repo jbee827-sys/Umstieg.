@@ -44,7 +44,7 @@ function zeige(
 
 const feld = () => screen.getByLabelText('Ankunft: Bahnhof oder Haltestelle') as HTMLInputElement
 /** Das zweite Ortsfeld steht seit dem 21.10.2026 hinter einem Knopf. */
-const oeffneAndere = () => userEvent.click(screen.getByRole('button', { name: 'Andere Haltestelle' }))
+const oeffneAndere = () => userEvent.click(screen.getByText('Andere Haltestelle als Ankunft'))
 
 describe('Eingabe: Bahnhofssuche', () => {
   beforeEach(() => {
@@ -597,16 +597,21 @@ describe('Eingabe: zwei Ortsfelder (Umstieg 2.0, E3)', () => {
     holeTafelMock.mockResolvedValue({ ok: true, eintraege: [] })
   })
 
-  it('das zweite Feld steht hinter „Andere Haltestelle“ und heisst auch so (Julian, 21.10.2026)', async () => {
+  it('das zweite Feld klappt unter „Andere Haltestelle als Ankunft“ auf, wie die Einstellungen (Julian, 21.10.2026)', async () => {
     zeige()
+    const aufklapper = screen.getByText('Andere Haltestelle als Ankunft').closest('details') as HTMLDetailsElement
+    expect(aufklapper.open).toBe(false)
     expect(screen.queryByLabelText('Anschluss: Bahnhof oder Haltestelle')).toBeNull()
     await oeffneAndere()
+    expect(aufklapper.open).toBe(true)
     const zweites = screen.getByLabelText('Anschluss: Bahnhof oder Haltestelle') as HTMLInputElement
     expect(zweites.placeholder).toBe('z. B. Haltestelle in der Nähe')
-    expect(screen.getByText('Andere Haltestelle', { selector: '.kicker' })).toBeDefined()
-    // Wieder weg damit: dann gilt wieder der Ankunftsort.
-    await userEvent.click(screen.getByRole('button', { name: 'Andere Haltestelle entfernen' }))
-    expect(screen.queryByLabelText('Anschluss: Bahnhof oder Haltestelle')).toBeNull()
+    await userEvent.type(zweites, 'Will')
+    // Zuklappen heisst: keine andere Haltestelle - das Feld wird geleert.
+    await oeffneAndere()
+    expect(aufklapper.open).toBe(false)
+    await oeffneAndere()
+    expect((screen.getByLabelText('Anschluss: Bahnhof oder Haltestelle') as HTMLInputElement).value).toBe('')
   })
 
   it('ein Entwurf mit anderer Haltestelle oeffnet das Feld gleich', () => {

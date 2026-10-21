@@ -47,6 +47,10 @@ describe('Kopf der Startseite', () => {
     const bild = ueberschrift.querySelector('img')
     expect(bild).not.toBeNull()
     expect(bild?.getAttribute('src')).toBe('/lockup-zwei-gleise.png')
+    // Daneben die Nachtfassung im Nachtrot (21.10.2026) - welche zu sehen
+    // ist, entscheidet das CSS.
+    const bilder = [...ueberschrift.querySelectorAll('img')].map((b) => b.getAttribute('src'))
+    expect(bilder).toEqual(['/lockup-zwei-gleise.png', '/lockup-zwei-gleise-dunkel.png'])
 
     // Die Massangaben halten den Platz frei, bevor das Bild geladen ist.
     // Stimmen sie nicht mit der Datei ueberein, springt das Layout.

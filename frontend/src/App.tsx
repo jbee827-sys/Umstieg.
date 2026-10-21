@@ -1096,10 +1096,14 @@ function App() {
             <header className="kopf">
               {/* Das Lockup traegt die Wortmarke selbst, darum steht hier kein
                   Text mehr. Die h1 bleibt als Huelle: Ohne sie haette die Seite
-                  keine Ueberschrift mehr - alt geht an Screenreader, width/height
-                  halten den Platz frei, bevor das Bild geladen ist. */}
-              <h1 className="lockup">
-                <img src="/lockup-zwei-gleise.png" alt="Umstieg." width={1003} height={181} />
+                  keine Ueberschrift mehr; width/height halten den Platz frei,
+                  bevor das Bild geladen ist. Den Namen traegt die h1 selbst:
+                  Seit dem 21.10.2026 stehen zwei Fassungen darin (hell und
+                  Nachtrot), immer eine verborgen - ein alt je Bild hiesse je
+                  nach Darstellung mal „Umstieg.“, mal nichts. */}
+              <h1 className="lockup" aria-label="Umstieg.">
+                <img className="lockup-hell" src="/lockup-zwei-gleise.png" alt="" width={1003} height={181} />
+                <img className="lockup-dunkel" src="/lockup-zwei-gleise-dunkel.png" alt="" width={1003} height={181} />
               </h1>
               <p>Vom Ankunftsgleis zum Anschlusszug – Schritt für Schritt.</p>
             </header>
