@@ -47,6 +47,24 @@ describe('tafelAusStoptimes', () => {
     expect(e.haltId).toBe(p.stopId);
   });
 
+  it('dieselbe Fahrt an zwei Halten im Bahnhofsumkreis steht einmal da - am fruehesten (Hannover, 21.10.2026)', () => {
+    const roh = lade<MotisStoptimesAntwort>('stoptimes-dep-berlin-hbf-bus');
+    const erster = roh.stopTimes[0];
+    const zweiter = {
+      ...erster,
+      place: {
+        ...erster.place,
+        name: 'Anderer Halt im Umkreis',
+        stopId: 'de-VBB_anderer',
+        scheduledDeparture: new Date(Date.parse(erster.place.scheduledDeparture!) + 2 * 60_000).toISOString(),
+      },
+    };
+    roh.stopTimes = [zweiter, erster];
+    const t = tafelAusStoptimes(roh, 'dep');
+    expect(t).toHaveLength(1);
+    expect(t[0].haltName).toBe(erster.place.name);
+  });
+
   it('planmaessig nicht bedienbarer Halt ohne Ausfall faellt weg', () => {
     const roh = lade<MotisStoptimesAntwort>('stoptimes-dep-berlin-hbf-bus');
     roh.stopTimes = [{ ...roh.stopTimes[0], pickupDropoffType: 'NOT_ALLOWED', cancelled: false, tripCancelled: false }];

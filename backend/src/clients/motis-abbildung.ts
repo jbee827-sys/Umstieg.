@@ -189,7 +189,13 @@ export function tafelAusStoptimes(antwort: MotisStoptimesAntwort, typ: 'arr' | '
     const fahrtId = vorher.fahrtId < e.fahrtId ? vorher.fahrtId : e.fahrtId;
     je.set(schluessel, { ...besser, fahrtId, ausfall: vorher.ausfall || e.ausfall });
   }
-  return [...je.values()].sort((a, b) => (a.zeitIst ?? a.zeitSoll).localeCompare(b.zeitIst ?? b.zeitSoll));
+  const sortiert = [...je.values()].sort((a, b) => (a.zeitIst ?? a.zeitSoll).localeCompare(b.zeitIst ?? b.zeitSoll));
+  // Im Bahnhofsumkreis haelt dieselbe Fahrt oft an zwei Halten (Hannover:
+  // „Hauptbahnhof“ und „Hauptbahnhof/E.-A.-Pl.“, 21.10.2026). Sie steht
+  // einmal da, am fruehesten Halt: Die Fahrt-ID ist Schluessel der Auswahl
+  // und Filter der Live-Ueberwachung - doppelt waeren beide Zeilen markiert.
+  const gesehen = new Set<string>();
+  return sortiert.filter((e) => !gesehen.has(e.fahrtId) && gesehen.add(e.fahrtId));
 }
 
 /** Fahrtverlauf einer Fahrt (Spec 5.1). Die Oberfläche nutzt ihn in 2.0 noch nicht. */
