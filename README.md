@@ -21,6 +21,50 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 
 ## Hier weitermachen (Stand 19.10.2026, abends)
 
+### Nutzergewinnung (21.10.2026) – fertig im Zweig, NICHT ausgeliefert
+
+Konzept: `D:\Claude-code\03-konzept-Nutzergewinnung.md`. Umgesetzt auf
+Zweig **`feat/nutzergewinnung`** (abgezweigt von `feat/umstieg-2` bei
+`80b6a2b`, nicht `feat/mvp` wie im Konzept). Nichts gepusht, nichts
+ausgeliefert, keine Vercel-Einstellung geändert.
+
+| Paket | Stand im Zweig |
+|---|---|
+| AP 1 Suchergebnis-Text, Vortext | Titel/Beschreibung nach Konzept 4.1, statischer Vortext im `#root` mit Link auf `/bahnhoefe`, JSON-LD `WebApplication` (`startseite.test.ts`) |
+| AP 3 Rechtsseiten | `/impressum`, `/datenschutz` per `pushState` (`navigation/rechtsseiten.ts`), alte `#impressum`-Links werden umgeschrieben, beim Build als statisches HTML aus denselben Komponenten |
+| AP 4 Messpunkte | `eingabe-fertig`, `navigation-start`, `schritt-1`, `ziel` je Reise genau einmal, nur der Name (`analytik/messpunkte.ts`); `/uebersicht`, `/weg`, `/angekommen` entstehen nachweislich per `pushState`; Datenschutzerklärung ergänzt |
+| AP 5a Gehzeiten | `cd backend && npm run bahnhofsseiten` (offline, ~2,5 min) → `frontend/src/bahnhofsseiten/daten/` – 379 Bahnhöfe, 19 894 Gleispaare, 2,72 MB. Keine Seite für Stufe 3 (Hamburg-Eidelstedt, -Sternschanze) und Saarlouis Hbf (nur ein Gleis). Gleise 5–34 bzw. 51–56 von München Hbf, die OSM auch Hackerbrücke und Karlsplatz zuschlägt, bleiben beim Hbf. **Nach jeder Erneuerung des Startbestands erneut laufen lassen.** |
+| AP 5b/5c Seiten | `npm run build` schreibt 379 × `/bahnhof/<slug>`, `/bahnhoefe`, `/sitemap.xml`; CSS und Messung als Dateien unter `/assets/` (CSP). Knopf „Weg für meinen Umstieg anzeigen" belegt die Eingabe vor (`sitzung/vorbelegung.ts`); Fußzeile verlinkt `/bahnhoefe` |
+| AP 2 | `robots.txt`, `vercel.json` `"trailingSlash": false` |
+| AP 6 | Kurzanleitung für Julian: `docs/deployment.md`, „Suchmaschinen anmelden" |
+
+**Zur Auslieferung (AP 7) zu tun – in dieser Reihenfolge:**
+
+1. `feat/nutzergewinnung` mit dem aktuellen `feat/umstieg-2` zusammenführen
+   (parallel liefen dort Bus-/Haltestellenarbeiten). Berührt in
+   gemeinsamen Dateien: `App.tsx` (Rechtsseite statt Hash, ein Hook für die
+   Messpunkte, `neueReise()` beim Absenden), `main.tsx`, `Fusszeile.tsx`,
+   `Datenschutz.tsx`, `Impressum.tsx`, `index.html`, `index.css`,
+   `App.css` (eine Zeile), `package.json` (Build, `tsx`). Danach Frontend
+   und Backend nacheinander testen.
+2. **Vorschau prüfen, ehe es in Produktion geht:** Liefert Vercel
+   `/bahnhof/hannover-hbf` **ohne** Schrägstrich die Bahnhofsseite oder die
+   App? `vite preview` tut es nur mit Schrägstrich. Ausweg, falls nicht:
+   `docs/deployment.md`, „Vorgerenderte Seiten" (`cleanUrls`).
+   Achtung: Die Vorschau von `feat/umstieg-2`-Zweigen hat kein
+   `VITE_API_BASE` – für die statischen Seiten egal, für die App nicht;
+   Produktion neu bauen statt Vorschau promoten.
+3. Live-Abnahmen aus Konzept AP 1–5 (Befehle in `docs/deployment.md`),
+   im Browser mobil und dunkel, Konsole ohne CSP-Verstöße, Lighthouse-SEO.
+4. Julian: Search Console und Bing (AP 6).
+
+**Offen bei Julian:** Vercel-Tarif für Messpunkt 3 (Vorgabe: Gratistarif,
+Ereignisse werden trotzdem gesendet); Stufe-3-Bahnhöfe ohne Seite
+(Vorgabe umgesetzt). Neu zu entscheiden: Die Bahnhofsseiten zählen in der
+Reichweitenmessung mit ihrer Adresse (`/bahnhof/hannover-hbf`) – die
+Datenschutzerklärung sagt das jetzt so; wer das nicht will, nimmt
+`messung.js` aus `bahnhofsseiten/seiten.ts`.
+
 ### Browser-Simulation 19.10.2026
 
 Lokal gegen echte Quellen (DB, Transitous, Overpass), drei Abläufe: Berlin Hbf
