@@ -10,6 +10,12 @@ describe('holeHaltestellenTafel', () => {
     expect(await holeHaltestellenTafel(ORT, 'dep')).toEqual({ ok: true, eintraege: [], stand: '2026-10-16T14:00:00Z' })
     expect(String(f.mock.calls[0][0])).toBe('/api/haltestelle/tafel?id=de-DELFI_de%3A06611%3A200003%3A%3AA&lat=51.31263&lon=9.49286&typ=dep')
   })
+  it('ein Bahnhof (mit EVA) fragt im Bahnhofsumkreis - der Busbahnhof heisst oft anders (21.10.2026)', async () => {
+    const f = vi.fn(async (_url: string) => new Response(JSON.stringify({ eintraege: [], stand: '2026-10-16T14:00:00Z' })))
+    vi.stubGlobal('fetch', f)
+    await holeHaltestellenTafel({ ...ORT, eva: '8000128' }, 'arr')
+    expect(new URL(String(f.mock.calls[0][0]), 'http://x').searchParams.get('umkreis')).toBe('bahnhof')
+  })
   it.each([
     [503, { fehler: 'haltestellen-nicht-verfuegbar' }, 'nicht-verfuegbar'],
     [503, { fehler: 'haltestellen-nicht-eingerichtet' }, 'nicht-eingerichtet'],

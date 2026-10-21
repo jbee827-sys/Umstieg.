@@ -252,6 +252,9 @@ export interface HaltestellenTafelEintrag {
   /** F5: Ohne Echtzeit zeigt die Oberfläche „laut Fahrplan“. */
   echtzeit: boolean;
   ausfall: boolean;
+  /** Halt der Fahrt – am Bahnhof oft einer mit eigenem Namen („Göttingen Bahnhof/ZOB“). */
+  haltId?: string;
+  haltName?: string;
 }
 
 export interface Steigpunkt {

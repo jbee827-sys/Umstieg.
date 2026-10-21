@@ -7,6 +7,7 @@ import { sucheOrte } from '../api/orte'
 import { holeHaltestellenTafel } from '../api/haltestellen'
 import type { HaltestellenTafelEintrag, Ort, QuellenStand, TafelEintrag } from '../api/typen'
 import type { EingabeEntwurf } from '../sitzung/eingabespeicher'
+import { uhrzeit } from '../api/zeit'
 import { raeumeBreiteAuf, stelleBreite } from '../aufbau/testbreite'
 
 vi.mock('../api/client', () => ({ holeTafel: vi.fn() }))
@@ -42,6 +43,8 @@ function zeige(
 }
 
 const feld = () => screen.getByLabelText('Ankunft: Bahnhof oder Haltestelle') as HTMLInputElement
+/** Das zweite Ortsfeld steht seit dem 21.10.2026 hinter einem Knopf. */
+const oeffneAndere = () => userEvent.click(screen.getByRole('button', { name: 'Andere Haltestelle' }))
 
 describe('Eingabe: Bahnhofssuche', () => {
   beforeEach(() => {
@@ -594,10 +597,21 @@ describe('Eingabe: zwei Ortsfelder (Umstieg 2.0, E3)', () => {
     holeTafelMock.mockResolvedValue({ ok: true, eintraege: [] })
   })
 
-  it('zeigt das zweite Feld mit dem Hinweis auf den gleichen Ort', () => {
+  it('das zweite Feld steht hinter „Andere Haltestelle“ und heisst auch so (Julian, 21.10.2026)', async () => {
     zeige()
+    expect(screen.queryByLabelText('Anschluss: Bahnhof oder Haltestelle')).toBeNull()
+    await oeffneAndere()
     const zweites = screen.getByLabelText('Anschluss: Bahnhof oder Haltestelle') as HTMLInputElement
-    expect(zweites.placeholder).toBe('Leer = gleicher Ort wie die Ankunft')
+    expect(zweites.placeholder).toBe('z. B. Haltestelle in der Nähe')
+    expect(screen.getByText('Andere Haltestelle', { selector: '.kicker' })).toBeDefined()
+    // Wieder weg damit: dann gilt wieder der Ankunftsort.
+    await userEvent.click(screen.getByRole('button', { name: 'Andere Haltestelle entfernen' }))
+    expect(screen.queryByLabelText('Anschluss: Bahnhof oder Haltestelle')).toBeNull()
+  })
+
+  it('ein Entwurf mit anderer Haltestelle oeffnet das Feld gleich', () => {
+    zeige(undefined, { ...ENTWURF, anschlussOrt: WILLY, anschlussText: WILLY.name })
+    expect((screen.getByLabelText('Anschluss: Bahnhof oder Haltestelle') as HTMLInputElement).value).toBe(WILLY.name)
   })
 
   it('ohne zweites Feld bleibt alles beim Bahnhof', async () => {
@@ -621,6 +635,7 @@ describe('Eingabe: zwei Ortsfelder (Umstieg 2.0, E3)', () => {
     await userEvent.type(feld(), 'Leip')
     await userEvent.click(await screen.findByRole('button', { name: /^Leipzig Hbf/ }))
     expect(await screen.findByRole('button', { name: 'Ankunftszug wählen' })).toBeDefined()
+    await oeffneAndere()
     await userEvent.type(screen.getByLabelText('Anschluss: Bahnhof oder Haltestelle'), 'Willy')
     await userEvent.click(await screen.findByRole('button', { name: /^Leipzig, Willy-Brandt-Platz/ }))
     // Die Bahnhofstafeln gehoeren zum Bahnhofspfad - hier waeren sie falsch.
@@ -660,6 +675,7 @@ describe('Eingabe: Haltestellenpfad (Umstieg 2.0)', () => {
     const onBerechnen = zeige()
     await userEvent.type(feld(), 'Berlin H')
     await userEvent.click(await screen.findByRole('button', { name: /^Berlin Hbf/ }))
+    await oeffneAndere()
     await userEvent.type(screen.getByLabelText('Anschluss: Bahnhof oder Haltestelle'), 'Berlin ZOB')
     await userEvent.click(await screen.findByRole('button', { name: /^Berlin ZOB/ }))
 
@@ -712,6 +728,7 @@ describe('Eingabe: Haltestellenpfad (Umstieg 2.0)', () => {
     zeige()
     await userEvent.type(feld(), 'Berlin H')
     await userEvent.click(await screen.findByRole('button', { name: /^Berlin Hbf/ }))
+    await oeffneAndere()
     await userEvent.type(screen.getByLabelText('Anschluss: Bahnhof oder Haltestelle'), 'Berlin ZOB')
     await userEvent.click(await screen.findByRole('button', { name: /^Berlin ZOB/ }))
     expect(await screen.findByText('Für diesen Bahnhof fehlen gerade Haltestellendaten.')).toBeDefined()
@@ -726,6 +743,7 @@ describe('Eingabe: Haltestellenpfad (Umstieg 2.0)', () => {
     zeige(undefined, { ...ENTWURF, gewaehlt: ZOB, suchtext: 'Berlin ZOB' })
     await userEvent.click(screen.getByRole('button', { name: 'Anschluss wählen' }))
     expect(await screen.findByRole('button', { name: /Bus 245/ })).toBeDefined()
+    await oeffneAndere()
     await userEvent.type(screen.getByLabelText('Anschluss: Bahnhof oder Haltestelle'), 'Berlin H')
     await userEvent.click(await screen.findByRole('button', { name: /^Berlin Hbf/ }))
     await userEvent.click(screen.getByRole('button', { name: 'Anschluss wählen' }))
@@ -747,6 +765,7 @@ describe('Eingabe: Haltestellenpfad (Umstieg 2.0)', () => {
     zeige()
     await userEvent.type(feld(), 'Berlin H')
     await userEvent.click(await screen.findByRole('button', { name: /^Berlin Hbf/ }))
+    await oeffneAndere()
     await userEvent.type(screen.getByLabelText('Anschluss: Bahnhof oder Haltestelle'), 'Berlin ZOB')
     await userEvent.click(await screen.findByRole('button', { name: /^Berlin ZOB/ }))
     expect(await screen.findByText('Haltestellendaten gerade nicht erreichbar.')).toBeDefined()
@@ -754,5 +773,125 @@ describe('Eingabe: Haltestellenpfad (Umstieg 2.0)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }))
     expect(await screen.findByRole('button', { name: 'Ankunft wählen' })).toBeDefined()
     expect(screen.queryByText('Haltestellendaten gerade nicht erreichbar.')).toBeNull()
+  })
+})
+
+/*
+ * Bus, Tram und U-Bahn am Bahnhof (Julian, 21.10.2026): Die Ortsuche zeigte am
+ * Bahnhof Bus und Tram, waehlbar waren nur Zuege. Jetzt stehen sie in beiden
+ * Tafeln; wer einen Bus waehlt, bekommt den Weg zu seinem Halt - auch zum ZOB
+ * mit anderem Namen.
+ */
+describe('Eingabe: Bus am Bahnhof (21.10.2026)', () => {
+  const GOE: Ort = { name: 'Göttingen', eva: '8000128', haltestelleId: 'h-goe', lat: 51.5364, lon: 9.9268, verkehrsmittel: ['bahn'] }
+  const inMin = (m: number) => new Date(Date.now() + m * 60_000).toISOString()
+  const fahrt = (extra: Partial<HaltestellenTafelEintrag>): HaltestellenTafelEintrag => ({
+    fahrtId: 'x', linie: 'x', verkehrsmittel: 'bus', ziel: 'Z', zeitSoll: inMin(20), steigLat: 51.537, steigLon: 9.928, steigGenau: true, echtzeit: true, ausfall: false, ...extra,
+  })
+  const RE_MOTIS = fahrt({ fahrtId: 'r1', linie: 'RE2', verkehrsmittel: 'bahn', ziel: 'Kassel', zeitSoll: inMin(10), steigSoll: '4', steigLevel: 0, haltId: 'h-goe-4', haltName: 'Göttingen' })
+  const BUS = fahrt({ fahrtId: 'b1', linie: '11', ziel: 'Weende', steigSoll: 'C', haltId: 'h-zob-c', haltName: 'Göttingen Bahnhof/ZOB' })
+  // Die DB-Tafel kennt die Zeit nur als „HH:MM“ in deutscher Ortszeit.
+  const RE_DB: TafelEintrag = { zug: 'RE 2', zeitSoll: uhrzeit(RE_MOTIS.zeitSoll), gleisSoll: '4', ziel: 'Kassel' }
+  const ICE_DB: TafelEintrag = { zug: 'ICE 5', zeitSoll: uhrzeit(inMin(30)), gleisSoll: '7', ziel: 'München' }
+  const tafelMock = vi.mocked(holeHaltestellenTafel)
+
+  beforeEach(() => {
+    sucheMock.mockReset()
+    sucheMock.mockResolvedValue(orteAntwort([GOE]))
+    holeTafelMock.mockReset()
+    // Je Tafel auch ein Zug - sonst waere der Bus die einzige Kategorie und schon offen.
+    holeTafelMock.mockImplementation(async (_eva: string, typ: 'arr' | 'dep') => ({ ok: true, eintraege: typ === 'arr' ? [RE_DB] : [ICE_DB] }))
+    tafelMock.mockReset()
+    tafelMock.mockImplementation(async (_o: Ort, typ: 'arr' | 'dep') => ({
+      ok: true as const,
+      stand: inMin(0),
+      eintraege: typ === 'arr' ? [RE_MOTIS] : [BUS],
+    }))
+  })
+
+  async function waehleGoettingen() {
+    await userEvent.type(feld(), 'Gött')
+    await userEvent.click(await screen.findByRole('button', { name: /^Göttingen/ }))
+  }
+
+  it('Zug an, Bus ab: der Zug wird seiner Fahrt aus Transitous zugeordnet, der Bus haengt an seinem Halt', async () => {
+    const onBerechnen = zeige()
+    await waehleGoettingen()
+    await userEvent.click(screen.getByRole('button', { name: 'Ankunftszug wählen' }))
+    await userEvent.click(await screen.findByRole('button', { name: /RE 2/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Anschlusszug wählen' }))
+    await userEvent.click(await screen.findByRole('heading', { name: 'Bus' }))
+    await userEvent.click(screen.getByRole('button', { name: /ab Göttingen Bahnhof\/ZOB/ }))
+
+    // Ein Bus hat kein Gleis und keinen Wagen - an ihrer Stelle steht sein Steig.
+    expect(screen.queryByLabelText('Anschluss: Gleis')).toBeNull()
+    expect(screen.queryByLabelText('Anschluss: Wagen (optional)')).toBeNull()
+    expect(screen.getByLabelText('Ankunft: Gleis')).toBeDefined()
+
+    await userEvent.click(screen.getByRole('button', { name: /Umstieg starten/ }))
+    await vi.waitFor(() => expect(onBerechnen).toHaveBeenCalled())
+    const [werte, entwurf] = onBerechnen.mock.calls[0]
+    expect(werte.eva).toBe('')
+    expect(werte.bahnhofName).toBe('Göttingen → Göttingen Bahnhof/ZOB')
+    expect(werte.haltestellen.ankunft.fahrt.fahrtId).toBe('r1')
+    expect(werte.haltestellen.ankunft.ort.haltestelleId).toBe('h-goe-4')
+    expect(werte.haltestellen.anschluss.fahrt.fahrtId).toBe('b1')
+    expect(werte.haltestellen.anschluss.ort).toMatchObject({ name: 'Göttingen Bahnhof/ZOB', haltestelleId: 'h-zob-c' })
+    expect(werte.gleisAn).toBe('4')
+    expect(werte.gleisAb).toBe('C')
+    expect(entwurf.zugAnkunft).toEqual(RE_DB)
+    expect(entwurf.fahrtAbfahrt.fahrtId).toBe('b1')
+  })
+
+  it('kennt Transitous den Zug nicht, beginnt der Weg am Bahnhof - mit Hinweis statt Abbruch', async () => {
+    tafelMock.mockImplementation(async (_o: Ort, typ: 'arr' | 'dep') => ({
+      ok: true as const, stand: inMin(0), eintraege: typ === 'arr' ? [] : [BUS],
+    }))
+    const onBerechnen = zeige()
+    await waehleGoettingen()
+    await userEvent.click(screen.getByRole('button', { name: 'Ankunftszug wählen' }))
+    await userEvent.click(await screen.findByRole('button', { name: /RE 2/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Anschlusszug wählen' }))
+    await userEvent.click(await screen.findByRole('heading', { name: 'Bus' }))
+    await userEvent.click(screen.getByRole('button', { name: /11/ }))
+    await userEvent.click(screen.getByRole('button', { name: /Umstieg starten/ }))
+    await vi.waitFor(() => expect(onBerechnen).toHaveBeenCalled())
+    const ankunft = onBerechnen.mock.calls[0][0].haltestellen.ankunft
+    expect(ankunft.ort).toEqual(GOE)
+    expect(ankunft.fahrt).toMatchObject({ linie: 'RE 2', steigSoll: '4', steigLat: GOE.lat, steigGenau: false })
+  })
+
+  it('mit Bus auf einer Seite braucht die andere den Zug aus der Tafel, nicht nur ein Gleis', async () => {
+    zeige()
+    await waehleGoettingen()
+    await userEvent.click(screen.getByRole('button', { name: 'Anschlusszug wählen' }))
+    await userEvent.click(await screen.findByRole('heading', { name: 'Bus' }))
+    await userEvent.click(screen.getByRole('button', { name: /11/ }))
+    await userEvent.type(screen.getByLabelText('Ankunft: Gleis'), '4')
+    expect((screen.getByRole('button', { name: /Umstieg starten/ }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByText('Für den Weg zum Bus bitte den Zug aus der Tafel wählen.')).toBeDefined()
+  })
+
+  it('Zug zu Zug bleibt der Bahnhofsablauf wie bisher', async () => {
+    const onBerechnen = zeige()
+    await waehleGoettingen()
+    await userEvent.type(screen.getByLabelText('Ankunft: Gleis'), '4')
+    await userEvent.type(screen.getByLabelText('Anschluss: Gleis'), '7')
+    await userEvent.click(screen.getByRole('button', { name: /Umstieg starten/ }))
+    const [werte] = onBerechnen.mock.calls[0]
+    expect(werte.eva).toBe('8000128')
+    expect(werte.haltestellen).toBeUndefined()
+  })
+
+  it('breit: die Ankunftstafel zeigt den Bus vom ZOB ebenfalls', async () => {
+    tafelMock.mockImplementation(async () => ({ ok: true as const, stand: inMin(0), eintraege: [BUS] }))
+    stelleBreite(true)
+    try {
+      zeige(undefined, { ...ENTWURF, gewaehlt: GOE, suchtext: 'Göttingen', zugAnkunft: null })
+      const ankunft = screen.getByRole('region', { name: 'Ankunft' })
+      expect(await within(ankunft).findByRole('group', { name: 'Bus' })).toBeDefined()
+    } finally {
+      raeumeBreiteAuf()
+    }
   })
 })

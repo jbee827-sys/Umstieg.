@@ -782,13 +782,11 @@
   font-size: 1.444rem;
 }
 
-.stufen-tag {
+/* Nur Text, keine Pille: Die sah aus wie ein Knopf (21.10.2026). */
+.stufen-vorbehalt {
   flex: none;
   font-size: var(--schrift-label);
-  letter-spacing: 0.02em;
-  padding: 4px 12px;
-  border-radius: var(--radius-pille);
-  background: var(--color-surface);
+  font-weight: 600;
   color: var(--color-neutral-800);
   white-space: nowrap;
 }
@@ -974,6 +972,15 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Bus am Bahnhof: Heisst sein Halt anders („Bahnhof/ZOB“), steht er unter der Linie. */
+.tafel-halt {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+  color: var(--color-neutral-700);
 }
 
 .tafel-gleis {
@@ -2544,8 +2551,26 @@
 }
 .feld-rand {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
+  gap: 12px;
   margin-top: 4px;
+}
+/* Zweites Ortsfeld hinter „Andere Haltestelle“ (21.10.2026): Titel und „Entfernen“ in einer Zeile. */
+.ortsfeld-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ortsfeld-kopf .kicker {
+  margin-bottom: 0;
+}
+/* Was zum Absenden noch fehlt - neben dem Feld, an dem es fehlt. */
+.feld-hinweis {
+  margin: 8px 0 0;
+  font-size: var(--schrift-label);
+  font-weight: 600;
+  color: var(--color-neutral-800);
 }
 /* Abkuerzung am Rand: Text statt Flaeche, aber 44 px Tippziel. */
 .textknopf {

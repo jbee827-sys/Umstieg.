@@ -366,6 +366,33 @@ describe('App: Adressen, Zurueck-Taste und Neuladen', () => {
     expect(window.location.pathname).toBe('/weg')
   })
 
+  /*
+   * „Präzise Karte“ stand als Pille im Kopf und sah aus wie ein Knopf, der
+   * eine Karte oeffnet - es war die Datenstufe (Julian, 21.10.2026). Stufe 1
+   * sagt nichts mehr; was Stufe 2 und 3 einschraenkt, steht als Text da.
+   */
+  it.each([
+    [1, null],
+    [2, 'Teildaten'],
+    [3, 'ca.-Angaben'],
+  ] as const)('Navigation, Stufe %i: kein Abzeichen „Präzise Karte“, Vorbehalt als Text: %s', (stufe, text) => {
+    const route = { ...antwort({ eva: '8010205', gleisAn: '6', gleisAb: '16', profil: 'normal', variante: 'schnellste', abschnitt: 'mitte' }), stufe }
+    schreibeReise({
+      werte: { eva: '8010205', bahnhofName: 'Leipzig Hbf', gleisAn: '6', gleisAb: '16', wagenAn: '', wagenAb: '', profil: 'normal', variante: 'schnellste', abschnitt: 'mitte' },
+      route,
+      variante: 'schnellste',
+      standort: 'mitte',
+      gehzeiten: { 'schnellste|mitte': route.gehzeitSek },
+      meldungen: [],
+      versatz: 0,
+    })
+    window.history.replaceState(null, '', '/weg')
+    const { container } = render(<App />)
+    expect(screen.queryByText('Präzise Karte')).toBeNull()
+    expect(container.querySelector('.stufen-tag')).toBeNull()
+    if (text) expect(screen.getByText(text).closest('button')).toBeNull()
+  })
+
   it('zeigt ohne gesicherte Reise auf /weg die Eingabe und berichtigt die Adresse', () => {
     window.history.replaceState(null, '', '/weg')
     render(<App />)

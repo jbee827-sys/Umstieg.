@@ -1,12 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Zugauswahl } from './Zugauswahl'
 import { holeTafel } from '../api/client'
-import type { TafelEintrag } from '../api/typen'
+import { holeHaltestellenTafel } from '../api/haltestellen'
+import type { HaltestellenTafelEintrag, TafelEintrag } from '../api/typen'
 
 vi.mock('../api/client', () => ({ holeTafel: vi.fn() }))
+vi.mock('../api/haltestellen', () => ({ holeHaltestellenTafel: vi.fn() }))
 const holeTafelMock = vi.mocked(holeTafel)
+const haltestellenTafelMock = vi.mocked(holeHaltestellenTafel)
 
 /** Uhrzeit in `minuten` Minuten, als "HH:MM" - die Tafel kennt kein Datum. */
 function inMinuten(minuten: number): string {
@@ -309,5 +312,99 @@ describe('Zugauswahl: Kategorien zum Aufklappen', () => {
     expect(block('S-Bahn').open).toBe(false)
     await userEvent.click(screen.getByRole('heading', { name: 'S-Bahn' }))
     expect(await screen.findByRole('button', { name: /S 5/ })).toBeDefined()
+  })
+})
+
+/*
+ * Bus, Tram und U-Bahn am Bahnhof (Julian, 21.10.2026): Die Ortsuche zeigte am
+ * Bahnhof Bus und Tram an, die Tafel nur Zuege. Jetzt stehen sie darunter -
+ * aus der Haltestellentafel des Bahnhofs, auch vom ZOB mit anderem Namen.
+ */
+describe('Zugauswahl: Bus und Tram am Bahnhof', () => {
+  const GOE = {
+    name: 'Göttingen',
+    eva: '8000128',
+    lat: 51.5364,
+    lon: 9.9268,
+    verkehrsmittel: ['bahn' as const],
+    haltestelleId: 'de-DELFI_de:03152:33817',
+  }
+  const inMin = (m: number) => new Date(Date.now() + m * 60_000).toISOString()
+  const fahrt = (id: string, linie: string, vm: HaltestellenTafelEintrag['verkehrsmittel'], halt: string, m: number) =>
+    ({
+      fahrtId: id,
+      linie,
+      verkehrsmittel: vm,
+      ziel: 'Weende',
+      zeitSoll: inMin(m),
+      steigSoll: 'C',
+      steigLat: 51.537,
+      steigLon: 9.928,
+      steigGenau: true,
+      echtzeit: true,
+      ausfall: false,
+      haltId: `id-${id}`,
+      haltName: halt,
+    }) satisfies HaltestellenTafelEintrag
+  const BUS = fahrt('b1', '11', 'bus', 'Göttingen Bahnhof/ZOB', 8)
+  const RE_MOTIS = fahrt('r1', 'RE2', 'bahn', 'Göttingen', 9)
+
+  beforeEach(() => {
+    holeTafelMock.mockReset()
+    holeTafelMock.mockResolvedValue({ ok: true, eintraege: [zug('RE 2', 9, '4')] })
+    haltestellenTafelMock.mockReset()
+    haltestellenTafelMock.mockResolvedValue({ ok: true, eintraege: [BUS, RE_MOTIS], stand: inMin(0) })
+  })
+
+  function zeigeMitBus(o: { auswahl?: TafelEintrag | null; fahrt?: HaltestellenTafelEintrag | null; immerOffen?: boolean } = {}) {
+    const onAuswahl = vi.fn()
+    const onFahrt = vi.fn()
+    render(
+      <Zugauswahl
+        eva="8000128"
+        typ="dep"
+        label="Abfahrt waehlen"
+        auswahl={o.auswahl ?? null}
+        onAuswahl={onAuswahl}
+        nahverkehr={{ ort: GOE, auswahl: o.fahrt ?? null, onAuswahl: onFahrt }}
+        immerOffen={o.immerOffen}
+      />,
+    )
+    return { onAuswahl, onFahrt }
+  }
+
+  it('breit: Bus unter den Zuegen, mit dem Namen des anderen Halts; der RE aus Transitous nicht doppelt', async () => {
+    const { onFahrt } = zeigeMitBus({ immerOffen: true })
+    const bus = (await screen.findByRole('group', { name: 'Bus' })) as HTMLDetailsElement
+    expect(screen.getByRole('group', { name: 'Regionalverkehr' })).toBeDefined()
+    expect(screen.queryByRole('group', { name: 'Bahn' })).toBeNull()
+    expect(haltestellenTafelMock).toHaveBeenCalledWith(GOE, 'dep')
+
+    await userEvent.click(within(bus).getByRole('heading', { name: 'Bus' }))
+    const zeile = within(bus).getByRole('button', { name: /11/ })
+    expect(zeile.textContent).toContain('ab Göttingen Bahnhof/ZOB')
+    await userEvent.click(zeile)
+    expect(onFahrt).toHaveBeenCalledWith(BUS)
+  })
+
+  it('Handy: beim Aufklappen beide Tafeln; die gewaehlte Busfahrt steht da wie ein Zug', async () => {
+    const { onFahrt } = zeigeMitBus()
+    await aufklappen()
+    await userEvent.click(await screen.findByRole('heading', { name: 'Bus' }))
+    await userEvent.click(screen.getByRole('button', { name: /11/ }))
+    expect(onFahrt).toHaveBeenCalledWith(BUS)
+
+    cleanup()
+    zeigeMitBus({ fahrt: BUS })
+    expect(screen.getByText(/nach Weende/)).toBeDefined()
+    await userEvent.click(screen.getByRole('button', { name: 'Ändern' }))
+  })
+
+  it('faellt die Haltestellentafel aus, bleibt es still bei den Zuegen', async () => {
+    haltestellenTafelMock.mockResolvedValue({ ok: false, fehler: 'nicht-verfuegbar' })
+    zeigeMitBus({ immerOffen: true })
+    expect(await screen.findByRole('group', { name: 'Regionalverkehr' })).toBeDefined()
+    expect(screen.queryByRole('group', { name: 'Bus' })).toBeNull()
+    expect(screen.queryByText(/nicht verfügbar/)).toBeNull()
   })
 })
