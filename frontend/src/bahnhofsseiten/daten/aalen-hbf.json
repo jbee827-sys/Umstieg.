@@ -1,0 +1,38 @@
+{
+  "name": "Aalen Hbf",
+  "eva": "8000002",
+  "slug": "aalen-hbf",
+  "lat": 48.841013,
+  "lon": 10.096271,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T19:52:31.148Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":133,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":133,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":125,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":125,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":133,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":19,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":19},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":120,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":120,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":133,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":19,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":19},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":120,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":120,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":125,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":120,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":120,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":10,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":10},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":125,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":120,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":120,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":10,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":10}
+  ]
+}

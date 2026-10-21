@@ -1,0 +1,17 @@
+{
+  "name": "München Hirschgarten",
+  "eva": "8004179",
+  "slug": "muenchen-hirschgarten",
+  "lat": 48.14354,
+  "lon": 11.519245,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T14:14:01.434Z",
+  "gleise": [
+    "1",
+    "2"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":2,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":2},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":2,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":2}
+  ]
+}

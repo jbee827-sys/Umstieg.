@@ -1,0 +1,17 @@
+{
+  "name": "Jena Paradies",
+  "eva": "8011956",
+  "slug": "jena-paradies",
+  "lat": 50.924856,
+  "lon": 11.587461,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:37:31.409Z",
+  "gleise": [
+    "1",
+    "2"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":214,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":214},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":214,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":214}
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "name": "Weiden(Oberpf)",
+  "eva": "8000204",
+  "slug": "weiden-oberpf",
+  "lat": 49.67049,
+  "lon": 12.153846,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T13:37:30.639Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":75,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":75,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":159,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":159,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":75,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":3,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":3},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":141,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":141,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":75,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":3,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":3},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":141,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":141,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":159,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":141,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":141,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":135,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":135},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":159,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":141,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":141,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":135,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":135}
+  ]
+}

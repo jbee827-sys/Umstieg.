@@ -1,0 +1,17 @@
+{
+  "name": "Frankfurt(M)Taunusanlage",
+  "eva": "8006691",
+  "slug": "frankfurt-m-taunusanlage",
+  "lat": 50.113565,
+  "lon": 8.668864,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T17:55:19.953Z",
+  "gleise": [
+    "1",
+    "2"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":19,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":19},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":19,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":19}
+  ]
+}

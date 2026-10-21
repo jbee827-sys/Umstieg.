@@ -1,0 +1,29 @@
+{
+  "name": "Bonn-Bad Godesberg",
+  "eva": "8001082",
+  "slug": "bonn-bad-godesberg",
+  "lat": 50.683927,
+  "lon": 7.159555,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T20:27:11.092Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":47,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":47},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":47,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":47},
+    {"von":"1","nach":"4","gleicherBahnsteig":true,"sek":17,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":17},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":47,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":47},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":35,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":35},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":47,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":47},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":47,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":47},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":35,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":35},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":47,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":47},
+    {"von":"4","nach":"1","gleicherBahnsteig":true,"sek":17,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":17},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":47,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":47},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":47,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":47}
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "name": "Bayreuth Hbf",
+  "eva": "8000028",
+  "slug": "bayreuth-hbf",
+  "lat": 49.949616,
+  "lon": 11.579985,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T20:05:11.955Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":71,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":71},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":71,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":71},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":140,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":140},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":140,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":140},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":71,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":71},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":25,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":25},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":94,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":94},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":94,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":94},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":71,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":71},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":25,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":25},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":94,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":94},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":94,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":94},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":140,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":140},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":94,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":94},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":94,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":94},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":55,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":55},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":140,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":140},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":94,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":94},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":94,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":94},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":55,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":55}
+  ]
+}

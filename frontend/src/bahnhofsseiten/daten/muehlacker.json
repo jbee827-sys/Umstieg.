@@ -1,0 +1,38 @@
+{
+  "name": "Mühlacker",
+  "eva": "8000339",
+  "slug": "muehlacker",
+  "lat": 48.953192,
+  "lon": 8.846101,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T19:14:16.129Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "5",
+    "50"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":257,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":257},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":257,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":257},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":229,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":229},
+    {"von":"1","nach":"50","gleicherBahnsteig":false,"sek":255,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":255},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":257,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":257},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":20,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":20},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":52,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":52},
+    {"von":"2","nach":"50","gleicherBahnsteig":false,"sek":245,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":245},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":257,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":257},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":20,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":20},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":52,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":52},
+    {"von":"3","nach":"50","gleicherBahnsteig":false,"sek":245,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":245},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":229,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":229},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":52,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":52},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":52,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":52},
+    {"von":"5","nach":"50","gleicherBahnsteig":false,"sek":218,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":218},
+    {"von":"50","nach":"1","gleicherBahnsteig":false,"sek":255,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":255},
+    {"von":"50","nach":"2","gleicherBahnsteig":false,"sek":245,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":245},
+    {"von":"50","nach":"3","gleicherBahnsteig":false,"sek":245,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":245},
+    {"von":"50","nach":"5","gleicherBahnsteig":false,"sek":218,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":218}
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "name": "Wuppertal Hbf",
+  "eva": "8000266",
+  "slug": "wuppertal-hbf",
+  "lat": 51.254363,
+  "lon": 7.149543,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T14:03:36.223Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":80,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":80},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":80,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":80},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":41,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":41},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":41,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":41},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":80,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":80},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":29,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":29},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":39,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":39},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":39,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":39},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":80,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":80},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":29,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":29},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":39,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":39},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":39,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":39},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":41,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":41},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":39,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":39},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":39,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":39},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":44,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":44},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":41,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":41},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":39,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":39},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":39,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":39},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":44,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":44}
+  ]
+}

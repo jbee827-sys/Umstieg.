@@ -1,0 +1,22 @@
+{
+  "name": "Fellbach",
+  "eva": "8001974",
+  "slug": "fellbach",
+  "lat": 48.8202977,
+  "lon": 9.27059948,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T17:50:53.138Z",
+  "gleise": [
+    "1",
+    "3",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":46,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":46},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":46,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":46},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":46,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":46},
+    {"von":"3","nach":"4","gleicherBahnsteig":true,"sek":31,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":31},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":46,"wechsel":0,"anlagen":["rampe"],"lage":"ebenerdig","stufenfreiSek":46},
+    {"von":"4","nach":"3","gleicherBahnsteig":true,"sek":31,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":31}
+  ]
+}

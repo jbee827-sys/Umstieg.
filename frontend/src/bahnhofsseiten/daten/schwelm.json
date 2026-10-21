@@ -1,0 +1,29 @@
+{
+  "name": "Schwelm",
+  "eva": "8000033",
+  "slug": "schwelm",
+  "lat": 51.290526,
+  "lon": 7.289681,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T13:06:58.361Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":6,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":6},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":56,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":56},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":56,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":56},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":6,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":6},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":56,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":56},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":56,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":56},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":56,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":56},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":56,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":56},
+    {"von":"3","nach":"4","gleicherBahnsteig":true,"sek":11,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":11},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":56,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":56},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":56,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":56},
+    {"von":"4","nach":"3","gleicherBahnsteig":true,"sek":11,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":11}
+  ]
+}

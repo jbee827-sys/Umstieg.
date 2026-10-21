@@ -1,0 +1,17 @@
+{
+  "name": "Düsseldorf-Derendorf",
+  "eva": "8001586",
+  "slug": "duesseldorf-derendorf",
+  "lat": 51.247624,
+  "lon": 6.794512,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T17:38:26.691Z",
+  "gleise": [
+    "1",
+    "2"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":128,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":128},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":128,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":128}
+  ]
+}

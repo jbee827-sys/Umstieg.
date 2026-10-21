@@ -1,0 +1,38 @@
+{
+  "name": "Backnang",
+  "eva": "8000016",
+  "slug": "backnang",
+  "lat": 48.942676,
+  "lon": 9.425989,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T19:57:31.426Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":17,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":17},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":17,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":17},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":164,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":164,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":17,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":17},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":23,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":23},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":17,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":17},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":23,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":23},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":164,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":17,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":17},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":164,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":146,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":17,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":17}
+  ]
+}

@@ -18,6 +18,14 @@ function zeige() {
   return document.body.textContent ?? ''
 }
 
+describe('Datenschutz ohne Rueckruf (vorgerendert)', () => {
+  it('fuehrt per Link zur Startseite statt per Knopf', () => {
+    const { container } = render(<Datenschutz />)
+    expect(container.querySelector('a[href="/"]')?.textContent).toBe('Zur Startseite')
+    expect(container.querySelector('button')).toBeNull()
+  })
+})
+
 describe('Datenschutzerklaerung sagt, was die App wirklich tut', () => {
   it('benennt den Sitzungsspeicher fuer die Eingabe', () => {
     const text = zeige()
@@ -65,6 +73,29 @@ describe('Datenschutzerklaerung sagt, was die App wirklich tut', () => {
     const text = zeige()
     expect(text).toMatch(/Vercel Web Analytics/)
     expect(text).toMatch(/Reichweitenmessung/)
+  })
+
+  // Seit dem 21.10.2026 (Konzept Nutzergewinnung AP 4): vier Ereignisse je
+  // Umstieg. Die Zusage: nur der Name, keine Reisedaten - analytik/
+  // messpunkte.test.ts haelt den Code darauf fest.
+  it('benennt die vier Ereignisse und dass nur ihr Name uebermittelt wird', () => {
+    const text = zeige()
+    expect(text).toMatch(/Eingabe abgeschlossen/)
+    expect(text).toMatch(/Navigation gestartet/)
+    expect(text).toMatch(/erste Schritt erreicht/)
+    expect(text).toMatch(/Ziel erreicht/)
+    expect(text).toMatch(/nur der Name des Ereignisses/)
+    expect(text).toMatch(/kein Bahnhof, kein Gleis, keine Uhrzeit und kein Standort/)
+  })
+
+  // Seit dem 21.10.2026 gibt es oeffentliche Bahnhofsseiten. Ihre Adresse
+  // nennt den Bahnhof der gelesenen Seite - das ist keine Reise, muss aber
+  // dastehen, sonst waere „nie einen Bahnhof" unwahr.
+  it('sagt, dass die Adresse auf den Bahnhofsseiten die gelesene Seite nennt', () => {
+    const text = zeige()
+    expect(text).toMatch(/Bahnhofsseiten/)
+    expect(text).toContain('/bahnhof/hannover-hbf')
+    expect(text).not.toMatch(/nie einen Bahnhof oder ein Gleis/)
   })
 
   it('behauptet nicht mehr, ohne Analyse und ohne Reichweitenmessung zu arbeiten', () => {

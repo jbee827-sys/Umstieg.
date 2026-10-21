@@ -1,0 +1,29 @@
+{
+  "name": "Langenhagen Mitte",
+  "eva": "8003545",
+  "slug": "langenhagen-mitte",
+  "lat": 52.440279,
+  "lon": 9.725427,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T14:09:29.087Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":12,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":12},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":12,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":12},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":295,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":295},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":12,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":12},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":7,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":7},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":283,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":283},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":12,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":12},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":7,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":7},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":283,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":283},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":295,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":295},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":283,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":283},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":283,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":283}
+  ]
+}

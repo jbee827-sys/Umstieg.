@@ -1,0 +1,17 @@
+{
+  "name": "Frankfurt(M)Hauptwache",
+  "eva": "8006692",
+  "slug": "frankfurt-m-hauptwache",
+  "lat": 50.113926,
+  "lon": 8.678947,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T17:57:55.764Z",
+  "gleise": [
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":22,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":22},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":22,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":22}
+  ]
+}

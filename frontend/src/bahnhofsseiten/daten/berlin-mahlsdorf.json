@@ -1,0 +1,38 @@
+{
+  "name": "Berlin-Mahlsdorf",
+  "eva": "8011343",
+  "slug": "berlin-mahlsdorf",
+  "lat": 52.512107,
+  "lon": 13.611417,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T20:15:43.013Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":53,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":53},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":267,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":327},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":267,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":327},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":53,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":53},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":267,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":327},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":267,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":327},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":267,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":327},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":267,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":327},
+    {"von":"3","nach":"4","gleicherBahnsteig":true,"sek":51,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":51},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":267,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":327},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":267,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":327},
+    {"von":"4","nach":"3","gleicherBahnsteig":true,"sek":51,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":51},
+    {"von":"4","nach":"5","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"5","nach":"4","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null}
+  ]
+}

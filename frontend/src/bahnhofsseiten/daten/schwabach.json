@@ -1,0 +1,38 @@
+{
+  "name": "Schwabach",
+  "eva": "8005439",
+  "slug": "schwabach",
+  "lat": 49.3264488,
+  "lon": 11.0354005,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T13:05:54.544Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "5",
+    "6"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":111,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":178},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":111,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":178},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":164,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"6","gleicherBahnsteig":false,"sek":164,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":111,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":178},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":8,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":8},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":138,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"6","gleicherBahnsteig":false,"sek":138,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":111,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":178},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":8,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":8},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":138,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"6","gleicherBahnsteig":false,"sek":138,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":164,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":138,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":138,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"6","gleicherBahnsteig":true,"sek":12,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":12},
+    {"von":"6","nach":"1","gleicherBahnsteig":false,"sek":164,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"6","nach":"2","gleicherBahnsteig":false,"sek":138,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"6","nach":"3","gleicherBahnsteig":false,"sek":138,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"6","nach":"5","gleicherBahnsteig":true,"sek":12,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":12}
+  ]
+}

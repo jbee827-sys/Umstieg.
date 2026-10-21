@@ -1,0 +1,29 @@
+{
+  "name": "Hennigsdorf(b Berlin)",
+  "eva": "8013483",
+  "slug": "hennigsdorf-b-berlin",
+  "lat": 52.6382034,
+  "lon": 13.2053357,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:24:56.700Z",
+  "gleise": [
+    "1",
+    "5",
+    "6",
+    "7"
+  ],
+  "paare": [
+    {"von":"1","nach":"5","gleicherBahnsteig":true,"sek":11,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":11},
+    {"von":"1","nach":"6","gleicherBahnsteig":false,"sek":125,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":125},
+    {"von":"1","nach":"7","gleicherBahnsteig":false,"sek":125,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":125},
+    {"von":"5","nach":"1","gleicherBahnsteig":true,"sek":11,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":11},
+    {"von":"5","nach":"6","gleicherBahnsteig":false,"sek":125,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":125},
+    {"von":"5","nach":"7","gleicherBahnsteig":false,"sek":125,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":125},
+    {"von":"6","nach":"1","gleicherBahnsteig":false,"sek":125,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":125},
+    {"von":"6","nach":"5","gleicherBahnsteig":false,"sek":125,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":125},
+    {"von":"6","nach":"7","gleicherBahnsteig":true,"sek":5,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":5},
+    {"von":"7","nach":"1","gleicherBahnsteig":false,"sek":125,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":125},
+    {"von":"7","nach":"5","gleicherBahnsteig":false,"sek":125,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":125},
+    {"von":"7","nach":"6","gleicherBahnsteig":true,"sek":5,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":5}
+  ]
+}

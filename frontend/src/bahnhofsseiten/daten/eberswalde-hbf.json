@@ -1,0 +1,38 @@
+{
+  "name": "Eberswalde Hbf",
+  "eva": "8010093",
+  "slug": "eberswalde-hbf",
+  "lat": 52.834021,
+  "lon": 13.797062,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T17:39:02.976Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":197,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":265},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":197,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":265},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":214,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":282},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":214,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":282},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":197,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":265},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":47,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":47},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":295,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":339},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":295,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":339},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":197,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":265},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":47,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":47},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":295,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":339},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":295,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":339},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":214,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":282},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":295,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":339},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":295,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":339},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":45,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":45},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":214,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":282},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":295,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":339},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":295,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":339},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":45,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":45}
+  ]
+}

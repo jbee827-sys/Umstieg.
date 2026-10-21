@@ -1,0 +1,38 @@
+{
+  "name": "Bonn Hbf",
+  "eva": "8000044",
+  "slug": "bonn-hbf",
+  "lat": 50.732008,
+  "lon": 7.097136,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T20:26:53.947Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":136,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":136},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":136,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":136},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":111,"wechsel":2,"anlagen":["rolltreppe","treppe"],"lage":"unterfuehrung","stufenfreiSek":153},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":161,"wechsel":2,"anlagen":["rolltreppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":136,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":136},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":31,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":31},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":126,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":126},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":115,"wechsel":2,"anlagen":["treppe","rampe","rolltreppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":136,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":136},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":31,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":31},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":126,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":126},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":115,"wechsel":2,"anlagen":["treppe","rampe","rolltreppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":111,"wechsel":2,"anlagen":["treppe","rolltreppe"],"lage":"unterfuehrung","stufenfreiSek":153},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":126,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":126},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":126,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":126},
+    {"von":"4","nach":"5","gleicherBahnsteig":false,"sek":114,"wechsel":2,"anlagen":["rolltreppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":161,"wechsel":2,"anlagen":["rolltreppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":115,"wechsel":2,"anlagen":["rolltreppe","rampe","treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":115,"wechsel":2,"anlagen":["rolltreppe","rampe","treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"4","gleicherBahnsteig":false,"sek":114,"wechsel":2,"anlagen":["rolltreppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null}
+  ]
+}

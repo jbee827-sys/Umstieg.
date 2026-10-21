@@ -1,0 +1,38 @@
+{
+  "name": "Altenbeken",
+  "eva": "8000004",
+  "slug": "altenbeken",
+  "lat": 51.766433,
+  "lon": 8.943319,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T19:53:21.068Z",
+  "gleise": [
+    "1",
+    "2",
+    "21",
+    "22",
+    "23"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"1","nach":"21","gleicherBahnsteig":false,"sek":23,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":23},
+    {"von":"1","nach":"22","gleicherBahnsteig":false,"sek":146,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":146},
+    {"von":"1","nach":"23","gleicherBahnsteig":false,"sek":147,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":147},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"2","nach":"21","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"2","nach":"22","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"2","nach":"23","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"21","nach":"1","gleicherBahnsteig":false,"sek":23,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":23},
+    {"von":"21","nach":"2","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"21","nach":"22","gleicherBahnsteig":false,"sek":150,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":150},
+    {"von":"21","nach":"23","gleicherBahnsteig":false,"sek":151,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":151},
+    {"von":"22","nach":"1","gleicherBahnsteig":false,"sek":146,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":146},
+    {"von":"22","nach":"2","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"22","nach":"21","gleicherBahnsteig":false,"sek":150,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":150},
+    {"von":"22","nach":"23","gleicherBahnsteig":false,"sek":33,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":33},
+    {"von":"23","nach":"1","gleicherBahnsteig":false,"sek":147,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":147},
+    {"von":"23","nach":"2","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"23","nach":"21","gleicherBahnsteig":false,"sek":151,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":151},
+    {"von":"23","nach":"22","gleicherBahnsteig":false,"sek":33,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":33}
+  ]
+}

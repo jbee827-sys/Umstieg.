@@ -1,0 +1,29 @@
+{
+  "name": "Altbach",
+  "eva": "8000508",
+  "slug": "altbach",
+  "lat": 48.720393,
+  "lon": 9.382384,
+  "stufe": 1,
+  "geholtAm": "2026-10-12T19:53:07.733Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":35,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":35},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":96,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":96},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":96,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":96},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":35,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":35},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":96,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":96},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":96,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":96},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":96,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":96},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":96,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":96},
+    {"von":"3","nach":"4","gleicherBahnsteig":true,"sek":24,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":24},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":96,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":96},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":96,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":96},
+    {"von":"4","nach":"3","gleicherBahnsteig":true,"sek":24,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":24}
+  ]
+}

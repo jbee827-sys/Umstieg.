@@ -1,0 +1,22 @@
+{
+  "name": "Rüsselsheim",
+  "eva": "8005220",
+  "slug": "ruesselsheim",
+  "lat": 49.991639,
+  "lon": 8.413583,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T13:03:05.130Z",
+  "gleise": [
+    "1",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":236,"wechsel":2,"anlagen":["aufzug","treppe"],"lage":"unterfuehrung","stufenfreiSek":284},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":236,"wechsel":2,"anlagen":["aufzug","treppe"],"lage":"unterfuehrung","stufenfreiSek":284},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":236,"wechsel":2,"anlagen":["treppe","aufzug"],"lage":"unterfuehrung","stufenfreiSek":284},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":24,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":24},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":236,"wechsel":2,"anlagen":["treppe","aufzug"],"lage":"unterfuehrung","stufenfreiSek":284},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":24,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":24}
+  ]
+}

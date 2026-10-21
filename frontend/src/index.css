@@ -339,3 +339,30 @@ h3 {
   min-height: 100vh;
   min-height: 100dvh;
 }
+
+/*
+ * Der Vortext in index.html - fuer Crawler ohne JavaScript und fuer den
+ * Augenblick, bevor die App steht. Bewusst dezent und auf dem Grund der App:
+ * Wer ihn beim Laden kurz sieht, soll keinen Sprung bemerken, sondern nur
+ * ruhigen Text, der der Eingabe Platz macht.
+ */
+.vortext {
+  max-width: 430px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  color: var(--color-neutral-700);
+}
+
+.vortext h1 {
+  font-size: var(--schrift-titel);
+  color: var(--color-text);
+  margin-bottom: 12px;
+}
+
+.vortext p {
+  margin: 0 0 12px;
+}
+
+.vortext a {
+  color: var(--color-accent-700);
+}

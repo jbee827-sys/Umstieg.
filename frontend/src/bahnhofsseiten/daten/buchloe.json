@@ -1,0 +1,38 @@
+{
+  "name": "Buchloe",
+  "eva": "8000057",
+  "slug": "buchloe",
+  "lat": 48.033723,
+  "lon": 10.716217,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T17:09:25.247Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":77,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":77},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":77,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":77},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":28,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":28},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":28,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":28},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":77,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":77},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":46,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":46},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":103,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":103},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":103,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":103},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":77,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":77},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":46,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":46},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":103,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":103},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":103,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":103},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":28,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":28},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":103,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":103},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":103,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":103},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":53,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":53},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":28,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":28},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":103,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":103},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":103,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":103},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":53,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":53}
+  ]
+}

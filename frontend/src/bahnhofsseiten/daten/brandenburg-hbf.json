@@ -1,0 +1,38 @@
+{
+  "name": "Brandenburg Hbf",
+  "eva": "8010060",
+  "slug": "brandenburg-hbf",
+  "lat": 52.400554,
+  "lon": 12.566138,
+  "stufe": 2,
+  "geholtAm": "2026-10-12T20:27:43.612Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":124,"wechsel":1,"anlagen":["treppe"],"lage":"nach-oben","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":84,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":84},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":185,"wechsel":3,"anlagen":["treppe","aufzug"],"lage":"unterfuehrung","stufenfreiSek":213},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":84,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":84},
+    {"von":"3","nach":"4","gleicherBahnsteig":false,"sek":185,"wechsel":3,"anlagen":["treppe","aufzug"],"lage":"unterfuehrung","stufenfreiSek":213},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":185,"wechsel":3,"anlagen":["aufzug","treppe"],"lage":"unterfuehrung","stufenfreiSek":213},
+    {"von":"4","nach":"3","gleicherBahnsteig":false,"sek":185,"wechsel":3,"anlagen":["aufzug","treppe"],"lage":"unterfuehrung","stufenfreiSek":213},
+    {"von":"4","nach":"5","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":124,"wechsel":1,"anlagen":["treppe"],"lage":"nach-unten","stufenfreiSek":null},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"5","nach":"4","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null}
+  ]
+}

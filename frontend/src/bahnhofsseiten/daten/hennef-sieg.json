@@ -1,0 +1,22 @@
+{
+  "name": "Hennef(Sieg)",
+  "eva": "8002753",
+  "slug": "hennef-sieg",
+  "lat": 50.773332,
+  "lon": 7.284592,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:24:30.462Z",
+  "gleise": [
+    "1",
+    "2",
+    "3"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":249,"wechsel":2,"anlagen":["rampe","treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":249,"wechsel":2,"anlagen":["rampe","treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":249,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":27,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":27},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":249,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":27,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":27}
+  ]
+}

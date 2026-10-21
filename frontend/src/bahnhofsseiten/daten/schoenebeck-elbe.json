@@ -1,0 +1,29 @@
+{
+  "name": "Schönebeck(Elbe)",
+  "eva": "8010318",
+  "slug": "schoenebeck-elbe",
+  "lat": 52.018794,
+  "lon": 11.733157,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T13:05:22.008Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":28,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":28},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":184,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":260},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":184,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":260},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":28,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":28},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":184,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":260},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":184,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":260},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":184,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":260},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":184,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":260},
+    {"von":"3","nach":"4","gleicherBahnsteig":true,"sek":13,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":13},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":184,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":260},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":184,"wechsel":4,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":260},
+    {"von":"4","nach":"3","gleicherBahnsteig":true,"sek":13,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":13}
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "Hamburg Hasselbrook",
+  "eva": "8002628",
+  "slug": "hamburg-hasselbrook",
+  "lat": 53.564711,
+  "lon": 10.056129,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:20:14.637Z",
+  "gleise": [
+    "1",
+    "2",
+    "6",
+    "7"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":20,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":20},
+    {"von":"1","nach":"6","gleicherBahnsteig":false,"sek":304,"wechsel":2,"anlagen":["treppe"],"lage":"ueberfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"7","gleicherBahnsteig":false,"sek":304,"wechsel":2,"anlagen":["treppe"],"lage":"ueberfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":20,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":20},
+    {"von":"2","nach":"6","gleicherBahnsteig":false,"sek":304,"wechsel":2,"anlagen":["treppe"],"lage":"ueberfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"7","gleicherBahnsteig":false,"sek":304,"wechsel":2,"anlagen":["treppe"],"lage":"ueberfuehrung","stufenfreiSek":null},
+    {"von":"6","nach":"1","gleicherBahnsteig":false,"sek":304,"wechsel":2,"anlagen":["treppe"],"lage":"ueberfuehrung","stufenfreiSek":null},
+    {"von":"6","nach":"2","gleicherBahnsteig":false,"sek":304,"wechsel":2,"anlagen":["treppe"],"lage":"ueberfuehrung","stufenfreiSek":null},
+    {"von":"6","nach":"7","gleicherBahnsteig":true,"sek":14,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":14},
+    {"von":"7","nach":"1","gleicherBahnsteig":false,"sek":304,"wechsel":2,"anlagen":["treppe"],"lage":"ueberfuehrung","stufenfreiSek":null},
+    {"von":"7","nach":"2","gleicherBahnsteig":false,"sek":304,"wechsel":2,"anlagen":["treppe"],"lage":"ueberfuehrung","stufenfreiSek":null},
+    {"von":"7","nach":"6","gleicherBahnsteig":true,"sek":14,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":14}
+  ]
+}

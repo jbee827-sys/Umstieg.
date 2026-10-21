@@ -1,0 +1,29 @@
+{
+  "name": "Petershausen(Obb)",
+  "eva": "8004775",
+  "slug": "petershausen-obb",
+  "lat": 48.41345,
+  "lon": 11.469881,
+  "stufe": 1,
+  "geholtAm": "2026-10-14T12:40:00.801Z",
+  "gleise": [
+    "1",
+    "4",
+    "5",
+    "6"
+  ],
+  "paare": [
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":298,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":298,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"6","gleicherBahnsteig":false,"sek":328,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":298,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":35,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":35},
+    {"von":"4","nach":"6","gleicherBahnsteig":false,"sek":31,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":31},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":298,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":35,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":35},
+    {"von":"5","nach":"6","gleicherBahnsteig":false,"sek":31,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":31},
+    {"von":"6","nach":"1","gleicherBahnsteig":false,"sek":328,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"6","nach":"4","gleicherBahnsteig":false,"sek":31,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":31},
+    {"von":"6","nach":"5","gleicherBahnsteig":false,"sek":31,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":31}
+  ]
+}

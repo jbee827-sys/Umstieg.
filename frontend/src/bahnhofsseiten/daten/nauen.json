@@ -1,0 +1,22 @@
+{
+  "name": "Nauen",
+  "eva": "8010239",
+  "slug": "nauen",
+  "lat": 52.612696,
+  "lon": 12.885559,
+  "stufe": 2,
+  "geholtAm": "2026-10-13T20:37:49.526Z",
+  "gleise": [
+    "2",
+    "5",
+    "6"
+  ],
+  "paare": [
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"2","nach":"6","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"5","nach":"6","gleicherBahnsteig":true,"sek":12,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":12},
+    {"von":"6","nach":"2","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"6","nach":"5","gleicherBahnsteig":true,"sek":12,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":12}
+  ]
+}

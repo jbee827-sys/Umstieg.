@@ -1,0 +1,38 @@
+{
+  "name": "Hamburg-Bergedorf",
+  "eva": "8002554",
+  "slug": "hamburg-bergedorf",
+  "lat": 53.489832,
+  "lon": 10.206171,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T18:15:52.840Z",
+  "gleise": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":73,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":73},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":150,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":150},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":150,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":150},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":229,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":270},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":73,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":73},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":150,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":150},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":150,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":150},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":229,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":270},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":150,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":150},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":150,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":150},
+    {"von":"3","nach":"4","gleicherBahnsteig":true,"sek":46,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":46},
+    {"von":"3","nach":"5","gleicherBahnsteig":false,"sek":119,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":119},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":150,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":150},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":150,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":150},
+    {"von":"4","nach":"3","gleicherBahnsteig":true,"sek":46,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":46},
+    {"von":"4","nach":"5","gleicherBahnsteig":false,"sek":119,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":119},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":229,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":270},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":229,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":270},
+    {"von":"5","nach":"3","gleicherBahnsteig":false,"sek":119,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":119},
+    {"von":"5","nach":"4","gleicherBahnsteig":false,"sek":119,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":119}
+  ]
+}

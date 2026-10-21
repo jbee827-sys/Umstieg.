@@ -1,0 +1,29 @@
+{
+  "name": "Flensburg",
+  "eva": "8000103",
+  "slug": "flensburg",
+  "lat": 54.774039,
+  "lon": 9.436526,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T17:51:58.028Z",
+  "gleise": [
+    "1",
+    "2",
+    "4",
+    "5"
+  ],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":14,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":14},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":170,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":170,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":14,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":14},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":170,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":170,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":170,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":170,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":16,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":16},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":170,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"2","gleicherBahnsteig":false,"sek":170,"wechsel":2,"anlagen":["treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
+    {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":16,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":16}
+  ]
+}
