@@ -75,6 +75,19 @@ describe('Datenschutzerklaerung sagt, was die App wirklich tut', () => {
     expect(text).toMatch(/Reichweitenmessung/)
   })
 
+  // Seit dem 21.10.2026 (Konzept Nutzergewinnung AP 4): vier Ereignisse je
+  // Umstieg. Die Zusage: nur der Name, keine Reisedaten - analytik/
+  // messpunkte.test.ts haelt den Code darauf fest.
+  it('benennt die vier Ereignisse und dass nur ihr Name uebermittelt wird', () => {
+    const text = zeige()
+    expect(text).toMatch(/Eingabe abgeschlossen/)
+    expect(text).toMatch(/Navigation gestartet/)
+    expect(text).toMatch(/erste Schritt erreicht/)
+    expect(text).toMatch(/Ziel erreicht/)
+    expect(text).toMatch(/nur der Name des Ereignisses/)
+    expect(text).toMatch(/kein Bahnhof, kein Gleis, keine Uhrzeit und kein Standort/)
+  })
+
   it('behauptet nicht mehr, ohne Analyse und ohne Reichweitenmessung zu arbeiten', () => {
     const text = zeige()
     expect(text).not.toMatch(/bindet keine Analyse-\s*oder\s*Werbedienste ein/)

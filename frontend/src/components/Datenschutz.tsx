@@ -24,6 +24,9 @@ import { BETREIBER } from '../rechtliches/betreiber'
 // - Reichweitenmessung: main.tsx (<Analytics>), analytik/ereignis.ts
 //   (schneidet die Abfragezeichenkette ab), abgesichert in
 //   analytik/ereignis.test.ts und components/Datenschutz.test.tsx
+// - Vier Ereignisse je Umstieg, seit 21.10.2026: analytik/ereignis.ts
+//   (melde - nur der Name), analytik/messpunkte.ts, abgesichert in
+//   analytik/messpunkte.test.ts und App.nutzergewinnung.test.tsx
 // - Backend ohne Zugriffsprotokoll: backend/src/app.ts
 //   (disableRequestLogging), abgesichert in backend/test/datenschutz.test.ts
 // - Ratenbegrenzung und Sicherheitsprotokoll: backend/src/app.ts (GRENZEN,
@@ -225,6 +228,15 @@ export function Datenschutz({ onZurueck }: { onZurueck?: () => void }) {
           abgeschnitten</strong> – sie könnte künftig Angaben tragen, die die
           Messung nichts angehen. Deine IP-Adresse wird zur Bestimmung des
           Landes verarbeitet und nicht gespeichert.
+        </p>
+        <p>
+          <strong>Vier Ereignisse je Umstieg:</strong> Damit wir sehen, an
+          welcher Stelle Menschen aufgeben, zählen wir zusätzlich, wenn eine
+          Eingabe abgeschlossen ist, die Navigation gestartet wurde, der
+          erste Schritt erreicht ist und das Ziel erreicht ist – jedes
+          höchstens einmal je Umstieg. Übermittelt wird dabei nur der Name des
+          Ereignisses: kein Bahnhof, kein Gleis, keine Uhrzeit und kein
+          Standort.
         </p>
         <p>
           <strong>Rechtsgrundlage:</strong> unser berechtigtes Interesse an
