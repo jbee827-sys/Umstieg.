@@ -6,6 +6,7 @@ import { ruhigGewuenscht } from '../navigation/uebergang'
 import { leereReise } from '../sitzung/reisespeicher'
 import daten from './daten/berlin-hbf-14-6.json'
 import { schreibeBeispielEntwurf } from './beispielreise'
+import { formularStand, setzeFormularVorgabe } from './formularstand'
 import { baueAppNeu } from './neuaufbau'
 import { SCHRITTE } from './schritte'
 import { sichere, stelleWiederHer } from './sitzungssicherung'
@@ -80,6 +81,8 @@ export async function starteTour(optionen: TourOptionen = {}): Promise<void> {
   // Erst sichern, dann umstellen: Die Messung schweigt, bevor die App auf
   // der Beispielreise zum ersten Mal einen Bildschirm wechselt.
   const sicherung = sichere()
+  // Was halb eingetippt und nie abgeschickt dasteht, liegt nicht im Speicher.
+  const formular = formularStand()
   setzeVorfuehrung(true)
   aktiviereVorfuehrquelle(DATEN)
   // Ohne die laufende Reise des Nutzers: Sonst starteten Leiste und
@@ -99,6 +102,7 @@ export async function starteTour(optionen: TourOptionen = {}): Promise<void> {
     drv.destroy()
     deaktiviereVorfuehrquelle()
     stelleWiederHer(sicherung)
+    setzeFormularVorgabe(formular)
     window.history.replaceState(null, '', PFAD.eingabe)
     baueAppNeu()
     // Der Merker fällt erst, wenn die neu aufgebaute App steht: Bis dahin

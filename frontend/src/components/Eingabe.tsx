@@ -21,6 +21,7 @@ import { Fahrtauswahl } from './Fahrtauswahl'
 import { ReiseImport } from './ReiseImport'
 import type { Umstieg } from '../reise/reisetext'
 import type { EingabeEntwurf } from '../sitzung/eingabespeicher'
+import { meldeFormularAn } from '../einfuehrung/formularstand'
 import { ladeDarstellung, waehleDarstellung, type Darstellung } from '../einstellungen/darstellung'
 import { useBreitesLayout } from '../aufbau/breite'
 
@@ -493,11 +494,10 @@ export function Eingabe({
     }
   }
 
-  function absenden() {
-    if (!bereit) return
-    // Der Entwurf ist das Formular selbst, ungetrimmt und ungedeutet - er
-    // soll die Maske spaeter genau so wiederherstellen, wie sie eben stand.
-    const abbild: EingabeEntwurf = {
+  // Der Entwurf ist das Formular selbst, ungetrimmt und ungedeutet - er
+  // soll die Maske spaeter genau so wiederherstellen, wie sie eben stand.
+  function abbildJetzt(): EingabeEntwurf {
+    return {
       suchtext,
       gewaehlt,
       anschlussText,
@@ -513,6 +513,18 @@ export function Eingabe({
       fahrtAnkunft,
       fahrtAbfahrt,
     }
+  }
+  // Die Einfuehrungstour baut die App neu auf. Was hier halb eingetippt und
+  // nie abgeschickt dasteht, nimmt sie so mit hinueber (einfuehrung/formularstand.ts).
+  const abbildRef = useRef(abbildJetzt)
+  useEffect(() => {
+    abbildRef.current = abbildJetzt
+  })
+  useEffect(() => meldeFormularAn(() => abbildRef.current()), [])
+
+  function absenden() {
+    if (!bereit) return
+    const abbild = abbildJetzt()
     if (haltestellenPfad) {
       if (!gewaehlt || !ankunftHalt || !abfahrtHalt || !fahrtAnkunft || !fahrtAbfahrt) return
       const andererOrt = anschlussOrt && ortSchluessel(anschlussOrt) !== ortSchluessel(gewaehlt)

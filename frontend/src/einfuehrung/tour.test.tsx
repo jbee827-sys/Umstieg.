@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, render, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { Config, DriveStep, Driver } from 'driver.js'
 import { AppRahmen } from '../AppRahmen'
 import { holeApi } from '../api/basis'
 import { SCHLUESSEL } from '../sitzung/eingabespeicher'
-import { REISE_SCHLUESSEL } from '../sitzung/reisespeicher'
+import { REISE_SCHLUESSEL, schreibeReise } from '../sitzung/reisespeicher'
 import { SCHRITTE } from './schritte'
 import { starteTour } from './tour'
 import { vorfuehrungLaeuft } from './zustand'
@@ -178,5 +178,63 @@ describe('Einführungstour', () => {
     } finally {
       vi.unstubAllGlobals()
     }
+  })
+
+  // Plan 7.5 (b): Die Eingabe sichert ihren Entwurf erst beim Absenden. Was
+  // halb eingetippt dasteht, gibt es nur im Formular - und das baut die Tour
+  // neu auf. Es muss danach trotzdem dastehen, ohne im Speicher zu landen.
+  it('lässt eine halb ausgefüllte, nicht abgeschickte Eingabe stehen', async () => {
+    render(<AppRahmen />)
+    fireEvent.change(screen.getByLabelText('Ankunft: Gleis'), { target: { value: '7' } })
+    const d = gestellterDriver()
+    void starteTour({ erzeugeDriver: d.erzeuge })
+    await beiSchritt(d, 0)
+    await waitFor(() => expect(screen.getByLabelText<HTMLInputElement>('Ankunft: Gleis').value).toBe('14'))
+
+    d.drueck('onCloseClick')
+    await waitFor(() => expect(vorfuehrungLaeuft()).toBe(false))
+    await waitFor(() => expect(screen.getByLabelText<HTMLInputElement>('Ankunft: Gleis').value).toBe('7'))
+    expect(sessionStorage.getItem(SCHLUESSEL)).toBeNull()
+  })
+
+  // Plan 7.5 (c): eine laufende Reise auf /weg, über die Leiste zur Eingabe,
+  // dort das „i“. Danach führt die Leiste wieder zu DIESER Reise.
+  it('führt nach der Tour zurück zur laufenden Reise des Nutzers', async () => {
+    const route = { stufe: 1 as const, schritte: [{ text: 'Zum Leipziger Kopf', typ: 'eben' as const }], gehzeitSek: 200, hinweise: [] }
+    schreibeReise({
+      werte: { eva: '8010205', bahnhofName: 'Leipzig Hbf', gleisAn: '6', gleisAb: '16', wagenAn: '', wagenAb: '', profil: 'normal', variante: 'schnellste', abschnitt: 'mitte' },
+      route,
+      variante: 'schnellste',
+      standort: 'mitte',
+      gehzeiten: { 'schnellste|mitte': 200 },
+      meldungen: [],
+      versatz: 0,
+    })
+    // Außerhalb der Tour hängt die Reise am Live-Strom; jsdom kennt keinen.
+    vi.stubGlobal(
+      'EventSource',
+      class {
+        static CLOSED = 2
+        readyState = 0
+        close() {}
+        addEventListener() {}
+      },
+    )
+    window.history.replaceState(null, '', '/weg')
+    render(<AppRahmen />)
+    act(() => screen.getByRole('button', { name: /Eingabe/ }).click())
+    await waitFor(() => expect(window.location.pathname).toBe('/eingabe'))
+
+    const d = gestellterDriver()
+    void starteTour({ erzeugeDriver: d.erzeuge })
+    await beiSchritt(d, 0)
+    d.drueck('onCloseClick')
+    await waitFor(() => expect(vorfuehrungLaeuft()).toBe(false))
+
+    act(() => screen.getByRole('button', { name: /Weg/ }).click())
+    await waitFor(() => expect(screen.getAllByText('Zum Leipziger Kopf').length).toBeGreaterThan(0))
+    expect(window.location.pathname).toBe('/weg')
+    cleanup()
+    vi.unstubAllGlobals()
   })
 })
