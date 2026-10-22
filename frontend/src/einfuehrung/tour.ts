@@ -1,6 +1,8 @@
 import { driver, type Config, type Driver, type DriveStep } from 'driver.js'
 import 'driver.js/dist/driver.css'
+import './einfuehrung.css'
 import { PFAD } from '../navigation/adressen'
+import { ruhigGewuenscht } from '../navigation/uebergang'
 import { leereReise } from '../sitzung/reisespeicher'
 import daten from './daten/berlin-hbf-14-6.json'
 import { schreibeBeispielEntwurf } from './beispielreise'
@@ -112,8 +114,13 @@ export async function starteTour(optionen: TourOptionen = {}): Promise<void> {
       })
   }
 
+  // Wer reduzierte Bewegung eingestellt hat, bekommt keine gleitende
+  // Hervorhebung und kein sanftes Rollen - wie bei den Seitenwechseln.
+  const ruhig = ruhigGewuenscht()
   const drv = erzeuge({
     ...EINSTELLUNGEN,
+    animate: !ruhig,
+    smoothScroll: !ruhig,
     // Esc, × und der Klick auf die abgedunkelte Fläche landen hier.
     onDestroyStarted: () => beende(),
   })

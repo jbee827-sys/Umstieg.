@@ -185,6 +185,62 @@
   color: var(--color-neutral-700);
 }
 
+/*
+ * Das „i“ für die Einführungstour, oben rechts im Kopf (Plan
+ * Einführungstour, Paket 6). Kursiv in einer Antiqua, wie das
+ * Informationszeichen auf Schildern. Das Lockup hält rechts Platz frei,
+ * damit es auf schmalen Geräten nicht unter den Knopf läuft.
+ */
+.kopf {
+  position: relative;
+}
+
+.app-eingabe .kopf .lockup {
+  padding-right: 44px;
+  box-sizing: border-box;
+}
+
+.tour-knopf {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--color-text);
+  border-radius: var(--radius-pille);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: italic 800 18px/1 Georgia, 'Times New Roman', serif;
+  cursor: pointer;
+}
+
+/* 34 px sieht man, 44 px trifft man: Die Trefferfläche reicht über den Rand. */
+.tour-knopf::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+}
+
+.tour-knopf:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.tour-knopf:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+@media (hover: hover) {
+  .tour-knopf:hover:not(:disabled) {
+    background: var(--color-text);
+    color: var(--color-bg);
+  }
+}
+
 .trennlinie {
   height: 2px;
   background: var(--color-divider);

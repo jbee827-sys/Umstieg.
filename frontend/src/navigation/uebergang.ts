@@ -26,7 +26,7 @@ export function uebergangsart(
   return b > a ? 'vor' : 'zurueck'
 }
 
-function ruhigGewuenscht(): boolean {
+export function ruhigGewuenscht(): boolean {
   return (
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches

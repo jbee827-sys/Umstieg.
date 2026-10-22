@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import App from './App'
+import { starteTour } from './einfuehrung/tour'
 
 /**
  * DER KOPF DER STARTSEITE.
@@ -36,6 +38,13 @@ vi.mock('./api/sse', () => ({
   verbindeLive: () => () => undefined,
 }))
 
+// Die Tour selbst hat ihre eigenen Tests (einfuehrung/tour.test.tsx). Hier
+// zählt nur, dass das „i“ sie startet - und erst dann lädt.
+let tourFertig: () => void = () => {}
+vi.mock('./einfuehrung/tour', () => ({
+  starteTour: vi.fn(() => new Promise<void>((fertig) => (tourFertig = fertig))),
+}))
+
 describe('Kopf der Startseite', () => {
   it('zeigt das Lockup als Ueberschrift, nicht den alten Text', () => {
     render(<App />)
@@ -62,5 +71,21 @@ describe('Kopf der Startseite', () => {
 
     // Der Untertitel bleibt.
     expect(screen.getByText(/Vom Ankunftsgleis zum Anschlusszug/)).toBeDefined()
+  })
+
+  // Plan Einführungstour, Paket 6: oben rechts ein „i“, das die Tour startet.
+  it('trägt oben rechts das „i“ für die Einführungstour', async () => {
+    render(<App />)
+    const knopf = screen.getByRole('button', { name: 'Einführung starten' })
+    expect(knopf.closest('header.kopf')).not.toBeNull()
+    expect(knopf.textContent).toBe('i')
+    expect(starteTour).not.toHaveBeenCalled()
+
+    await userEvent.click(knopf)
+    await waitFor(() => expect(starteTour).toHaveBeenCalledTimes(1))
+    // Solange die Tour lädt, startet ein zweiter Tipp sie nicht noch einmal.
+    expect(knopf).toHaveProperty('disabled', true)
+    tourFertig()
+    await waitFor(() => expect(knopf).toHaveProperty('disabled', false))
   })
 })
