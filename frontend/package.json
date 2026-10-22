@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
+    "driver.js": "1.10.2",
     "maplibre-gl": "^6.6.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
