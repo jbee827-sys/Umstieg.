@@ -21,6 +21,32 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 
 ## Hier weitermachen (Stand 21.10.2026, abends)
 
+### Einführungstour (Stand 22.10.2026, Zweig `feat/einfuehrungstour`, nicht ausgeliefert)
+
+Umgesetzt nach dem Plan in `Umstieg_Konzepte/04-einführungstour/`. Ein
+rundes „i" oben rechts auf der Eingabe startet eine Tour mit driver.js
+1.10.2 (MIT) über die **echten** Bildschirme Eingabe, Übersicht und Weg:
+Begrüßung, 12 Schritte, Abschluss. Beispielreise Berlin Hbf, ICE 945 auf
+Gleis 14 → ICE 1007 auf Gleis 6, Züge relativ zur aktuellen Uhrzeit.
+
+- **Ohne Netz:** Die Vorführquelle (`frontend/src/einfuehrung/vorfuehrquelle.ts`)
+  beantwortet `/api/*` über `holeApi()` in `api/basis.ts`; kein Live-Strom,
+  keine Standortverfolgung. Die Routen liegen in
+  `frontend/src/einfuehrung/daten/` – **nach jeder Erneuerung des
+  Startbestands `cd backend && npm run vorfuehrdaten` laufen lassen** und
+  Schritt 7 („9 statt 6 Minuten") prüfen.
+- **Nichts vom Nutzer anfassen:** Während der Tour halten Entwurfs- und
+  Reisespeicher still; ein halb ausgefülltes Formular wird im Speicher der
+  Seite mitgenommen. Danach baut `AppRahmen` die App neu auf – alles wie
+  vorher, auch nach Neuladen mitten in der Tour.
+- **Keine Messung:** Weder Seitenaufrufe noch Messpunkte gehen während der
+  Tour an Vercel. Datenschutzerklärung unverändert (nichts gespeichert,
+  nichts gesendet).
+- **Ladegewicht:** driver.js und Daten nur im nachgeladenen Chunk
+  (`tour-*.js`, 40 kB gzip); der Haupt-Chunk wächst um 0,6 kB gzip.
+- Sichtprüfung in Chrome gegen den Build mit der CSP aus `vercel.json`:
+  breit/dunkel, 390 px dunkel und hell – keine CSP-Meldungen.
+
 ### Ausgeliefert am 21.10.2026
 
 **Live:** Frontend aus `main` (Vercel baut die Produktion beim Push auf
