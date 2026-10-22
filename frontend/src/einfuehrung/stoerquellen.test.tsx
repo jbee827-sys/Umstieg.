@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, render, waitFor } from '@testing-library/react'
 import App from '../App'
 import daten from './daten/berlin-hbf-14-6.json'
-import { schreibeBeispielEntwurf } from './beispielreise'
+import { beispielEntwurf } from './beispielreise'
+import { setzeFormularVorgabe } from './formularstand'
 import { aktiviereVorfuehrquelle, deaktiviereVorfuehrquelle, type Vorfuehrdaten } from './vorfuehrquelle'
 import { setzeVorfuehrung } from './zustand'
 
@@ -20,7 +21,7 @@ beforeEach(() => {
     },
   })
   aktiviereVorfuehrquelle(daten as unknown as Vorfuehrdaten)
-  schreibeBeispielEntwurf(new Date())
+  setzeFormularVorgabe(beispielEntwurf(new Date()))
 })
 afterEach(() => {
   // Erst abbauen: Beim Abbau ruft die App clearWatch - am gestellten Navigator.

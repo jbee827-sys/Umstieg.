@@ -1,18 +1,13 @@
-import { afterEach, describe, expect, it } from 'vitest'
-import { lies } from '../sitzung/eingabespeicher'
-import { schreibeBeispielEntwurf } from './beispielreise'
-
-afterEach(() => sessionStorage.clear())
+import { describe, expect, it } from 'vitest'
+import { beispielEntwurf } from './beispielreise'
 
 /**
- * Die Tour tippt nicht (Plan 5.2): Sie legt die Beispielreise als Entwurf ab,
- * und die Eingabe liest ihn beim Neuaufbau wie nach einem Neuladen.
+ * Die Tour tippt nicht (Plan 5.2): Sie gibt der Eingabe die Beispielreise als
+ * Entwurf vor, und die Eingabe beginnt beim Neuaufbau mit ihm.
  */
-describe('schreibeBeispielEntwurf', () => {
-  it('legt Berlin Hbf mit ICE 945 auf Gleis 14 und ICE 1007 auf Gleis 6 ab', () => {
-    schreibeBeispielEntwurf(new Date(2026, 9, 22, 14, 58))
-    const entwurf = lies()
-    expect(entwurf).toMatchObject({
+describe('beispielEntwurf', () => {
+  it('ist Berlin Hbf mit ICE 945 auf Gleis 14 und ICE 1007 auf Gleis 6', () => {
+    expect(beispielEntwurf(new Date(2026, 9, 22, 14, 58))).toMatchObject({
       suchtext: 'Berlin Hbf',
       gewaehlt: { name: 'Berlin Hbf', eva: '8011160' },
       gleisAn: '14',

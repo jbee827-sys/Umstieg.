@@ -1,5 +1,6 @@
 import type { BahnhofTreffer, Gehprofil, HaltestellenTafelEintrag, Ort, TafelEintrag } from '../api/typen';
 import { ortAusBahnhof } from '../ort/ortmodell';
+import { sitzungsspeicherGesperrt } from '../einfuehrung/zustand';
 
 /**
  * Die Eingabe eines Umstiegs, so wie sie im Formular steht.
@@ -63,6 +64,9 @@ interface Ablage {
  * heisst das "kein Gedaechtnis"; die App laeuft ohne weiter.
  */
 function speicher(): Storage | null {
+  // Waehrend der Einfuehrungstour gibt es keinen - wie bei der Reise
+  // (reisespeicher.ts): Die Beispieleingabe soll kein Neuladen ueberleben.
+  if (sitzungsspeicherGesperrt()) return null;
   try {
     return window.sessionStorage;
   } catch {

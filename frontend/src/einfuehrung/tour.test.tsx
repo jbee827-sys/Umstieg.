@@ -135,7 +135,9 @@ describe('Einführungstour', () => {
     const d = gestellterDriver()
     void starteTour({ erzeugeDriver: d.erzeuge })
     await beiSchritt(d, 0)
-    expect(sessionStorage.getItem(SCHLUESSEL)).not.toBeNull()
+    // Die Beispielreise steht im Formular, nicht im Speicher.
+    expect(screen.getByLabelText<HTMLInputElement>('Ankunft: Gleis').value).toBe('14')
+    expect(sessionStorage.getItem(SCHLUESSEL)).toBeNull()
 
     // driver.js meldet Esc, ×, und den Klick daneben über onDestroyStarted.
     act(() => d.stand.config!.onDestroyStarted!(undefined, d.aktuell(), { reason: 'escape' } as never))
@@ -241,5 +243,28 @@ describe('Einführungstour', () => {
     expect(window.location.pathname).toBe('/weg')
     cleanup()
     vi.unstubAllGlobals()
+  })
+
+  // Lädt jemand mitten in der Tour neu, endet sie ohne Aufräumen. Dann darf
+  // im Speicher nichts von ihr stehen - sonst wäre die Beispielreise danach
+  // die eigene, und Entwurf und Reise des Nutzers wären weg.
+  it('schreibt während der Tour nichts in den Sitzungsspeicher', async () => {
+    sessionStorage.setItem(SCHLUESSEL, NUTZER_ENTWURF)
+    sessionStorage.setItem(REISE_SCHLUESSEL, NUTZER_REISE)
+    render(<AppRahmen />)
+    const d = gestellterDriver()
+    void starteTour({ erzeugeDriver: d.erzeuge })
+    await beiSchritt(d, 0)
+    for (let nr = 1; nr <= 5; nr++) {
+      d.drueck('onNextClick')
+      // eslint-disable-next-line no-await-in-loop -- Die Schritte folgen aufeinander; nacheinander ist der Zweck.
+      await beiSchritt(d, nr)
+    }
+    // Auf der Übersicht: Hier sichert die App sonst ihre Reise.
+    expect(window.location.pathname).toBe('/uebersicht')
+    expect(sessionStorage.getItem(SCHLUESSEL)).toBe(NUTZER_ENTWURF)
+    expect(sessionStorage.getItem(REISE_SCHLUESSEL)).toBe(NUTZER_REISE)
+    d.drueck('onCloseClick')
+    await waitFor(() => expect(vorfuehrungLaeuft()).toBe(false))
   })
 })

@@ -3,15 +3,14 @@ import 'driver.js/dist/driver.css'
 import './einfuehrung.css'
 import { PFAD } from '../navigation/adressen'
 import { ruhigGewuenscht } from '../navigation/uebergang'
-import { leereReise } from '../sitzung/reisespeicher'
 import daten from './daten/berlin-hbf-14-6.json'
-import { schreibeBeispielEntwurf } from './beispielreise'
+import { beispielEntwurf } from './beispielreise'
 import { formularStand, setzeFormularVorgabe } from './formularstand'
 import { baueAppNeu } from './neuaufbau'
 import { SCHRITTE } from './schritte'
 import { sichere, stelleWiederHer } from './sitzungssicherung'
 import { aktiviereVorfuehrquelle, deaktiviereVorfuehrquelle, type Vorfuehrdaten } from './vorfuehrquelle'
-import { setzeVorfuehrung } from './zustand'
+import { setzeVorfuehrung, sperreSitzungsspeicher } from './zustand'
 
 /**
  * Die Einführungstour (Plan Einführungstour, Paket 5).
@@ -79,16 +78,20 @@ export async function starteTour(optionen: TourOptionen = {}): Promise<void> {
   const wartezeit = optionen.wartezeitMs ?? 6000
 
   // Erst sichern, dann umstellen: Die Messung schweigt, bevor die App auf
-  // der Beispielreise zum ersten Mal einen Bildschirm wechselt.
+  // der Beispielreise zum ersten Mal einen Bildschirm wechselt. Gesichert
+  // wird trotz der Sperre in den Speichermodulen - was immer doch hineingerät,
+  // ist danach wieder weg.
   const sicherung = sichere()
   // Was halb eingetippt und nie abgeschickt dasteht, liegt nicht im Speicher.
   const formular = formularStand()
   setzeVorfuehrung(true)
+  sperreSitzungsspeicher(true)
   aktiviereVorfuehrquelle(DATEN)
-  // Ohne die laufende Reise des Nutzers: Sonst starteten Leiste und
-  // Meldungszähler mit ihr.
-  leereReise()
-  schreibeBeispielEntwurf(new Date())
+  // Der Sitzungsspeicher bleibt unberührt: Solange der Merker steht, lesen
+  // und schreiben Entwurfs- und Reisespeicher nichts (sitzung/). Die App
+  // startet deshalb ohne die Reise des Nutzers, und die Eingabe mit der
+  // Beispielreise, die ihr hier vorgegeben wird.
+  setzeFormularVorgabe(beispielEntwurf(new Date()))
   window.history.replaceState(null, '', PFAD.eingabe)
   baueAppNeu()
 
@@ -101,6 +104,7 @@ export async function starteTour(optionen: TourOptionen = {}): Promise<void> {
     beendet = true
     drv.destroy()
     deaktiviereVorfuehrquelle()
+    sperreSitzungsspeicher(false)
     stelleWiederHer(sicherung)
     setzeFormularVorgabe(formular)
     window.history.replaceState(null, '', PFAD.eingabe)
