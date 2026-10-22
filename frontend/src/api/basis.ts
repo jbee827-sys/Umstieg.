@@ -21,3 +21,30 @@ export const API_BASIS: string = roh.replace(/\/+$/, '');
 export function apiUrl(pfad: string): string {
   return `${API_BASIS}${pfad}`;
 }
+
+/** Beantwortet `/api/*` ohne Netz – gesetzt nur, solange die Einführungstour läuft. */
+export type Vorschalter = (pfad: string) => Promise<Response>;
+
+let vorschalter: Vorschalter | null = null;
+
+/**
+ * Setzt oder entfernt den Vorschalter (einfuehrung/vorfuehrquelle.ts).
+ *
+ * Eine Stelle im eigenen Code statt eines Eingriffs in `window.fetch`: Die
+ * Tour soll die echte App vorführen, aber nichts außerhalb der App umbiegen –
+ * Kartenkacheln, Schriften und die Reichweitenmessung laufen über dasselbe
+ * `fetch` und haben mit der Vorführung nichts zu tun.
+ */
+export function setzeVorschalter(neu: Vorschalter | null): void {
+  vorschalter = neu;
+}
+
+/** Ob gerade vorgeführt wird – dann öffnet api/sse.ts keinen Live-Strom. */
+export function wirdVorgefuehrt(): boolean {
+  return vorschalter !== null;
+}
+
+/** Jeder Abruf unter `/api/` geht hier durch. */
+export function holeApi(pfad: string): Promise<Response> {
+  return vorschalter ? vorschalter(pfad) : fetch(apiUrl(pfad));
+}

@@ -1,4 +1,4 @@
-import { apiUrl } from './basis';
+import { holeApi } from './basis';
 import { RouteFehler } from './client';
 import type { Gehprofil, HaltestellenTafelEintrag, Ort, Steigpunkt, Weg } from './typen';
 
@@ -24,7 +24,7 @@ export async function holeHaltestellenTafel(ort: Ort, typ: 'arr' | 'dep'): Promi
   // Bahnhof/ZOB“) - Spec 2026-10-21-bus-am-bahnhof.
   if (ort.eva) params.set('umkreis', 'bahnhof');
   try {
-    const res = await fetch(apiUrl(`/api/haltestelle/tafel?${params.toString()}`));
+    const res = await holeApi(`/api/haltestelle/tafel?${params.toString()}`);
     if (res.ok) {
       const body = (await res.json()) as { eintraege: HaltestellenTafelEintrag[]; stand: string };
       return { ok: true, eintraege: body.eintraege, stand: body.stand };
@@ -68,7 +68,7 @@ export async function holeWeg(p: WegParameter): Promise<Weg> {
 
   let res: Response;
   try {
-    res = await fetch(apiUrl(`/api/weg?${params.toString()}`));
+    res = await holeApi(`/api/weg?${params.toString()}`);
   } catch {
     throw new RouteFehler('netz', 'Keine Verbindung zum Server.');
   }
