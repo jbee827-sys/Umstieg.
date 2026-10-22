@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Analytics } from '@vercel/analytics/react'
 import './index.css'
-import App from './App.tsx'
+import { AppRahmen } from './AppRahmen'
 import { ohneAbfrage } from './analytik/ereignis'
 import { ladeDarstellung, wendeDarstellungAn } from './einstellungen/darstellung'
 import { leiteRauteUm } from './navigation/rechtsseiten'
@@ -27,7 +27,7 @@ uebernimmBahnhofAusAdresse()
 // darauf fest.
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <AppRahmen />
     <Analytics beforeSend={ohneAbfrage} />
   </StrictMode>,
 )

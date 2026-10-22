@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { setzeVorfuehrung } from '../einfuehrung/zustand'
 import { ohneAbfrage } from './ereignis'
 
 const seitenaufruf = (url: string) => ({ type: 'pageview' as const, url })
@@ -55,5 +56,17 @@ describe('ohneAbfrage', () => {
   // Eine unbrauchbare Adresse ist kein Grund, etwas Ungeprueftes zu senden.
   it('verwirft ein Ereignis mit unlesbarer Adresse, statt es durchzulassen', () => {
     expect(ohneAbfrage(seitenaufruf('kaputt'))).toBeNull()
+  })
+
+  // Die Einführungstour wechselt auf /uebersicht und /weg - das sind keine
+  // Seitenaufrufe eines Reisenden.
+  it('verwirft jeden Seitenaufruf, solange die Einführung vorgeführt wird', () => {
+    setzeVorfuehrung(true)
+    try {
+      expect(ohneAbfrage(seitenaufruf('https://umstieg.online/weg'))).toBeNull()
+    } finally {
+      setzeVorfuehrung(false)
+    }
+    expect(ohneAbfrage(seitenaufruf('https://umstieg.online/weg'))?.url).toBe('https://umstieg.online/weg')
   })
 })

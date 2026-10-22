@@ -1,4 +1,5 @@
 import { track, type BeforeSendEvent } from '@vercel/analytics'
+import { vorfuehrungLaeuft } from '../einfuehrung/zustand'
 
 /**
  * Die vier Messpunkte aus BRIEF.md 3 (Konzept Nutzergewinnung AP 4).
@@ -17,6 +18,9 @@ export type Messpunkt = 'eingabe-fertig' | 'navigation-start' | 'schritt-1' | 'z
  * Datenschutzerklaerung, und analytik/messpunkte.test.ts haelt es fest.
  */
 export function melde(name: Messpunkt): void {
+  // Die Einführungstour fährt eine Beispielreise durch - sie ist keine Reise
+  // und gehört nicht in die Zahlen.
+  if (vorfuehrungLaeuft()) return
   try {
     track(name)
   } catch {
@@ -44,9 +48,12 @@ export function melde(name: Messpunkt): void {
  * `/datenschutz`, siehe navigation/rechtsseiten.ts.)
  *
  * `null` bedeutet „nicht senden". Eine unlesbare Adresse ist kein Grund,
- * etwas Ungeprüftes zu senden.
+ * etwas Ungeprüftes zu senden – und eine Einführungstour ist kein Besuch.
  */
 export function ohneAbfrage(ereignis: BeforeSendEvent): BeforeSendEvent | null {
+  // Während der Einführungstour wechselt die App auf /uebersicht und /weg,
+  // ohne dass jemand reist - diese Seitenaufrufe gehen nicht hinaus.
+  if (vorfuehrungLaeuft()) return null
   try {
     const adresse = new URL(ereignis.url)
     adresse.search = ''
