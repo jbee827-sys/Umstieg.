@@ -396,6 +396,8 @@ function App() {
   // Rechtsseiten mit eigener Adresse (/impressum, /datenschutz) - bis zum
   // 21.10.2026 ueber den Hash, den die Reichweitenmessung nicht sah.
   const rechtsseite = useRechtsseite()
+  /** Die Tour wird gerade nachgeladen - der „i“-Knopf wartet so lange. */
+  const [tourLaedt, setTourLaedt] = useState(false)
 
   const berechne = useCallback(async (eingabe: EingabeWerte) => {
     setLaden(true)
@@ -1114,6 +1116,25 @@ function App() {
                 <img className="lockup-dunkel" src="/lockup-zwei-gleise-dunkel.png" alt="" width={1003} height={181} />
               </h1>
               <p>Vom Ankunftsgleis zum Anschlusszug – Schritt für Schritt.</p>
+              {/* Die Einfuehrungstour (einfuehrung/tour.ts) wird erst hier
+                  nachgeladen - mit driver.js und den Beispieldaten. Kein
+                  automatischer Start, nichts gespeichert (Plan Einfuehrungstour). */}
+              <button
+                type="button"
+                className="tour-knopf"
+                aria-label="Einführung starten"
+                title="Einführung starten"
+                disabled={tourLaedt}
+                onClick={() => {
+                  setTourLaedt(true)
+                  void import('./einfuehrung/tour')
+                    .then((tour) => tour.starteTour())
+                    .catch(() => undefined)
+                    .finally(() => setTourLaedt(false))
+                }}
+              >
+                i
+              </button>
             </header>
             {standortStatus === 'verweigert' && (
               <div className="hinweis-box">

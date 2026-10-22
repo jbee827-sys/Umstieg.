@@ -159,4 +159,24 @@ describe('Einführungstour', () => {
     await waitFor(() => expect(vorfuehrungLaeuft()).toBe(false), { timeout: 3000 })
     expect(d.stand.zerstoert).toBe(1)
   })
+
+  it('bewegt bei reduzierter Bewegung nichts', async () => {
+    vi.stubGlobal('matchMedia', (abfrage: string) => ({
+      matches: abfrage.includes('prefers-reduced-motion'),
+      media: abfrage,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }))
+    try {
+      render(<AppRahmen />)
+      const d = gestellterDriver()
+      void starteTour({ erzeugeDriver: d.erzeuge })
+      await beiSchritt(d, 0)
+      expect(d.stand.config).toMatchObject({ animate: false, smoothScroll: false })
+      d.drueck('onCloseClick')
+      await waitFor(() => expect(vorfuehrungLaeuft()).toBe(false))
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
 })
