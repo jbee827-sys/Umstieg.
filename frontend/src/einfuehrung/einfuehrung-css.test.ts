@@ -40,6 +40,11 @@ describe('einfuehrung.css', () => {
     expect(ziel).toContain('outline-offset: 4px')
   })
 
+  // DESIGN.md 4: keine spitzen Ecken - auch nicht am Fokusring des ×.
+  it('rundet das × wie jeden Knopf', () => {
+    expect(deklarationenVon(tour, '.umstieg-tour .driver-popover-close-btn')).toContain('border-radius: var(--radius-pille)')
+  })
+
   it('hält die Schrift der Blase nicht unter --schrift-label', () => {
     for (const groesse of tour.matchAll(/font-size:\s*([^;]+);/g)) {
       expect(groesse[1].trim()).toMatch(/^var\(--schrift-(label|text|anweisung|titel)\)$/)
