@@ -544,6 +544,12 @@ jeder Ebene sichtbar. Drei Befunde, zwei behoben:
 > Lauf übersprang, was schon lag. `osm-startbestand.test.ts` hält Anzahl
 > (≥ 350), Größe (< 15 MB), Version, Dateinamen und die fünf Metropolen fest.
 >
+> **Nach jeder Erneuerung des Startbestands** auch `cd backend && npm run
+> bahnhofsseiten` und `npm run vorfuehrdaten` laufen lassen. Letzteres
+> zeichnet die Routen der Einführungstour (Berlin Hbf, Gleis 14 → 6) nach
+> `frontend/src/einfuehrung/daten/` auf; danach Schritt 7 der Tour
+> („9 statt 6 Minuten") gegen die neuen Gehzeiten prüfen.
+>
 > ```bash
 > cd backend && npm test && npm run lint   # 529 von 529, Lint sauber
 > ```
