@@ -142,7 +142,7 @@ export function Dashboard({
           abgefahren={abgefahren}
         />
 
-        <div className="dashboard-bloecke">
+        <div className="dashboard-bloecke" data-tour="zuege">
           <section className="dashboard-block">
             <div className="kicker">Du kommst an</div>
             {zugAn && <div className="dashboard-zug">{zugAn}</div>}
@@ -180,7 +180,7 @@ export function Dashboard({
           * Streifen und der Punkt sind nur Bild.
           */}
         {!halt && (
-          <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
+          <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld" data-tour="standort">
             <label id="standortwahl-label">Wo stehst du auf Gleis {werte.gleisAn}?</label>
             <div
               className="standortwahl bahnsteigstreifen"
@@ -230,7 +230,7 @@ export function Dashboard({
           </fieldset>
         )}
 
-        <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
+        <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld" data-tour="route">
           <label>Route</label>
           <div className="routenwahl" role="group" aria-label="Routenvariante">
             {knoepfe.map((k) => {
@@ -288,7 +288,7 @@ export function Dashboard({
 
       {/* Schwebt ueber dem Rollbereich, der Inhalt rollt darunter durch -
           angeheftet ist nur der Knopf (12.10.2026). */}
-      <button type="button" className="knopf-primaer knopf-schwebend" onClick={onNavigation}>
+      <button type="button" className="knopf-primaer knopf-schwebend" onClick={onNavigation} data-tour="navigation-starten">
         <span>Navigation starten</span>
       </button>
     </div>

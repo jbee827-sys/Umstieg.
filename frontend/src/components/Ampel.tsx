@@ -29,7 +29,7 @@ function gehzeitText(sek: number): string {
 export function Ampel({ farbe, gehzeitSek, restSek, startPufferSek, abgefahren }: AmpelProps) {
   const zeigtLeiste = farbe !== null && restSek !== undefined && !abgefahren
   return (
-    <div className={`ampel-leiste ampel-${farbe ?? 'grau'}`} role="status">
+    <div className={`ampel-leiste ampel-${farbe ?? 'grau'}`} role="status" data-tour="ampel">
       <div className="ampel-kopf">
         <div className="ampel-lampen" aria-hidden="true">
           <span className={`ampel-lampe${farbe === 'gruen' ? ' an-gruen' : ''}`} />

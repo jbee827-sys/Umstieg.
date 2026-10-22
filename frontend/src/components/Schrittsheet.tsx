@@ -43,7 +43,7 @@ export function Schrittsheet({
   const zusatztext = detail(aktuell)
   const amZiel = position >= schritte.length - 1
   return (
-    <section className="schrittsheet" aria-live="polite">
+    <section className="schrittsheet" aria-live="polite" data-tour="schritt">
       <div className="schrittsheet-zaehler">
         Schritt {position + 1} von {schritte.length}
       </div>
