@@ -752,7 +752,7 @@ export function Eingabe({
       <div className="eingabe-rollbereich">
         {kopf}
         {breit && <h2 className="eingabe-titel">Wo steigst du um?</h2>}
-        <div className="ortsfeld">
+        <div className="ortsfeld" data-tour="bahnhof">
           <div className="kicker" aria-hidden="true">Du kommst an</div>
           <Ortsuche
             id="bahnhof"
@@ -921,7 +921,7 @@ export function Eingabe({
         ) : breit ? (
           <>
             <div className="gleiskacheln">
-              <div className="gleiskachel">
+              <div className="gleiskachel" data-tour="ankunft">
                 <div className="kicker">Du kommst an</div>
                 {/* Ein Bus hat kein Gleis: an seiner Stelle der Steig. */}
                 {fahrtAnkunft ? (
@@ -944,7 +944,7 @@ export function Eingabe({
                   </>
                 )}
               </div>
-              <div className="gleiskachel ziel">
+              <div className="gleiskachel ziel" data-tour="anschluss">
                 <div className="kicker">Dein Anschluss</div>
                 {fahrtAbfahrt ? (
                   steigZeile(fahrtAbfahrt)
@@ -976,7 +976,7 @@ export function Eingabe({
           <>
             {/* Die Ueberschrift steht UEBER der Box, nicht in ihrem Rand
                 (Julian, 21.10.2026) - darum die innere `reiseblock-box`. */}
-            <fieldset className="reiseblock">
+            <fieldset className="reiseblock" data-tour="ankunft">
               <legend>Ankunft</legend>
               <div className="reiseblock-box">
                 {eva !== '' && (
@@ -1013,7 +1013,7 @@ export function Eingabe({
               </div>
             </fieldset>
 
-            <fieldset className="reiseblock">
+            <fieldset className="reiseblock" data-tour="anschluss">
               <legend>Abfahrt</legend>
               <div className="reiseblock-box">
                 {eva !== '' && (
@@ -1131,7 +1131,7 @@ export function Eingabe({
           Inhalt (App.css). Ohne Pfeil: DESIGN.md 4, „Kein Pfeil hinter dem
           Text". „Wird berechnet", nicht „Route wird berechnet": Das brach
           auf 360 px in zwei Zeilen. */}
-      <button className="knopf-primaer knopf-schwebend" type="submit" disabled={!bereit}>
+      <button className="knopf-primaer knopf-schwebend" type="submit" disabled={!bereit} data-tour="starten">
         <span>{laden || ordnetZu ? 'Wird berechnet …' : 'Umstieg starten'}</span>
         {(laden || ordnetZu) && <span className="lade-kreisel" aria-hidden="true" />}
       </button>

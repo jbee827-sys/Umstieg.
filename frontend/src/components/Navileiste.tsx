@@ -22,7 +22,7 @@ interface NavileisteProps {
 // (der „Nordstern") - auf Wunsch entfernt.
 export function Navileiste({ aktuell, hatRoute, ungelesen, hervorgehoben, onWechsel }: NavileisteProps) {
   return (
-    <nav className="navileiste" aria-label="Bereiche">
+    <nav className="navileiste" aria-label="Bereiche" data-tour="leiste">
       {leisteneintraege(hatRoute).map((e) => {
         const kennzeichnen = e.id === 'meldungen'
         return (

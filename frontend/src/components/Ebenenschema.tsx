@@ -305,7 +305,7 @@ function Bandstapel({ modell, bahnhofName }: { modell: Bandmodell; bahnhofName: 
   const flaeche = bildflaeche(aktivH)
 
   return (
-    <section className="schema-bereich">
+    <section className="schema-bereich" data-tour="schema">
       <div className="schema-fenster" ref={fensterRef} style={{ paddingTop: ANKER_H }}>
         <div
           className="schema-stapel"
@@ -373,7 +373,7 @@ function Bandstapel({ modell, bahnhofName }: { modell: Bandmodell; bahnhofName: 
  */
 function ErsatzSchema({ modell, bahnhofName }: { modell: SchemaModell; bahnhofName: string }) {
   return (
-    <section className="schema-bereich">
+    <section className="schema-bereich" data-tour="schema">
       {/* Kein Anker wie im echten Bild: Hier sind ALLE Bänder gleich hoch, der
           Stapel bleibt kurz und passt am Stück ins Fenster. Ihn zu verschieben
           hätte die vorderen Ebenen aus einem halbleeren Bild geschoben. */}
