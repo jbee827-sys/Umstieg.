@@ -49,6 +49,7 @@ import { mitUebergang, uebergangsart, type Ausloeser } from './navigation/ueberg
 import { erkenneBahnhof } from './standort/bahnhofErkennung'
 import { useStandort } from './standort/useStandort'
 import { vorfuehrungLaeuft } from './einfuehrung/zustand'
+import { formularVorgabe, setzeFormularVorgabe } from './einfuehrung/formularstand'
 
 
 const FEHLER_TEXTE: Record<string, string> = {
@@ -398,6 +399,9 @@ function App() {
   const rechtsseite = useRechtsseite()
   /** Die Tour wird gerade nachgeladen - der „i“-Knopf wartet so lange. */
   const [tourLaedt, setTourLaedt] = useState(false)
+  // Die Vorgabe gilt fuer den ersten Aufbau der Eingabe nach der Tour, nicht
+  // fuer jeden spaeteren: Danach liest sie wieder den abgeschickten Entwurf.
+  useEffect(() => setzeFormularVorgabe(null), [])
 
   const berechne = useCallback(async (eingabe: EingabeWerte) => {
     setLaden(true)
@@ -1100,7 +1104,9 @@ function App() {
         laden={laden}
         fehler={fehler}
         erkannt={erkannt}
-        entwurf={liesEntwurf()}
+        // Nach der Einfuehrungstour steht hier das Formular von vorher, auch
+        // wenn es nie abgeschickt wurde (einfuehrung/formularstand.ts).
+        entwurf={formularVorgabe() ?? liesEntwurf()}
         kopf={
           <>
             <header className="kopf">
