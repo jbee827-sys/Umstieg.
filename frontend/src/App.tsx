@@ -48,6 +48,7 @@ import { leereReise, liesReise, schreibeReise } from './sitzung/reisespeicher'
 import { mitUebergang, uebergangsart, type Ausloeser } from './navigation/uebergang'
 import { erkenneBahnhof } from './standort/bahnhofErkennung'
 import { useStandort } from './standort/useStandort'
+import { vorfuehrungLaeuft } from './einfuehrung/zustand'
 
 
 const FEHLER_TEXTE: Record<string, string> = {
@@ -341,9 +342,12 @@ function App() {
     return () => window.clearInterval(timer)
   }, [bildschirm])
 
-  // Verfolgung laeuft ausschliesslich in der Routenansicht.
+  // Verfolgung laeuft ausschliesslich in der Routenansicht - und nicht in der
+  // Einfuehrungstour: Deren Reise ist ein Beispiel. Wer gerade wirklich in
+  // Berlin Hbf steht, bekaeme sonst „Angekommen“ am Beispielgleis angeboten.
   useEffect(() => {
     if (bildschirm !== 'dashboard' && bildschirm !== 'navigation') return
+    if (vorfuehrungLaeuft()) return
     starteVerfolgung()
     return stoppeVerfolgung
   }, [bildschirm, starteVerfolgung, stoppeVerfolgung])
