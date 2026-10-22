@@ -1,6 +1,7 @@
 import type { Bahnsteigabschnitt, RouteErgebnis, RoutenVariante } from '../api/typen'
 import type { EingabeWerte } from '../components/Eingabe'
 import type { Meldung } from '../meldungen/modell'
+import { sitzungsspeicherGesperrt } from '../einfuehrung/zustand'
 
 /**
  * Die laufende Reise, gesichert im Sitzungsspeicher dieses Tabs (Spec
@@ -47,6 +48,10 @@ interface Ablage {
 // gesperrte Site-Daten). Ohne Speicher laeuft die App weiter, nur ohne
 // Gedaechtnis ueber das Neuladen hinaus.
 function speicher(): Storage | null {
+  // Waehrend der Einfuehrungstour gibt es keinen: Ihre Reise ist ein
+  // Beispiel. Laedt jemand mitten in der Tour neu, stuende sie sonst als
+  // eigene Reise da - an der Stelle der echten.
+  if (sitzungsspeicherGesperrt()) return null
   try {
     return window.sessionStorage
   } catch {

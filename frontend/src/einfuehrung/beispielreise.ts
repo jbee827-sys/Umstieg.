@@ -1,19 +1,19 @@
-import { schreibe as schreibeEntwurf } from '../sitzung/eingabespeicher'
+import type { EingabeEntwurf } from '../sitzung/eingabespeicher'
 import { BEISPIEL_ORT, beispielZuege } from './vorfuehrquelle'
 
 /**
- * Legt die Beispielreise als Eingabe-Entwurf ab: Berlin Hbf, ICE 945 auf
- * Gleis 14, Anschluss ICE 1007 auf Gleis 6 - mit denselben Zeiten, die die
+ * Die Beispielreise als Eingabe-Entwurf: Berlin Hbf, ICE 945 auf Gleis 14,
+ * Anschluss ICE 1007 auf Gleis 6 - mit denselben Zeiten, die die
  * Vorführquelle auf ihre Tafeln stellt.
  *
  * Die Tour füllt die Felder nicht per simuliertem Tippen (so machte es nur
- * die Vorschau). Nach dem Neuaufbau liest die Eingabe diesen Entwurf wie
- * nach einem Neuladen; die ersten Schritte erklären dann fertige Felder.
- * Vorbild: `sitzung/vorbelegung.ts`.
+ * die Vorschau). Sie gibt diesen Entwurf der neu aufgebauten Eingabe vor
+ * (formularstand.ts) - im Speicher der Seite, nicht im Sitzungsspeicher;
+ * die ersten Schritte erklären dann fertige Felder.
  */
-export function schreibeBeispielEntwurf(jetzt: Date): void {
+export function beispielEntwurf(jetzt: Date): EingabeEntwurf {
   const { ankunft, abfahrt } = beispielZuege(jetzt)
-  schreibeEntwurf({
+  return {
     suchtext: BEISPIEL_ORT.name,
     gewaehlt: BEISPIEL_ORT,
     anschlussText: '',
@@ -29,5 +29,5 @@ export function schreibeBeispielEntwurf(jetzt: Date): void {
     zugAbfahrt: abfahrt,
     fahrtAnkunft: null,
     fahrtAbfahrt: null,
-  })
+  }
 }

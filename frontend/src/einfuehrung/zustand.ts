@@ -15,3 +15,21 @@ export function vorfuehrungLaeuft(): boolean {
 export function setzeVorfuehrung(an: boolean): void {
   laeuft = an
 }
+
+/**
+ * Ob Entwurfs- und Reisespeicher gerade stillhalten (sitzung/).
+ *
+ * Ein eigener Merker neben `vorfuehrungLaeuft`, weil beide zu verschiedenen
+ * Zeitpunkten fallen: Am Ende der Tour muss der Speicher WIEDER lesbar sein,
+ * bevor die App neu aufgebaut wird - sie liest dabei die Reise des Nutzers.
+ * Die Messung dagegen schweigt bis danach.
+ */
+let speicherGesperrt = false
+
+export function sitzungsspeicherGesperrt(): boolean {
+  return speicherGesperrt
+}
+
+export function sperreSitzungsspeicher(an: boolean): void {
+  speicherGesperrt = an
+}
