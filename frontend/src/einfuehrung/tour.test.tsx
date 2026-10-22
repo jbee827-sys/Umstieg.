@@ -91,6 +91,8 @@ describe('Einführungstour', () => {
     expect(sessionStorage.getItem(SCHLUESSEL)).toBe(NUTZER_ENTWURF)
     expect(sessionStorage.getItem(REISE_SCHLUESSEL)).toBe(NUTZER_REISE)
     expect(window.location.pathname).toBe('/eingabe')
+    // Der Fokus steht wieder dort, wo die Tour begann.
+    await waitFor(() => expect(document.activeElement?.getAttribute('aria-label')).toBe('Einführung starten'))
     // Die Vorführquelle ist aus: /api/* geht wieder ans Netz.
     const netz = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('[]'))
     await holeApi('/api/health')
@@ -141,6 +143,9 @@ describe('Einführungstour', () => {
     expect(d.stand.zerstoert).toBe(1)
     expect(sessionStorage.getItem(SCHLUESSEL)).toBeNull()
     expect(sessionStorage.getItem(REISE_SCHLUESSEL)).toBeNull()
+    // Auch hier, wo die Tour auf der Eingabe endet: Fokus auf dem NEUEN „i“.
+    await waitFor(() => expect(document.activeElement?.getAttribute('aria-label')).toBe('Einführung starten'))
+    expect(document.activeElement?.isConnected).toBe(true)
   })
 
   it('beendet sauber, wenn der nächste Bildschirm nicht kommt', async () => {
