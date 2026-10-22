@@ -1,4 +1,4 @@
-import { apiUrl } from './basis';
+import { holeApi } from './basis';
 import type { OrteAntwort } from './typen';
 
 /**
@@ -12,7 +12,7 @@ export type OrteErgebnis =
 
 async function frage(pfad: string): Promise<OrteErgebnis> {
   try {
-    const res = await fetch(apiUrl(pfad));
+    const res = await holeApi(pfad);
     if (res.status === 503) return { ok: false, fehler: 'nicht-verfuegbar' };
     if (!res.ok) return { ok: false, fehler: 'netz' };
     return { ok: true, antwort: (await res.json()) as OrteAntwort };

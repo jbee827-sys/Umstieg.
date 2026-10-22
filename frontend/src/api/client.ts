@@ -1,4 +1,4 @@
-import { apiUrl } from './basis';
+import { holeApi } from './basis';
 import type { BahnhofTreffer, RouteErgebnis, RouteParameter, TafelEintrag } from './typen';
 
 export type SuchErgebnis =
@@ -7,7 +7,7 @@ export type SuchErgebnis =
 
 export async function sucheStationen(q: string): Promise<SuchErgebnis> {
   try {
-    const res = await fetch(apiUrl(`/api/stations?q=${encodeURIComponent(q)}`));
+    const res = await holeApi(`/api/stations?q=${encodeURIComponent(q)}`);
     if (res.status === 503) return { ok: false, fehler: 'db-zugang-fehlt' };
     if (!res.ok) return { ok: false, fehler: 'netz' };
     return { ok: true, treffer: (await res.json()) as BahnhofTreffer[] };
@@ -19,7 +19,7 @@ export async function sucheStationen(q: string): Promise<SuchErgebnis> {
 /** Umkreissuche. Die Koordinaten sind bereits gerundet – siehe standort/bahnhofErkennung.ts. */
 export async function sucheStationenNahebei(lat: number, lon: number): Promise<SuchErgebnis> {
   try {
-    const res = await fetch(apiUrl(`/api/stations?lat=${lat}&lon=${lon}`));
+    const res = await holeApi(`/api/stations?lat=${lat}&lon=${lon}`);
     if (res.status === 503) return { ok: false, fehler: 'db-zugang-fehlt' };
     if (!res.ok) return { ok: false, fehler: 'netz' };
     return { ok: true, treffer: (await res.json()) as BahnhofTreffer[] };
@@ -52,7 +52,7 @@ export async function holeRoute(p: RouteParameter): Promise<RouteErgebnis> {
 
   let res: Response;
   try {
-    res = await fetch(apiUrl(`/api/route?${params.toString()}`));
+    res = await holeApi(`/api/route?${params.toString()}`);
   } catch {
     throw new RouteFehler('netz', 'Keine Verbindung zum Server.');
   }
@@ -69,7 +69,7 @@ export type TafelErgebnis =
 
 export async function holeTafel(eva: string, typ: 'arr' | 'dep'): Promise<TafelErgebnis> {
   try {
-    const res = await fetch(apiUrl(`/api/board/${encodeURIComponent(eva)}?type=${typ}`));
+    const res = await holeApi(`/api/board/${encodeURIComponent(eva)}?type=${typ}`);
     if (res.status === 503) return { ok: false, fehler: 'db-zugang-fehlt' };
     if (!res.ok) return { ok: false, fehler: 'netz' };
     return { ok: true, eintraege: (await res.json()) as TafelEintrag[] };

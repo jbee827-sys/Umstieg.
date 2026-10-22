@@ -1,4 +1,4 @@
-import { apiUrl } from './basis';
+import { apiUrl, wirdVorgefuehrt } from './basis';
 import type { LiveEreignis, Ort } from './typen';
 
 export interface LiveOptionen {
@@ -32,7 +32,11 @@ function oeffneStrom(
   onEreignis: (ereignis: LiveEreignis) => void,
   onWiederverbunden: () => void,
 ): () => void {
-  const nimm = (typ: LiveEreignis['typ']) => (nachricht: MessageEvent<string>) => {
+  // Die Einführungstour führt eine aufgezeichnete Reise vor. Ein Strom zum
+  // Backend brächte dort echte Meldungen zu einem erfundenen Zeitpunkt – und
+  // die Tour soll auch ohne Backend laufen. Still ist der ehrliche Zustand.
+  if (wirdVorgefuehrt()) return () => {};
+  const nimm =(typ: LiveEreignis['typ']) => (nachricht: MessageEvent<string>) => {
     try {
       onEreignis({ ...(JSON.parse(nachricht.data) as LiveEreignis), typ });
     } catch {
