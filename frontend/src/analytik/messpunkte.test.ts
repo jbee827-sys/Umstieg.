@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { track } from '@vercel/analytics'
+import { setzeVorfuehrung } from '../einfuehrung/zustand'
 import { melde } from './ereignis'
 import { bereitsErreicht, faelligeMesspunkte } from './messpunkte'
 
@@ -34,6 +35,20 @@ describe('melde', () => {
       gefangen = e
     }
     expect(gefangen).toBeNull()
+    expect(trackMock).toHaveBeenCalledTimes(1)
+  })
+
+  // Einführungstour: Jede Tour liefe sonst als Reise durch die Zahlen des
+  // Konzepts Nutzergewinnung.
+  it('sendet nichts, solange die Einführung vorgeführt wird', () => {
+    setzeVorfuehrung(true)
+    try {
+      melde('eingabe-fertig')
+    } finally {
+      setzeVorfuehrung(false)
+    }
+    expect(trackMock).not.toHaveBeenCalled()
+    melde('eingabe-fertig')
     expect(trackMock).toHaveBeenCalledTimes(1)
   })
 })
