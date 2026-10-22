@@ -104,13 +104,19 @@ export async function starteTour(optionen: TourOptionen = {}): Promise<void> {
     stelleWiederHer(sicherung)
     setzeFormularVorgabe(formular)
     window.history.replaceState(null, '', PFAD.eingabe)
+    // Endet die Tour auf der Eingabe, steht dort noch das „i“ der alten App -
+    // der Neuaufbau ersetzt es gleich. Gemeint ist das neue.
+    const altesI = document.querySelector('.tour-knopf')
     baueAppNeu()
     // Der Merker fällt erst, wenn die neu aufgebaute App steht: Bis dahin
     // könnte ein Adresswechsel noch als Seitenaufruf durchgehen.
-    void warte(() => document.querySelector<HTMLElement>('.tour-knopf') ?? true, 1000)
-      .then((knopf) => {
-        if (knopf instanceof HTMLElement) knopf.focus()
-      })
+    // Erkennbar am „i“: Es steht nur auf der Eingabe, und die Tour endet
+    // meist auf dem Weg. Fehlt es nach einer Sekunde, fällt der Merker trotzdem.
+    void warte(() => {
+      const knopf = document.querySelector<HTMLElement>('.tour-knopf')
+      return knopf !== altesI ? knopf : null
+    }, 1000)
+      .then((knopf) => knopf.focus())
       .catch(() => undefined)
       .finally(() => {
         setzeVorfuehrung(false)
