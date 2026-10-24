@@ -8,7 +8,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = scene as? UIWindowScene else { return }
 
         window = UIWindow(windowScene: windowScene)
-        window?.rootViewController = CAPBridgeViewController()
+        // Unser ViewController statt CAPBridgeViewController: Zurueck-Wischgeste
+        // und das Uebergabe-Plugin (ViewController.swift). Bis 24.10.2026 stand
+        // hier die Klasse von Capacitor - beides griff dann nicht.
+        window?.rootViewController = ViewController()
         window?.makeKeyAndVisible()
 
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)

@@ -15,6 +15,7 @@ gilt, fragt `istApp()` (`frontend/src/plattform/istApp.ts`).
 | Cloud-Bau | `.github/workflows/ios.yml` (macOS 26, Xcode 26) |
 | Bildschirmfotos | `.github/scripts/ios-bildschirmfotos.sh`; Artefakt `ios-bildschirmfotos` am Actions-Lauf |
 | Export für App Store Connect | `frontend/ios/ExportOptions.plist` |
+| Teilen-Erweiterung (Paket 7) | `frontend/ios/App/Teilen/`, App Group `group.online.umstieg.app` (`UebergabeSpeicher.swift`), Plugin `UebergabePlugin.swift`, Web-Seite `src/plattform/uebergabe.ts` |
 
 Unterschiede zur Web-Fassung:
 
@@ -52,10 +53,19 @@ Voraussetzung: Mitgliedschaft im Apple Developer Program ist freigeschaltet.
 
 1. **App anlegen.** [App Store Connect](https://appstoreconnect.apple.com) →
    *Apps* → **+** → *Neue App*: Plattform iOS, Name **Umstieg.**, Sprache
-   Deutsch, Bundle-ID **online.umstieg.app** (falls sie in der Liste fehlt:
-   vorher unter developer.apple.com → *Certificates, Identifiers & Profiles*
-   → *Identifiers* → **+** → *App IDs* mit genau dieser Bundle-ID anlegen),
-   SKU `umstieg-ios`, Zugriff „Vollständig“.
+   Deutsch, Bundle-ID **online.umstieg.app**, SKU `umstieg-ios` (frei
+   wählbar, nur intern sichtbar), Zugriff „Vollständig“.
+   - Fehlt die Bundle-ID in der Liste, vorher anlegen: developer.apple.com →
+     *Certificates, Identifiers & Profiles* → *Identifiers* → **+** → *App
+     IDs* → *App* → *Explicit* `online.umstieg.app`, unter *Capabilities*
+     **App Groups** anhaken.
+   - Die Teilen-Erweiterung braucht eine zweite ID und eine App Group. Der
+     Actions-Lauf legt beide mit dem Admin-Schlüssel selbst an. Scheitert er
+     daran („No profiles for 'online.umstieg.app.teilen'“ oder „App Group“),
+     von Hand: *Identifiers* → **+** → *App Groups* → `group.online.umstieg.app`;
+     dann **+** → *App IDs* → *App* → `online.umstieg.app.teilen` mit *App
+     Groups*; bei beiden App-IDs unter *App Groups* → *Configure* die Gruppe
+     wählen.
 2. **API-Schlüssel.** *Benutzer und Zugriff* → *Integrationen* → *App Store
    Connect API* → *Teamschlüssel* → **+**. Name `GitHub Actions`, Rolle
    **Admin**.

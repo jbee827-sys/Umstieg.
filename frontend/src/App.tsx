@@ -52,6 +52,7 @@ import { useStandort } from './standort/useStandort'
 import { vorfuehrungLaeuft } from './einfuehrung/zustand'
 import { formularVorgabe, setzeFormularVorgabe } from './einfuehrung/formularstand'
 import { istApp } from './plattform/istApp'
+import { beobachteUebergabe } from './plattform/uebergabe'
 import {
   bereiteMitteilungenVor,
   planeErinnerung,
@@ -419,6 +420,17 @@ function App() {
   useEffect(() => {
     zaehleInApp(`bildschirm-${PFAD[bildschirm].slice(1)}`)
   }, [bildschirm])
+
+  // „An Umstieg senden“ (Plan App Store, Paket 7): Kommt eine geteilte
+  // Verbindung an, geht es auf die Eingabe - dort oeffnet sich der Dialog
+  // „Reise importieren“ mit dem Text. Eine laufende Reise bleibt gesichert.
+  useEffect(
+    () =>
+      beobachteUebergabe(() => {
+        if (bildschirmRef.current !== 'eingabe') setBildschirm('eingabe')
+      }),
+    [setBildschirm],
+  )
 
   // In der App bleibt der Bildschirm an, solange der Weg zu sehen ist.
   useEffect(() => {

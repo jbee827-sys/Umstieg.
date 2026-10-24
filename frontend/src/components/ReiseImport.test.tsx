@@ -263,3 +263,26 @@ describe('ReiseImport', () => {
     expect(document.body.textContent).not.toMatch(/Reisetag/i)
   })
 })
+
+/**
+ * „An Umstieg senden“ (Plan App Store, Paket 7): In der App kommt der Text
+ * aus dem Teilen-Menue schon eingesetzt. Er wird gelesen wie ein eingefuegter
+ * - und genauso wenig von selbst uebernommen.
+ */
+describe('ReiseImport mit geteiltem Text', () => {
+  it('zeigt den Text und die erkannte Verbindung sofort', () => {
+    zeige({ vorgabe: MIT_EINEM_UMSTIEG, jetzt: new Date('2026-08-15T09:00:00') })
+    expect((feld() as HTMLTextAreaElement).value).toBe(MIT_EINEM_UMSTIEG)
+    expect(document.body.textContent).toMatch(/Stimmt das\?/)
+  })
+
+  it('uebernimmt auch dann nichts ungefragt', () => {
+    const { onUebernehmen } = zeige({ vorgabe: MIT_EINEM_UMSTIEG, jetzt: new Date('2026-08-15T09:00:00') })
+    expect(onUebernehmen).not.toHaveBeenCalled()
+  })
+
+  it('setzt den Fokus nicht ins Feld - die Tastatur verdeckte die Auswahl', () => {
+    zeige({ vorgabe: MIT_EINEM_UMSTIEG })
+    expect(document.activeElement).not.toBe(feld())
+  })
+})

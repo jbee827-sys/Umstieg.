@@ -205,4 +205,11 @@ describe('Datenschutz: die App', () => {
     expect(text).toContain('„Umstieg.“ → „Standort“')
     expect(text).toContain('„Umstieg.“ → „Mitteilungen“')
   })
+
+  it('sagt, was mit einer geteilten Verbindung geschieht - und dass sie das Geraet nicht verlaesst', () => {
+    const text = zeige()
+    expect(text).toContain('Verbindung teilen')
+    expect(text).toContain('löscht ihn dabei')
+    expect(text).toContain('Der Text verlässt dein Gerät nicht.')
+  })
 })

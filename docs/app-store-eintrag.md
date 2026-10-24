@@ -72,8 +72,6 @@ umsteigen,bahnhof,anschluss,bahnsteig,zug,weg,aufzug,barrierefrei,verspätung,gl
 > Marketplace), Transitous/DELFI; Bahnhofsgeometrie: © OpenStreetMap-
 > Mitwirkende. Quelloffen unter der AGPL: github.com/jbee827-sys/Umstieg.
 
-Der Satz zum Teilen gilt erst mit Paket 7 – vorher streichen.
-
 ## Neuigkeiten (erste Fassung)
 
 > Die erste Fassung von Umstieg. als App – mit Mitteilungen bei Gleiswechsel,
@@ -145,8 +143,10 @@ die Verschlüsselung des Systems (HTTPS). Die Frage erscheint dann nicht.
 > - Optional anonymous usage counting, asked once with equal "Ja"/"Nein"
 >   buttons and revocable under "Einstellungen". Only event names are sent to
 >   our own server; nothing is sent without consent.
-> - Share extension: a connection shared from a journey planner app is imported
->   directly (Paket 7 – remove this line if not yet included).
+> - Share extension: in a journey planner app (e.g. DB Navigator), share a
+>   connection as text and pick "Umstieg." in the share sheet. The next time
+>   Umstieg. opens, the "Reise importieren" dialog shows the connection and
+>   asks which change to take over.
 >
 > The app is open source under the AGPL with an additional permission for app
 > store distribution: https://github.com/jbee827-sys/Umstieg.

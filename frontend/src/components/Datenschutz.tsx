@@ -332,6 +332,14 @@ export function Datenschutz({ onZurueck }: { onZurueck?: () => void }) {
           „Umstieg.“ → „Mitteilungen“.
         </p>
         <p>
+          <strong>Verbindung teilen:</strong> Teilst du eine Verbindung aus
+          einer anderen App mit „Umstieg.“, legt die Teilen-Funktion ihren Text
+          in einem Speicher ab, den nur Umstieg. auf deinem Gerät lesen kann.
+          Beim nächsten Öffnen liest die App ihn, löscht ihn dabei und zeigt
+          ihn unter „Reise importieren“; ist er älter als einen Tag, verwirft
+          sie ihn ungelesen. Der Text verlässt dein Gerät nicht.
+        </p>
+        <p>
           <strong>Speicher auf dem Gerät:</strong> Eingabe und Reise liegen wie
           oben beschrieben im <code>sessionStorage</code> – in der App bleiben
           sie, bis du „Angekommen“ bestätigst, einen neuen Umstieg eingibst

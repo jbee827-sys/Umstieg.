@@ -73,6 +73,15 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/abgeleitet" \
             CODE_SIGNING_ALLOWED=NO
 
+      - name: Teilen-Erweiterung im App-Paket
+        # Paket 7: Ohne sie fehlt „Umstieg.“ im Teilen-Menue - der Bau liefe
+        # trotzdem durch.
+        run: |
+          APP="$RUNNER_TEMP/abgeleitet/Build/Products/Debug-iphonesimulator/App.app"
+          test -f "$APP/PlugIns/Teilen.appex/Info.plist"
+          plutil -extract NSExtension.NSExtensionPointIdentifier raw "$APP/PlugIns/Teilen.appex/Info.plist" | grep -qx com.apple.share-services
+          echo "Teilen.appex eingebettet"
+
       - name: Bildschirmfotos
         # Erster Lauf (24.10.2026): 13,5 Minuten fuer 12 Fotos samt Start zweier Simulatoren.
         timeout-minutes: 25

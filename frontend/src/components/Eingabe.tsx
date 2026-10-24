@@ -25,6 +25,7 @@ import { meldeFormularAn } from '../einfuehrung/formularstand'
 import { ladeDarstellung, waehleDarstellung, type Darstellung } from '../einstellungen/darstellung'
 import { setzeEinwilligung, useEinwilligung } from '../analytik/einwilligung'
 import { istApp } from '../plattform/istApp'
+import { useGeteilterText, verwirfGeteiltenText } from '../plattform/uebergabe'
 import { useBreitesLayout } from '../aufbau/breite'
 
 /** Haltestellenpfad (Umstieg 2.0): beide Orte mit der gewählten Fahrt. */
@@ -182,6 +183,8 @@ export function Eingabe({
   const [fahrtAbfahrt, setFahrtAbfahrt] = useState<HaltestellenTafelEintrag | null>(entwurf?.fahrtAbfahrt ?? null)
   const [erkennungVerworfen, setErkennungVerworfen] = useState(false)
   const [importOffen, setImportOffen] = useState(false)
+  // In der App: eine Verbindung aus dem Teilen-Menue wartet (Paket 7).
+  const geteilt = useGeteilterText()
   /*
    * Bewegung nur auf eine Handlung hin (DESIGN.md 6): eine Wahl oder ihr
    * Aufheben durch den Nutzer. Setzt die Standorterkennung oder der Entwurf
@@ -1076,9 +1079,15 @@ export function Eingabe({
           </>
         )}
 
-        {importOffen && (
+        {(importOffen || geteilt !== null) && (
           <ReiseImport
-            onSchliessen={() => setImportOffen(false)}
+            // Ein neu geteilter Text oeffnet den Dialog frisch.
+            key={geteilt ?? 'von-hand'}
+            vorgabe={geteilt ?? undefined}
+            onSchliessen={() => {
+              setImportOffen(false)
+              verwirfGeteiltenText()
+            }}
             onUebernehmen={uebernimmUmstieg}
           />
         )}
