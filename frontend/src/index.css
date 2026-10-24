@@ -366,3 +366,35 @@ h3 {
 .vortext a {
   color: var(--color-accent-700);
 }
+
+/*
+ * Nur in der iOS-App (`ist-app` an <html>, src/plattform/istApp.ts).
+ *
+ * Eine App federt nicht als Ganzes nach, wenn man ueber das Ende hinaus
+ * wischt - das verraet die Webseite darunter. Gerollt wird ohnehin in den
+ * Rollbereichen, die ihr eigenes `overscroll-behavior: contain` haben.
+ *
+ * Und Bedienelemente sind keine Texte: Ein langer Druck auf einen Knopf
+ * markiert dort kein Wort und oeffnet kein Kontextmenue, ein Tipp blitzt
+ * nicht grau auf. Eingabefelder und Fliesstext bleiben auswaehlbar.
+ */
+.ist-app,
+.ist-app body {
+  overscroll-behavior: none;
+}
+
+.ist-app body {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ist-app button,
+.ist-app a,
+.ist-app label,
+.ist-app summary,
+.ist-app [role='button'],
+.ist-app [role='tab'],
+.ist-app img {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}

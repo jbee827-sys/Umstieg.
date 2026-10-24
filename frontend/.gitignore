@@ -30,3 +30,7 @@ dist-ssr
 dist-abzug/
 # Sichtpruefungen aus scripts/abzug.tsx - Zwischenergebnis, nie ins Repo
 .abzug/
+
+# App-Bau (npm run build:app) - erzeugt, nie ins Repo. Was davon ins
+# iOS-Projekt kopiert wird (ios/App/App/public), schliesst ios/.gitignore aus.
+dist-app/

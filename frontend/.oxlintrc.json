@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["react", "typescript", "oxc", "promise", "node"],
-  "ignorePatterns": ["dist", "node_modules"],
+  "ignorePatterns": ["dist", "dist-app", "ios", "node_modules"],
 
   // Gleiche Strenge wie im Backend. Vorher fehlten `suspicious`, `perf` und
   // das promise-Plugin – das Frontend prüfte also weniger als das Backend,

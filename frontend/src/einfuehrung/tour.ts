@@ -10,6 +10,7 @@ import { baueAppNeu } from './neuaufbau'
 import { SCHRITTE } from './schritte'
 import { sichere, stelleWiederHer } from './sitzungssicherung'
 import { aktiviereVorfuehrquelle, deaktiviereVorfuehrquelle, type Vorfuehrdaten } from './vorfuehrquelle'
+import { warte, ziel } from './warte'
 import { setzeVorfuehrung, sperreSitzungsspeicher } from './zustand'
 
 /**
@@ -47,27 +48,6 @@ export interface TourOptionen {
   wartezeitMs?: number
 }
 
-function ziel(wert: string): HTMLElement | null {
-  return document.querySelector<HTMLElement>(`[data-tour="${wert}"]`)
-}
-
-/**
- * Wartet, bis `finde` etwas liefert - und bis ein Seitenübergang fertig ist
- * (navigation/uebergang.ts setzt `data-uebergang`, solange er läuft). Erst
- * dann stimmt die Lage, an der driver.js die Blase ausrichtet.
- */
-function warte<T>(finde: () => T | null | undefined | false, ms: number): Promise<T> {
-  const bis = Date.now() + ms
-  return new Promise((fertig, fehler) => {
-    const pruefe = () => {
-      const gefunden = finde()
-      if (gefunden && !document.documentElement.dataset.uebergang) return fertig(gefunden)
-      if (Date.now() > bis) return fehler(new Error('Einführung: Ziel nicht erschienen'))
-      setTimeout(pruefe, 50)
-    }
-    pruefe()
-  })
-}
 
 let laeuft = false
 
