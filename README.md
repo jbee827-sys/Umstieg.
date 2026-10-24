@@ -30,9 +30,9 @@ Code (`istApp()`); die Web-Fassung ändert sich nur im Suchfeld
 
 | Paket | Stand |
 |---|---|
-| 0 Apple-Konto | **Julian** |
+| 0 Apple-Konto | erledigt (Julian, 24.10.2026) |
 | 1 Lizenz-Ausnahme (§ 7 AGPL) | umgesetzt in `NOTICE`, `CONTRIBUTING.md` – **Freigabe Julian** |
-| 2 Capacitor + Cloud-Bau | fertig; Actions-Lauf grün mit 12 Fotos (iPhone 6,9", iPad 13", hell/dunkel). **Offen:** `capacitor://localhost` in `CORS_ORIGIN` auf Fly (Befehl in `docs/deployment.md`) |
+| 2 Capacitor + Cloud-Bau | fertig; Actions-Lauf grün mit 12 Fotos (iPhone 6,9", iPad 13", hell/dunkel); `capacitor://localhost` steht seit 24.10.2026 in `CORS_ORIGIN` auf Fly |
 | 3 TestFlight | Job `testflight` steht; braucht Paket 0 und die vier Geheimnisse (`docs/app-ios.md`) |
 | 4 Messung mit Einwilligung | **offen – Richtungsfrage** (Vercel-Endpunkt oder eigener Zähler im Backend) |
 | 5 Native Grundfunktionen | fertig (Standort mit Erklärung vor der Abfrage, Haptik, Wachhalten, Statusleiste, Start, Symbol, Safari-Ansicht, Datenschutz-Manifest) |

@@ -358,8 +358,8 @@ Sechs Herkünfte, kommagetrennt:
 **Für die iOS-App kommt eine siebte hinzu (Plan App Store, Paket 2):**
 `capacitor://localhost` – die Herkunft der Seite in der WebView der App.
 Sie ist keine Website; niemand sonst kann sie in einem Browser annehmen.
-Stand 24.10.2026 noch **nicht** gesetzt (Prüfung mit `Origin:
-capacitor://localhost` auf `/api/health`: keine Freigabe). Setzen mit der
+**Gesetzt am 24.10.2026** (Julian), geprüft mit `Origin:` auf `/api/health`:
+alle sieben freigegeben, eine fremde Herkunft nicht. Der Befehl mit der
 vollen Liste (siehe Falle 1):
 
 ```bash
