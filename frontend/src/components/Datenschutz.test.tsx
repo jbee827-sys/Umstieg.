@@ -166,3 +166,34 @@ describe('Datenschutzerklaerung sagt, was die App wirklich tut', () => {
     expect(zeige()).toMatch(/Steigkoordinaten/)
   })
 })
+
+/**
+ * Die App (Plan App Store, Pakete 5, 6 und 10). Eine Seite fuer Web und App -
+ * sie muss sagen, was in der App anders ist, und darf nichts zusagen, was die
+ * App nicht haelt.
+ */
+describe('Datenschutz: die App', () => {
+  it('hat einen eigenen Abschnitt', () => {
+    expect(zeige()).toContain('Die App für iPhone und iPad')
+  })
+
+  it('sagt, dass der Standort erst nach dem Tipp auf „Standort verwenden“ abgefragt wird', () => {
+    expect(zeige()).toContain('Erst wenn du auf „Standort verwenden“ tippst')
+  })
+
+  it('sagt, dass Mitteilungen auf dem Geraet entstehen und es keinen Push-Dienst gibt', () => {
+    const text = zeige()
+    expect(text).toContain('entstehen auf deinem Gerät')
+    expect(text).toContain('keinen Push-Dienst')
+  })
+
+  it('sagt, dass die App nicht misst - solange main.tsx sie ausnimmt', () => {
+    expect(zeige()).toContain('Die App misst nicht.')
+  })
+
+  it('nennt den Widerruf in den Einstellungen von iOS', () => {
+    const text = zeige()
+    expect(text).toContain('„Umstieg.“ → „Standort“')
+    expect(text).toContain('„Umstieg.“ → „Mitteilungen“')
+  })
+})
