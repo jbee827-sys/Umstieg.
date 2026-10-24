@@ -1,5 +1,7 @@
 export type StandortStatus =
   | 'unbekannt'
+  /** Nur in der App: noch nie gefragt - die Oberflaeche erklaert erst, wozu. */
+  | 'erklaeren'
   | 'frage-laeuft'
   | 'erteilt'
   | 'verweigert'

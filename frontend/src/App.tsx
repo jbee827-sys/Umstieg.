@@ -50,6 +50,13 @@ import { erkenneBahnhof } from './standort/bahnhofErkennung'
 import { useStandort } from './standort/useStandort'
 import { vorfuehrungLaeuft } from './einfuehrung/zustand'
 import { formularVorgabe, setzeFormularVorgabe } from './einfuehrung/formularstand'
+import { istApp } from './plattform/istApp'
+import {
+  halteBildschirmWach,
+  meldeAnkunftSpuerbar,
+  meldeEreignisSpuerbar,
+  tippeSchrittwechsel,
+} from './plattform/geraet'
 
 
 const FEHLER_TEXTE: Record<string, string> = {
@@ -293,7 +300,8 @@ function App() {
   /** Zeitstempel des Tafelausfalls, solange er anhaelt (null = Quelle antwortet). */
   const [quelleWegSeit, setQuelleWegSeit] = useState<string | null>(null)
   const [stand, setStand] = useState<string | null>(null)
-  const { status: standortStatus, standort, starteVerfolgung, stoppeVerfolgung } = useStandort()
+  const { status: standortStatus, standort, starteVerfolgung, stoppeVerfolgung, erlaube: erlaubeStandort } =
+    useStandort()
   const [erkannt, setErkannt] = useState<Ort[]>([])
   const [standortZuUngenau, setStandortZuUngenau] = useState(false)
   const erkennungLaeuft = useRef(false)
@@ -352,6 +360,13 @@ function App() {
     starteVerfolgung()
     return stoppeVerfolgung
   }, [bildschirm, starteVerfolgung, stoppeVerfolgung])
+
+  // In der App bleibt der Bildschirm an, solange der Weg zu sehen ist.
+  useEffect(() => {
+    if (bildschirm !== 'navigation') return
+    halteBildschirmWach(true)
+    return () => halteBildschirmWach(false)
+  }, [bildschirm])
 
   // Wie weit der Nutzer sich durchgetippt hat. Summe der Weiter- und
   // Zurueck-Tipps; die Uhr redet hier nicht mehr mit (siehe fortschritt.ts).
@@ -721,7 +736,7 @@ function App() {
             haltWort: haltWort(betroffen),
           }
           setLiveEreignis(ereignis)
-          navigator.vibrate?.([200, 100, 200])
+          meldeEreignisSpuerbar()
 
           if (ereignis.typ === 'verspaetung' && ereignis.neu) {
             // Wie im Bahnhofspfad auf dem letzten Vorschlag aufsetzen. Eine
@@ -790,7 +805,7 @@ function App() {
         const betrifftAnkunftszug = roh.zug !== undefined && roh.zug === werte.zugAnName && roh.zug !== werte.zugAbName
         const ereignis: LiveEreignis = { ...roh, seite: betrifftAnkunftszug ? 'an' : 'ab' }
         setLiveEreignis(ereignis)
-        navigator.vibrate?.([200, 100, 200])
+        meldeEreignisSpuerbar()
 
         // Eine neue Abfahrtszeit aendert die Restzeit, nicht den Weg - die
         // Route bleibt, nur die Zeit wird neu. Ein Gleiswechsel dagegen
@@ -899,6 +914,7 @@ function App() {
     ankunft.current = { ...ankunft.current, bestaetigt: true }
     setAnkunftVorschlag(false)
     stoppeVerfolgung()
+    meldeAnkunftSpuerbar()
     setBildschirm('angekommen')
   }
 
@@ -1057,8 +1073,14 @@ function App() {
           bahnhofName={werte.bahnhofName || 'Umstieg'}
           position={position}
           standort={standort}
-          onZurueck={() => setVersatz((v) => v - 1)}
-          onWeiter={() => setVersatz((v) => v + 1)}
+          onZurueck={() => {
+            tippeSchrittwechsel()
+            setVersatz((v) => v - 1)
+          }}
+          onWeiter={() => {
+            tippeSchrittwechsel()
+            setVersatz((v) => v + 1)
+          }}
           onAngekommen={bestaetigeAnkunft}
           pfad={werte.haltestellen ? 'haltestelle' : 'bahnhof'}
           // Die Streckenhinweise standen bis zum 19.09.2026 lose unter der
@@ -1142,10 +1164,24 @@ function App() {
                 i
               </button>
             </header>
+            {/* Nur in der App: erst der Satz, dann die Systemabfrage
+                (Plan App Store, Paket 5; standort/useStandort.ts). */}
+            {standortStatus === 'erklaeren' && (
+              <div className="hinweis-box">
+                <p style={{ margin: '0 0 8px' }}>
+                  Mit deinem Standort erkennt Umstieg den Bahnhof und merkt unterwegs, wann du am Gleis
+                  bist. Die Position wird gerundet und nicht gespeichert.
+                </p>
+                <button type="button" className="knopf-sekundaer" onClick={erlaubeStandort}>
+                  Standort verwenden
+                </button>
+              </div>
+            )}
             {standortStatus === 'verweigert' && (
               <div className="hinweis-box">
-                Ohne Standortfreigabe suchst du den Bahnhof von Hand. Du kannst sie in den
-                Browsereinstellungen für diese Seite wieder erlauben.
+                {istApp()
+                  ? 'Ohne Standortfreigabe suchst du den Bahnhof von Hand. Du kannst sie in den Einstellungen deines Geräts unter „Umstieg.“ wieder erlauben.'
+                  : 'Ohne Standortfreigabe suchst du den Bahnhof von Hand. Du kannst sie in den Browsereinstellungen für diese Seite wieder erlauben.'}
               </div>
             )}
             {standortStatus === 'nicht-verfuegbar' && (
