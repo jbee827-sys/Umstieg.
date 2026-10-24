@@ -355,6 +355,17 @@ Sechs Herkünfte, kommagetrennt:
 | `https://umstieg-git-main-jbeerbaum827-8346s-projects.vercel.app` | **hinter Vercel-SSO** |
 | `https://umstieg-git-feat-mvp-jbeerbaum827-8346s-projects.vercel.app` | **hinter Vercel-SSO** |
 
+**Für die iOS-App kommt eine siebte hinzu (Plan App Store, Paket 2):**
+`capacitor://localhost` – die Herkunft der Seite in der WebView der App.
+Sie ist keine Website; niemand sonst kann sie in einem Browser annehmen.
+Stand 24.10.2026 noch **nicht** gesetzt (Prüfung mit `Origin:
+capacitor://localhost` auf `/api/health`: keine Freigabe). Setzen mit der
+vollen Liste (siehe Falle 1):
+
+```bash
+flyctl secrets set -a umstieg-backend CORS_ORIGIN="https://umstieg.vercel.app,https://umstieg.online,https://www.umstieg.online,https://umstieg-jbeerbaum827-8346s-projects.vercel.app,https://umstieg-git-main-jbeerbaum827-8346s-projects.vercel.app,https://umstieg-git-feat-mvp-jbeerbaum827-8346s-projects.vercel.app,capacitor://localhost"
+```
+
 Die drei projektbezogenen Vercel-Aliase antworten mit `302` auf
 `vercel.com/sso-api`. Sie sind also nur für den eingeloggten Eigentümer
 erreichbar – ihre Aufnahme in die Allowlist vergrössert die öffentliche
