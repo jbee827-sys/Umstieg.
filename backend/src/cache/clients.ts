@@ -78,12 +78,14 @@ export const SUCHE_TTL_MS = 10 * 60 * 1000;
 export const FASTA_TTL_MS = 5 * 60 * 1000;
 
 /**
- * Abfahrts- und Ankunftstafel - und zwar NUR fuer die HTTP-Route.
+ * Timetables-Aenderungen (/fchg) - beim Lesen NUR fuer die HTTP-Route.
  *
  * Muss unter dem Poll-Intervall der Ueberwachung (30 s) bleiben, sonst
  * koennte eine Anzeige aelter sein als die Ereignisse, die der Live-Strom
- * daneben schon gemeldet hat. Der Poller selbst umgeht diesen Speicher
- * vollstaendig: Er IST die Frischequelle - ein Cache in seinem Pfad
- * verschluckte genau die Aenderung, wegen der es den Strom gibt.
+ * daneben schon gemeldet hat. Der Poller liest diesen Speicher nicht: Er IST
+ * die Frischequelle - ein Treffer in seinem Pfad verschluckte genau die
+ * Aenderung, wegen der es den Strom gibt. Er schreibt aber hinein
+ * (`erzeugeTimetablesQuelle` in `clients/timetables.ts`). Den Sollplan haelt
+ * dieselbe Quelle laenger (`PLAN_TTL_MS`).
  */
 export const TAFEL_TTL_MS = 20 * 1000;

@@ -15,7 +15,7 @@ import {
   sucheBahnhoefe,
   sucheBahnhoefeNahebei,
 } from './clients/stations.js';
-import { holeTafel } from './clients/timetables.js';
+import { erzeugeTimetablesQuelle } from './clients/timetables.js';
 import { holeWagenposition } from './clients/wagenreihung.js';
 import { Ueberwachung } from './core/ueberwachung.js';
 import { Sicherheitsprotokoll } from './core/sicherheitsprotokoll.js';
@@ -34,7 +34,6 @@ import {
   FASTA_TTL_MS,
   STAMM_TTL_MS,
   SUCHE_TTL_MS,
-  TAFEL_TTL_MS,
 } from './cache/clients.js';
 import {
   erzeugeHaltestellenLive,
@@ -296,24 +295,25 @@ export function buildApp(
   app.setNotFoundHandler((_req, reply) => reply.code(404).send({ fehler: 'nicht-gefunden' }));
 
   /**
-   * Die Tafel gibt es in ZWEI Ausfuehrungen - und das ist Absicht.
+   * Die Tafel gibt es in ZWEI Ausfuehrungen derselben Quelle - und das ist
+   * Absicht.
    *
-   * `tafelRoh` geht immer hinaus und gehoert dem Live-Poller: Er ist die
-   * Frischequelle. Ein Zwischenspeicher in seinem Pfad verschluckte genau die
-   * Aenderung, wegen der es den SSE-Strom ueberhaupt gibt.
-   *
-   * `tafelFuerRouten` bedient die HTTP-Route und spart dort Quote. Die Frist
-   * liegt unter dem Poll-Intervall (30 s), damit die abgerufene Anzeige nie
-   * aelter ist als das, was der Strom daneben schon gemeldet hat.
+   * `live` gehoert dem Poller: Er holt die Aenderungen immer frisch, denn er
+   * IST die Frischequelle. `tafel` bedient die HTTP-Route und nimmt, was der
+   * Poller oder ein frueherer Aufruf schon geholt hat. Beide teilen sich
+   * Speicher und Budget - 60 Aufrufe je Minute fuer alle Nutzer zusammen
+   * (`clients/timetables-budget.ts`).
    *
    * Zwischengespeichert wird nur, was NICHT hereingereicht wurde: Tests mit
    * Fixture-Clients zaehlen Aufrufe, ein Speicher darunter machte diese
    * Zaehlung bedeutungslos.
    */
-  const tafelRoh: TafelFn = clients.tafel ?? ((eva, typ) => holeTafel(eva, typ));
-  const tafelFuerRouten: TafelFn = clients.tafel
-    ? tafelRoh
-    : mitCache(tafelRoh, (eva, typ) => `${eva}|${typ}`, TAFEL_TTL_MS, 200);
+  const hereingereicht = clients.tafel;
+  const timetables = hereingereicht ? null : erzeugeTimetablesQuelle({ log: app.log });
+  const tafelFuerRouten: TafelFn = hereingereicht ?? ((eva, typ) => timetables!.tafel(eva, typ));
+  const tafelLive = hereingereicht
+    ? async (eva: string) => [...(await hereingereicht(eva, 'arr')), ...(await hereingereicht(eva, 'dep'))]
+    : (eva: string) => timetables!.live(eva);
 
   // Eine Überwachung je App-Instanz. Sie beobachtet beide Tafeln, damit sowohl
   // der Ankunfts- als auch der Anschlusszug erfasst ist; gepollt wird trotzdem
@@ -322,13 +322,7 @@ export function buildApp(
   // `app.log` reicht die Protokollierung bis in den Poller. Ohne ihn war ein
   // Ausfall von Timetables im Betrieb an nichts zu erkennen: Der SSE-Strom
   // bleibt offen und wird nur stumm.
-  const ueberwachung =
-    clients.ueberwachung ??
-    new Ueberwachung(
-      async (eva) => [...(await tafelRoh(eva, 'arr')), ...(await tafelRoh(eva, 'dep'))],
-      undefined,
-      app.log,
-    );
+  const ueberwachung = clients.ueberwachung ?? new Ueberwachung(tafelLive, undefined, app.log);
 
   /**
    * Die Routen kommen in einem eigenen Zusammenhang - und zwar NACH der
