@@ -7,6 +7,11 @@ import { ohneAbfrage } from './analytik/ereignis'
 import { starteVorfuehrungAusAdresse } from './einfuehrung/vorfuehrstart'
 import { ladeDarstellung, wendeDarstellungAn } from './einstellungen/darstellung'
 import { leiteRauteUm } from './navigation/rechtsseiten'
+import {
+  blendeStartbildschirmAus,
+  folgeDarstellung,
+  oeffneExterneLinksImBrowser,
+} from './plattform/geraet'
 import { istApp, markiereApp } from './plattform/istApp'
 import { uebernimmBahnhofAusAdresse } from './sitzung/vorbelegung'
 
@@ -14,6 +19,9 @@ import { uebernimmBahnhofAusAdresse } from './sitzung/vorbelegung'
 // weissen Bildschirm sehen.
 wendeDarstellungAn(ladeDarstellung())
 markiereApp()
+// Nur in der App: Statusleiste passend zur Palette, fremde Links in Safari.
+folgeDarstellung()
+oeffneExterneLinksImBrowser()
 // Ebenfalls vorher: geteilte alte Links (#impressum) auf die echte Adresse,
 // bevor App die Adresse liest - und ein Bahnhof aus dem Link einer
 // Bahnhofsseite in die Eingabe (/eingabe?bahnhof=…).
@@ -40,3 +48,7 @@ createRoot(document.getElementById('root')!).render(
     {!istApp() && <Analytics beforeSend={ohneAbfrage} />}
   </StrictMode>,
 )
+
+// Der Startbildschirm der App deckt den Augenblick ab, bis React gezeichnet
+// hat - danach weg, sonst saehe man ihn bis zu seiner Hoechstdauer.
+requestAnimationFrame(() => blendeStartbildschirmAus())

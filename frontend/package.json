@@ -14,8 +14,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor-community/keep-awake": "8.0.1",
+    "@capacitor/browser": "8.0.5",
     "@capacitor/core": "8.5.3",
+    "@capacitor/geolocation": "8.2.4",
+    "@capacitor/haptics": "8.0.2",
     "@capacitor/ios": "8.5.3",
+    "@capacitor/splash-screen": "8.0.2",
+    "@capacitor/status-bar": "8.0.4",
     "@vercel/analytics": "^2.0.1",
     "driver.js": "1.10.2",
     "maplibre-gl": "^6.6.0",
@@ -24,6 +30,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "8.5.3",
+    "@resvg/resvg-js": "2.6.2",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.6",

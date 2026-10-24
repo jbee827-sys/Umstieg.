@@ -21,6 +21,16 @@ const config: CapacitorConfig = {
     // Kein backgroundColor: Ohne Angabe nimmt die WebView die Systemfarbe und
     // ist nachts dunkel, bevor die Seite steht - kein weisser Blitz.
   },
+  plugins: {
+    // Der Startbildschirm (einfarbig, hell/dunkel - scripts/app-bilder.ts)
+    // bleibt, bis React gezeichnet hat: main.tsx blendet ihn dann aus. Die
+    // 3 s sind nur die Obergrenze, falls das nie geschieht.
+    SplashScreen: {
+      launchShowDuration: 3000,
+      launchAutoHide: true,
+      showSpinner: false,
+    },
+  },
 }
 
 export default config

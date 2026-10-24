@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Datenschutz-Manifest der App (Plan App Store, Paket 5).
+
+  Kein Tracking, keine gesammelten Daten: Die gerundete Position geht nur
+  fuer die Bahnhofssuche ans Backend und wird dort nicht gespeichert
+  (Datenschutzerklaerung) - nach Apples Begriff ist das keine Sammlung.
+  Kommt mit Paket 4 eine Messung mit Einwilligung dazu, gehoert sie hier
+  und im App-Datenschutz von App Store Connect nachgetragen.
+
+  Schnittstellen mit Begruendungspflicht nutzt der eigene Code nicht. Die
+  Capacitor-Pakete bringen ihre eigenen Manifeste mit.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array/>
+</dict>
+</plist>

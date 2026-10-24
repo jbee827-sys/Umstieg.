@@ -1,3 +1,5 @@
+import { passeStatusleisteAn } from '../plattform/geraet'
+
 /**
  * Hell, Dunkel oder wie das Geraet - die Wahl unter „Einstellungen".
  *
@@ -43,6 +45,7 @@ export function wendeDarstellungAn(darstellung: Darstellung, wurzel: HTMLElement
 /** Wahl aus den Einstellungen: sofort anwenden und merken. */
 export function waehleDarstellung(darstellung: Darstellung): void {
   wendeDarstellungAn(darstellung)
+  passeStatusleisteAn()
   try {
     const s = speicher()
     if (darstellung === 'system') s?.removeItem(SCHLUESSEL)

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { istApp } from '../plattform/istApp';
+import { appFreigabe, appPosition, frageAppFreigabe, verfolgeAppPosition } from './appStandort';
 import type { Standort, StandortStatus } from './typen';
 
 const OPTIONEN: PositionOptions = {
@@ -23,12 +25,20 @@ function zuStandort(pos: GeolocationPosition): Standort {
  *
  * Bewusst ohne Entscheidungslogik – die liegt in ankunft.ts und
  * bahnhofErkennung.ts und ist dort ohne Browser-Mocks testbar.
+ *
+ * In der iOS-App (Plan App Store, Paket 5) laeuft alles ueber das native
+ * Plugin (appStandort.ts), und gefragt wird NICHT beim Mounten: Ist die
+ * Freigabe noch offen, meldet der Haken `erklaeren`, die Oberflaeche sagt in
+ * einem Satz, wozu, und erst ihr Knopf ruft `erlaube()` und damit die
+ * Systemabfrage. Die Verfolgung startet in der App nur mit Freigabe - sonst
+ * kaeme die Systemabfrage doch noch ohne Erklaerung.
  */
 export function useStandort(): {
   status: StandortStatus;
   standort: Standort | null;
   starteVerfolgung: () => void;
   stoppeVerfolgung: () => void;
+  erlaube: () => void;
 } {
   // Fehlt die API, laeuft die Seite ueber http:// ausserhalb von localhost.
   // Direkt beim Initialisieren abgeleitet statt im Effect gesetzt: das spart
@@ -38,8 +48,41 @@ export function useStandort(): {
   );
   const [standort, setStandort] = useState<Standort | null>(null);
   const watchId = useRef<number | null>(null);
+  const appVerfolgung = useRef<(() => void) | null>(null);
+  const appErlaubt = useRef(false);
+
+  /** App: einmal orten, sobald die Freigabe da ist. */
+  const ortetApp = useCallback((istAbgebrochen: () => boolean) => {
+    appErlaubt.current = true;
+    setStatus('frage-laeuft');
+    appPosition()
+      .then((s) => {
+        if (istAbgebrochen()) return;
+        setStandort(s);
+        setStatus('erteilt');
+      })
+      .catch(() => {
+        if (!istAbgebrochen()) setStatus('fehler');
+      });
+  }, []);
 
   useEffect(() => {
+    if (istApp()) {
+      let abgebrochen = false;
+      appFreigabe()
+        .then((freigabe) => {
+          if (abgebrochen) return;
+          if (freigabe === 'erteilt') ortetApp(() => abgebrochen);
+          else setStatus(freigabe === 'verweigert' ? 'verweigert' : 'erklaeren');
+        })
+        // Ortungsdienste des Geraets ganz aus.
+        .catch(() => {
+          if (!abgebrochen) setStatus('nicht-verfuegbar');
+        });
+      return () => {
+        abgebrochen = true;
+      };
+    }
     if (!('geolocation' in navigator)) return;
 
     let abgebrochen = false;
@@ -80,9 +123,23 @@ export function useStandort(): {
     return () => {
       abgebrochen = true;
     };
-  }, []);
+    // `ortetApp` aendert sich nie (useCallback ohne Abhaengigkeiten).
+  }, [ortetApp]);
+
+  const erlaube = useCallback(() => {
+    if (!istApp()) return;
+    setStatus('frage-laeuft');
+    frageAppFreigabe()
+      .then((freigabe) => {
+        if (freigabe === 'erteilt') ortetApp(() => false);
+        else setStatus('verweigert');
+      })
+      .catch(() => setStatus('nicht-verfuegbar'));
+  }, [ortetApp]);
 
   const stoppeVerfolgung = useCallback(() => {
+    appVerfolgung.current?.();
+    appVerfolgung.current = null;
     if (watchId.current !== null) {
       navigator.geolocation.clearWatch(watchId.current);
       watchId.current = null;
@@ -90,6 +147,18 @@ export function useStandort(): {
   }, []);
 
   const starteVerfolgung = useCallback(() => {
+    if (istApp()) {
+      if (!appErlaubt.current || appVerfolgung.current) return;
+      appVerfolgung.current = verfolgeAppPosition(
+        (s) => {
+          setStandort(s);
+          setStatus('erteilt');
+        },
+        // Letzte bekannte Position bleibt stehen (Degradationstabelle).
+        () => setStatus('fehler'),
+      );
+      return;
+    }
     if (!('geolocation' in navigator) || watchId.current !== null) return;
     watchId.current = navigator.geolocation.watchPosition(
       (pos) => {
@@ -107,5 +176,5 @@ export function useStandort(): {
   // Kein Tracking ueber die Lebensdauer der Komponente hinaus.
   useEffect(() => stoppeVerfolgung, [stoppeVerfolgung]);
 
-  return { status, standort, starteVerfolgung, stoppeVerfolgung };
+  return { status, standort, starteVerfolgung, stoppeVerfolgung, erlaube };
 }
