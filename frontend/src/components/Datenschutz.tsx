@@ -21,6 +21,9 @@ import { BETREIBER } from '../rechtliches/betreiber'
 //   waehlt", "loescht den Eintrag, wenn wieder System gewaehlt wird")
 // - Kartenkacheln: components/Karte.tsx
 // - Schriften: index.css (lokale @font-face, KEIN Google Fonts)
+// - App (iOS), seit 24.10.2026: plattform/ (istApp, geraet, mitteilungen),
+//   standort/appStandort.ts; in der App keine Messung (main.tsx), abgesichert
+//   in plattform/*.test.ts und standort/useStandort.app.test.ts
 // - Reichweitenmessung: main.tsx (<Analytics>), analytik/ereignis.ts
 //   (schneidet die Abfragezeichenkette ab), abgesichert in
 //   analytik/ereignis.test.ts und components/Datenschutz.test.tsx
@@ -66,9 +69,10 @@ export function Datenschutz({ onZurueck }: { onZurueck?: () => void }) {
           Reichweitenmessung zählen wir Seitenaufrufe – ohne Cookies, ohne
           Kennung und ohne Profil. Es gibt kein Nutzerkonto. Auf deinem Gerät bleibt
           allein deine eigene Eingabe – Bahnhof oder Haltestelle, Gleise, Zug – und nur so
-          lange, wie dieser Browser-Tab offen ist. Dein Standort wird nur mit
-          deiner Erlaubnis verwendet, bereits im Browser auf etwa 110 Meter
-          gerundet und nirgends gespeichert.
+          lange, wie dieser Browser-Tab offen ist (in der App: bis iOS die App
+          beendet). Dein Standort wird nur mit deiner Erlaubnis verwendet,
+          bereits auf deinem Gerät auf etwa 110 Meter gerundet und nirgends
+          gespeichert.
         </p>
 
         <h2>Verantwortlicher</h2>
@@ -287,6 +291,55 @@ export function Datenschutz({ onZurueck }: { onZurueck?: () => void }) {
         <p>
           Auch diese Angabe verlässt dein Gerät nicht und ist für die von dir
           gewünschte Einstellung erforderlich (§ 25 Abs. 2 Nr. 2 TTDSG).
+        </p>
+
+        <h2>Die App für iPhone und iPad</h2>
+        <p>
+          Umstieg. gibt es auch als App im App Store von Apple. Sie enthält
+          dieselbe Anwendung wie diese Webseite; was oben steht, gilt für sie
+          ebenso. Die Unterschiede:
+        </p>
+        <p>
+          <strong>App Store:</strong> Laden und Aktualisieren der App wickelt
+          Apple ab; dafür gilt die Datenschutzrichtlinie von Apple. Von Apple
+          erhalten wir nur zusammengefasste Zahlen, etwa wie oft die App
+          geladen wurde – und Absturzberichte nur, wenn du in iOS zugestimmt
+          hast, Analysedaten mit App-Entwicklern zu teilen. Wer du bist,
+          erfahren wir dabei nicht.
+        </p>
+        <p>
+          <strong>Standort:</strong> Die App fragt nicht beim Start. Erst wenn
+          du auf „Standort verwenden“ tippst, zeigt iOS die Abfrage – und nur
+          für die Zeit, in der du die App verwendest. Verarbeitet wird die
+          Position wie unter „Standortdaten“ beschrieben. Widerrufen kannst du
+          die Erlaubnis jederzeit in den Einstellungen von iOS unter
+          „Umstieg.“ → „Standort“.
+        </p>
+        <p>
+          <strong>Mitteilungen:</strong> Läuft eine Reise, fragt iOS einmal, ob
+          die App Mitteilungen senden darf – etwa wenn dein Anschluss das Gleis
+          wechselt oder fünf Minuten vor deiner Ankunft. Diese Mitteilungen
+          entstehen auf deinem Gerät aus den Daten, die die App ohnehin hat. Es
+          gibt keinen Push-Dienst: Weder wir noch Apple erhalten dafür eine
+          Gerätekennung oder den Inhalt. Die geplante Erinnerung löscht die App
+          mit „Angekommen“. Widerruf in den Einstellungen von iOS unter
+          „Umstieg.“ → „Mitteilungen“.
+        </p>
+        <p>
+          <strong>Speicher auf dem Gerät:</strong> Eingabe und Reise liegen wie
+          oben beschrieben im <code>sessionStorage</code> – in der App bleiben
+          sie, bis du „Angekommen“ bestätigst, einen neuen Umstieg eingibst
+          oder iOS die App beendet.
+        </p>
+        <p>
+          <strong>Reichweitenmessung:</strong> Die App misst nicht. Die oben
+          beschriebene Messung mit Vercel Web Analytics gilt nur für die
+          Webseite.
+        </p>
+        <p>
+          <strong>Links zu anderen Seiten</strong> (etwa zu den Datenquellen
+          oder zum Quellcode) öffnen in einer Safari-Ansicht über der App. Dort
+          gelten die Regeln der jeweiligen Seite.
         </p>
 
         <h2>Deine Rechte</h2>
