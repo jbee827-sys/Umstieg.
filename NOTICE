@@ -61,6 +61,14 @@ sind NICHT Teil dieses Repositorys - sie werden zur Laufzeit abgerufen.
 - OpenStreetMap / Overpass (Bahnhofsgeometrie): Open Database License (ODbL).
   Attribution "© OpenStreetMap-Mitwirkende" ist Pflicht und in der Karte
   hinterlegt. https://www.openstreetmap.org/copyright
+- Kartenbild (seit 24.10.2026): OpenFreeMap (https://openfreemap.org),
+  Vektorkacheln nach dem Schema von OpenMapTiles (© OpenMapTiles,
+  https://www.openmaptiles.org), Daten aus OpenStreetMap (ODbL). Die
+  Namensnennung "OpenFreeMap © OpenMapTiles Data from OpenStreetMap" bringt
+  die Kachelquelle mit; MapLibre zeigt sie in der Karte an. Vorher
+  Rasterkacheln von tile.openstreetmap.org - deren Nutzungsregeln verlangen
+  eine erkennbare Anwendungskennung, die aus der WebView der iOS-App nicht
+  moeglich ist.
 - Deutsche Bahn (Fahrplan-, Wagenreihungs-, Stations- und FaSta-Daten):
   Nutzungsbedingungen des DB API Marketplace, überwiegend CC BY 4.0.
   https://developers.deutschebahn.com

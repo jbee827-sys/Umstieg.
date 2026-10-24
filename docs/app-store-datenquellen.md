@@ -3,7 +3,14 @@
 Stand 24.10.2026. Was die App zur Laufzeit abruft und ob das in einer App im
 App Store erlaubt ist.
 
-## 1. Kartenkacheln – Entscheidung nötig
+## 1. Kartenkacheln – entschieden: OpenFreeMap (Julian, 24.10.2026)
+
+Umgesetzt in `frontend/src/components/kartenstil.ts` und `Karte.tsx`: Stil
+`liberty` (hell) bzw. `dark`, alles von `tiles.openfreemap.org`; CSP,
+Datenschutzerklärung und `NOTICE` angepasst. Sichtprüfung im Browser
+24.10.2026: Karte lädt, Weglinie liegt darauf, Namensnennung steht unten.
+Ein eigener Stil in den Farben der App ist möglich (eigene `style.json`),
+aber nicht nötig. Die Abwägung von damals:
 
 Heute: Rasterkacheln von `tile.openstreetmap.org` (Web und App,
 `components/Karte.tsx`, CSP in `vercel.json`).

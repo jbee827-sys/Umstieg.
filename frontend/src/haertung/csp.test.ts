@@ -15,7 +15,9 @@ import { dirname, resolve } from 'node:path'
  * zu strenge Policy die Karte oder den Live-Strom in Produktion, was
  * schlimmer waere als gar keine CSP:
  *
- *   - Kartenkacheln: `frontend/src/components/Karte.tsx` (tile.openstreetmap.org)
+ *   - Kartenkacheln: `frontend/src/components/Karte.tsx` (tiles.openfreemap.org:
+ *     Stil, Vektorkacheln, Schriften und Symbole - seit 24.10.2026, vorher
+ *     tile.openstreetmap.org)
  *   - SSE-Strom + API: `frontend/src/api/sse.ts`, `frontend/src/api/basis.ts`
  *     (VITE_API_BASE zeigt in Produktion auf https://umstieg-backend.fly.dev,
  *     siehe README "Deployment-Stand")
@@ -44,12 +46,16 @@ describe('Content-Security-Policy in vercel.json (Haertung P2)', () => {
     expect(csp()).toMatch(/(?:^|;\s*)default-src 'self'/)
   })
 
-  it('erlaubt die OSM-Kartenkacheln, die Karte.tsx tatsaechlich laedt', () => {
-    expect(csp()).toMatch(/img-src[^;]*https:\/\/tile\.openstreetmap\.org/)
-    // MapLibre holt Kacheln per fetch() und dekodiert sie selbst (siehe
-    // Karte-Bundle: createImageBitmap) - das faellt unter connect-src, nicht
-    // img-src.
-    expect(csp()).toMatch(/connect-src[^;]*https:\/\/tile\.openstreetmap\.org/)
+  it('erlaubt die Kartenquelle, die Karte.tsx tatsaechlich laedt', () => {
+    expect(csp()).toMatch(/img-src[^;]*https:\/\/tiles\.openfreemap\.org/)
+    // MapLibre holt Stil, Kacheln, Schriften und Symbole per fetch() und
+    // dekodiert sie selbst (createImageBitmap) - das faellt unter
+    // connect-src, nicht img-src.
+    expect(csp()).toMatch(/connect-src[^;]*https:\/\/tiles\.openfreemap\.org/)
+  })
+
+  it('laedt keine Kacheln mehr von tile.openstreetmap.org (Nutzungsregeln, 24.10.2026)', () => {
+    expect(csp()).not.toContain('tile.openstreetmap.org')
   })
 
   it('erlaubt den SSE-Strom und die API-Aufrufe zum Fly.io-Backend', () => {
