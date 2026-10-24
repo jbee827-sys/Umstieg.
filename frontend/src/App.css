@@ -21,8 +21,12 @@
    * hoch. Dieselbe Leiste sass damit je nach Seite und Rollstand an drei
    * verschiedenen Hoehen. Ihr eigenes Polster samt `safe-area-inset`
    * uebernimmt den Abstand nach unten.
+   *
+   * Oben die Statusleiste: In der iOS-App reicht die Seite darunter
+   * (`viewport-fit=cover`, src/plattform/appHtml.ts). Im Browser ist der
+   * Wert 0 - dort steht die Seite ohnehin unter der Leiste.
    */
-  padding: 24px 20px 0;
+  padding: calc(24px + env(safe-area-inset-top)) 20px 0;
   gap: 18px;
 }
 
@@ -2492,7 +2496,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  /* Nie unter Statusleiste, Kamerakerbe oder Home-Balken (iOS-App quer). */
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   background: color-mix(in srgb, #201e1d 55%, transparent);
 }
 

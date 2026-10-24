@@ -1,0 +1,82 @@
+# iOS-App: Bau fuer den Simulator und Bildschirmfotos (Plan App Store, Paket 2).
+#
+# Ohne Signatur und ohne Apple-Konto. Der signierte Bau fuer TestFlight kommt
+# mit Paket 3 dazu. Das Repository ist oeffentlich - macOS-Rechner kosten
+# hier nichts.
+name: iOS
+
+on:
+  push:
+    branches: [feat/app-ios]
+    paths:
+      - 'frontend/**'
+      - 'vercel.json'
+      - '.github/workflows/ios.yml'
+      - '.github/scripts/ios-bildschirmfotos.sh'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  simulator:
+    name: Simulator-Bau und Bildschirmfotos
+    runs-on: macos-26
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Abhaengigkeiten
+        run: npm ci
+
+      - name: Tests und Lint
+        # Die Fahrplanzeiten in den Tests sind deutsche Ortszeit.
+        env:
+          TZ: Europe/Berlin
+        run: npm test && npm run lint
+
+      - name: App-Bau (dist-app)
+        run: npm run build:app
+
+      - name: Web-Bau ins iOS-Projekt
+        run: npx cap sync ios
+
+      - name: Xcode
+        run: xcodebuild -version && xcrun simctl list runtimes
+
+      - name: Bau fuer den Simulator
+        run: |
+          xcodebuild build \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/abgeleitet" \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Bildschirmfotos
+        run: |
+          bash ../.github/scripts/ios-bildschirmfotos.sh \
+            "$RUNNER_TEMP/abgeleitet/Build/Products/Debug-iphonesimulator/App.app" \
+            "$RUNNER_TEMP/bildschirmfotos"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-bildschirmfotos
+          path: ${{ runner.temp }}/bildschirmfotos
+          if-no-files-found: warn
