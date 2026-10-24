@@ -3,6 +3,7 @@ import { Browser } from '@capacitor/browser'
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics'
 import { SplashScreen } from '@capacitor/splash-screen'
 import { StatusBar, Style } from '@capacitor/status-bar'
+import { TextZoom } from '@capacitor/text-zoom'
 import { istApp } from './istApp'
 
 /**
@@ -60,6 +61,24 @@ export function folgeDarstellung(): void {
   if (!istApp()) return
   passeStatusleisteAn()
   window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener('change', passeStatusleisteAn)
+}
+
+/**
+ * Die Textgröße aus den Einstellungen des Geräts (Anzeige & Helligkeit →
+ * Textgröße, Bedienungshilfen). Die WebView einer App übernimmt sie nicht von
+ * selbst - ohne dies bliebe die App bei 18 px, auch für jemanden, der am
+ * Gerät große Schrift eingestellt hat. Die Staffel in index.css ist in rem
+ * gesetzt und wächst mit. Beim Zurückkehren in die App neu, falls sie
+ * inzwischen geändert wurde. (Im Browser regelt Safari das selbst.)
+ */
+export function folgeSchriftgroesse(): void {
+  if (!istApp()) return
+  const uebernimm = () =>
+    still(TextZoom.getPreferred().then(({ value }) => TextZoom.set({ value })))
+  uebernimm()
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') uebernimm()
+  })
 }
 
 /** Der Startbildschirm geht, sobald die App gezeichnet ist. */

@@ -74,7 +74,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO
 
       - name: Bildschirmfotos
-        # Erster Lauf: 7 Minuten fuer 12 Fotos samt Start zweier Simulatoren.
+        # Erster Lauf (24.10.2026): 13,5 Minuten fuer 12 Fotos samt Start zweier Simulatoren.
         timeout-minutes: 25
         run: |
           bash ../.github/scripts/ios-bildschirmfotos.sh \
