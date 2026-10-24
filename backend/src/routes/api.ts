@@ -5,6 +5,7 @@ import {
   gleislisteUnvollstaendig,
   istGueltigeEva,
 } from '../clients/stations.js';
+import { TimetablesAusgelastetError } from '../clients/timetables-budget.js';
 import { namensvarianten } from '../core/bahnhofsname.js';
 import { gehzeitSekunden } from '../core/gehzeit.js';
 import { berlinTeile } from '../core/zeit.js';
@@ -313,6 +314,14 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
       } catch (e) {
         if (e instanceof FehlendeZugangsdatenError) {
           return reply.code(503).send({ fehler: 'db-zugang-fehlt' });
+        }
+        // Kein Serverfehler, sondern ausgeschoepfte Quote - vorhergesehen und
+        // vorueber, sobald die Minute um ist.
+        if (e instanceof TimetablesAusgelastetError) {
+          return reply.code(503).send({
+            fehler: 'tafel-ausgelastet',
+            detail: 'Die Live-Tafel ist gerade ausgelastet. Bitte gleich erneut versuchen.',
+          });
         }
         throw e;
       }

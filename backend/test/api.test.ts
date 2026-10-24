@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { buildApp } from '../src/app.js';
+import { TimetablesAusgelastetError } from '../src/clients/timetables-budget.js';
 import type {
   FastaAnlage,
   OverpassAntwort,
@@ -301,6 +302,17 @@ describe('GET /api/board/:eva', () => {
     const res = await app.inject({ method: 'GET', url: '/api/board/8000001?type=dep' });
     expect(res.statusCode).toBe(503);
     expect(res.json()).toEqual({ fehler: 'db-zugang-fehlt' });
+  });
+
+  it('Timetables-Budget erschoepft → 503 tafel-ausgelastet statt Serverfehler', async () => {
+    const clients = macheClients();
+    clients.tafel = vi.fn(async () => {
+      throw new TimetablesAusgelastetError();
+    });
+    const app = buildApp(clients);
+    const res = await app.inject({ method: 'GET', url: '/api/board/8000001?type=dep' });
+    expect(res.statusCode).toBe(503);
+    expect(res.json()).toMatchObject({ fehler: 'tafel-ausgelastet' });
   });
 });
 
