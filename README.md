@@ -21,6 +21,27 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 
 ## Hier weitermachen (Stand 21.10.2026, abends)
 
+### iOS-App (Stand 24.10.2026, Zweig `feat/app-ios`, nicht ausgeliefert)
+
+Plan: `Umstieg_Konzepte/05-umsetzungsplan-app-store.md`. Aufbau und
+Einrichtung: [`docs/app-ios.md`](./docs/app-ios.md). Web und App teilen einen
+Code (`istApp()`); die Web-Fassung ändert sich nur im Suchfeld
+(Autokorrektur aus) und im Datenschutztext.
+
+| Paket | Stand |
+|---|---|
+| 0 Apple-Konto | **Julian** |
+| 1 Lizenz-Ausnahme (§ 7 AGPL) | umgesetzt in `NOTICE`, `CONTRIBUTING.md` – **Freigabe Julian** |
+| 2 Capacitor + Cloud-Bau | fertig; Actions-Lauf grün mit 12 Fotos (iPhone 6,9", iPad 13", hell/dunkel). **Offen:** `capacitor://localhost` in `CORS_ORIGIN` auf Fly (Befehl in `docs/deployment.md`) |
+| 3 TestFlight | Job `testflight` steht; braucht Paket 0 und die vier Geheimnisse (`docs/app-ios.md`) |
+| 4 Messung mit Einwilligung | **offen – Richtungsfrage** (Vercel-Endpunkt oder eigener Zähler im Backend) |
+| 5 Native Grundfunktionen | fertig (Standort mit Erklärung vor der Abfrage, Haptik, Wachhalten, Statusleiste, Start, Symbol, Safari-Ansicht, Datenschutz-Manifest) |
+| 6 Lokale Mitteilungen | fertig (Gleiswechsel/Ausfall des Anschlusses, Ampel Rot, Erinnerung 5 min vor Ankunft) |
+| 7 Teilen-Erweiterung | offen |
+| 8 iPad/HIG | teilweise: Wischgeste, Textgröße des Geräts, Suchfeld, Platzhalter entfernt; Sichtprüfung iPad steht aus |
+| 9 Datenquellen | Vorlagen in `docs/app-store-datenquellen.md`; **Kartenkacheln: Richtungsfrage**, Transitous-Anfrage: Julian schickt ab |
+| 10 Store-Eintrag | Vorlagen in `docs/app-store-eintrag.md`; Datenschutz-Abschnitt „App“ – **Freigabe Julian** |
+
 ### Einführungstour (Stand 22.10.2026, Zweig `feat/einfuehrungstour`, nicht ausgeliefert)
 
 Umgesetzt nach dem Plan in `Umstieg_Konzepte/04-einführungstour/`. Ein
