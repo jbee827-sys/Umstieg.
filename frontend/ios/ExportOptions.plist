@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Export fuer App Store Connect (Plan App Store, Paket 3).
+  destination=upload: xcodebuild -exportArchive laedt den Bau direkt hoch.
+  teamID setzt der Ablauf .github/workflows/ios.yml aus dem Geheimnis
+  APPLE_TEAM_ID - die Team-ID steht nicht im Repository.
+-->
+<plist version="1.0">
+<dict>
+	<key>method</key>
+	<string>app-store-connect</string>
+	<key>destination</key>
+	<string>upload</string>
+	<key>signingStyle</key>
+	<string>automatic</string>
+	<key>teamID</key>
+	<string>WIRD_GESETZT</string>
+	<key>uploadSymbols</key>
+	<true/>
+	<key>manageAppVersionAndBuildNumber</key>
+	<false/>
+</dict>
+</plist>

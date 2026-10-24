@@ -1,13 +1,18 @@
-# iOS-App: Bau fuer den Simulator und Bildschirmfotos (Plan App Store, Paket 2).
+# iOS-App (Plan App Store, Pakete 2 und 3).
 #
-# Ohne Signatur und ohne Apple-Konto. Der signierte Bau fuer TestFlight kommt
-# mit Paket 3 dazu. Das Repository ist oeffentlich - macOS-Rechner kosten
-# hier nichts.
+# simulator:  bei jedem Push - Tests, Bau ohne Signatur, Bildschirmfotos.
+# testflight: von Hand oder per Tag app-v* - signiert, Upload zu App Store
+#             Connect. Braucht die Geheimnisse aus docs/app-ios.md.
+#
+# Das Repository ist oeffentlich - macOS-Rechner kosten hier nichts.
 name: iOS
 
 on:
   push:
     branches: [feat/app-ios]
+    # Ein Tag app-v1.2.0 baut zusaetzlich fuer TestFlight (Job testflight).
+    # Pfadfilter gelten fuer Tags nicht.
+    tags: ['app-v*']
     paths:
       - 'frontend/**'
       - 'vercel.json'
@@ -80,3 +85,94 @@ jobs:
           name: ios-bildschirmfotos
           path: ${{ runner.temp }}/bildschirmfotos
           if-no-files-found: warn
+
+  # Signierter Bau und Upload zu App Store Connect (Plan App Store, Paket 3).
+  # Nur von Hand oder mit einem Tag app-v1.2.3 - nicht jeder Commit soll
+  # einen TestFlight-Bau erzeugen. Einrichtung: docs/app-ios.md.
+  testflight:
+    name: Signierter Bau fuer TestFlight
+    needs: simulator
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/app-v')
+    runs-on: macos-26
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Schluessel fuer App Store Connect
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          for name in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 APPLE_TEAM_ID; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Geheimnis $name fehlt - Einrichtung siehe docs/app-ios.md"
+              exit 1
+            fi
+          done
+          mkdir -p "$RUNNER_TEMP/asc"
+          printf '%s\n' "$ASC_KEY_P8" > "$RUNNER_TEMP/asc/AuthKey.p8"
+          plutil -replace teamID -string "$APPLE_TEAM_ID" ios/ExportOptions.plist
+
+      - name: Version und Buildnummer
+        # Buildnummer: die Laufnummer dieses Ablaufs - steigt immer. Version:
+        # aus dem Tag (app-v1.2.0 -> 1.2.0), sonst die im Projekt.
+        run: |
+          echo "BUILDNUMMER=${{ github.run_number }}" >> "$GITHUB_ENV"
+          if [[ "$GITHUB_REF" == refs/tags/app-v* ]]; then
+            echo "VERSION_ANGABE=MARKETING_VERSION=${GITHUB_REF#refs/tags/app-v}" >> "$GITHUB_ENV"
+          else
+            echo "VERSION_ANGABE=" >> "$GITHUB_ENV"
+          fi
+
+      - name: Abhaengigkeiten
+        run: npm ci
+
+      - name: App-Bau (dist-app)
+        run: npm run build:app
+
+      - name: Web-Bau ins iOS-Projekt
+        run: npx cap sync ios
+
+      - name: Archiv
+        run: |
+          xcodebuild archive \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Umstieg.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/asc/AuthKey.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic \
+            CURRENT_PROJECT_VERSION="$BUILDNUMMER" \
+            $VERSION_ANGABE
+
+      - name: Upload zu App Store Connect
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Umstieg.xcarchive" \
+            -exportOptionsPlist ios/ExportOptions.plist \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/asc/AuthKey.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+
+      - name: Schluessel entfernen
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/asc"
