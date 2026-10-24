@@ -14,6 +14,46 @@ AGPL-3.0-only. Bis Commit 83823df lag den Staenden eine MIT-Lizenzdatei
 bei; Rechte, die jemand in dieser Zeit unter MIT erworben hat, bleiben
 davon unberuehrt.
 
+Zusaetzliche Erlaubnis nach § 7 AGPL: App-Marktplaetze
+------------------------------------------------------
+
+Die Nutzungsbedingungen von App-Marktplaetzen wie dem Apple App Store
+schraenken die Empfaenger ein (Nutzungsregeln, Kopierschutz). Die AGPL
+verbietet solche weiteren Einschraenkungen (§ 10). Damit Umstieg. dort
+trotzdem angeboten werden darf - von diesem Projekt und von jedem, der
+es weitergibt -, gilt die folgende zusaetzliche Erlaubnis. Massgeblich
+ist der englische Wortlaut:
+
+  Additional permission under GNU AGPL version 3 section 7
+
+  As a special exception, the copyright holders of Umstieg. give you
+  permission to convey this program, or a work based on it, in object
+  code form through an application marketplace (an "app store", in
+  particular the Apple App Store), even if the terms of service, usage
+  rules or technical protection measures of that marketplace impose
+  further restrictions on the recipients that would otherwise be
+  prohibited by the GNU Affero General Public License, provided that
+  the Corresponding Source of the conveyed version is available to
+  every recipient free of charge under the terms of this License, for
+  example through a publicly accessible source code repository.
+
+  This permission covers only the restrictions imposed by the
+  marketplace. All other terms of the GNU Affero General Public License
+  remain in effect, in particular section 13: the program must keep
+  offering users who interact with it the Corresponding Source of the
+  running version.
+
+  If you modify this program, you may extend this exception to your
+  version, but you are not obligated to do so. If you do not wish to
+  do so, delete this exception statement from your version.
+
+Auf Deutsch, ohne rechtliche Wirkung: Wer Umstieg. oder eine darauf
+aufbauende Fassung ueber einen App-Marktplatz verbreitet, darf dessen
+Bedingungen in Kauf nehmen, solange der vollstaendige Quellcode genau
+dieser Fassung fuer alle Empfaenger kostenlos unter der AGPL erreichbar
+ist. Alles andere aus der AGPL gilt unveraendert, auch § 13. Beitraege
+werden nur einschliesslich dieser Erlaubnis angenommen (CONTRIBUTING.md).
+
 Die AGPL gilt fuer den Code dieses Projekts.
 Die zur Laufzeit verarbeiteten Daten stehen unter eigenen Lizenzen und
 sind NICHT Teil dieses Repositorys - sie werden zur Laufzeit abgerufen.
