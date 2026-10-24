@@ -10,6 +10,7 @@ import { leiteRauteUm } from './navigation/rechtsseiten'
 import {
   blendeStartbildschirmAus,
   folgeDarstellung,
+  folgeSchriftgroesse,
   oeffneExterneLinksImBrowser,
 } from './plattform/geraet'
 import { istApp, markiereApp } from './plattform/istApp'
@@ -19,8 +20,10 @@ import { uebernimmBahnhofAusAdresse } from './sitzung/vorbelegung'
 // weissen Bildschirm sehen.
 wendeDarstellungAn(ladeDarstellung())
 markiereApp()
-// Nur in der App: Statusleiste passend zur Palette, fremde Links in Safari.
+// Nur in der App: Statusleiste passend zur Palette, Textgroesse des Geraets,
+// fremde Links in Safari.
 folgeDarstellung()
+folgeSchriftgroesse()
 oeffneExterneLinksImBrowser()
 // Ebenfalls vorher: geteilte alte Links (#impressum) auf die echte Adresse,
 // bevor App die Adresse liest - und ein Bahnhof aus dem Link einer

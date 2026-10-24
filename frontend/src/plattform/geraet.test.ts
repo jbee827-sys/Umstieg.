@@ -9,6 +9,8 @@ const plugins = vi.hoisted(() => ({
   setStyle: vi.fn(() => Promise.resolve()),
   hide: vi.fn(() => Promise.resolve()),
   open: vi.fn(() => Promise.resolve()),
+  getPreferred: vi.fn(() => Promise.resolve({ value: 1.35 })),
+  setZoom: vi.fn(() => Promise.resolve()),
 }))
 
 vi.mock('./istApp', () => ({ istApp: () => plugins.app }))
@@ -26,6 +28,7 @@ vi.mock('@capacitor/status-bar', () => ({
 }))
 vi.mock('@capacitor/splash-screen', () => ({ SplashScreen: { hide: plugins.hide } }))
 vi.mock('@capacitor/browser', () => ({ Browser: { open: plugins.open } }))
+vi.mock('@capacitor/text-zoom', () => ({ TextZoom: { getPreferred: plugins.getPreferred, set: plugins.setZoom } }))
 
 const geraet = await import('./geraet')
 
@@ -91,6 +94,11 @@ describe('in der App', () => {
     document.documentElement.dataset.darstellung = 'hell'
     geraet.passeStatusleisteAn()
     expect(plugins.setStyle.mock.calls).toEqual([[{ style: 'DARK' }], [{ style: 'LIGHT' }]])
+  })
+
+  it('übernimmt die Textgröße des Geräts', async () => {
+    geraet.folgeSchriftgroesse()
+    await vi.waitFor(() => expect(plugins.setZoom).toHaveBeenCalledWith({ value: 1.35 }))
   })
 
   it('fremde Links öffnen in Safari, eigene bleiben in der App', () => {
