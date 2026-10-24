@@ -52,6 +52,16 @@ import { vorfuehrungLaeuft } from './einfuehrung/zustand'
 import { formularVorgabe, setzeFormularVorgabe } from './einfuehrung/formularstand'
 import { istApp } from './plattform/istApp'
 import {
+  bereiteMitteilungenVor,
+  planeErinnerung,
+  teileEreignisMit,
+  teileGefaehrdungMit,
+  vergissErinnerung,
+  wirdRot,
+} from './plattform/mitteilungen'
+import { ampelFarbe } from './navigation/ampel'
+import type { Ampelfarbe } from './api/typen'
+import {
   halteBildschirmWach,
   meldeAnkunftSpuerbar,
   meldeEreignisSpuerbar,
@@ -360,6 +370,47 @@ function App() {
     starteVerfolgung()
     return stoppeVerfolgung
   }, [bildschirm, starteVerfolgung, stoppeVerfolgung])
+
+  // Mitteilungen in der App (Plan App Store, Paket 6). Gefragt wird, sobald
+  // eine Reise laeuft - nicht beim Start und nicht in der Einfuehrungstour.
+  useEffect(() => {
+    if (!AUF_REISE.includes(bildschirm) || vorfuehrungLaeuft()) return
+    bereiteMitteilungenVor()
+  }, [bildschirm])
+
+  // Erinnerung fuenf Minuten vor der Ankunft - geplant, damit sie auch kommt,
+  // wenn iOS die App laengst angehalten hat. Neu bei jeder Aenderung von
+  // Ankunftszeit oder Anschlussgleis, weg mit der Reise.
+  const reiseLaeuft = route !== null
+  const erinnerungAnkunft = werte?.ankunftZeit
+  const erinnerungBahnhof = werte?.bahnhofName
+  const erinnerungGleis = werte?.gleisAb
+  const erinnerungZug = werte?.zugAbName
+  useEffect(() => {
+    if (!reiseLaeuft || !erinnerungAnkunft || !erinnerungBahnhof || !erinnerungGleis) return
+    if (vorfuehrungLaeuft()) return
+    planeErinnerung({
+      ankunft: heuteUm(erinnerungAnkunft),
+      bahnhofName: erinnerungBahnhof,
+      gleisAb: erinnerungGleis,
+      zugAbName: erinnerungZug,
+    })
+  }, [reiseLaeuft, erinnerungAnkunft, erinnerungBahnhof, erinnerungGleis, erinnerungZug])
+
+  // Springt die Ampel auf Rot, waehrend die App im Hintergrund ist, sagt es
+  // eine Mitteilung. Dieselbe Rechnung wie auf der Uebersicht.
+  const anschlussFarbe: Ampelfarbe | null = (() => {
+    if (!AUF_REISE.includes(bildschirm) || !route || !werte?.abfahrtZeit) return null
+    const restSek = (heuteUm(werte.abfahrtZeit).getTime() - jetzt) / 1000
+    if (restSek * 1000 < -ABGEFAHREN_KULANZ_MS) return null
+    return ampelFarbe(restSek, route.gehzeitSek)
+  })()
+  const letzteFarbe = useRef<Ampelfarbe | null>(null)
+  useEffect(() => {
+    const vorher = letzteFarbe.current
+    letzteFarbe.current = anschlussFarbe
+    if (wirdRot(vorher, anschlussFarbe) && werte && !vorfuehrungLaeuft()) teileGefaehrdungMit(werte.gleisAb)
+  }, [anschlussFarbe, werte])
 
   // In der App bleibt der Bildschirm an, solange der Weg zu sehen ist.
   useEffect(() => {
@@ -737,6 +788,7 @@ function App() {
           }
           setLiveEreignis(ereignis)
           meldeEreignisSpuerbar()
+          teileEreignisMit(ereignis)
 
           if (ereignis.typ === 'verspaetung' && ereignis.neu) {
             // Wie im Bahnhofspfad auf dem letzten Vorschlag aufsetzen. Eine
@@ -806,6 +858,7 @@ function App() {
         const ereignis: LiveEreignis = { ...roh, seite: betrifftAnkunftszug ? 'an' : 'ab' }
         setLiveEreignis(ereignis)
         meldeEreignisSpuerbar()
+        teileEreignisMit(ereignis)
 
         // Eine neue Abfahrtszeit aendert die Restzeit, nicht den Weg - die
         // Route bleibt, nur die Zeit wird neu. Ein Gleiswechsel dagegen
@@ -914,6 +967,7 @@ function App() {
     ankunft.current = { ...ankunft.current, bestaetigt: true }
     setAnkunftVorschlag(false)
     stoppeVerfolgung()
+    vergissErinnerung()
     meldeAnkunftSpuerbar()
     setBildschirm('angekommen')
   }
