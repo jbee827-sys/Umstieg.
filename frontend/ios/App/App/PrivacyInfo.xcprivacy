@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Datenschutz-Manifest der App (Plan App Store, Paket 5).
+  Datenschutz-Manifest der App (Plan App Store, Pakete 4 und 5).
 
-  Kein Tracking, keine gesammelten Daten: Die gerundete Position geht nur
-  fuer die Bahnhofssuche ans Backend und wird dort nicht gespeichert
-  (Datenschutzerklaerung) - nach Apples Begriff ist das keine Sammlung.
-  Kommt mit Paket 4 eine Messung mit Einwilligung dazu, gehoert sie hier
-  und im App-Datenschutz von App Store Connect nachgetragen.
+  Kein Tracking. Angegeben ist, was auch im App-Datenschutz von App Store
+  Connect steht (docs/app-store-eintrag.md):
+  - Grober Standort fuer die App-Funktion: Die gerundete Position geht fuer
+    die Bahnhofs- und Haltestellensuche ueber unser Backend an Transitous.
+    Wir speichern sie nicht; ob Transitous protokolliert, liegt nicht bei uns.
+  - Produktinteraktion fuer Analyse: die Nutzungszaehlung mit Einwilligung
+    (analytik/einwilligung.ts) - nur Ereignisnamen, Summen je Stunde.
+  Beides nicht mit der Identitaet verknuepft.
 
   Schnittstellen mit Begruendungspflicht nutzt der eigene Code nicht. Die
   Capacitor-Pakete bringen ihre eigenen Manifeste mit.
@@ -19,7 +22,32 @@
 	<key>NSPrivacyTrackingDomains</key>
 	<array/>
 	<key>NSPrivacyCollectedDataTypes</key>
-	<array/>
+	<array>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeCoarseLocation</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeProductInteraction</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSPrivacyAccessedAPITypes</key>
 	<array/>
 </dict>

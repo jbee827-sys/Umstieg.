@@ -7,9 +7,11 @@ import { passeStatusleisteAn } from '../plattform/geraet'
  * waehlt, setzt `data-darstellung` an der Wurzel; die Farbtoken in index.css
  * richten sich danach.
  *
- * Gemerkt wird die Wahl im `localStorage` - als EINZIGER Eintrag dort, und nur,
- * wenn jemand ausdruecklich Hell oder Dunkel waehlt. Zurueck auf System
- * loescht ihn. So steht es in der Datenschutzerklaerung.
+ * Gemerkt wird die Wahl im `localStorage` - auf der Website als EINZIGER
+ * Eintrag dort (in der App kommt die Antwort zur Nutzungszaehlung dazu,
+ * analytik/einwilligung.ts), und nur, wenn jemand ausdruecklich Hell oder
+ * Dunkel waehlt. Zurueck auf System loescht ihn. So steht es in der
+ * Datenschutzerklaerung.
  */
 export type Darstellung = 'system' | 'hell' | 'dunkel'
 

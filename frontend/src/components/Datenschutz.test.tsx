@@ -187,8 +187,17 @@ describe('Datenschutz: die App', () => {
     expect(text).toContain('keinen Push-Dienst')
   })
 
-  it('sagt, dass die App nicht misst - solange main.tsx sie ausnimmt', () => {
-    expect(zeige()).toContain('Die App misst nicht.')
+  it('sagt, dass die App nur mit Einwilligung zaehlt - und was dabei hinausgeht', () => {
+    const text = zeige()
+    expect(text).toContain('Nutzungszählung nur mit Einwilligung')
+    expect(text).toContain('Ohne Antwort und mit „Nein“ wird nichts gesendet')
+    expect(text).toContain('Namen des Ereignisses')
+    expect(text).toContain('Art. 6 Abs. 1 lit. a DSGVO')
+    expect(text).toContain('„Anonyme Nutzungszählung“ → „Aus“')
+  })
+
+  it('nennt den zweiten Eintrag im localStorage der App', () => {
+    expect(zeige()).toMatch(/localStorage\s*als Wort „ja“ oder „nein“/)
   })
 
   it('nennt den Widerruf in den Einstellungen von iOS', () => {

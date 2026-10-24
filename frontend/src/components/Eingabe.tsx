@@ -23,6 +23,8 @@ import type { Umstieg } from '../reise/reisetext'
 import type { EingabeEntwurf } from '../sitzung/eingabespeicher'
 import { meldeFormularAn } from '../einfuehrung/formularstand'
 import { ladeDarstellung, waehleDarstellung, type Darstellung } from '../einstellungen/darstellung'
+import { setzeEinwilligung, useEinwilligung } from '../analytik/einwilligung'
+import { istApp } from '../plattform/istApp'
 import { useBreitesLayout } from '../aufbau/breite'
 
 /** Haltestellenpfad (Umstieg 2.0): beide Orte mit der gewählten Fahrt. */
@@ -172,6 +174,7 @@ export function Eingabe({
   // Keine Reiseangabe, sondern eine Geraeteeinstellung: Sie steht nicht im
   // Entwurf, sondern im eigenen Speicher (einstellungen/darstellung.ts).
   const [darstellung, setDarstellung] = useState<Darstellung>(ladeDarstellung)
+  const einwilligung = useEinwilligung()
   const [zugAnkunft, setZugAnkunft] = useState<TafelEintrag | null>(entwurf?.zugAnkunft ?? null)
   const [zugAbfahrt, setZugAbfahrt] = useState<TafelEintrag | null>(entwurf?.zugAbfahrt ?? null)
   // Haltestellenpfad: die Fahrten aus den Haltestellentafeln.
@@ -1117,6 +1120,26 @@ export function Eingabe({
               ))}
             </div>
           </fieldset>
+          {/* Widerruf der Nutzungszaehlung - nur in der App, wo sie gefragt
+              wird (analytik/einwilligung.ts). */}
+          {istApp() && (
+            <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
+              <label>Anonyme Nutzungszählung</label>
+              <div className="wahl-gruppe" role="group" aria-label="Anonyme Nutzungszählung">
+                {(['ja', 'nein'] as const).map((wert) => (
+                  <button
+                    key={wert}
+                    type="button"
+                    className="wahl-knopf"
+                    aria-pressed={einwilligung === wert}
+                    onClick={() => setzeEinwilligung(wert)}
+                  >
+                    {wert === 'ja' ? 'Erlaubt' : 'Aus'}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          )}
         </details>
 
         {fehler && <div className="fehler-box">{fehler}</div>}

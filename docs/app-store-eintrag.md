@@ -99,17 +99,16 @@ aufbewahrt, als die Anfrage in Echtzeit braucht. Umstieg. bewahrt nichts auf
 Server an Transitous, und dort haben wir keinen Einfluss darauf, ob sie
 protokolliert wird. Deshalb der vorsichtige Vorschlag:
 
-- **Ja, Daten werden erfasst** – genau eine Art:
-  - *Standort → Grober Standort*
-  - Verwendung: **App-Funktionalität**
-  - Mit der Identität verknüpft: **Nein**
-  - Für Tracking verwendet: **Nein**
+- **Ja, Daten werden erfasst** – zwei Arten:
+  - *Standort → Grober Standort*: Verwendung **App-Funktionalität**, mit
+    der Identität verknüpft **Nein**, Tracking **Nein**
+  - *Nutzungsdaten → Produktinteraktion*: Verwendung **Analyse**, mit der
+    Identität verknüpft **Nein**, Tracking **Nein** (die Nutzungszählung mit
+    Einwilligung, Paket 4 – nur Ereignisnamen, Summen je Stunde)
 
 Die strenge Lesart („Daten werden nicht erfasst“) wäre vertretbar, solange
 nur unser Server die Koordinate sieht; mit Transitous als Drittem ist sie es
-nicht sicher. Kommt mit Paket 4 eine Messung mit Einwilligung dazu, kommt
-*Nutzungsdaten → Produktinteraktion (Analyse, nicht verknüpft, kein
-Tracking)* hinzu – und dieselbe Angabe in `PrivacyInfo.xcprivacy`.
+nicht sicher. Dieselben zwei Angaben stehen in `PrivacyInfo.xcprivacy`.
 
 ## Exportkonformität
 
@@ -143,6 +142,9 @@ die Verschlüsselung des Systems (HTTPS). Die Frage erscheint dann nicht.
 >   the station and the arrival at the platform; rounded on device, not stored.
 > - Haptic feedback on step changes and arrival; screen stays awake during
 >   navigation.
+> - Optional anonymous usage counting, asked once with equal "Ja"/"Nein"
+>   buttons and revocable under "Einstellungen". Only event names are sent to
+>   our own server; nothing is sent without consent.
 > - Share extension: a connection shared from a journey planner app is imported
 >   directly (Paket 7 – remove this line if not yet included).
 >

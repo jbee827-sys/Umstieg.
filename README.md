@@ -34,12 +34,12 @@ Code (`istApp()`); die Web-Fassung ändert sich nur im Suchfeld
 | 1 Lizenz-Ausnahme (§ 7 AGPL) | umgesetzt in `NOTICE`, `CONTRIBUTING.md` – **Freigabe Julian** |
 | 2 Capacitor + Cloud-Bau | fertig; Actions-Lauf grün mit 12 Fotos (iPhone 6,9", iPad 13", hell/dunkel); `capacitor://localhost` steht seit 24.10.2026 in `CORS_ORIGIN` auf Fly |
 | 3 TestFlight | Job `testflight` steht; braucht Paket 0 und die vier Geheimnisse (`docs/app-ios.md`) |
-| 4 Messung mit Einwilligung | **offen – Richtungsfrage** (Vercel-Endpunkt oder eigener Zähler im Backend) |
+| 4 Messung mit Einwilligung | fertig: eigener Zähler `POST /api/zaehle` (nur Ereignisname, Summen je Stunde als `app-nutzung` im Fly-Protokoll), Abfrage beim ersten Start, Widerruf unter „Einstellungen“. **Backend noch nicht auf Fly ausgerollt** – bis dahin antwortet `/api/zaehle` mit 404, die App merkt davon nichts |
 | 5 Native Grundfunktionen | fertig (Standort mit Erklärung vor der Abfrage, Haptik, Wachhalten, Statusleiste, Start, Symbol, Safari-Ansicht, Datenschutz-Manifest) |
 | 6 Lokale Mitteilungen | fertig (Gleiswechsel/Ausfall des Anschlusses, Ampel Rot, Erinnerung 5 min vor Ankunft) |
 | 7 Teilen-Erweiterung | offen |
 | 8 iPad/HIG | teilweise: Wischgeste, Textgröße des Geräts, Suchfeld, Platzhalter entfernt; Sichtprüfung iPad steht aus |
-| 9 Datenquellen | Vorlagen in `docs/app-store-datenquellen.md`; **Kartenkacheln: Richtungsfrage**, Transitous-Anfrage: Julian schickt ab |
+| 9 Datenquellen | Karte auf OpenFreeMap umgestellt (Web und App, `liberty`/`dark`, CSP, Datenschutz, `NOTICE`) – geht mit dem nächsten Web-Release live; DB-Prüfliste und Transitous-Anfrage in `docs/app-store-datenquellen.md`, Julian schickt ab |
 | 10 Store-Eintrag | Vorlagen in `docs/app-store-eintrag.md`; Datenschutz-Abschnitt „App“ – **Freigabe Julian** |
 
 ### Einführungstour (Stand 22.10.2026, Zweig `feat/einfuehrungstour`, nicht ausgeliefert)

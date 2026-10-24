@@ -19,11 +19,15 @@ import { BETREIBER } from '../rechtliches/betreiber'
 //   einstellungen/darstellung.ts, abgesichert in
 //   einstellungen/darstellung.test.ts ("schreibt nichts, solange niemand
 //   waehlt", "loescht den Eintrag, wenn wieder System gewaehlt wird")
-// - Kartenkacheln: components/Karte.tsx
+// - Kartenkacheln: components/Karte.tsx (OpenFreeMap seit 24.10.2026)
 // - Schriften: index.css (lokale @font-face, KEIN Google Fonts)
 // - App (iOS), seit 24.10.2026: plattform/ (istApp, geraet, mitteilungen),
-//   standort/appStandort.ts; in der App keine Messung (main.tsx), abgesichert
-//   in plattform/*.test.ts und standort/useStandort.app.test.ts
+//   standort/appStandort.ts, abgesichert in plattform/*.test.ts und
+//   standort/useStandort.app.test.ts
+// - Nutzungszaehlung der App mit Einwilligung, seit 24.10.2026:
+//   analytik/einwilligung.ts (localStorage `umstieg.messung`, nur der Name an
+//   POST /api/zaehle), backend/src/routes/zaehler.ts (Summen je Stunde),
+//   abgesichert in analytik/einwilligung.test.ts und backend/test/zaehler.test.ts
 // - Reichweitenmessung: main.tsx (<Analytics>), analytik/ereignis.ts
 //   (schneidet die Abfragezeichenkette ab), abgesichert in
 //   analytik/ereignis.test.ts und components/Datenschutz.test.tsx
@@ -164,9 +168,11 @@ export function Datenschutz({ onZurueck }: { onZurueck?: () => void }) {
 
         <h2>Kartendaten</h2>
         <p>
-          Die Kartenkacheln werden erst geladen, wenn du die Karte aufklappst.
-          Sie stammen direkt von den Servern der OpenStreetMap Foundation. Dabei
-          erfährt diese deine IP-Adresse und den betrachteten Kartenausschnitt.
+          Die Karte wird erst geladen, wenn du sie aufklappst. Kartenbild,
+          Schriften und Symbole stammen direkt vom freien Kartendienst{' '}
+          <strong>OpenFreeMap</strong> (<code>tiles.openfreemap.org</code>);
+          die Karteninhalte selbst kommen aus OpenStreetMap. Dabei erfährt
+          OpenFreeMap deine IP-Adresse und den betrachteten Kartenausschnitt.
           Solange du die Karte nicht öffnest, findet keine Verbindung dorthin
           statt.
         </p>
@@ -332,9 +338,31 @@ export function Datenschutz({ onZurueck }: { onZurueck?: () => void }) {
           oder iOS die App beendet.
         </p>
         <p>
-          <strong>Reichweitenmessung:</strong> Die App misst nicht. Die oben
+          <strong>Nutzungszählung nur mit Einwilligung:</strong> Die oben
           beschriebene Messung mit Vercel Web Analytics gilt nur für die
-          Webseite.
+          Webseite. Die App fragt beim ersten Start, ob sie anonym zählen darf,
+          welche Schritte genutzt werden – „Ja“ und „Nein“ sind gleichwertig,
+          nichts ist vorgewählt. Ohne Antwort und mit „Nein“ wird nichts
+          gesendet.
+        </p>
+        <p>
+          Mit „Ja“ sendet die App bei jedem Start, bei jedem Bildschirmwechsel
+          und bei den vier Ereignissen je Umstieg (siehe oben) allein den{' '}
+          <strong>Namen des Ereignisses</strong> – etwa{' '}
+          <code>bildschirm-weg</code> – an unseren Server: kein Bahnhof, kein
+          Gleis, keine Uhrzeit, kein Standort und keine Kennung. Der Server
+          zählt nur mit und schreibt je Stunde eine Summe je Name in sein
+          Protokoll; die einzelne Anfrage und deine IP-Adresse werden dabei
+          nicht gespeichert (zur IP-Adresse siehe „Missbrauchsabwehr“).
+          Während der Einführungstour wird nie gezählt.
+        </p>
+        <p>
+          <strong>Rechtsgrundlage</strong> ist deine Einwilligung nach Art. 6
+          Abs. 1 lit. a DSGVO. Widerrufen kannst du sie jederzeit unter
+          „Einstellungen“ → „Anonyme Nutzungszählung“ → „Aus“; danach wird
+          nichts mehr gesendet. Deine Antwort merkt sich die App im{' '}
+          <code>localStorage</code> als Wort „ja“ oder „nein“ – in der App
+          neben der Darstellung der einzige Eintrag dort.
         </p>
         <p>
           <strong>Links zu anderen Seiten</strong> (etwa zu den Datenquellen

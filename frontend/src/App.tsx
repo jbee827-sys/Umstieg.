@@ -44,6 +44,7 @@ import type { Bildschirm } from './navigation/bildschirme'
 import { PFAD, bildschirmAusPfad, brauchtReise, startBildschirm } from './navigation/adressen'
 import { rechtsseiteAusPfad, schliesseRechtsseite, useRechtsseite } from './navigation/rechtsseiten'
 import { useMesspunkte } from './analytik/messpunkte'
+import { setzeEinwilligung, sollFragen, useEinwilligung, zaehleInApp } from './analytik/einwilligung'
 import { leereReise, liesReise, schreibeReise } from './sitzung/reisespeicher'
 import { mitUebergang, uebergangsart, type Ausloeser } from './navigation/uebergang'
 import { erkenneBahnhof } from './standort/bahnhofErkennung'
@@ -411,6 +412,13 @@ function App() {
     letzteFarbe.current = anschlussFarbe
     if (wirdRot(vorher, anschlussFarbe) && werte && !vorfuehrungLaeuft()) teileGefaehrdungMit(werte.gleisAb)
   }, [anschlussFarbe, werte])
+
+  // Nutzungszaehlung der App mit Einwilligung (Plan App Store, Paket 4): die
+  // Bildschirme, wie auf der Website die Seitenaufrufe. Im Browser nichts.
+  const einwilligung = useEinwilligung()
+  useEffect(() => {
+    zaehleInApp(`bildschirm-${PFAD[bildschirm].slice(1)}`)
+  }, [bildschirm])
 
   // In der App bleibt der Bildschirm an, solange der Weg zu sehen ist.
   useEffect(() => {
@@ -1220,6 +1228,26 @@ function App() {
             </header>
             {/* Nur in der App: erst der Satz, dann die Systemabfrage
                 (Plan App Store, Paket 5; standort/useStandort.ts). */}
+            {/* Nur in der App, einmal: gleichwertige Knoepfe, nichts
+                vorgewaehlt (Plan App Store, Paket 4). Widerruf unter
+                „Einstellungen“. */}
+            {sollFragen(einwilligung) && (
+              <div className="hinweis-box" role="group" aria-label="Nutzungszählung">
+                <p style={{ margin: '0 0 8px' }}>
+                  Darf Umstieg anonym zählen, welche Schritte genutzt werden? Gezählt wird nur, wie
+                  oft ein Bildschirm oder Schritt erreicht wird – kein Bahnhof, kein Standort, keine
+                  Kennung. Ändern kannst du das jederzeit unter „Einstellungen“.
+                </p>
+                <div className="wahl-gruppe">
+                  <button type="button" className="knopf-sekundaer" onClick={() => setzeEinwilligung('ja')}>
+                    Ja, zählen
+                  </button>
+                  <button type="button" className="knopf-sekundaer" onClick={() => setzeEinwilligung('nein')}>
+                    Nein
+                  </button>
+                </div>
+              </div>
+            )}
             {standortStatus === 'erklaeren' && (
               <div className="hinweis-box">
                 <p style={{ margin: '0 0 8px' }}>
