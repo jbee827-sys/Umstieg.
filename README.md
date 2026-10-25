@@ -21,6 +21,44 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 
 ## Hier weitermachen (Stand 21.10.2026, abends)
 
+### Zugbild und Zugspitze (Stand 25.10.2026, Zweig `feat/zugbild`, nicht ausgeliefert)
+
+Konzept `Umstieg_Konzepte/06-Zugbild` plus Fahrtrichtung. Die Standortwahl
+fragt „Wo befindest du dich im Zug?"; über dem Bahnsteigstreifen steht ein
+dreiteiliger Zug. Kennt die App die Zugspitze, heißen Knöpfe und
+Schema-Marken „Zuganfang · Zugmitte · Zugende", der vordere Endwagen trägt
+das weiße Spitzenlicht (Zg 1), der hintere das rote Schlusslicht (Zg 2) –
+Viertelkreise oben im roten Bug. Die Reihenfolge bleibt die des Bahnsteigs
+(links Nord-/Westende); die Spitze steht links oder rechts je nach
+Fahrtrichtung. Ohne sichere Richtung bleibt es bei „Nordende · Mitte ·
+Südende". Bei Ankunft mit Bus oder Tram (Haltestellenpfad) gibt es weder
+Zug noch Standortwahl.
+
+- **Regel:** Die Spitze steht am Bahnsteigende, das vom vorherigen Halt weg
+  zeigt – im Kopfbahnhof am Prellbock (`bestimmeZugspitze`,
+  `core/richtung.ts`). Der Halt kommt aus dem IRIS-Laufweg (`vonHalt` in der
+  Tafel, bei Umleitung `cpth`), seine Lage aus RIS::Stations, nur bei genau
+  gleichem Namen. Liegt er mehr als 60° neben der Bahnsteigachse, gilt die
+  Richtung als unsicher.
+- **Simulation** (`backend/scripts/simulation-zugspitze.ts`, 25.10.2026 ab
+  18 Uhr, Plan je einer Stunde, 382 Bahnhöfe des Startbestands, 5203
+  Ankünfte): **4049 bestimmt (78 %)**; offen: quer 441, Gleis nicht im Graphen
+  299, Tafel ohne Gleis 112, Halt ohne Lage 258, Stufe 3 44.
+  **Bahnhöfe: 168 immer bestimmt, 202 teilweise, 8 nie** (Hamburg-Eidelstedt
+  und -Sternschanze Stufe 3; München Marienplatz, München-Giesing, Plattling
+  Gleis nicht im Graphen; Konstanz Schweizer Halte; Plauen ob Bf, Jena
+  Paradies quer). Gegenprobe mit dem nächsten Halt: 2865 stimmig, 27 auf
+  derselben Seite (Kopfbahnhof oder Fehlrichtung), 191 quer.
+- **Nachrechnung ohne Netz** (Halte-Speicher des Laufs, daher untere
+  Grenzen): Namenszusätze abstreifen („München Hbf (tief)", „(S-Bahn)",
+  „(S)", „Gl.27-36") → 4210 (81 %); dazu Teilgleise wie „11 B-C" auf die
+  Gleisnummer, was die App über RIS ohnehin tut → 4334 (83 %); dazu bei
+  „quer" den nächsten Halt nehmen → 4526 (87 %). Die ersten beiden sind
+  ohne Risiko; der dritte irrt in einem Kopfbahnhof, wenn der vorherige Halt
+  quer liegt – **offen, Entscheidung Julian**.
+- Lokal mit Startbestand: `OSM_STARTBESTAND_PFAD=<repo>/backend/osm-bestand`
+  setzen, sonst fragt der Server Overpass.
+
 ### Einführungstour (Stand 22.10.2026, Zweig `feat/einfuehrungstour`, nicht ausgeliefert)
 
 Umgesetzt nach dem Plan in `Umstieg_Konzepte/04-einführungstour/`. Ein
