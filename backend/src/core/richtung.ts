@@ -119,33 +119,66 @@ export type Zugspitze = 'anfang' | 'ende';
  */
 export const ZUGSPITZE_HOECHSTWINKEL_GRAD = 60;
 
+/** Was ueber den Zug bekannt ist, um seine Spitze zu finden. */
+export interface Zuglauf {
+  /** Lage des letzten Halts vor diesem Bahnhof. */
+  vorher?: Ort;
+  /** Lage des naechsten Halts - fehlt, wo der Zug endet. */
+  nachher?: Ort;
+  /** Das Ankunftsgleis endet am Prellbock (RIS::Stations `headPlatform`). */
+  kopfgleis?: boolean;
+}
+
 /**
- * Wo die Zugspitze am Ankunftsbahnsteig steht (25.10.2026).
- *
- * Die Spitze zeigt zum naechsten Bahnhof. Im Kopfbahnhof steht sie bei der
- * Ankunft am Prellbock und kehrt sich erst mit der Abfahrt um. Beides sagt
- * EINE Regel: Die Spitze steht am Ende, das vom VORHERIGEN Halt weg zeigt.
- * Der naechste Halt hilft nicht - im Kopfbahnhof laege er auf derselben Seite
- * wie der vorherige.
- *
- * `undefined` heisst „nicht sicher" - ohne vorherigen Halt, bei einem Halt
- * quer zum Bahnsteig oder auf dem Bahnsteig selbst. Die Knoepfe bleiben dann
- * bei der Himmelsrichtung.
+ * Auf welcher Seite des Bahnsteigs ein Ort liegt - das Ende, hinter dem er
+ * liegt. `undefined`, wenn er quer zur Achse liegt, auf dem Bahnsteig selbst
+ * oder der Bahnsteig keine Laenge hat.
  */
-export function bestimmeZugspitze(anfang: Ort, ende: Ort, vorher: Ort | undefined): Zugspitze | undefined {
-  if (!vorher) return undefined;
+function seiteVon(anfang: Ort, ende: Ort, ort: Ort | undefined): Zugspitze | undefined {
+  if (!ort) return undefined;
   const mitte = { lat: (anfang.lat + ende.lat) / 2, lon: (anfang.lon + ende.lon) / 2 };
   const mLon = M_LAT * Math.cos(mitte.lat * BOGEN);
   const achseOst = (ende.lon - anfang.lon) * mLon;
   const achseNord = (ende.lat - anfang.lat) * M_LAT;
   const laenge = Math.hypot(achseOst, achseNord);
-  const ost = (vorher.lon - mitte.lon) * mLon;
-  const nord = (vorher.lat - mitte.lat) * M_LAT;
+  const ost = (ort.lon - mitte.lon) * mLon;
+  const nord = (ort.lat - mitte.lat) * M_LAT;
   const abstand = Math.hypot(ost, nord);
-  // Auf dem Bahnsteig selbst (oder ein Bahnsteig ohne Laenge): keine Seite.
   if (laenge < 1 || abstand <= laenge / 2) return undefined;
   const cos = (ost * achseOst + nord * achseNord) / (laenge * abstand);
   if (Math.abs(cos) < Math.cos(ZUGSPITZE_HOECHSTWINKEL_GRAD * BOGEN)) return undefined;
-  // Der vorherige Halt liegt auf der Seite des Endes -> die Spitze am Anfang.
-  return cos > 0 ? 'anfang' : 'ende';
+  return cos > 0 ? 'ende' : 'anfang';
+}
+
+const gegenueber = (s: Zugspitze): Zugspitze => (s === 'anfang' ? 'ende' : 'anfang');
+
+/**
+ * Wo die Zugspitze am Ankunftsbahnsteig steht (25.10.2026).
+ *
+ * Die Spitze zeigt zum naechsten Bahnhof. Im Kopfbahnhof steht sie bei der
+ * Ankunft am Prellbock und kehrt sich erst mit der Abfahrt um.
+ *
+ * - Durchgangsgleis: Zuerst der vorherige Halt - die Spitze steht am Ende,
+ *   das von ihm weg zeigt. Liegt er quer (Kurve, Abzweig) oder ist seine Lage
+ *   unbekannt, der naechste Halt - die Spitze steht am Ende zu ihm hin.
+ * - Kopfgleis: Die Spitze steht immer entgegen dem naechsten Halt - der Zug
+ *   kehrt und faehrt dorthin zurueck, woher er kam. Endet er hier, entscheidet
+ *   der vorherige Halt wie sonst.
+ *
+ * Simulation vom 25.10.2026: Bei 2865 von 2892 Ankuenften mit beiden Halten
+ * laengs lag der naechste Halt hinter der Spitze - die Rueckfallregel ueber
+ * den naechsten Halt widerspricht der Hauptregel also kaum.
+ *
+ * `undefined` heisst „nicht sicher". Die Knoepfe bleiben dann bei der
+ * Himmelsrichtung.
+ */
+export function bestimmeZugspitze(anfang: Ort, ende: Ort, zuglauf: Zuglauf): Zugspitze | undefined {
+  const seiteVorher = seiteVon(anfang, ende, zuglauf.vorher);
+  const seiteNachher = seiteVon(anfang, ende, zuglauf.nachher);
+  if (zuglauf.kopfgleis) {
+    if (seiteNachher) return gegenueber(seiteNachher);
+    return seiteVorher ? gegenueber(seiteVorher) : undefined;
+  }
+  if (seiteVorher) return gegenueber(seiteVorher);
+  return seiteNachher;
 }

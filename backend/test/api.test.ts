@@ -336,6 +336,32 @@ describe('GET /api/route – Zugspitze aus dem vorherigen Halt', () => {
     expect(start(res.json() as RouteErgebnis).zugspitze).toBeUndefined();
   });
 
+  /** Mehr als 60° neben der Achse - am Durchgangsgleis entscheidet dann der naechste Halt. */
+  it('nimmt bei querem vorherigen Halt den naechsten: Spitze zu ihm hin', async () => {
+    const app = buildApp(mitHalten());
+    const res = await app.inject({ method: 'GET', url: `${ROUTE_URL}&vonHalt=Nordheim&nachHalt=Weststadt` });
+    expect(start(res.json() as RouteErgebnis).zugspitze).toBe('anfang');
+  });
+
+  it('stellt am Kopfgleis laut RIS die Spitze entgegen dem naechsten Halt', async () => {
+    const clients = mitHalten();
+    clients.stations.holeStationsInfo = vi.fn(async () => ({
+      ...ministadt,
+      gleise: [{ gleis: '1', ris: { name: '1', headPlatform: true } }, { gleis: '2' }],
+    }));
+    const app = buildApp(clients);
+    const res = await app.inject({ method: 'GET', url: `${ROUTE_URL}&vonHalt=Nordheim&nachHalt=Weststadt` });
+    expect(start(res.json() as RouteErgebnis).zugspitze).toBe('ende');
+  });
+
+  it('findet einen Halt auch ohne Zusatz wie „(tief)"', async () => {
+    const clients = mitHalten();
+    const app = buildApp(clients);
+    const res = await app.inject({ method: 'GET', url: `${ROUTE_URL}&vonHalt=${encodeURIComponent('Weststadt (tief)')}` });
+    expect(start(res.json() as RouteErgebnis).zugspitze).toBe('ende');
+    expect(clients.stations.sucheBahnhoefe).toHaveBeenCalledWith('Weststadt');
+  });
+
   it('ohne vonHalt wird nicht gesucht', async () => {
     const clients = mitHalten();
     const app = buildApp(clients);

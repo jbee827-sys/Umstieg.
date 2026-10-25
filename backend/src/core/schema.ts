@@ -1,5 +1,5 @@
 import { haversineM } from './graph.js';
-import { bestimmeZugspitze, himmelsrichtungen, mittlereAchse, peilungGrad, type Ort as Lage } from './richtung.js';
+import { bestimmeZugspitze, himmelsrichtungen, mittlereAchse, peilungGrad, type Zuglauf } from './richtung.js';
 import type {
   BahnhofSchema,
   GraphKnoten,
@@ -650,10 +650,8 @@ function elementeFuer(
   return [...amBahnsteig, ...abseits.slice(0, ELEMENT_MAX_ABSEITS).map((g) => g.element)];
 }
 
-export interface SchemaOptionen {
-  /** Lage des vorherigen Halts des Ankunftszugs - bestimmt die Zugspitze. */
-  herkunft?: Lage;
-}
+/** Was ueber den Ankunftszug bekannt ist - bestimmt die Zugspitze. */
+export type SchemaOptionen = Zuglauf;
 
 export function baueBahnhofSchema(
   graph: StationGraph,
@@ -708,7 +706,7 @@ export function baueBahnhofSchema(
       // gaebe es kein Ende, an das die Spitze sich stellen koennte.
       const zugspitze =
         rolle === 'start' && hatAchse && graph.stufe !== 3
-          ? bestimmeZugspitze(b.anfang!, b.ende!, optionen.herkunft)
+          ? bestimmeZugspitze(b.anfang!, b.ende!, optionen)
           : undefined;
       return {
         bahnsteigId: b.bahnsteigId,

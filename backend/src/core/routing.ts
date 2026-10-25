@@ -6,6 +6,7 @@ import type {
   RoutenPfad,
   RoutenVariante,
   StationGraph,
+  StationsInfo,
 } from './typen.js';
 import { gehzeitSekunden, kantenZeitSekunden } from './gehzeit.js';
 import { haversineM } from './graph.js';
@@ -355,4 +356,23 @@ function rekonstruiere(
     aktuell = schritt ? schritt.zustand : null;
   }
   return { knoten, kanten, laengeM: kanten.reduce((s, ka) => s + ka.laengeM, 0) };
+}
+
+/**
+ * Endet das Ankunftsgleis am Prellbock? Laut RIS::Stations (`headPlatform`),
+ * fuer das angefragte Gleis, sein physisches Gleis (`parentPlatform`) oder
+ * das Gleis, auf das der Graph es aufgeloest hat. Frankfurt(Main)Hbf 1-24,
+ * Leipzig Hbf 6-23 und München Hbf 15-26 stehen dort so (geprueft am
+ * 25.10.2026), die Durchgangsgleise derselben Bahnhoefe nicht.
+ */
+export function istKopfgleis(
+  info: Pick<StationsInfo, 'gleise'>,
+  angefragt: string,
+  imGraphen: string,
+): boolean {
+  const eintrag = (name: string | undefined) => (name ? info.gleise.find((g) => g.gleis === name) : undefined);
+  const direkt = eintrag(angefragt);
+  return [direkt, eintrag(direkt?.ris?.parentPlatform), eintrag(imGraphen)].some(
+    (g) => g?.ris?.headPlatform === true,
+  );
 }

@@ -7,12 +7,13 @@ import {
 } from '../clients/stations.js';
 import { TimetablesAusgelastetError } from '../clients/timetables-budget.js';
 import { namensvarianten } from '../core/bahnhofsname.js';
+import { gleicherHaltname, haltnamenZurSuche } from '../core/haltname.js';
 import { gehzeitSekunden } from '../core/gehzeit.js';
 import { berlinTeile } from '../core/zeit.js';
 import { baueGraph, graphZuGeoJSON, kopiereGraph } from '../core/graph.js';
 import { klassifiziere } from '../core/klassifikation.js';
 import { baueBahnhofSchema } from '../core/schema.js';
-import { berechneRoute, findeStartknoten, istGleicherBahnsteig, loeseGleis } from '../core/routing.js';
+import { berechneRoute, findeStartknoten, istGleicherBahnsteig, istKopfgleis, loeseGleis } from '../core/routing.js';
 import { gleicherBahnsteigErgebnis, syntheseGraph, wendeFastaAn } from '../core/synthmodell.js';
 import { generiereSchritte } from '../core/textgen.js';
 import { erzeugeBestand } from '../osm/bestand.js';
@@ -89,18 +90,14 @@ interface RouteQuery {
   abschnitt?: string;
   /** Letzter Halt des Ankunftszugs vor diesem Bahnhof (aus der Tafel) - fuer die Zugspitze. */
   vonHalt?: string;
+  /** Naechster Halt des Ankunftszugs - entscheidet, wenn der vorherige quer liegt. */
+  nachHalt?: string;
   profil?: string;
   variante?: string;
 }
 
 /** Laengere Namen gibt es im Fahrplan nicht; alles darueber wird nicht gesucht. */
 const HALTNAME_MAX = 100;
-
-/** Vergleich von Bahnhofsnamen ohne Gross/klein und doppelte Leerzeichen. */
-function gleicherName(a: string, b: string): boolean {
-  const norm = (n: string) => n.trim().replace(/\s+/g, ' ').toLowerCase();
-  return norm(a) === norm(b);
-}
 
 /**
  * Koordinate aus der Abfrage – oder `null`, wenn sie fehlt oder unbrauchbar
@@ -198,12 +195,10 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
   /**
    * Lage eines Halts aus dem Laufweg, nach seinem Namen (25.10.2026).
    *
-   * Nur ein Treffer mit GENAU diesem Namen zaehlt: Die Tafel schreibt die
-   * Namen von RIS::Stations, und ein aehnlicher Treffer („Oststadt Süd" fuer
-   * „Oststadt") laege womoeglich auf der anderen Seite des Bahnhofs - die
-   * Spitze stuende dann am falschen Ende, und das waere schlimmer als keine.
-   * Gemerkt wird auch „gibt es nicht"; ein Fehler dagegen nicht, damit die
-   * naechste Anfrage es noch einmal versucht.
+   * Nur ein Treffer mit GENAU dem gesuchten Namen zaehlt, erst wie er ist,
+   * dann ohne Zusatz fuer Bahnhofsteile (`core/haltname.ts`). Gemerkt wird
+   * auch „gibt es nicht"; ein Fehler dagegen nicht, damit die naechste
+   * Anfrage es noch einmal versucht.
    */
   const haltCache = erzeugeCache<{ ort: { lat: number; lon: number } | null }>(1000, GRAPH_TTL_MS);
   async function lageVonHalt(
@@ -214,10 +209,17 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
     const gecacht = haltCache.get(name);
     if (gecacht) return gecacht.ort ?? undefined;
     try {
-      const treffer = (await clients.stations.sucheBahnhoefe(name)).find(
-        (t) => gleicherName(t.name, name) && (t.lat !== 0 || t.lon !== 0),
-      );
-      const ort = treffer ? { lat: treffer.lat, lon: treffer.lon } : null;
+      let ort: { lat: number; lon: number } | null = null;
+      for (const gesucht of haltnamenZurSuche(name)) {
+        // eslint-disable-next-line no-await-in-loop -- der zweite Name nur, wenn der erste nichts fand.
+        const treffer = (await clients.stations.sucheBahnhoefe(gesucht)).find(
+          (t) => gleicherHaltname(t.name, gesucht) && (t.lat !== 0 || t.lon !== 0),
+        );
+        if (treffer) {
+          ort = { lat: treffer.lat, lon: treffer.lon };
+          break;
+        }
+      }
       haltCache.set(name, { ort });
       return ort ?? undefined;
     } catch (e) {
@@ -376,7 +378,7 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
   );
 
   app.get<{ Querystring: RouteQuery }>('/api/route', async (req, reply) => {
-    const { eva, gleisAn, gleisAb, zugAn, wagen, abschnitt, vonHalt } = req.query;
+    const { eva, gleisAn, gleisAb, zugAn, wagen, abschnitt, vonHalt, nachHalt } = req.query;
     const profil = (req.query.profil ?? 'normal') as Gehprofil;
     const variante = (req.query.variante ?? 'schnellste') as RoutenVariante;
     if (!eva || !gleisAn || !gleisAb) {
@@ -618,14 +620,21 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
 
     // Erst hier, nicht vorher: Im Standardmodell und am selben Bahnsteig
     // braucht niemand die Lage - dann kostet sie auch keinen Aufruf.
-    const herkunft = graph.stufe !== 3 ? await lageVonHalt(vonHalt, req.log) : undefined;
+    const zuglauf =
+      graph.stufe !== 3
+        ? {
+            vorher: await lageVonHalt(vonHalt, req.log),
+            nachher: await lageVonHalt(nachHalt, req.log),
+            kopfgleis: istKopfgleis(eintrag.info, gleisAn, an.gleis),
+          }
+        : {};
 
     return {
       stufe: graph.stufe,
       schritte: generiereSchritte(pfad, { ungefaehr: graph.stufe === 3, profil }),
       gehzeitSek: gehzeitSekunden(pfad, profil),
       karte: graphZuGeoJSON(graph, pfad),
-      schema: baueBahnhofSchema(graph, pfad, { herkunft }),
+      schema: baueBahnhofSchema(graph, pfad, zuglauf),
       hinweise,
     };
   });

@@ -451,6 +451,7 @@ function App() {
       profil: eingabe.profil,
       zugAn: eingabe.zugAn,
       vonHalt: eingabe.vonHalt,
+      nachHalt: eingabe.nachHalt,
       wagen: eingabe.wagenAn || undefined,
     }
     // NICHT `standort` - so heisst in dieser Datei die GPS-Position.
@@ -543,6 +544,7 @@ function App() {
         profil: werte.profil,
         zugAn: werte.zugAn,
         vonHalt: werte.vonHalt,
+        nachHalt: werte.nachHalt,
         wagen: werte.wagenAn || undefined,
         abschnitt: standortAmGleis,
         variante: v,
@@ -564,6 +566,7 @@ function App() {
               profil: werte.profil,
               zugAn: werte.zugAn,
               vonHalt: werte.vonHalt,
+              nachHalt: werte.nachHalt,
               wagen: werte.wagenAn || undefined,
             },
             v,
@@ -609,6 +612,7 @@ function App() {
         profil: werte.profil,
         zugAn: werte.zugAn,
         vonHalt: werte.vonHalt,
+        nachHalt: werte.nachHalt,
         wagen: werte.wagenAn || undefined,
       }
       setStandortLaden(a)
@@ -844,6 +848,7 @@ function App() {
           abschnitt: neueWerte.abschnitt,
           zugAn: neueWerte.zugAn,
           vonHalt: neueWerte.vonHalt,
+          nachHalt: neueWerte.nachHalt,
           wagen: neueWerte.wagenAn || undefined,
         })
           .then((neueRoute) =>

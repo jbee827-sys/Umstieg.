@@ -210,6 +210,8 @@ export interface RouteParameter {
   zugAn?: string;
   /** Letzter Halt des Ankunftszugs - daraus bestimmt das Backend die Zugspitze. */
   vonHalt?: string;
+  /** Naechster Halt des Ankunftszugs - entscheidet, wenn der vorherige quer liegt. */
+  nachHalt?: string;
   wagen?: string;
   abschnitt?: Bahnsteigabschnitt;
   profil: Gehprofil;

@@ -1,41 +1,43 @@
 // SIMULATION: An wie vielen Bahnhoefen kennt die App die Zugspitze?
 //
 // Seit dem 25.10.2026 fragt die Standortwahl nach der Stelle im ZUG
-// („Zuganfang · Zugmitte · Zugende"), wenn die Fahrtrichtung sicher ist: Die
-// Spitze steht am Bahnsteigende, das vom vorherigen Halt weg zeigt
-// (`bestimmeZugspitze`). Sonst bleibt es bei der Himmelsrichtung. Diese
-// Simulation misst, wie oft das „sonst" eintritt - je Ankunft und je Bahnhof.
+// („Zuganfang · Zugmitte · Zugende"), wenn die Fahrtrichtung sicher ist
+// (`bestimmeZugspitze`): weg vom vorherigen Halt; liegt der quer oder fehlt
+// seine Lage, zum naechsten Halt hin; am Kopfgleis (RIS `headPlatform`)
+// immer entgegen dem naechsten Halt. Sonst bleibt es bei der Himmelsrichtung.
+// Diese Simulation misst, wie oft das „sonst" eintritt - je Ankunft und je
+// Bahnhof.
 //
 // Je Bahnhof des Startbestands (`osm-bestand/`):
 //   - Graph offline wie in `bahnhofsseiten-daten.ts`, Stufe nach Klassifikation.
+//   - Stationsauskunft aus RIS::Stations wie in `/api/route`: Verkehrsstellen
+//     der Gruppe und Gleisliste - fuer Teilgleise („11 B-C") und Kopfgleise.
 //   - ECHTE Ankunftstafel (Timetables, Plan der aktuellen Stunde, je
-//     Verkehrsstelle der Gruppe) - dieselbe Quelle, aus der die App den
-//     vorherigen Halt nimmt.
+//     Verkehrsstelle) - dieselbe Quelle, aus der die App die Halte nimmt.
 //   - Lage jedes vorherigen und naechsten Halts aus RIS::Stations, mit
-//     derselben Regel wie `/api/route` (nur genau gleicher Name).
-//   - Je Ankunft: Gleis aufgeloest? Achse da? Halt gefunden? Spitze bestimmt?
-//   - Gegenprobe, wo der Zug weiterfaehrt: Liegt der naechste Halt hinter der
-//     Spitze (Durchgangsbahnhof, stimmig), hinter dem Zugende (Kopfbahnhof -
-//     oder eine falsch erkannte Richtung) oder quer?
+//     derselben Namensregel wie `/api/route` (`core/haltname.ts`).
+//   - Je Ankunft: Gleis aufgeloest? Achse da? Spitze bestimmt - und woraus?
+//   - Gegenprobe, wo beide Halte laengs liegen: Stimmen sie ueberein?
 //
 // Last: Timetables teilt sich das Minutenbudget (60) mit der Produktion.
 // Deshalb hoechstens 20 Abrufe je Minute und nur der Plan EINER Stunde - die
-// Produktion behaelt zwei Drittel. RIS::Stations hoechstens 60 je Minute.
-// Gemerkte Haltlagen liegen in `osm-ablage/zugspitze/halte.json` (gitignored)
-// und werden beim naechsten Lauf nicht neu geholt.
+// Produktion behaelt zwei Drittel. RIS::Stations hoechstens 50 je Minute.
+// Gemerkte Haltlagen liegen in `osm-ablage/zugspitze/halte.json` (gitignored),
+// je GESUCHTEM Namen, und werden beim naechsten Lauf nicht neu geholt.
 //
 // Aufruf: npx tsx scripts/simulation-zugspitze.ts [--grenze N]
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { epTafelPlan } from '../src/clients/db-endpunkte.js';
-import { dbAuthHeader, holeGruppe, sucheBahnhoefe } from '../src/clients/stations.js';
+import { dbAuthHeader, holeStationsInfo, sucheBahnhoefe } from '../src/clients/stations.js';
 import { baueTafel } from '../src/clients/timetables.js';
 import { baueGraph } from '../src/core/graph.js';
+import { gleicherHaltname, haltnamenZurSuche } from '../src/core/haltname.js';
 import { klassifiziere } from '../src/core/klassifikation.js';
 import { bestimmeZugspitze, type Ort } from '../src/core/richtung.js';
-import { loeseGleis } from '../src/core/routing.js';
-import type { StationGraph, TafelEintrag } from '../src/core/typen.js';
+import { istKopfgleis, loeseGleis } from '../src/core/routing.js';
+import type { StationGraph, StationsInfo, TafelEintrag } from '../src/core/typen.js';
 import { entpackeEintrag } from '../src/osm/bestand.js';
 import { ladeSecrets } from './secrets.js';
 
@@ -44,7 +46,7 @@ const AUSGABE = fileURLToPath(new URL('../osm-ablage/zugspitze/', import.meta.ur
 const HALTE = join(AUSGABE, 'halte.json');
 
 const TIMETABLES_ABSTAND_MS = 3_000;
-const RIS_ABSTAND_MS = 1_000;
+const RIS_ABSTAND_MS = 1_200;
 const PAUSE_429_MS = 65_000;
 
 // --- Abrufe im Takt ---
@@ -76,49 +78,56 @@ const halte: Record<string, HaltLage> = existsSync(HALTE)
   : {};
 let halteNeu = 0;
 
-const norm = (n: string) => n.trim().replace(/\s+/g, ' ').toLowerCase();
-
-/** Dieselbe Regel wie `lageVonHalt` in `routes/api.ts`: nur genau gleicher Name. */
+/** Dieselbe Regel wie `lageVonHalt` in `routes/api.ts`. */
 async function lageVon(name: string | undefined): Promise<Ort | undefined | 'fehler'> {
   if (!name) return undefined;
-  if (name in halte) return halte[name] ?? undefined;
-  try {
-    const treffer = (await sucheBahnhoefe(name, taktFetch)).find(
-      (t) => norm(t.name) === norm(name) && (t.lat !== 0 || t.lon !== 0),
-    );
-    halte[name] = treffer ? { lat: treffer.lat, lon: treffer.lon } : null;
-    if (++halteNeu % 25 === 0) writeFileSync(HALTE, JSON.stringify(halte));
-    return halte[name] ?? undefined;
-  } catch (e) {
-    console.log(`  Halt „${name}": ${String(e)}`);
-    return 'fehler';
+  for (const gesucht of haltnamenZurSuche(name)) {
+    if (!(gesucht in halte)) {
+      try {
+        const treffer = (await sucheBahnhoefe(gesucht, taktFetch)).find(
+          (t) => gleicherHaltname(t.name, gesucht) && (t.lat !== 0 || t.lon !== 0),
+        );
+        halte[gesucht] = treffer ? { lat: treffer.lat, lon: treffer.lon } : null;
+        if (++halteNeu % 25 === 0) writeFileSync(HALTE, JSON.stringify(halte));
+      } catch (e) {
+        console.log(`  Halt „${gesucht}": ${String(e)}`);
+        return 'fehler';
+      }
+    }
+    if (halte[gesucht]) return halte[gesucht]!;
   }
+  return undefined;
 }
 
 // --- Bewertung ---
 
 type Ergebnis =
-  | 'bestimmt'
+  | 'vorher'
+  | 'nachher'
+  | 'kopf-nachher'
+  | 'kopf-vorher'
   | 'stufe-3'
+  | 'ohne-gleisangabe'
   | 'gleis-unbekannt'
   | 'ohne-achse'
-  | 'ohne-vorhalt'
-  | 'halt-ohne-lage'
   | 'halt-fehler'
+  | 'halte-ohne-lage'
   | 'quer';
 
-type Gegenprobe = 'stimmig' | 'kopf' | 'quer' | 'ohne';
+const BESTIMMT: Ergebnis[] = ['vorher', 'nachher', 'kopf-nachher', 'kopf-vorher'];
+
+/** Wo beide Halte laengs liegen: zeigen sie dieselbe Richtung? */
+type Gegenprobe = 'stimmig' | 'widerspruch';
 
 interface Ankunft {
   zug: string;
   gleis: string;
   vonHalt?: string;
   nachHalt?: string;
+  kopfgleis: boolean;
   ergebnis: Ergebnis;
   zugspitze?: 'anfang' | 'ende';
   gegenprobe?: Gegenprobe;
-  /** Nur bei `quer`: Laege der naechste Halt klar laengs zur Achse? */
-  nachherKlar?: boolean;
 }
 
 interface Bahnhof {
@@ -126,38 +135,46 @@ interface Bahnhof {
   eva: string;
   stufe: number;
   evas: string[];
+  kopfgleise: string[];
   tafelFehler?: string;
   ankuenfte: Ankunft[];
 }
 
-function bewerte(graph: StationGraph, e: TafelEintrag, vorher: Ort | undefined | 'fehler', nachher: Ort | undefined | 'fehler'): Omit<Ankunft, 'zug' | 'gleis' | 'vonHalt' | 'nachHalt'> {
-  if (graph.stufe === 3) return { ergebnis: 'stufe-3' };
-  const gleis = loeseGleis(graph, e.gleisIst ?? e.gleisSoll).gleis;
-  if (!graph.gleise.includes(gleis)) return { ergebnis: 'gleis-unbekannt' };
+function bewerte(
+  graph: StationGraph,
+  info: Pick<StationsInfo, 'gleise'>,
+  e: TafelEintrag,
+  vorher: Ort | undefined | 'fehler',
+  nachher: Ort | undefined | 'fehler',
+): Omit<Ankunft, 'zug' | 'gleis' | 'vonHalt' | 'nachHalt'> {
+  const angefragt = e.gleisIst ?? e.gleisSoll;
+  const gleis = loeseGleis(graph, angefragt, info.gleise).gleis;
+  const kopfgleis = istKopfgleis(info, angefragt, gleis);
+  if (graph.stufe === 3) return { kopfgleis, ergebnis: 'stufe-3' };
+  if (angefragt === '') return { kopfgleis, ergebnis: 'ohne-gleisangabe' };
+  if (!graph.gleise.includes(gleis)) return { kopfgleis, ergebnis: 'gleis-unbekannt' };
   const anfang = graph.knoten.get(`gleis${gleis}:anfang`);
   const ende = graph.knoten.get(`gleis${gleis}:ende`);
-  if (!anfang || !ende || anfang === ende) return { ergebnis: 'ohne-achse' };
-  if (!e.vonHalt) return { ergebnis: 'ohne-vorhalt' };
-  if (vorher === 'fehler') return { ergebnis: 'halt-fehler' };
-  if (!vorher) return { ergebnis: 'halt-ohne-lage' };
-  const zugspitze = bestimmeZugspitze(anfang, ende, vorher);
-  if (!zugspitze) {
-    // Wie oft haette der naechste Halt geholfen? Nur gezaehlt, nicht benutzt -
-    // im Kopfbahnhof laege er auf der falschen Seite.
-    const klar = nachher !== undefined && nachher !== 'fehler' && bestimmeZugspitze(anfang, ende, nachher) !== undefined;
-    return { ergebnis: 'quer', nachherKlar: klar };
-  }
+  if (!anfang || !ende || anfang === ende) return { kopfgleis, ergebnis: 'ohne-achse' };
+  if (vorher === 'fehler' || nachher === 'fehler') return { kopfgleis, ergebnis: 'halt-fehler' };
+  if (!vorher && !nachher) return { kopfgleis, ergebnis: 'halte-ohne-lage' };
 
-  // Gegenprobe: Wohin zeigt der naechste Halt? Dieselbe Rechnung, nur von der
-  // anderen Seite - liegt er hinter der Spitze, ist die Richtung stimmig.
-  let gegenprobe: Gegenprobe = 'ohne';
-  if (nachher && nachher !== 'fehler') {
-    const seiteNach = bestimmeZugspitze(anfang, ende, nachher);
-    // `bestimmeZugspitze(nachher)` nennt das Ende WEG vom naechsten Halt; im
-    // Durchgangsbahnhof ist das das Zugende, also nicht die Spitze.
-    gegenprobe = !seiteNach ? 'quer' : seiteNach !== zugspitze ? 'stimmig' : 'kopf';
-  }
-  return { ergebnis: 'bestimmt', zugspitze, gegenprobe };
+  const zugspitze = bestimmeZugspitze(anfang, ende, { vorher, nachher, kopfgleis });
+  if (!zugspitze) return { kopfgleis, ergebnis: 'quer' };
+
+  // Woraus die Spitze kommt: dieselbe Regel einzeln befragt.
+  const ausVorher = bestimmeZugspitze(anfang, ende, { vorher, kopfgleis });
+  const ausNachher = bestimmeZugspitze(anfang, ende, { nachher, kopfgleis });
+  const ergebnis: Ergebnis = kopfgleis
+    ? ausNachher
+      ? 'kopf-nachher'
+      : 'kopf-vorher'
+    : ausVorher
+      ? 'vorher'
+      : 'nachher';
+  const gegenprobe: Gegenprobe | undefined =
+    ausVorher && ausNachher ? (ausVorher === ausNachher ? 'stimmig' : 'widerspruch') : undefined;
+  return { kopfgleis, ergebnis, zugspitze, ...(gegenprobe ? { gegenprobe } : {}) };
 }
 
 async function main(): Promise<void> {
@@ -178,14 +195,25 @@ async function main(): Promise<void> {
     const eintrag = await entpackeEintrag(readFileSync(join(BESTAND, datei)));
     const graph = baueGraph(eintrag.osm);
     graph.stufe = klassifiziere(graph);
-    const bahnhof: Bahnhof = { name: eintrag.name, eva: eintrag.schluessel, stufe: graph.stufe, evas: [], ankuenfte: [] };
+    const bahnhof: Bahnhof = {
+      name: eintrag.name,
+      eva: eintrag.schluessel,
+      stufe: graph.stufe,
+      evas: [],
+      kopfgleise: [],
+      ankuenfte: [],
+    };
     bahnhoefe.push(bahnhof);
 
+    let info: Pick<StationsInfo, 'gleise'> = { gleise: [] };
     try {
-      bahnhof.evas = await holeGruppe(eintrag.schluessel, taktFetch);
+      const voll = await holeStationsInfo(eintrag.schluessel, taktFetch);
+      info = voll;
+      bahnhof.evas = voll.evas;
+      bahnhof.kopfgleise = voll.gleise.filter((g) => g.ris?.headPlatform === true).map((g) => g.gleis);
     } catch (e) {
       bahnhof.evas = [eintrag.schluessel];
-      console.log(`  Gruppe ${eintrag.name}: ${String(e)}`);
+      console.log(`  Stationsauskunft ${eintrag.name}: ${String(e)}`);
     }
     const eintraege: TafelEintrag[] = [];
     for (const eva of bahnhof.evas) {
@@ -215,12 +243,12 @@ async function main(): Promise<void> {
         gleis: e.gleisIst ?? e.gleisSoll,
         ...(e.vonHalt ? { vonHalt: e.vonHalt } : {}),
         ...(e.nachHalt ? { nachHalt: e.nachHalt } : {}),
-        ...bewerte(graph, e, vorher, nachher),
+        ...bewerte(graph, info, e, vorher, nachher),
       });
     }
-    const bestimmt = bahnhof.ankuenfte.filter((a) => a.ergebnis === 'bestimmt').length;
+    const bestimmt = bahnhof.ankuenfte.filter((a) => BESTIMMT.includes(a.ergebnis)).length;
     console.log(
-      `[${i + 1}/${dateien.length}] ${eintrag.name} (Stufe ${graph.stufe}): ${bestimmt}/${bahnhof.ankuenfte.length} bestimmt${bahnhof.tafelFehler ? ` - Tafel: ${bahnhof.tafelFehler}` : ''}`,
+      `[${i + 1}/${dateien.length}] ${eintrag.name} (Stufe ${graph.stufe}${bahnhof.kopfgleise.length ? `, Kopf ${bahnhof.kopfgleise.length}` : ''}): ${bestimmt}/${bahnhof.ankuenfte.length} bestimmt${bahnhof.tafelFehler ? ` - Tafel: ${bahnhof.tafelFehler}` : ''}`,
     );
     writeFileSync(join(AUSGABE, 'ergebnis.json'), JSON.stringify(bahnhoefe, null, 1));
   }
@@ -232,16 +260,17 @@ function auswerten(bahnhoefe: Bahnhof[]): void {
   const alle = bahnhoefe.flatMap((b) => b.ankuenfte);
   const zaehle = <T extends string>(werte: T[]) =>
     werte.reduce<Record<string, number>>((z, w) => ((z[w] = (z[w] ?? 0) + 1), z), {});
+  const istBestimmt = (a: Ankunft) => BESTIMMT.includes(a.ergebnis);
 
   console.log('\n=== Ankuenfte ===');
-  console.log(`gesamt ${alle.length}`, zaehle(alle.map((a) => a.ergebnis)));
-  const bestimmt = alle.filter((a) => a.ergebnis === 'bestimmt');
-  console.log('Gegenprobe (naechster Halt)', zaehle(bestimmt.map((a) => a.gegenprobe ?? 'ohne')));
-  const quer = alle.filter((a) => a.ergebnis === 'quer');
-  console.log(`quer: ${quer.length}, davon mit klar laengs liegendem naechsten Halt ${quer.filter((a) => a.nachherKlar).length}`);
+  const bestimmt = alle.filter(istBestimmt).length;
+  console.log(`gesamt ${alle.length}, bestimmt ${bestimmt} (${Math.round((bestimmt / alle.length) * 1000) / 10} %)`);
+  console.log(zaehle(alle.map((a) => a.ergebnis)));
+  console.log('Gegenprobe (beide Halte laengs)', zaehle(alle.flatMap((a) => (a.gegenprobe ? [a.gegenprobe] : []))));
+  console.log(`am Kopfgleis: ${alle.filter((a) => a.kopfgleis).length} Ankuenfte`);
 
   const mitAnkunft = bahnhoefe.filter((b) => b.ankuenfte.length > 0);
-  const anteil = (b: Bahnhof) => b.ankuenfte.filter((a) => a.ergebnis === 'bestimmt').length / b.ankuenfte.length;
+  const anteil = (b: Bahnhof) => b.ankuenfte.filter(istBestimmt).length / b.ankuenfte.length;
   const nie = mitAnkunft.filter((b) => anteil(b) === 0);
   const voll = mitAnkunft.filter((b) => anteil(b) === 1);
   const teils = mitAnkunft.filter((b) => anteil(b) > 0 && anteil(b) < 1);
@@ -250,11 +279,12 @@ function auswerten(bahnhoefe: Bahnhof[]): void {
     `${bahnhoefe.length} im Bestand, ${mitAnkunft.length} mit Ankuenften in der Stunde: ` +
       `${voll.length} immer bestimmt, ${teils.length} teilweise, ${nie.length} nie`,
   );
+  console.log(`mit Kopfgleisen laut RIS: ${bahnhoefe.filter((b) => b.kopfgleise.length > 0).map((b) => b.name).join(', ')}`);
   const ohneAnkunft = bahnhoefe.filter((b) => b.ankuenfte.length === 0);
-  console.log(`ohne Ankunft in der Stunde: ${ohneAnkunft.length}${ohneAnkunft.some((b) => b.tafelFehler) ? ` (davon mit Tafelfehler ${ohneAnkunft.filter((b) => b.tafelFehler).length})` : ''}`);
+  console.log(`ohne Ankunft in der Stunde: ${ohneAnkunft.length} (${ohneAnkunft.map((b) => b.name).join(', ')})`);
 
   const grund = (b: Bahnhof) => {
-    const z = zaehle(b.ankuenfte.filter((a) => a.ergebnis !== 'bestimmt').map((a) => a.ergebnis));
+    const z = zaehle(b.ankuenfte.filter((a) => !istBestimmt(a)).map((a) => a.ergebnis));
     return Object.entries(z)
       .sort((x, y) => y[1] - x[1])
       .map(([k, v]) => `${k} ${v}`)
@@ -266,14 +296,16 @@ function auswerten(bahnhoefe: Bahnhof[]): void {
   for (const b of teils.filter((x) => anteil(x) < 0.8).sort((x, y) => anteil(x) - anteil(y))) {
     console.log(`  ${b.name}: ${Math.round(anteil(b) * 100)} % von ${b.ankuenfte.length} - ${grund(b)}`);
   }
-  console.log('\nKopf in der Gegenprobe (naechster Halt auf der Seite des vorherigen):');
-  const kopf = new Map<string, number>();
+  console.log('\nWiderspruch in der Gegenprobe:');
+  const wider = new Map<string, number>();
   for (const b of bahnhoefe) {
-    const n = b.ankuenfte.filter((a) => a.gegenprobe === 'kopf').length;
-    if (n > 0) kopf.set(b.name, n);
+    const n = b.ankuenfte.filter((a) => a.gegenprobe === 'widerspruch').length;
+    if (n > 0) wider.set(b.name, n);
   }
-  for (const [name, n] of [...kopf].sort((x, y) => y[1] - x[1])) console.log(`  ${name}: ${n}`);
-  const ohneLage = zaehle(alle.filter((a) => a.ergebnis === 'halt-ohne-lage').map((a) => a.vonHalt ?? ''));
+  for (const [name, n] of [...wider].sort((x, y) => y[1] - x[1])) console.log(`  ${name}: ${n}`);
+  const ohneLage = zaehle(
+    alle.filter((a) => a.ergebnis === 'halte-ohne-lage').flatMap((a) => [a.vonHalt ?? '', a.nachHalt ?? '']).filter(Boolean),
+  );
   console.log('\nHalte ohne Lage (Name nicht genau gefunden):', Object.keys(ohneLage).length);
   for (const [name, n] of Object.entries(ohneLage).sort((x, y) => y[1] - x[1]).slice(0, 40)) console.log(`  „${name}" ${n}`);
 }

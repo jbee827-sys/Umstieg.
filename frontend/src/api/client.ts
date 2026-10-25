@@ -49,6 +49,7 @@ export async function holeRoute(p: RouteParameter): Promise<RouteErgebnis> {
   if (p.abschnitt) params.set('abschnitt', p.abschnitt);
   if (p.zugAn) params.set('zugAn', p.zugAn);
   if (p.vonHalt) params.set('vonHalt', p.vonHalt);
+  if (p.nachHalt) params.set('nachHalt', p.nachHalt);
   if (p.wagen) params.set('wagen', p.wagen);
 
   let res: Response;
