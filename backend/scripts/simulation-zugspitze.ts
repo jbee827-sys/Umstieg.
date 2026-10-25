@@ -17,7 +17,8 @@
 //   - Lage jedes vorherigen und naechsten Halts aus RIS::Stations, mit
 //     derselben Namensregel wie `/api/route` (`core/haltname.ts`).
 //   - Je Ankunft: Gleis aufgeloest? Achse da? Spitze bestimmt - und woraus?
-//   - Gegenprobe, wo beide Halte laengs liegen: Stimmen sie ueberein?
+//   - Gegenprobe, wo beide Halte laengs liegen: Stimmen sie ueberein? Am
+//     Kopfgleis mit bekanntem Prellbock: Haetten die Halte dasselbe gesagt?
 //
 // Last: Timetables teilt sich das Minutenbudget (60) mit der Produktion.
 // Deshalb hoechstens 20 Abrufe je Minute und nur der Plan EINER Stunde - die
@@ -36,7 +37,7 @@ import { baueGraph } from '../src/core/graph.js';
 import { gleicherHaltname, haltnamenZurSuche } from '../src/core/haltname.js';
 import { klassifiziere } from '../src/core/klassifikation.js';
 import { bestimmeZugspitze, type Ort } from '../src/core/richtung.js';
-import { istKopfgleis, loeseGleis } from '../src/core/routing.js';
+import { istKopfgleis, kopfgleiseImGraphen, loeseGleis, prellbockEnde } from '../src/core/routing.js';
 import type { StationGraph, StationsInfo, TafelEintrag } from '../src/core/typen.js';
 import { entpackeEintrag } from '../src/osm/bestand.js';
 import { ladeSecrets } from './secrets.js';
@@ -102,6 +103,7 @@ async function lageVon(name: string | undefined): Promise<Ort | undefined | 'feh
 // --- Bewertung ---
 
 type Ergebnis =
+  | 'kopf-prellbock'
   | 'vorher'
   | 'nachher'
   | 'kopf-nachher'
@@ -114,7 +116,7 @@ type Ergebnis =
   | 'halte-ohne-lage'
   | 'quer';
 
-const BESTIMMT: Ergebnis[] = ['vorher', 'nachher', 'kopf-nachher', 'kopf-vorher'];
+const BESTIMMT: Ergebnis[] = ['kopf-prellbock', 'vorher', 'nachher', 'kopf-nachher', 'kopf-vorher'];
 
 /** Wo beide Halte laengs liegen: zeigen sie dieselbe Richtung? */
 type Gegenprobe = 'stimmig' | 'widerspruch';
@@ -157,6 +159,17 @@ function bewerte(
   const ende = graph.knoten.get(`gleis${gleis}:ende`);
   if (!anfang || !ende || anfang === ende) return { kopfgleis, ergebnis: 'ohne-achse' };
   if (vorher === 'fehler' || nachher === 'fehler') return { kopfgleis, ergebnis: 'halt-fehler' };
+  const prellbock = kopfgleis ? prellbockEnde(graph, kopfgleiseImGraphen(graph, info), gleis) : undefined;
+  if (prellbock) {
+    // Gegenprobe am Kopfgleis: Was haetten die Halte gesagt?
+    const ausHalten = vorher || nachher ? bestimmeZugspitze(anfang, ende, { vorher, nachher, kopfgleis }) : undefined;
+    return {
+      kopfgleis,
+      ergebnis: 'kopf-prellbock',
+      zugspitze: prellbock,
+      ...(ausHalten ? { gegenprobe: ausHalten === prellbock ? 'stimmig' : 'widerspruch' } : {}),
+    };
+  }
   if (!vorher && !nachher) return { kopfgleis, ergebnis: 'halte-ohne-lage' };
 
   const zugspitze = bestimmeZugspitze(anfang, ende, { vorher, nachher, kopfgleis });

@@ -217,6 +217,15 @@ describe('bestimmeZugspitze – welches Bahnsteigende die Spitze des Zuges hat',
     expect(bestimmeZugspitze(anfang, ende, { nachher: senkrecht, kopfgleis: true })).toBeUndefined();
   });
 
+  it('stellt am Kopfgleis die Spitze an den Prellbock, wenn er bekannt ist', () => {
+    // Die Halte zeigten nach Norden - der Prellbock entscheidet trotzdem.
+    expect(
+      bestimmeZugspitze(anfang, ende, { vorher: imSueden, nachher: imSueden, kopfgleis: true, prellbock: 'ende' }),
+    ).toBe('ende');
+    // Ohne Kopfgleis zaehlt ein Prellbock nicht.
+    expect(bestimmeZugspitze(anfang, ende, { vorher: imSueden, prellbock: 'ende' })).toBe('anfang');
+  });
+
   it('nimmt am Kopfgleis den vorherigen, wenn der Zug dort endet', () => {
     expect(bestimmeZugspitze(anfang, ende, { vorher: imSueden, kopfgleis: true })).toBe('anfang');
   });

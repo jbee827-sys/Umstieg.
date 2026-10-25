@@ -13,7 +13,15 @@ import { berlinTeile } from '../core/zeit.js';
 import { baueGraph, graphZuGeoJSON, kopiereGraph } from '../core/graph.js';
 import { klassifiziere } from '../core/klassifikation.js';
 import { baueBahnhofSchema } from '../core/schema.js';
-import { berechneRoute, findeStartknoten, istGleicherBahnsteig, istKopfgleis, loeseGleis } from '../core/routing.js';
+import {
+  berechneRoute,
+  findeStartknoten,
+  istGleicherBahnsteig,
+  istKopfgleis,
+  kopfgleiseImGraphen,
+  loeseGleis,
+  prellbockEnde,
+} from '../core/routing.js';
 import { gleicherBahnsteigErgebnis, syntheseGraph, wendeFastaAn } from '../core/synthmodell.js';
 import { generiereSchritte } from '../core/textgen.js';
 import { erzeugeBestand } from '../osm/bestand.js';
@@ -620,12 +628,14 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
 
     // Erst hier, nicht vorher: Im Standardmodell und am selben Bahnsteig
     // braucht niemand die Lage - dann kostet sie auch keinen Aufruf.
+    const kopfgleis = istKopfgleis(eintrag.info, gleisAn, an.gleis);
     const zuglauf =
       graph.stufe !== 3
         ? {
             vorher: await lageVonHalt(vonHalt, req.log),
             nachher: await lageVonHalt(nachHalt, req.log),
-            kopfgleis: istKopfgleis(eintrag.info, gleisAn, an.gleis),
+            kopfgleis,
+            prellbock: kopfgleis ? prellbockEnde(graph, kopfgleiseImGraphen(graph, eintrag.info), an.gleis) : undefined,
           }
         : {};
 

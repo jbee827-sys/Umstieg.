@@ -376,3 +376,58 @@ export function istKopfgleis(
     (g) => g?.ris?.headPlatform === true,
   );
 }
+
+/** Die Kopfgleise laut RIS::Stations, so wie der Graph sie nennt. */
+export function kopfgleiseImGraphen(graph: StationGraph, info: Pick<StationsInfo, 'gleise'>): string[] {
+  return info.gleise
+    .filter((g) => g.ris?.headPlatform === true)
+    .map((g) => loeseGleis(graph, g.gleis, info.gleise).gleis)
+    .filter((g) => graph.gleise.includes(g));
+}
+
+/** Umkreis um ein Bahnsteigende, in dem Wegknoten gezaehlt werden. */
+const PRELLBOCK_UMKREIS_M = 25;
+/** Um so viel muss ein Ende das andere uebertreffen, damit es als Prellbock gilt. */
+const PRELLBOCK_VORSPRUNG = 1.5;
+
+/**
+ * An welchem Ende die Kopfgleise einer Ebene am Prellbock enden (25.10.2026).
+ *
+ * Am Prellbock verbindet der Querbahnsteig alle Bahnsteige, dort liegen Halle
+ * und Ausgaenge; am Vorfeld enden die Bahnsteige offen. Der Graph zeigt das
+ * als Zahl der Wegknoten ausserhalb von Bahnsteigen auf derselben Ebene in
+ * 25 m um das Ende. Gemessen am Startbestand (Prellbock : Vorfeld): Frankfurt
+ * 3,7, Stuttgart 3,3, München 1,9, Leipzig 1,75; mit allen Knoten oder 40 m
+ * Umkreis waere Leipzig unter 1,5 gefallen. Gezaehlt ueber ALLE Kopfgleise der Ebene des Ankunftsgleises - ihre
+ * Enden sind gleich ausgerichtet (`baueGraph`), und ein einzelner Randbahnsteig
+ * kippt das Ergebnis dann nicht (Frankfurt(Main)Hbf Gleis 24).
+ *
+ * Geprueft am Startbestand: Frankfurt(Main)Hbf und München Hbf im Osten,
+ * Leipzig Hbf und Stuttgart Hbf im Sueden. `undefined`, wenn kein Ende
+ * deutlich vorn liegt.
+ */
+export function prellbockEnde(
+  graph: StationGraph,
+  kopfgleise: string[],
+  ankunftsgleis: string,
+): 'anfang' | 'ende' | undefined {
+  const ebene = graph.knoten.get(`gleis${ankunftsgleis}:anfang`)?.level;
+  if (ebene === undefined) return undefined;
+  const aufEbene = [...graph.knoten.values()].filter((k) => k.level === ebene);
+  const wegeNahe = (p: GraphKnoten): number =>
+    aufEbene.filter(
+      (k) => k.bahnsteigId === undefined && haversineM(k.lat, k.lon, p.lat, p.lon) < PRELLBOCK_UMKREIS_M,
+    ).length;
+  let anfang = 0;
+  let ende = 0;
+  for (const gleis of new Set(kopfgleise)) {
+    const a = graph.knoten.get(`gleis${gleis}:anfang`);
+    const e = graph.knoten.get(`gleis${gleis}:ende`);
+    if (!a || !e || a === e || a.level !== ebene) continue;
+    anfang += wegeNahe(a);
+    ende += wegeNahe(e);
+  }
+  if (ende > anfang * PRELLBOCK_VORSPRUNG) return 'ende';
+  if (anfang > ende * PRELLBOCK_VORSPRUNG) return 'anfang';
+  return undefined;
+}

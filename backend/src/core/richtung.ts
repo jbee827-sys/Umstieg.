@@ -136,6 +136,8 @@ export interface Zuglauf {
   nachher?: Ort;
   /** Das Ankunftsgleis endet am Prellbock (RIS::Stations `headPlatform`). */
   kopfgleis?: boolean;
+  /** Am Kopfgleis: welches Ende der Prellbock ist, wenn der Graph es zeigt (`prellbockEnde`). */
+  prellbock?: Zugspitze;
 }
 
 /**
@@ -175,9 +177,12 @@ const gegenueber = (s: Zugspitze): Zugspitze => (s === 'anfang' ? 'ende' : 'anfa
  * - Durchgangsgleis: Zuerst der vorherige Halt - die Spitze steht am Ende,
  *   das von ihm weg zeigt. Liegt er quer (Kurve, Abzweig) oder ist seine Lage
  *   unbekannt, der naechste Halt - die Spitze steht am Ende zu ihm hin.
- * - Kopfgleis: Die Spitze steht immer entgegen dem naechsten Halt - der Zug
- *   kehrt und faehrt dorthin zurueck, woher er kam. Endet er hier, entscheidet
- *   der vorherige Halt wie sonst. Quer ist hier erst, was fast senkrecht
+ * - Kopfgleis: Die Spitze steht am Prellbock, wenn der Graph ihn zeigt - der
+ *   sicherste Fall, denn die Halte koennen hier taeuschen: Frankfurt(Main)Sued
+ *   liegt suedoestlich von Frankfurt(Main)Hbf, und doch fahren die Zuege von
+ *   dort im Bogen von Westen ein. Sonst steht sie entgegen dem naechsten Halt
+ *   - der Zug kehrt und faehrt dorthin zurueck, woher er kam. Endet er hier,
+ *   entscheidet der vorherige Halt. Quer ist hier erst, was fast senkrecht
  *   liegt (`KOPFGLEIS_HOECHSTWINKEL_GRAD`).
  *
  * Simulation vom 25.10.2026: Bei 2865 von 2892 Ankuenften mit beiden Halten
@@ -192,6 +197,7 @@ export function bestimmeZugspitze(anfang: Ort, ende: Ort, zuglauf: Zuglauf): Zug
   const seiteVorher = seiteVon(anfang, ende, zuglauf.vorher, winkel);
   const seiteNachher = seiteVon(anfang, ende, zuglauf.nachher, winkel);
   if (zuglauf.kopfgleis) {
+    if (zuglauf.prellbock) return zuglauf.prellbock;
     if (seiteNachher) return gegenueber(seiteNachher);
     return seiteVorher ? gegenueber(seiteVorher) : undefined;
   }
