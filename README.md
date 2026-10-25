@@ -34,28 +34,38 @@ Fahrtrichtung. Ohne sichere Richtung bleibt es bei „Nordende · Mitte ·
 Südende". Bei Ankunft mit Bus oder Tram (Haltestellenpfad) gibt es weder
 Zug noch Standortwahl.
 
-- **Regel:** Die Spitze steht am Bahnsteigende, das vom vorherigen Halt weg
-  zeigt – im Kopfbahnhof am Prellbock (`bestimmeZugspitze`,
-  `core/richtung.ts`). Der Halt kommt aus dem IRIS-Laufweg (`vonHalt` in der
-  Tafel, bei Umleitung `cpth`), seine Lage aus RIS::Stations, nur bei genau
-  gleichem Namen. Liegt er mehr als 60° neben der Bahnsteigachse, gilt die
-  Richtung als unsicher.
-- **Simulation** (`backend/scripts/simulation-zugspitze.ts`, 25.10.2026 ab
-  18 Uhr, Plan je einer Stunde, 382 Bahnhöfe des Startbestands, 5203
-  Ankünfte): **4049 bestimmt (78 %)**; offen: quer 441, Gleis nicht im Graphen
-  299, Tafel ohne Gleis 112, Halt ohne Lage 258, Stufe 3 44.
-  **Bahnhöfe: 168 immer bestimmt, 202 teilweise, 8 nie** (Hamburg-Eidelstedt
-  und -Sternschanze Stufe 3; München Marienplatz, München-Giesing, Plattling
-  Gleis nicht im Graphen; Konstanz Schweizer Halte; Plauen ob Bf, Jena
-  Paradies quer). Gegenprobe mit dem nächsten Halt: 2865 stimmig, 27 auf
-  derselben Seite (Kopfbahnhof oder Fehlrichtung), 191 quer.
-- **Nachrechnung ohne Netz** (Halte-Speicher des Laufs, daher untere
-  Grenzen): Namenszusätze abstreifen („München Hbf (tief)", „(S-Bahn)",
-  „(S)", „Gl.27-36") → 4210 (81 %); dazu Teilgleise wie „11 B-C" auf die
-  Gleisnummer, was die App über RIS ohnehin tut → 4334 (83 %); dazu bei
-  „quer" den nächsten Halt nehmen → 4526 (87 %). Die ersten beiden sind
-  ohne Risiko; der dritte irrt in einem Kopfbahnhof, wenn der vorherige Halt
-  quer liegt – **offen, Entscheidung Julian**.
+- **Regel** (`bestimmeZugspitze`, `core/richtung.ts`): Durchgangsgleis – weg
+  vom vorherigen Halt; liegt er mehr als 60° neben der Bahnsteigachse oder
+  fehlt seine Lage, zum nächsten Halt hin. Kopfgleis (RIS::Stations
+  `headPlatform`) – am Prellbock, den `prellbockEnde` (`core/routing.ts`) aus
+  dem Graphen liest (Wegknoten außerhalb von Bahnsteigen in 25 m um die Enden
+  aller Kopfgleise der Ebene: Frankfurt und München Osten, Leipzig und
+  Stuttgart Süden); sonst entgegen dem nächsten Halt, endet der Zug, weg vom
+  vorherigen; quer erst ab 85°. Die Halte kommen aus dem IRIS-Laufweg
+  (`vonHalt`/`nachHalt`, bei Umleitung `cpth`), ihre Lage aus RIS::Stations,
+  nur bei genau gleichem Namen, notfalls ohne Zusatz wie „(tief)", „(S-Bahn)",
+  „(S)", „Gl.27-36" (`core/haltname.ts`). Warum der Prellbock vorgeht: Der RE
+  aus Bad Hersfeld kommt über Frankfurt(Main)Süd, das südöstlich liegt, und
+  fährt doch im Bogen von Westen in Frankfurt(Main)Hbf ein.
+- **Simulation** (`backend/scripts/simulation-zugspitze.ts`, echte
+  Ankunftstafeln je einer Stunde, 382 Bahnhöfe des Startbestands):
+
+  | Lauf | Ankünfte | bestimmt | Bahnhöfe immer / teils / nie |
+  |---|---|---|---|
+  | 1 (25.10., 18 Uhr), nur vorheriger Halt | 5203 | 4049 (78 %) | 168 / 202 / 8 |
+  | 2 (25.10., 19 Uhr), alle Regeln | 5211 | **4627 (89 %)** | **236 / 134 / 7** |
+
+  Lauf 2 offen: quer 249 (z. B. Hamburg Hbf 35 – die Strecken kommen von
+  Osten und gehen nach Westen ab, beide Halte quer), Gleis nicht im
+  OSM-Graphen 161 (München S-Bahn-Stammstrecke, Hamburg-Altona S-Bahn),
+  Tafel ohne Gleis 108, Stufe 3 44, Halt ohne Lage 22 (Ausland, Karlsruher
+  Stadtbahn). Nie: Hamburg-Eidelstedt, -Sternschanze (Stufe 3), München
+  Marienplatz, München-Giesing (Gleis), Plattling (ohne Gleis), Konstanz
+  (Schweizer Halte), Plauen ob Bf (quer). Gegenprobe, wo beide Halte längs
+  liegen: 3332 stimmig, 45 Widerspruch – meist Züge, die kehren (München
+  Ost, Halle), dort gewinnt richtig der vorherige Halt; an den Kopfgleisen
+  (86 Ankünfte, alle über den Prellbock) hätten die Halte 11-mal das falsche
+  Ende genannt.
 - Lokal mit Startbestand: `OSM_STARTBESTAND_PFAD=<repo>/backend/osm-bestand`
   setzen, sonst fragt der Server Overpass.
 
