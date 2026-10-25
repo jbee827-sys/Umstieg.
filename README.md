@@ -21,7 +21,14 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 
 ## Hier weitermachen (Stand 21.10.2026, abends)
 
-### Zugbild und Zugspitze (Stand 25.10.2026, Zweig `feat/zugbild`, nicht ausgeliefert)
+### Zugbild und Zugspitze (ausgeliefert am 25.10.2026, abends)
+
+**Live:** Backend auf Fly (eine Maschine), Frontend aus `main` = `feat/mvp` =
+`feat/zugbild` (`c4fbdd1`). Live geprüft: `/api/health`, Berlin Hbf Gl. 2 aus
+Gesundbrunnen → Spitze Südende, Frankfurt(Main)Hbf Gl. 9 (Kopfgleis) →
+Prellbock Ostende, Tafel mit `vonHalt`/`nachHalt` (121 von 122 Ankünften), auf
+www.umstieg.online RE 3315 aus Stralsund → „Zugende · Zugmitte · Zuganfang",
+Konsole ohne Fehler.
 
 Konzept `Umstieg_Konzepte/06-Zugbild` plus Fahrtrichtung. Die Standortwahl
 fragt „Wo befindest du dich im Zug?"; über dem Bahnsteigstreifen steht ein
