@@ -64,7 +64,7 @@ Zug noch Standortwahl.
   (Schweizer Halte), Plauen ob Bf (quer). Gegenprobe, wo beide Halte längs
   liegen: 3332 stimmig, 45 Widerspruch – meist Züge, die kehren (München
   Ost, Halle), dort gewinnt richtig der vorherige Halt; an den Kopfgleisen
-  (86 Ankünfte, alle über den Prellbock) hätten die Halte 11-mal das falsche
+  (86 Ankünfte, alle über den Prellbock) hätten die Halte 12-mal das falsche
   Ende genannt.
 - Lokal mit Startbestand: `OSM_STARTBESTAND_PFAD=<repo>/backend/osm-bestand`
   setzen, sonst fragt der Server Overpass.
