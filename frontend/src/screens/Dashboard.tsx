@@ -1,8 +1,9 @@
 import { Ampel } from '../components/Ampel'
+import { Zugbild } from '../components/Zugbild'
 import type { EingabeWerte } from '../components/Eingabe'
 import type { Ampelfarbe, Bahnsteigabschnitt, RouteErgebnis, RoutenVariante } from '../api/typen'
 import { ampelFarbe } from '../navigation/ampel'
-import { ABSCHNITTE, ankunftsRichtung, standortNamen } from '../api/standorte'
+import { ABSCHNITTE, ankunftsRichtung, ankunftsZugspitze, standortNamen } from '../api/standorte'
 import { ebenenZahl, gleisEbenen } from '../schema/bandmodell'
 import { linienName, ortsangabe } from '../ort/anzeige'
 
@@ -113,8 +114,10 @@ export function Dashboard({
   onMeldungen,
 }: DashboardProps) {
   const farbe = farbeVon(restSek, route.gehzeitSek, abgefahren)
+  // „Zuganfang · Zugmitte · Zugende", wenn die Fahrtrichtung sicher ist; sonst
   // „Nordende · Mitte · Südende" - oder, ohne gemessene Achse, Anfang und Ende.
-  const standortNamenJetzt = standortNamen(ankunftsRichtung(route.schema))
+  const zugspitze = ankunftsZugspitze(route.schema)
+  const standortNamenJetzt = standortNamen(ankunftsRichtung(route.schema), zugspitze)
   // Im Standardmodell `undefined` - dort waeren die Ebenen geraten.
   const ebenen = gleisEbenen(route)
   const halt = pfad === 'haltestelle' ? werte.haltestellen : undefined
@@ -182,6 +185,12 @@ export function Dashboard({
         {!halt && (
           <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld" data-tour="standort">
             <label id="standortwahl-label">Wo stehst du auf Gleis {werte.gleisAn}?</label>
+            {/*
+              * Seit dem 25.10.2026 steht ein Zug ueber dem Streifen. Er ist nur
+              * Bild: Gewaehlt wird am Streifen, der Zug hebt den passenden
+              * Zugteil hervor und blendet die anderen ab.
+              */}
+            <Zugbild gewaehlt={standorte.gewaehlt} zugspitze={zugspitze} />
             <div
               className="standortwahl bahnsteigstreifen"
               role="group"
@@ -223,9 +232,14 @@ export function Dashboard({
                 */}
               <span className="standortpunkt" data-stelle={standorte.gewaehlt} aria-hidden="true" />
             </div>
+            {/*
+              * Nach dem Zugteil fragen kann nur, wer die Fahrtrichtung kennt -
+              * sonst hiesse „Zugteil" unter „Nordende" nichts.
+              */}
             <p className="standortwahl-hinweis">
-              Der Punkt am Bahnsteig entscheidet den Weg – ohne Wagenreihung weiß die App
-              sonst nicht, wo du aussteigst.
+              {zugspitze
+                ? 'Wähle den Zugteil, in dem du sitzt. Ohne Wagenreihung weiß die App sonst nicht, wo du aussteigst.'
+                : 'Der Punkt am Bahnsteig entscheidet den Weg – ohne Wagenreihung weiß die App sonst nicht, wo du aussteigst.'}
             </p>
           </fieldset>
         )}

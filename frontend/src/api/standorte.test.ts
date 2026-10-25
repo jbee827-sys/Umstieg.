@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import {
   ABSCHNITTE,
   ankunftsRichtung,
+  ankunftsZugspitze,
   gehzeitSchluessel,
   ladeStandorte,
   STANDORT_VOREINSTELLUNG,
@@ -66,6 +67,23 @@ describe('standortNamen', () => {
   it('bleibt ohne gemessene Achse bei Anfang und Ende – lieber vage als erfunden', () => {
     expect(standortNamen(undefined)).toEqual({ anfang: 'Anfang', mitte: 'Mitte', ende: 'Ende' })
   })
+
+  /**
+   * Seit dem 25.10.2026: Kennt die App die Fahrtrichtung, fragt sie nach der
+   * Stelle im ZUG - die kennt jeder, die Himmelsrichtung kaum jemand.
+   */
+  it('nennt die Stellen im Zug, wenn die Spitze bekannt ist', () => {
+    expect(standortNamen({ von: 'N', bis: 'S' }, 'ende')).toEqual({
+      anfang: 'Zugende',
+      mitte: 'Zugmitte',
+      ende: 'Zuganfang',
+    })
+    expect(standortNamen({ von: 'W', bis: 'O' }, 'anfang')).toEqual({
+      anfang: 'Zuganfang',
+      mitte: 'Zugmitte',
+      ende: 'Zugende',
+    })
+  })
 })
 
 describe('ankunftsRichtung', () => {
@@ -92,6 +110,16 @@ describe('ankunftsRichtung', () => {
 
   it('schweigt ohne Schema', () => {
     expect(ankunftsRichtung(undefined)).toBeUndefined()
+  })
+
+  it('liest die Zugspitze am Ankunftsbahnsteig', () => {
+    const mitSpitze = structuredClone(schema)
+    mitSpitze.ebenen[1].bahnsteige[1].zugspitze = 'ende'
+    // Am Zielbahnsteig ohne Belang.
+    mitSpitze.ebenen[1].bahnsteige[0].zugspitze = 'anfang'
+    expect(ankunftsZugspitze(mitSpitze)).toBe('ende')
+    expect(ankunftsZugspitze(schema)).toBeUndefined()
+    expect(ankunftsZugspitze(undefined)).toBeUndefined()
   })
 })
 

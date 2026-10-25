@@ -260,6 +260,91 @@ describe('Dashboard: Standortwahl am Ankunftsgleis', () => {
     // Nur Bild: Die Wahl sagt `aria-pressed` am Knopf.
     expect(punkte[0].getAttribute('aria-hidden')).toBe('true')
   })
+
+  /**
+   * Entwurf vom 25.10.2026: Ueber dem Streifen steht ein dreiteiliger Zug. Er
+   * ist nur Bild - gewaehlt wird weiter am Streifen -, und er hebt den Zugteil
+   * ueber der gewaehlten Stelle hervor.
+   */
+  it('zeigt einen dreiteiligen Zug, der nur Bild ist', () => {
+    zeige({ standorte: LEIPZIG })
+    const zug = document.querySelector('.zugbild')
+    expect(zug).not.toBeNull()
+    expect(zug!.getAttribute('aria-hidden')).toBe('true')
+    const teile = Array.from(zug!.querySelectorAll('.zugbild-wagen')).map((w) =>
+      w.getAttribute('data-stelle'),
+    )
+    expect(teile).toEqual(['anfang', 'mitte', 'ende'])
+    // Keine zusaetzlichen Knoepfe: Die Gruppe hat weiter genau drei.
+    const gruppe = screen.getByRole('group', { name: /Wo stehst du/ })
+    expect(within(gruppe).getAllByRole('button')).toHaveLength(3)
+  })
+
+  it('hebt den Zugteil der gewaehlten Stelle hervor', () => {
+    zeige({ standorte: { ...LEIPZIG, gewaehlt: 'ende' } })
+    const gewaehlt = document.querySelectorAll('.zugbild-wagen.gewaehlt')
+    expect(gewaehlt).toHaveLength(1)
+    expect(gewaehlt[0].getAttribute('data-stelle')).toBe('ende')
+  })
+
+  /**
+   * 25.10.2026: Kennt das Backend die Zugspitze (aus dem vorherigen Halt des
+   * Zuges), fragt die App nach der Stelle im Zug. Die Reihenfolge bleibt die
+   * des Bahnsteigs - nur die Namen und die Spitze im Bild folgen der
+   * Fahrtrichtung.
+   */
+  function mitZugspitze(zugspitze?: 'anfang' | 'ende'): RouteErgebnis {
+    return {
+      ...route,
+      schema: {
+        ebenen: [
+          {
+            level: 0,
+            art: 'gleise',
+            bahnsteige: [
+              {
+                bahnsteigId: 'w1',
+                gleise: ['6'],
+                rolle: 'start',
+                himmelsrichtung: { von: 'W', bis: 'O' },
+                ...(zugspitze ? { zugspitze } : {}),
+              },
+            ],
+          },
+        ],
+        anlagen: [],
+        pois: [],
+        wechsel: [],
+        vorbehalte: [],
+      },
+    } as unknown as RouteErgebnis
+  }
+
+  it('nennt Zuganfang, Zugmitte und Zugende, wenn die Fahrtrichtung bekannt ist', () => {
+    zeige({ route: mitZugspitze('ende'), standorte: LEIPZIG })
+    const gruppe = screen.getByRole('group', { name: /Wo stehst du/ })
+    const namen = within(gruppe)
+      .getAllByRole('button')
+      .map((b) => b.textContent)
+    expect(namen).toEqual(['Zugende6 min', 'Zugmitte6 min', 'Zuganfang5 min'])
+    expect(screen.getByText(/Wähle den Zugteil, in dem du sitzt/)).toBeDefined()
+  })
+
+  it('zeigt die Spitze des Zuges an dem Ende, an dem sie steht', () => {
+    zeige({ route: mitZugspitze('ende'), standorte: LEIPZIG })
+    const rolle = (stelle: string) =>
+      document.querySelector(`.zugbild-wagen[data-stelle="${stelle}"]`)!.getAttribute('data-rolle')
+    expect(rolle('ende')).toBe('spitze')
+    expect(rolle('anfang')).toBe('schluss')
+    expect(rolle('mitte')).toBeNull()
+  })
+
+  it('bleibt ohne Fahrtrichtung bei der Himmelsrichtung und einem Zug ohne Spitze', () => {
+    zeige({ route: mitZugspitze(undefined), standorte: LEIPZIG })
+    expect(screen.getByRole('button', { name: /^Westende/ })).toBeDefined()
+    expect(document.querySelectorAll('.zugbild-wagen[data-rolle]')).toHaveLength(0)
+    expect(screen.queryByText(/Wähle den Zugteil/)).toBeNull()
+  })
 })
 
 /** Ankunft auf Ebene −2, Abfahrt auf Ebene +1 – wie im Entwurf vom 18.09. */

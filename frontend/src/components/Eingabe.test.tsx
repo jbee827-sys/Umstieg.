@@ -197,6 +197,17 @@ describe('Eingabe: gespeicherter Entwurf', () => {
     ).toBe('true')
   })
 
+  /** 25.10.2026: Aus dem vorherigen Halt bestimmt das Backend die Zugspitze. */
+  it('gibt den vorherigen Halt des Ankunftszugs an die Route weiter', async () => {
+    const onBerechnen = zeige(undefined, {
+      ...ENTWURF,
+      zugAnkunft: { ...ENTWURF.zugAnkunft!, vonHalt: 'Berlin Gesundbrunnen' },
+    })
+    await userEvent.click(screen.getByRole('button', { name: /Umstieg starten/ }))
+    const [werte] = onBerechnen.mock.calls[0]
+    expect(werte.vonHalt).toBe('Berlin Gesundbrunnen')
+  })
+
   it('startet leer, wenn kein Entwurf vorliegt', () => {
     zeige(undefined, null)
     expect(feld().value).toBe('')

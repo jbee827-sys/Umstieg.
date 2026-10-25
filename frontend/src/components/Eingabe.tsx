@@ -50,6 +50,8 @@ export interface EingabeWerte {
   abschnitt: Bahnsteigabschnitt
   /** Zugnummer des Ankunftszugs (für die Wagenreihung), z. B. "3" aus "RE 3" */
   zugAn?: string
+  /** Letzter Halt des Ankunftszugs laut Tafel - bestimmt die Zugspitze am Bahnsteig. */
+  vonHalt?: string
   /** Volle Bezeichnungen wie in der Tafel ("ICE 1006") – Filter für die Live-Überwachung. */
   zugAnName?: string
   zugAbName?: string
@@ -556,6 +558,7 @@ export function Eingabe({
         variante: 'schnellste',
         abschnitt: STANDORT_VOREINSTELLUNG,
         zugAn: zugAnkunft ? zugnummer(zugAnkunft.zug) : undefined,
+        vonHalt: zugAnkunft?.vonHalt,
         zugAnName: zugAnkunft?.zug,
         zugAbName: zugAbfahrt?.zug,
         ankunftZeit: zugAnkunft ? (zugAnkunft.zeitIst ?? zugAnkunft.zeitSoll) : undefined,
