@@ -119,6 +119,15 @@ export type Zugspitze = 'anfang' | 'ende';
  */
 export const ZUGSPITZE_HOECHSTWINKEL_GRAD = 60;
 
+/**
+ * Dasselbe am Kopfgleis. Dort kommt und geht jeder Zug ueber das Gleisvorfeld
+ * - eine Kurve dahinter kann die Seite nicht vertauschen, nur verschieben. In
+ * Frankfurt(Main)Hbf laufen die Gleise nach Westsueden aus und biegen dann
+ * nach Norden: Frankfurt-West liegt 77° neben der Achse und doch eindeutig
+ * auf der Seite des Vorfelds. Nur fast genau senkrecht bleibt es offen.
+ */
+export const KOPFGLEIS_HOECHSTWINKEL_GRAD = 85;
+
 /** Was ueber den Zug bekannt ist, um seine Spitze zu finden. */
 export interface Zuglauf {
   /** Lage des letzten Halts vor diesem Bahnhof. */
@@ -134,7 +143,12 @@ export interface Zuglauf {
  * liegt. `undefined`, wenn er quer zur Achse liegt, auf dem Bahnsteig selbst
  * oder der Bahnsteig keine Laenge hat.
  */
-function seiteVon(anfang: Ort, ende: Ort, ort: Ort | undefined): Zugspitze | undefined {
+function seiteVon(
+  anfang: Ort,
+  ende: Ort,
+  ort: Ort | undefined,
+  hoechstwinkelGrad = ZUGSPITZE_HOECHSTWINKEL_GRAD,
+): Zugspitze | undefined {
   if (!ort) return undefined;
   const mitte = { lat: (anfang.lat + ende.lat) / 2, lon: (anfang.lon + ende.lon) / 2 };
   const mLon = M_LAT * Math.cos(mitte.lat * BOGEN);
@@ -146,7 +160,7 @@ function seiteVon(anfang: Ort, ende: Ort, ort: Ort | undefined): Zugspitze | und
   const abstand = Math.hypot(ost, nord);
   if (laenge < 1 || abstand <= laenge / 2) return undefined;
   const cos = (ost * achseOst + nord * achseNord) / (laenge * abstand);
-  if (Math.abs(cos) < Math.cos(ZUGSPITZE_HOECHSTWINKEL_GRAD * BOGEN)) return undefined;
+  if (Math.abs(cos) < Math.cos(hoechstwinkelGrad * BOGEN)) return undefined;
   return cos > 0 ? 'ende' : 'anfang';
 }
 
@@ -163,7 +177,8 @@ const gegenueber = (s: Zugspitze): Zugspitze => (s === 'anfang' ? 'ende' : 'anfa
  *   unbekannt, der naechste Halt - die Spitze steht am Ende zu ihm hin.
  * - Kopfgleis: Die Spitze steht immer entgegen dem naechsten Halt - der Zug
  *   kehrt und faehrt dorthin zurueck, woher er kam. Endet er hier, entscheidet
- *   der vorherige Halt wie sonst.
+ *   der vorherige Halt wie sonst. Quer ist hier erst, was fast senkrecht
+ *   liegt (`KOPFGLEIS_HOECHSTWINKEL_GRAD`).
  *
  * Simulation vom 25.10.2026: Bei 2865 von 2892 Ankuenften mit beiden Halten
  * laengs lag der naechste Halt hinter der Spitze - die Rueckfallregel ueber
@@ -173,8 +188,9 @@ const gegenueber = (s: Zugspitze): Zugspitze => (s === 'anfang' ? 'ende' : 'anfa
  * Himmelsrichtung.
  */
 export function bestimmeZugspitze(anfang: Ort, ende: Ort, zuglauf: Zuglauf): Zugspitze | undefined {
-  const seiteVorher = seiteVon(anfang, ende, zuglauf.vorher);
-  const seiteNachher = seiteVon(anfang, ende, zuglauf.nachher);
+  const winkel = zuglauf.kopfgleis ? KOPFGLEIS_HOECHSTWINKEL_GRAD : ZUGSPITZE_HOECHSTWINKEL_GRAD;
+  const seiteVorher = seiteVon(anfang, ende, zuglauf.vorher, winkel);
+  const seiteNachher = seiteVon(anfang, ende, zuglauf.nachher, winkel);
   if (zuglauf.kopfgleis) {
     if (seiteNachher) return gegenueber(seiteNachher);
     return seiteVorher ? gegenueber(seiteVorher) : undefined;

@@ -208,6 +208,15 @@ describe('bestimmeZugspitze – welches Bahnsteigende die Spitze des Zuges hat',
     expect(bestimmeZugspitze(anfang, ende, { vorher: imNorden, nachher: imSueden, kopfgleis: true })).toBe('anfang');
   });
 
+  it('nimmt am Kopfgleis auch einen Halt weit neben der Achse - nur nicht senkrecht', () => {
+    // 70° neben der Achse im Norden: am Durchgangsgleis quer, am Kopfgleis
+    // eindeutig die Seite des Vorfelds.
+    expect(bestimmeZugspitze(anfang, ende, { nachher: quer })).toBeUndefined();
+    expect(bestimmeZugspitze(anfang, ende, { nachher: quer, kopfgleis: true })).toBe('ende');
+    const senkrecht = { lat: 52.001, lon: 13.05 };
+    expect(bestimmeZugspitze(anfang, ende, { nachher: senkrecht, kopfgleis: true })).toBeUndefined();
+  });
+
   it('nimmt am Kopfgleis den vorherigen, wenn der Zug dort endet', () => {
     expect(bestimmeZugspitze(anfang, ende, { vorher: imSueden, kopfgleis: true })).toBe('anfang');
   });
