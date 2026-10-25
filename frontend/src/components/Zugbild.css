@@ -61,23 +61,23 @@
   fill: #ffffff;
 }
 /*
- * Spitze und Ende, wenn die Fahrtrichtung bekannt ist: vorn ein grosses
- * weisses Spitzenlicht mit Schein, hinten ein grosses rotes Schlusslicht,
- * beide in einem dunklen Lampengehaeuse. Ohne das Gehaeuse verschwaende das
- * Rot im roten Bug.
+ * Spitze und Ende, wenn die Fahrtrichtung bekannt ist: Zg 1 weiss vorn, Zg 2
+ * rot hinten, je ein Viertelkreis in der unteren Ecke. Beide sitzen auf dem
+ * roten Bug: Das Weiss bekommt den dunklen Rand des Wagenkastens, das Rot
+ * einen weissen - mit dunklem verschwaende es im Bug.
  */
-.zugbild-lampe {
-  fill: #201e1d;
+.zugbild-spitzenlicht,
+.zugbild-schlusslicht {
+  stroke-width: 1.5;
+  stroke-linejoin: round;
 }
 .zugbild-spitzenlicht {
   fill: #ffffff;
-}
-.zugbild-lichtschein {
-  fill: #fff6c8;
-  opacity: 0.35;
+  stroke: #201e1d;
 }
 .zugbild-schlusslicht {
-  fill: #ff2b14;
+  fill: #c40f00;
+  stroke: #ffffff;
 }
 .zugbild-tuer {
   fill: #eae9e9;

@@ -13,6 +13,12 @@ interface ZugbildProps {
 type Endrolle = 'spitze' | 'schluss'
 
 /**
+ * Halbmesser der Zuglichter in Einheiten des Wagenbilds (120 breit). 8, damit
+ * der Viertelkreis so weit reicht wie die runde Lampe (Durchmesser 8) davor.
+ */
+const LICHT_R = 8
+
+/**
  * Ein dreiteiliger Triebzug in Seitenansicht ueber der Standortwahl
  * (Entwurf vom 25.10.2026, Artboard „Neu – Position im Zug").
  *
@@ -25,8 +31,9 @@ type Endrolle = 'spitze' | 'schluss'
  * Reihenfolge wie `ABSCHNITTE` und damit wie die Knoepfe darunter: links der
  * Bahnsteiganfang, der hintere Endwagen gespiegelt. Kennt die App die
  * Fahrtrichtung (`zugspitze`), traegt der vordere Endwagen das weisse
- * Spitzenlicht und der hintere das rote Schlusslicht - wie am echten Zug, und
- * gross genug, dass Spitze und Ende auf einen Blick zu unterscheiden sind.
+ * Spitzenlicht (Zg 1) und der hintere das rote Schlusslicht (Zg 2) - wie am
+ * echten Zug als Viertelkreis in der Ecke, gross genug, dass Spitze und Ende
+ * auf einen Blick zu unterscheiden sind.
  * Die Lichter liegen ausserhalb des Wagenkoerpers und werden mit ihm nicht
  * blass. Ohne Fahrtrichtung bleiben beide Enden bei der kleinen weissen
  * Lampe des Entwurfs: Ein Zug ohne Richtung behauptet keine.
@@ -93,15 +100,17 @@ function Endwagen({ gespiegelt, rolle }: { gespiegelt: boolean; rolle?: Endrolle
         <Rad x={88} />
         <Rad x={100} />
       </g>
-      {/* Dunkles Lampengehaeuse: Erst davor heben sich Weiss und Rot klar ab - auf dem roten Bug verschwaende das Rot. */}
-      {rolle && <circle className="zugbild-lampe" cx="10" cy="36.5" r="6" />}
-      {rolle === 'spitze' && (
-        <>
-          <circle className="zugbild-lichtschein" cx="10" cy="36.5" r="8.5" />
-          <circle className="zugbild-spitzenlicht" cx="10" cy="36.5" r="4" />
-        </>
+      {/*
+        * Zg 1 / Zg 2 wie an modernen Triebzuegen: ein Viertelkreis in der
+        * unteren Ecke des Fuehrerstands, buendig mit Front und Unterkante
+        * des Wagenkastens.
+        */}
+      {rolle && (
+        <path
+          className={rolle === 'spitze' ? 'zugbild-spitzenlicht' : 'zugbild-schlusslicht'}
+          d={`M2 44 L2 ${44 - LICHT_R} A${LICHT_R} ${LICHT_R} 0 0 1 ${2 + LICHT_R} 44 Z`}
+        />
       )}
-      {rolle === 'schluss' && <circle className="zugbild-schlusslicht" cx="10" cy="36.5" r="4" />}
     </svg>
   )
 }
