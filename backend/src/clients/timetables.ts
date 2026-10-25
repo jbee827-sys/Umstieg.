@@ -64,7 +64,7 @@ function halteVon(plan: IrisEreignis | undefined, aenderung: IrisEreignis | unde
 }
 
 /** Aus den Plaenen beider Stunden und den Aenderungen die Tafel einer Richtung. */
-function baueTafel(planXmls: string[], aenderungenXml: string, typ: 'arr' | 'dep'): TafelEintrag[] {
+export function baueTafel(planXmls: string[], aenderungenXml: string, typ: 'arr' | 'dep'): TafelEintrag[] {
   const aenderungen = new Map<string, IrisHalt>();
   for (const halt of parseHalte(aenderungenXml)) {
     if (halt.id) aenderungen.set(halt.id, halt);
