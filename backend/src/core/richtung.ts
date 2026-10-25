@@ -106,3 +106,46 @@ export function himmelsrichtungen(
   }
   return ost >= 0 ? { von: 'O', bis: 'W' } : { von: 'W', bis: 'O' };
 }
+
+/** Welches der beiden Bahnsteigenden die Spitze des Zuges hat. */
+export type Zugspitze = 'anfang' | 'ende';
+
+/**
+ * Wie weit der vorherige Halt hoechstens neben der Bahnsteigachse liegen darf
+ * (Winkel von der Bahnsteigmitte aus). Darueber ist die Seite geraten: Kurz
+ * vor dem Bahnhof kann die Strecke in einer Kurve oder ueber eine Bruecke
+ * kommen, und der Halt dahinter liegt dann eher neben als hinter dem
+ * Bahnsteig.
+ */
+export const ZUGSPITZE_HOECHSTWINKEL_GRAD = 60;
+
+/**
+ * Wo die Zugspitze am Ankunftsbahnsteig steht (25.10.2026).
+ *
+ * Die Spitze zeigt zum naechsten Bahnhof. Im Kopfbahnhof steht sie bei der
+ * Ankunft am Prellbock und kehrt sich erst mit der Abfahrt um. Beides sagt
+ * EINE Regel: Die Spitze steht am Ende, das vom VORHERIGEN Halt weg zeigt.
+ * Der naechste Halt hilft nicht - im Kopfbahnhof laege er auf derselben Seite
+ * wie der vorherige.
+ *
+ * `undefined` heisst „nicht sicher" - ohne vorherigen Halt, bei einem Halt
+ * quer zum Bahnsteig oder auf dem Bahnsteig selbst. Die Knoepfe bleiben dann
+ * bei der Himmelsrichtung.
+ */
+export function bestimmeZugspitze(anfang: Ort, ende: Ort, vorher: Ort | undefined): Zugspitze | undefined {
+  if (!vorher) return undefined;
+  const mitte = { lat: (anfang.lat + ende.lat) / 2, lon: (anfang.lon + ende.lon) / 2 };
+  const mLon = M_LAT * Math.cos(mitte.lat * BOGEN);
+  const achseOst = (ende.lon - anfang.lon) * mLon;
+  const achseNord = (ende.lat - anfang.lat) * M_LAT;
+  const laenge = Math.hypot(achseOst, achseNord);
+  const ost = (vorher.lon - mitte.lon) * mLon;
+  const nord = (vorher.lat - mitte.lat) * M_LAT;
+  const abstand = Math.hypot(ost, nord);
+  // Auf dem Bahnsteig selbst (oder ein Bahnsteig ohne Laenge): keine Seite.
+  if (laenge < 1 || abstand <= laenge / 2) return undefined;
+  const cos = (ost * achseOst + nord * achseNord) / (laenge * abstand);
+  if (Math.abs(cos) < Math.cos(ZUGSPITZE_HOECHSTWINKEL_GRAD * BOGEN)) return undefined;
+  // Der vorherige Halt liegt auf der Seite des Endes -> die Spitze am Anfang.
+  return cos > 0 ? 'anfang' : 'ende';
+}

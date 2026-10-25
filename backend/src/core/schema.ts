@@ -1,5 +1,5 @@
 import { haversineM } from './graph.js';
-import { himmelsrichtungen, mittlereAchse, peilungGrad } from './richtung.js';
+import { bestimmeZugspitze, himmelsrichtungen, mittlereAchse, peilungGrad, type Ort as Lage } from './richtung.js';
 import type {
   BahnhofSchema,
   GraphKnoten,
@@ -650,7 +650,16 @@ function elementeFuer(
   return [...amBahnsteig, ...abseits.slice(0, ELEMENT_MAX_ABSEITS).map((g) => g.element)];
 }
 
-export function baueBahnhofSchema(graph: StationGraph, pfad: RoutenPfad): BahnhofSchema {
+export interface SchemaOptionen {
+  /** Lage des vorherigen Halts des Ankunftszugs - bestimmt die Zugspitze. */
+  herkunft?: Lage;
+}
+
+export function baueBahnhofSchema(
+  graph: StationGraph,
+  pfad: RoutenPfad,
+  optionen: SchemaOptionen = {},
+): BahnhofSchema {
   const bahnsteige = sammleBahnsteige(graph);
   const anlagenZahlen = zaehleAnlagen(graph, bahnsteige);
   const start = pfad.knoten[0];
@@ -695,6 +704,12 @@ export function baueBahnhofSchema(graph: StationGraph, pfad: RoutenPfad): Bahnho
       // Bahnsteigen ist die Stelle ohne Belang und die Antwort bliebe sonst
       // nicht klein.
       const zugaenge = rolle && hatAchse ? zugaengeFuer(b, graph, aufRoute, zuXY) : undefined;
+      // Wie die Himmelsrichtung nur bei gemessener Achse - im Standardmodell
+      // gaebe es kein Ende, an das die Spitze sich stellen koennte.
+      const zugspitze =
+        rolle === 'start' && hatAchse && graph.stufe !== 3
+          ? bestimmeZugspitze(b.anfang!, b.ende!, optionen.herkunft)
+          : undefined;
       return {
         bahnsteigId: b.bahnsteigId,
         gleise: b.gleise,
@@ -708,6 +723,7 @@ export function baueBahnhofSchema(graph: StationGraph, pfad: RoutenPfad): Bahnho
         ...(hatAchse && graph.stufe !== 3
           ? { himmelsrichtung: himmelsrichtungen(b.anfang!, b.ende!) }
           : {}),
+        ...(zugspitze ? { zugspitze } : {}),
         ...(zugaenge ? { zugaenge } : {}),
       };
     });
