@@ -12,11 +12,16 @@ interface ZugbildProps {
 /** Was ein Endwagen ist: vorn mit Spitzenlicht, hinten mit Schlusslicht. */
 type Endrolle = 'spitze' | 'schluss'
 
+/** Halbmesser der Zuglichter in Einheiten des Wagenbilds (120 breit). */
+const LICHT_R = 6.4
+
 /**
- * Halbmesser der Zuglichter in Einheiten des Wagenbilds (120 breit). 8, damit
- * der Viertelkreis so weit reicht wie die runde Lampe (Durchmesser 8) davor.
+ * Ecke der Zuglichter: vorn oben im roten Bug, gleich unter der Scheibe. So
+ * liegen sie im oberen Drittel des roten Felds, buendig mit seiner Front und
+ * seiner Oberkante.
  */
-const LICHT_R = 8
+const LICHT_X = 2.75
+const LICHT_Y = 29
 
 /**
  * Ein dreiteiliger Triebzug in Seitenansicht ueber der Standortwahl
@@ -32,7 +37,7 @@ const LICHT_R = 8
  * Bahnsteiganfang, der hintere Endwagen gespiegelt. Kennt die App die
  * Fahrtrichtung (`zugspitze`), traegt der vordere Endwagen das weisse
  * Spitzenlicht (Zg 1) und der hintere das rote Schlusslicht (Zg 2) - wie am
- * echten Zug als Viertelkreis in der Ecke, gross genug, dass Spitze und Ende
+ * echten Zug als Viertelkreis vorn oben im Bug, gross genug, dass Spitze und Ende
  * auf einen Blick zu unterscheiden sind.
  * Die Lichter liegen ausserhalb des Wagenkoerpers und werden mit ihm nicht
  * blass. Ohne Fahrtrichtung bleiben beide Enden bei der kleinen weissen
@@ -102,13 +107,12 @@ function Endwagen({ gespiegelt, rolle }: { gespiegelt: boolean; rolle?: Endrolle
       </g>
       {/*
         * Zg 1 / Zg 2 wie an modernen Triebzuegen: ein Viertelkreis in der
-        * unteren Ecke des Fuehrerstands, buendig mit Front und Unterkante
-        * des Wagenkastens.
+        * oberen Ecke des roten Bugs, buendig mit Front und Oberkante.
         */}
       {rolle && (
         <path
           className={rolle === 'spitze' ? 'zugbild-spitzenlicht' : 'zugbild-schlusslicht'}
-          d={`M2 44 L2 ${44 - LICHT_R} A${LICHT_R} ${LICHT_R} 0 0 1 ${2 + LICHT_R} 44 Z`}
+          d={`M${LICHT_X} ${LICHT_Y} L${LICHT_X + LICHT_R} ${LICHT_Y} A${LICHT_R} ${LICHT_R} 0 0 1 ${LICHT_X} ${LICHT_Y + LICHT_R} Z`}
         />
       )}
     </svg>

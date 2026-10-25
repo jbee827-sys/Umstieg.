@@ -62,22 +62,20 @@
 }
 /*
  * Spitze und Ende, wenn die Fahrtrichtung bekannt ist: Zg 1 weiss vorn, Zg 2
- * rot hinten, je ein Viertelkreis in der unteren Ecke. Beide sitzen auf dem
- * roten Bug: Das Weiss bekommt den dunklen Rand des Wagenkastens, das Rot
- * einen weissen - mit dunklem verschwaende es im Bug.
+ * rot hinten, je ein Viertelkreis oben im roten Bug. Beide mit schwarzem
+ * Rand - er trennt auch das Rot vom roten Bug.
  */
 .zugbild-spitzenlicht,
 .zugbild-schlusslicht {
+  stroke: #201e1d;
   stroke-width: 1.5;
   stroke-linejoin: round;
 }
 .zugbild-spitzenlicht {
   fill: #ffffff;
-  stroke: #201e1d;
 }
 .zugbild-schlusslicht {
   fill: #c40f00;
-  stroke: #ffffff;
 }
 .zugbild-tuer {
   fill: #eae9e9;
