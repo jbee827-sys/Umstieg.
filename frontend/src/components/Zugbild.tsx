@@ -25,8 +25,11 @@ type Endrolle = 'spitze' | 'schluss'
  * Reihenfolge wie `ABSCHNITTE` und damit wie die Knoepfe darunter: links der
  * Bahnsteiganfang, der hintere Endwagen gespiegelt. Kennt die App die
  * Fahrtrichtung (`zugspitze`), traegt der vordere Endwagen das weisse
- * Spitzenlicht und der hintere das rote Schlusslicht - wie am echten Zug.
- * Ohne sie bleiben beide Lichter weiss: Ein Zug ohne Richtung behauptet keine.
+ * Spitzenlicht und der hintere das rote Schlusslicht - wie am echten Zug, und
+ * gross genug, dass Spitze und Ende auf einen Blick zu unterscheiden sind.
+ * Die Lichter liegen ausserhalb des Wagenkoerpers und werden mit ihm nicht
+ * blass. Ohne Fahrtrichtung bleiben beide Enden bei der kleinen weissen
+ * Lampe des Entwurfs: Ein Zug ohne Richtung behauptet keine.
  */
 export function Zugbild({ gewaehlt, zugspitze }: ZugbildProps) {
   const rolleVon = (a: Bahnsteigabschnitt): Endrolle | undefined => {
@@ -74,20 +77,31 @@ function Tuer({ x }: { x: number }) {
 function Endwagen({ gespiegelt, rolle }: { gespiegelt: boolean; rolle?: Endrolle }) {
   return (
     <svg viewBox="0 6 120 44" className={gespiegelt ? 'gespiegelt' : undefined} focusable="false">
-      <rect className="zugbild-dach" x="34" y="8" width="70" height="5" rx="2.5" />
-      <path className="zugbild-kasten" d="M2 44 L2 34 C2 23 10 13 30 12 L118 12 L118 44 Z" />
-      <path className="zugbild-scheibe" d="M5 29 C7 21 14 16 26 15.5 L31 15.5 L31 29 Z" />
-      <rect className="zugbild-fenster" x="36" y="17" width="80" height="10" rx="3" />
-      <rect className="zugbild-rot" x="30" y="35" width="87.25" height="6" />
-      <path className="zugbild-rot" d="M2.75 43.25 L2.75 34 C2.75 31.5 3.3 30 4.2 29 L31 29 L31 43.25 Z" />
-      <circle className={rolle === 'schluss' ? 'zugbild-schlusslicht' : 'zugbild-licht'} cx="8" cy="37" r="1.8" />
-      <Tuer x={44} />
-      <Tuer x={94} />
-      <rect className="zugbild-uebergang" x="118" y="17" width="2" height="24" rx="1" />
-      <Rad x={22} />
-      <Rad x={34} />
-      <Rad x={88} />
-      <Rad x={100} />
+      <g className="zugbild-koerper">
+        <rect className="zugbild-dach" x="34" y="8" width="70" height="5" rx="2.5" />
+        <path className="zugbild-kasten" d="M2 44 L2 34 C2 23 10 13 30 12 L118 12 L118 44 Z" />
+        <path className="zugbild-scheibe" d="M5 29 C7 21 14 16 26 15.5 L31 15.5 L31 29 Z" />
+        <rect className="zugbild-fenster" x="36" y="17" width="80" height="10" rx="3" />
+        <rect className="zugbild-rot" x="30" y="35" width="87.25" height="6" />
+        <path className="zugbild-rot" d="M2.75 43.25 L2.75 34 C2.75 31.5 3.3 30 4.2 29 L31 29 L31 43.25 Z" />
+        {!rolle && <circle className="zugbild-licht" cx="8" cy="37" r="1.8" />}
+        <Tuer x={44} />
+        <Tuer x={94} />
+        <rect className="zugbild-uebergang" x="118" y="17" width="2" height="24" rx="1" />
+        <Rad x={22} />
+        <Rad x={34} />
+        <Rad x={88} />
+        <Rad x={100} />
+      </g>
+      {/* Dunkles Lampengehaeuse: Erst davor heben sich Weiss und Rot klar ab - auf dem roten Bug verschwaende das Rot. */}
+      {rolle && <circle className="zugbild-lampe" cx="10" cy="36.5" r="6" />}
+      {rolle === 'spitze' && (
+        <>
+          <circle className="zugbild-lichtschein" cx="10" cy="36.5" r="8.5" />
+          <circle className="zugbild-spitzenlicht" cx="10" cy="36.5" r="4" />
+        </>
+      )}
+      {rolle === 'schluss' && <circle className="zugbild-schlusslicht" cx="10" cy="36.5" r="4" />}
     </svg>
   )
 }
@@ -96,19 +110,21 @@ function Endwagen({ gespiegelt, rolle }: { gespiegelt: boolean; rolle?: Endrolle
 function Mittelwagen() {
   return (
     <svg viewBox="0 6 120 44" focusable="false">
-      <path className="zugbild-buegel" d="M46 12 L56 6.5 L66 12 M50 6.5 L62 6.5" />
-      <rect className="zugbild-dach" x="72" y="8" width="34" height="5" rx="2.5" />
-      <rect className="zugbild-kasten" x="2" y="12" width="116" height="32" rx="4" />
-      <rect className="zugbild-fenster" x="8" y="17" width="104" height="10" rx="3" />
-      <rect className="zugbild-rot" x="2.75" y="35" width="114.5" height="6" />
-      <Tuer x={24} />
-      <Tuer x={85} />
-      <rect className="zugbild-uebergang" x="0" y="17" width="2" height="24" rx="1" />
-      <rect className="zugbild-uebergang" x="118" y="17" width="2" height="24" rx="1" />
-      <Rad x={18} />
-      <Rad x={30} />
-      <Rad x={90} />
-      <Rad x={102} />
+      <g className="zugbild-koerper">
+        <path className="zugbild-buegel" d="M46 12 L56 6.5 L66 12 M50 6.5 L62 6.5" />
+        <rect className="zugbild-dach" x="72" y="8" width="34" height="5" rx="2.5" />
+        <rect className="zugbild-kasten" x="2" y="12" width="116" height="32" rx="4" />
+        <rect className="zugbild-fenster" x="8" y="17" width="104" height="10" rx="3" />
+        <rect className="zugbild-rot" x="2.75" y="35" width="114.5" height="6" />
+        <Tuer x={24} />
+        <Tuer x={85} />
+        <rect className="zugbild-uebergang" x="0" y="17" width="2" height="24" rx="1" />
+        <rect className="zugbild-uebergang" x="118" y="17" width="2" height="24" rx="1" />
+        <Rad x={18} />
+        <Rad x={30} />
+        <Rad x={90} />
+        <Rad x={102} />
+      </g>
     </svg>
   )
 }

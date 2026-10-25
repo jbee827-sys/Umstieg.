@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Dashboard } from './Dashboard'
 import type { EingabeWerte } from '../components/Eingabe'
@@ -154,14 +154,15 @@ describe('Dashboard: Rueckmeldung beim Variantenwechsel', () => {
 describe('Dashboard: Standortwahl am Ankunftsgleis', () => {
   const LEIPZIG = { anfang: 343, mitte: 354, ende: 251, gewaehlt: 'mitte' as const }
 
-  it('nennt das Gleis, um das es geht', () => {
+  /** 25.10.2026: Gefragt wird nach der Stelle im Zug - das Gleis steht schon in der Karte darueber. */
+  it('fragt, wo man sich im Zug befindet', () => {
     zeige({ standorte: LEIPZIG })
-    expect(screen.getByText(/Wo stehst du auf Gleis 6\?/)).toBeDefined()
+    expect(screen.getByText('Wo befindest du dich im Zug?')).toBeDefined()
   })
 
   it('bietet Anfang, Mitte und Ende an - in der Reihenfolge des Bahnsteigs', () => {
     zeige({ standorte: LEIPZIG })
-    const gruppe = screen.getByRole('group', { name: /Wo stehst du/ })
+    const gruppe = screen.getByRole('group', { name: /Wo befindest du dich im Zug/ })
     const namen = within(gruppe)
       .getAllByRole('button')
       .map((b) => b.textContent)
@@ -197,7 +198,7 @@ describe('Dashboard: Standortwahl am Ankunftsgleis', () => {
       },
     } as unknown as RouteErgebnis
     zeige({ route: mitSchema, standorte: LEIPZIG })
-    const gruppe = screen.getByRole('group', { name: /Wo stehst du/ })
+    const gruppe = screen.getByRole('group', { name: /Wo befindest du dich im Zug/ })
     const namen = within(gruppe)
       .getAllByRole('button')
       .map((b) => b.textContent)
@@ -276,7 +277,7 @@ describe('Dashboard: Standortwahl am Ankunftsgleis', () => {
     )
     expect(teile).toEqual(['anfang', 'mitte', 'ende'])
     // Keine zusaetzlichen Knoepfe: Die Gruppe hat weiter genau drei.
-    const gruppe = screen.getByRole('group', { name: /Wo stehst du/ })
+    const gruppe = screen.getByRole('group', { name: /Wo befindest du dich im Zug/ })
     expect(within(gruppe).getAllByRole('button')).toHaveLength(3)
   })
 
@@ -322,7 +323,7 @@ describe('Dashboard: Standortwahl am Ankunftsgleis', () => {
 
   it('nennt Zuganfang, Zugmitte und Zugende, wenn die Fahrtrichtung bekannt ist', () => {
     zeige({ route: mitZugspitze('ende'), standorte: LEIPZIG })
-    const gruppe = screen.getByRole('group', { name: /Wo stehst du/ })
+    const gruppe = screen.getByRole('group', { name: /Wo befindest du dich im Zug/ })
     const namen = within(gruppe)
       .getAllByRole('button')
       .map((b) => b.textContent)
@@ -337,6 +338,26 @@ describe('Dashboard: Standortwahl am Ankunftsgleis', () => {
     expect(rolle('ende')).toBe('spitze')
     expect(rolle('anfang')).toBe('schluss')
     expect(rolle('mitte')).toBeNull()
+  })
+
+  /**
+   * Die Lichter muessen Spitze und Ende auf einen Blick trennen: vorn ein
+   * grosses weisses Spitzenlicht, hinten ein grosses rotes Schlusslicht. Sie
+   * bleiben voll sichtbar, auch wenn ihr Wagen nicht gewaehlt ist.
+   */
+  it('zeichnet vorn das Spitzenlicht und hinten das Schlusslicht', () => {
+    zeige({ route: mitZugspitze('anfang'), standorte: LEIPZIG })
+    const wagen = (stelle: string) => document.querySelector(`.zugbild-wagen[data-stelle="${stelle}"]`)!
+    expect(wagen('anfang').querySelector('.zugbild-spitzenlicht')).not.toBeNull()
+    expect(wagen('anfang').querySelector('.zugbild-schlusslicht')).toBeNull()
+    expect(wagen('ende').querySelector('.zugbild-schlusslicht')).not.toBeNull()
+    // Nur der Wagenkoerper wird blass, nicht das Licht.
+    expect(wagen('ende').querySelector('.zugbild-koerper .zugbild-schlusslicht')).toBeNull()
+  })
+
+  it('zeigt ohne Fahrtrichtung weder Spitzen- noch Schlusslicht', () => {
+    zeige({ route: mitZugspitze(undefined), standorte: LEIPZIG })
+    expect(document.querySelector('.zugbild-spitzenlicht, .zugbild-schlusslicht')).toBeNull()
   })
 
   it('bleibt ohne Fahrtrichtung bei der Himmelsrichtung und einem Zug ohne Spitze', () => {
@@ -405,7 +426,7 @@ describe('Dashboard: der Hauptknopf bleibt stehen', () => {
     zeige()
     const bereich = document.querySelector('.dashboard-rollbereich') as HTMLElement | null
     expect(bereich).not.toBeNull()
-    expect(within(bereich!).getByRole('group', { name: /Wo stehst du/ })).toBeDefined()
+    expect(within(bereich!).getByRole('group', { name: /Wo befindest du dich im Zug/ })).toBeDefined()
     expect(within(bereich!).getByRole('group', { name: /Routenvariante/ })).toBeDefined()
     const knopf = screen.getByRole('button', { name: /Navigation starten/ })
     expect(knopf.closest('.dashboard-rollbereich')).toBeNull()
@@ -446,13 +467,33 @@ describe('Dashboard: Haltestellenpfad (Umstieg 2.0)', () => {
 
   it('ohne Standortwahl und ohne „Mit Stopp“, Steig statt Gleis', () => {
     zeige({ werte: halteWerte, pfad: 'haltestelle' })
-    expect(screen.queryByRole('group', { name: /Wo stehst du/ })).toBeNull()
-    expect(screen.queryByText(/Wo stehst du/)).toBeNull()
+    expect(screen.queryByRole('group', { name: /Wo befindest du dich im Zug/ })).toBeNull()
+    expect(screen.queryByText(/Wo befindest du dich im Zug/)).toBeNull()
     expect(screen.queryByRole('button', { name: /Mit Stopp/ })).toBeNull()
     expect(screen.getByRole('button', { name: /Barrierefrei/ })).toBeDefined()
     expect(screen.getByText('Gleis 7')).toBeDefined()
     expect(screen.getByText('Steig Pos. 11')).toBeDefined()
     expect(screen.getByText('Bus 245')).toBeDefined()
+  })
+
+  /**
+   * 25.10.2026: Kommt man mit Bus oder Tram an, gibt es keine Stelle im Zug -
+   * Zugbild und Standortwahl wuerden nur verwirren.
+   */
+  it('zeigt bei Ankunft mit Bus oder Tram weder Zug noch Standortwahl', () => {
+    for (const verkehrsmittel of ['bus', 'tram'] as const) {
+      const busWerte: EingabeWerte = {
+        ...halteWerte,
+        haltestellen: {
+          ...halteWerte.haltestellen!,
+          ankunft: { ort, fahrt: { ...eintrag, linie: 'M5', verkehrsmittel, steigSoll: 'A' } },
+        },
+      }
+      zeige({ werte: busWerte, pfad: 'haltestelle' })
+      expect(document.querySelector('.zugbild')).toBeNull()
+      expect(screen.queryByText(/Wo befindest du dich im Zug/)).toBeNull()
+      cleanup()
+    }
   })
 
   it('der Bahnhofspfad bleibt, wie er war', () => {

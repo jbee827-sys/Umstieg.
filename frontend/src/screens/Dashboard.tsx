@@ -182,9 +182,20 @@ export function Dashboard({
           * Fuer Screenreader bleiben es drei Knoepfe mit `aria-pressed`; der
           * Streifen und der Punkt sind nur Bild.
           */}
+        {/*
+          * Nur im Bahnhofspfad. Im Haltestellenpfad gibt es keine Stelle am
+          * Bahnsteig: Kommt man mit Bus oder Tram an, waere ein Zugbild
+          * verwirrend, und auch nach einem Zug rechnet MOTIS den Weg vom
+          * Steig, nicht von einer Stelle darauf.
+          */}
         {!halt && (
           <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld" data-tour="standort">
-            <label id="standortwahl-label">Wo stehst du auf Gleis {werte.gleisAn}?</label>
+            {/*
+              * Seit dem 25.10.2026 nach der Stelle im ZUG gefragt, nicht am
+              * Gleis - das Gleis steht schon in der Karte darueber, und wo man
+              * im Zug sitzt, weiss jeder.
+              */}
+            <label id="standortwahl-label">Wo befindest du dich im Zug?</label>
             {/*
               * Seit dem 25.10.2026 steht ein Zug ueber dem Streifen. Er ist nur
               * Bild: Gewaehlt wird am Streifen, der Zug hebt den passenden
