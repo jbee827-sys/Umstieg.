@@ -165,6 +165,11 @@
   margin: 16px 0 4px;
 }
 
+/* Abstand zur Zeile „Bahnhofsplan vom …“ darunter. */
+.bs-naehe {
+  margin-bottom: 16px;
+}
+
 /*
  * Fusszeile wie in der App (App.css, `.fusszeile`) - hier wiederholt, weil
  * diese Seiten App.css nicht laden. Impressum und Datenschutz muessen von
