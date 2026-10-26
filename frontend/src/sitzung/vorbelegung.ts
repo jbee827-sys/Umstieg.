@@ -4,7 +4,7 @@ import { lies as liesEntwurf, schreibe as schreibeEntwurf, type EingabeEntwurf }
 /**
  * Von einer Bahnhofsseite in die App (Konzept Nutzergewinnung 5c.1).
  *
- * Der Knopf „Weg für meinen Umstieg anzeigen" fuehrt auf
+ * Der Knopf „Weg anzeigen" fuehrt auf
  * /eingabe?bahnhof=<eva>&name=…&lat=…&lon=… (bahnhofsseiten/seiten.tsx).
  * Vor dem ersten Zeichnen (main.tsx) wird daraus ein Entwurf - die Eingabe
  * liest ihn wie nach einem Neuladen, App und Eingabe bleiben unberuehrt.

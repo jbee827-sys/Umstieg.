@@ -159,6 +159,12 @@
   padding: 6px 0;
 }
 
+/* Haeufige Fragen (26.10.2026): Frage fett, Antwort als normaler Absatz. */
+.bs-frage h3 {
+  font-size: 1rem;
+  margin: 16px 0 4px;
+}
+
 /*
  * Fusszeile wie in der App (App.css, `.fusszeile`) - hier wiederholt, weil
  * diese Seiten App.css nicht laden. Impressum und Datenschutz muessen von

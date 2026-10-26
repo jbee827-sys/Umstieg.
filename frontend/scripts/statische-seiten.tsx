@@ -25,6 +25,7 @@ import { bahnhofsseiteHtml, BAHNHOF_PFAD, sitemapXml, uebersichtHtml, type Baute
 import type { Bahnhofsdaten } from '../src/bahnhofsseiten/typen'
 import { ohneLuecken } from '../src/bahnhofsseiten/texte'
 import { rechtsseiteHtml } from '../src/statisch/rechtsseiten'
+import { naechsteBahnhoefe } from '../src/bahnhofsseiten/ueberblick'
 
 const DIST = fileURLToPath(new URL('../dist/', import.meta.url))
 const SRC = fileURLToPath(new URL('../src/', import.meta.url))
@@ -92,7 +93,7 @@ for (const seite of ['impressum', 'datenschutz', 'daten'] as const) {
 
 const teile = bauteile()
 const alle = ladeDaten()
-for (const d of alle) schreibeSeite(BAHNHOF_PFAD(d.slug), bahnhofsseiteHtml(d, teile))
+for (const d of alle) schreibeSeite(BAHNHOF_PFAD(d.slug), bahnhofsseiteHtml(d, teile, naechsteBahnhoefe(d, alle, 6)))
 schreibeSeite('bahnhoefe', uebersichtHtml(alle, teile))
 writeFileSync(join(DIST, 'sitemap.xml'), sitemapXml(alle, new Date().toISOString().slice(0, 10)), 'utf8')
 
