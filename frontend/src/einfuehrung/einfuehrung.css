@@ -8,7 +8,7 @@
 .driver-popover.umstieg-tour {
   background: var(--color-bg);
   color: var(--color-text);
-  border: 1px solid var(--color-divider);
+  border: 0;
   border-radius: var(--radius-mittel);
   padding: 18px 18px 14px;
   min-width: 0;

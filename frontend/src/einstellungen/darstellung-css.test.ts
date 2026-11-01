@@ -38,6 +38,35 @@ describe('index.css: die dunkle Palette', () => {
     expect(gewaehlt).toEqual(system)
   })
 
+  /* Bis zum 01.11.2026 hatten die Nachtgraus einen Violettstich, waehrend die
+     helle Palette warm ist. Rot und Akzent sind hier nicht gemeint. */
+  it.each([
+    '--color-bg',
+    '--color-papier',
+    '--color-surface',
+    '--color-feld',
+    '--zugknopf-flaeche',
+    '--color-neutral-100',
+    '--color-neutral-300',
+    '--color-neutral-500',
+    '--color-neutral-600',
+    '--color-neutral-700',
+    '--color-neutral-800',
+    '--color-schema-band',
+    '--color-schema-band-besucht',
+    '--color-schema-bahnsteig',
+    '--color-schema-netz',
+    '--color-ampel-gehaeuse',
+    '--color-ampel-lampe-aus',
+  ])('haelt %s nachts warm: Rot >= Gruen >= Blau', (token) => {
+    const zeile = deklarationen(blockNach(":root[data-darstellung='dunkel']")).find((d) => d.startsWith(`${token}:`))
+    const hex = zeile?.split('#')[1] ?? ''
+    expect(hex).toHaveLength(6)
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16))
+    expect(r).toBeGreaterThanOrEqual(g)
+    expect(g).toBeGreaterThanOrEqual(b)
+  })
+
   it('haelt die Systempalette in der Medienabfrage', () => {
     expect(css).toMatch(/@media \(prefers-color-scheme: dark\) \{\s*:root:not\(\[data-darstellung='hell'\]\)/)
   })

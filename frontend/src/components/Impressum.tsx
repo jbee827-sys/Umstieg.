@@ -4,7 +4,6 @@ export function Impressum({ onZurueck }: { onZurueck?: () => void }) {
   return (
     <main className="app">
       <header className="kopf">
-        <div className="kicker">Umstieg.</div>
         <h1>Impressum</h1>
       </header>
       <hr className="trennlinie" />

@@ -1038,20 +1038,17 @@ function App() {
       // Bereich, Schritt-Box und Leiste unten am Rand - siehe App.css.
       <main className="app app-navigation">
         {meldung}
-        {/* Der Vorbehalt der Datenstufe steht in der Zeile des Bahnhofsnamens,
-            nicht neben dem Titel: Dort bricht „Gleis 12 → Gleis 104" auf
-            360 px sonst in zwei Zeilen um, und die nimmt das feste Bild. */}
+        {/* Der Vorbehalt der Datenstufe steht unter dem Titel, nicht daneben:
+            Dort bricht „Gleis 12 → Gleis 104" auf 360 px sonst in zwei Zeilen
+            um, und die nimmt das feste Bild. */}
         <div className="routen-kopf">
           <div>
-            <div className="routen-kopf-zeile">
-              <div className="kicker">{werte.bahnhofName || 'Umstieg'}</div>
-              {STUFEN_VORBEHALT[route.stufe] && (
-                <span className="stufen-vorbehalt">{STUFEN_VORBEHALT[route.stufe]}</span>
-              )}
-            </div>
             <h2>
               {ortsangabe(werte, 'an')} → {ortsangabe(werte, 'ab')}
             </h2>
+            {STUFEN_VORBEHALT[route.stufe] && (
+              <span className="stufen-vorbehalt">{STUFEN_VORBEHALT[route.stufe]}</span>
+            )}
           </div>
         </div>
         {stand && (
@@ -1131,7 +1128,6 @@ function App() {
                 <img className="lockup-hell" src="/lockup-zwei-gleise.png" alt="" width={1003} height={181} />
                 <img className="lockup-dunkel" src="/lockup-zwei-gleise-dunkel.png" alt="" width={1003} height={181} />
               </h1>
-              <p>Vom Ankunftsgleis zum Anschlusszug – Schritt für Schritt.</p>
               {/* Die Einfuehrungstour (einfuehrung/tour.ts) wird erst hier
                   nachgeladen - mit driver.js und den Beispieldaten. Kein
                   automatischer Start, nichts gespeichert (Plan Einfuehrungstour). */}

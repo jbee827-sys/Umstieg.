@@ -431,12 +431,26 @@ describe('Eingabe: Handy wie vor dem 11.10.2026', () => {
     expect(within(abfahrt).getByLabelText('Anschluss: Wagen (optional)')).toBeDefined()
   })
 
-  it('traegt die Gleise in schlichte Felder statt in Kacheln, ohne Titel', () => {
+  it('traegt die Gleise in schlichte Felder statt in Kacheln', () => {
     zeige()
     expect(screen.getByLabelText('Ankunft: Gleis').closest('.gleiskachel')).toBeNull()
     expect(screen.getByPlaceholderText('z. B. 6')).toBe(screen.getByLabelText('Ankunft: Gleis'))
     expect(screen.getByPlaceholderText('z. B. 14')).toBe(screen.getByLabelText('Anschluss: Gleis'))
-    expect(screen.queryByRole('heading', { level: 2, name: 'Wo steigst du um?' })).toBeNull()
+  })
+
+  it('hat EINE Ueberschrift ueber dem Bahnhofsfeld, keine zweite „Du kommst an“', () => {
+    zeige()
+    expect(screen.getByRole('heading', { level: 2, name: 'Wo steigst du um?' })).toBeDefined()
+    expect(screen.queryByText('Du kommst an')).toBeNull()
+  })
+
+  it('sagt „Ankunft“ im Block nicht noch einmal - nur fuer Vorleser', () => {
+    zeige()
+    expect(screen.getByLabelText('Ankunft: Gleis').closest('fieldset')?.querySelector('label')?.textContent).toBe(
+      'Ankunft: Gleis',
+    )
+    expect(document.querySelector('label[for="gleisAn"] .nur-vorlesen')?.textContent).toBe('Ankunft: ')
+    expect(document.querySelector('label[for="wagenAb"] .nur-vorlesen')?.textContent).toBe('Anschluss: ')
   })
 
   it('stellt den Hauptknopf fest unter den Rollbereich, ohne Pfeil', () => {

@@ -16,7 +16,7 @@ describe('einfuehrung.css', () => {
     expect(tour).not.toMatch(/\brgba?\(/)
   })
 
-  it('setzt die Sprechblase in die Grundfarbe der App, Radius 20 px', () => {
+  it('setzt die Sprechblase in die Grundfarbe der App, mittlerer Radius', () => {
     const blase = deklarationenVon(tour, '.driver-popover.umstieg-tour')
     expect(blase).toContain('background: var(--color-bg)')
     expect(blase).toContain('color: var(--color-text)')

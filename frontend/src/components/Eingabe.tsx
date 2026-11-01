@@ -731,13 +731,13 @@ export function Eingabe({
 
   const wagenAnFeld = (
     <div className="feld">
-      <label htmlFor="wagenAn">Ankunft: Wagen (optional)</label>
+      <label htmlFor="wagenAn"><span className="nur-vorlesen">Ankunft: </span>Wagen (optional)</label>
       <input
         id="wagenAn"
         className="eingabefeld"
         type="text"
         inputMode="numeric"
-        placeholder="z. B. 26 – genauer Startpunkt"
+        placeholder="z. B. 26"
         value={wagenAn}
         onChange={(e) => setWagenAn(e.target.value)}
       />
@@ -745,13 +745,13 @@ export function Eingabe({
   )
   const wagenAbFeld = (
     <div className="feld">
-      <label htmlFor="wagenAb">Anschluss: Wagen (optional)</label>
+      <label htmlFor="wagenAb"><span className="nur-vorlesen">Anschluss: </span>Wagen (optional)</label>
       <input
         id="wagenAb"
         className="eingabefeld"
         type="text"
         inputMode="numeric"
-        placeholder="z. B. 7 – wo du einsteigst"
+        placeholder="z. B. 7"
         value={wagenAb}
         onChange={(e) => setWagenAb(e.target.value)}
       />
@@ -768,9 +768,8 @@ export function Eingabe({
     >
       <div className="eingabe-rollbereich">
         {kopf}
-        {breit && <h2 className="eingabe-titel">Wo steigst du um?</h2>}
+        <h2 className="eingabe-titel">Wo steigst du um?</h2>
         <div className="ortsfeld" data-tour="bahnhof">
-          <div className="kicker" aria-hidden="true">Du kommst an</div>
           <Ortsuche
             id="bahnhof"
             // Sichtbar steht nur die Ueberschrift darueber - die Unterzeile
@@ -912,15 +911,14 @@ export function Eingabe({
           {/* „Verbindung einfügen“: Abkuerzung am Rand (BRIEF.md 4), nicht der
               Einstieg - statt Bahnhof und zwei Gleise zu tippen, den Text aus
               „Verbindung teilen" einfuegen. Auf dem Handy heisst sie wie vor
-              dem 11.10.2026 „Reise importieren" und steht als Knopf unter den
-              Bloecken. */}
-          {breit && (
-            <div className="feld-rand">
-              <button type="button" className="textknopf" onClick={() => setImportOffen(true)}>
-                Verbindung einfügen
-              </button>
-            </div>
-          )}
+              dem 11.10.2026 „Reise importieren". Bis zum 01.11.2026 stand sie
+              dort als Knopf unter den Bloecken - genau hinter dem schwebenden
+              Hauptknopf. */}
+          <div className="feld-rand">
+            <button type="button" className="textknopf" onClick={() => setImportOffen(true)}>
+              {breit ? 'Verbindung einfügen' : 'Reise importieren'}
+            </button>
+          </div>
         </div>
 
         {/*
@@ -991,8 +989,8 @@ export function Eingabe({
           </>
         ) : (
           <>
-            {/* Die Ueberschrift steht UEBER der Box, nicht in ihrem Rand
-                (Julian, 21.10.2026) - darum die innere `reiseblock-box`. */}
+            {/* Die Ueberschrift steht UEBER den Feldern (Julian, 21.10.2026),
+                `reiseblock-box` haelt nur noch den Abstand. */}
             <fieldset className="reiseblock" data-tour="ankunft">
               <legend>Ankunft</legend>
               <div className="reiseblock-box">
@@ -1012,7 +1010,7 @@ export function Eingabe({
                 ) : (
                   <div className="gleis-zeile">
                     <div className="feld">
-                      <label htmlFor="gleisAn">Ankunft: Gleis</label>
+                      <label htmlFor="gleisAn"><span className="nur-vorlesen">Ankunft: </span>Gleis</label>
                       <input
                         id="gleisAn"
                         className="eingabefeld"
@@ -1048,7 +1046,7 @@ export function Eingabe({
                 ) : (
                   <div className="gleis-zeile">
                     <div className="feld">
-                      <label htmlFor="gleisAb">Anschluss: Gleis</label>
+                      <label htmlFor="gleisAb"><span className="nur-vorlesen">Anschluss: </span>Gleis</label>
                       <input
                         id="gleisAb"
                         className="eingabefeld"
@@ -1065,16 +1063,6 @@ export function Eingabe({
                 {zugFehlt(zugAbfahrt, fahrtAbfahrt)}
               </div>
             </fieldset>
-
-            <div className="feld">
-              <button
-                type="button"
-                className="knopf-sekundaer knopf-breit"
-                onClick={() => setImportOffen(true)}
-              >
-                Reise importieren
-              </button>
-            </div>
           </>
         )}
 

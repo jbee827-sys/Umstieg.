@@ -99,9 +99,9 @@
  *   Erklaerung steht auf den anderen Seiten.
  * - „Live-Daten · Stand" entfaellt, solange das Banner steht - es
  *   widerspraeche ihm ohnehin.
- * - Der Titel nimmt die Groesse der Anweisung und die volle Breite - das
- *   Stufen-Abzeichen steht in der Zeile des Bahnhofsnamens (App.tsx). So
- *   passt auch „Gleis 1 B-C → Gleis 15 E-G" in eine Zeile.
+ * - Der Titel nimmt die Groesse der Anweisung und die volle Breite - der
+ *   Vorbehalt der Datenstufe steht darunter (App.tsx). So passt auch
+ *   „Gleis 1 B-C → Gleis 15 E-G" in eine Zeile.
  */
 .app-navigation .quelle-weg {
   flex-direction: row;
@@ -123,12 +123,6 @@
 .app-navigation .routen-kopf h2 {
   font-size: var(--schrift-anweisung);
 }
-.routen-kopf-zeile {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
 
 /*
  * Normale Schreibweise statt Versalien, dafuer eine Stufe groesser.
@@ -140,11 +134,9 @@
 .kicker {
   font-size: var(--schrift-label);
   font-weight: 600;
-  letter-spacing: 0.01em;
-  /* Rotschrift, nicht Signalrot: Signalrot erreicht als 15-px-Schrift nur
-     4,2:1, auf dem Rotschleier der Anschlusskarte 3,8:1 (Sichtpruefung
-     11.10.2026, DESIGN.md 2). */
-  color: var(--color-accent-700);
+  /* Nur noch Beschriftung IN einem Block („Du kommst an", „Alt") - die Zeilen
+     ueber Ueberschriften sind seit dem 01.11.2026 weg. Deshalb ruhig statt rot. */
+  color: var(--color-neutral-700);
 }
 
 .kopf h1 {
@@ -177,12 +169,6 @@
 }
 .lockup .lockup-dunkel {
   display: var(--lockup-dunkel);
-}
-
-.kopf p {
-  margin: 4px 0 0;
-  font-size: var(--schrift-label);
-  color: var(--color-neutral-700);
 }
 
 /*
@@ -266,14 +252,13 @@
   font-size: 0.889rem;
   color: var(--color-text);
   caret-color: var(--color-accent);
-  background: var(--color-neutral-100);
-  border: 1px solid var(--color-divider);
+  background: var(--color-feld);
+  border: 0;
   border-radius: var(--radius-klein);
 }
 
-.eingabefeld:focus-visible {
-  border-color: var(--color-accent);
-  outline-offset: 0;
+.eingabefeld::placeholder {
+  color: var(--color-neutral-700);
 }
 
 .gleis-zeile {
@@ -291,9 +276,9 @@
  * also „Ankunft – Gleis" statt zweimal nur „Gleis". Der mitgelieferte
  * Browserrahmen muss dafuer weg.
  */
-/* „Ankunft“ und „Abfahrt“ stehen gross UEBER der Box, nicht in ihrem Rand
-   (Julian, 21.10.2026): Das fieldset ist nur noch Gruppe, die Box ist
-   `.reiseblock-box`. */
+/* „Ankunft“ und „Abfahrt“ stehen gross UEBER ihren Feldern (Julian,
+   21.10.2026): Das fieldset ist nur noch Gruppe. Eine Box gibt es seit dem
+   01.11.2026 nicht mehr, `.reiseblock-box` haelt nur den Abstand. */
 .reiseblock {
   margin: 0;
   padding: 0;
@@ -313,25 +298,15 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 14px 16px;
-  border: 1px solid var(--color-neutral-300);
-  border-radius: var(--radius-mittel);
-  background: var(--color-surface);
-}
-
-/* Die Tafel-Knoepfe heben sich hell von der grauen Box ab (Julian, 21.10.2026). */
-.reiseblock-box .zugauswahl > .knopf-sekundaer {
-  background: var(--color-neutral-100);
 }
 
 .vorschlaege {
   list-style: none;
   margin: 6px 0 0;
   padding: 0;
-  border: 1px solid var(--color-neutral-300);
   border-radius: var(--radius-klein);
   overflow: hidden;
-  background: var(--color-neutral-100);
+  background: var(--color-feld);
 }
 
 .vorschlaege button {
@@ -344,7 +319,8 @@
   font-size: var(--schrift-label);
   background: transparent;
   border: 0;
-  border-bottom: 1px solid var(--color-neutral-300);
+  /* Im Ton des Grundes: neutral-300 ginge im Feldton unter. */
+  border-bottom: 1px solid var(--color-bg);
   cursor: pointer;
 }
 
@@ -385,7 +361,7 @@
   font-size: var(--schrift-label);
   font-weight: 600;
   line-height: 1.4;
-  background: var(--color-surface);
+  background: var(--color-bg);
   color: var(--color-neutral-700);
 }
 
@@ -425,18 +401,6 @@
   font-weight: 600;
 }
 
-/* Zwei Ortsfelder untereinander, je mit Kicker wie die Gleiskacheln. */
-/* Ueberschrift der Ortsfelder: gross, fett, im Rot von „Umstieg starten“ und
-   vom Logo (Julian, 21.10.2026). Signalrot als Schrift erst ab 22 px - dort
-   ist es grosse Schrift, 3:1 genuegt, es hat 4,2:1 (DESIGN.md 2). */
-.ortsfeld .kicker {
-  margin-bottom: 6px;
-  font-family: var(--font-heading);
-  font-size: var(--schrift-anweisung);
-  font-weight: 800;
-  color: var(--color-accent);
-}
-
 /* Die Beschriftung im Feld ist nur fuer Vorleser da - ohne Abstand. */
 .ortsfeld .feld > label {
   margin: 0;
@@ -472,9 +436,9 @@
   font: inherit;
   font-size: var(--schrift-label);
   font-weight: 600;
-  border: 1px solid var(--color-neutral-300);
+  border: 0;
   border-radius: var(--radius-klein);
-  background: var(--color-neutral-100);
+  background: var(--color-feld);
   color: var(--color-text);
   cursor: pointer;
   transition: background var(--dauer-normal) var(--verlauf-ein), color var(--dauer-normal) var(--verlauf-ein),
@@ -488,7 +452,6 @@
 
 .wahl-knopf[aria-pressed='true'] {
   background: var(--color-akzent-tief);
-  border-color: var(--color-akzent-tief);
   color: var(--color-auf-akzent);
 }
 
@@ -608,8 +571,8 @@
   font-size: var(--schrift-label);
   font-weight: 600;
   color: var(--color-text);
-  background: transparent;
-  border: 1px solid var(--color-divider);
+  background: var(--color-surface);
+  border: 0;
   border-radius: var(--radius-klein);
   cursor: pointer;
   /* Auch als Link (vorgerenderte Rechtsseiten: „Zur Startseite"). */
@@ -626,8 +589,36 @@
 
 @media (hover: hover) {
   .knopf-sekundaer:hover {
-    background: color-mix(in srgb, var(--color-text) 7%, transparent);
+    background: color-mix(in srgb, var(--color-text) 7%, var(--color-surface));
   }
+}
+
+/*
+ * Waehlen und Aendern in der Zugauswahl (01.11.2026): der Look des
+ * Neumorph-Buttons von cult-ui, Fassung „secondary" - Grund im Feldton, Rand, eine
+ * Kante unten, weicher Schatten. Bewusst nur der Look: ohne Tailwind und Motion,
+ * ohne Grossbuchstaben, Federn und Spinner, dafuer mit Nachtfassung (index.css).
+ * Das Nachgeben beim Druecken kommt von `.knopf-sekundaer:active`.
+ */
+.knopf-zugwahl {
+  background: var(--zugknopf-flaeche);
+  border: 1px solid var(--zugknopf-rand);
+  border-radius: 9px;
+  box-shadow: var(--zugknopf-schatten);
+  transition: background var(--dauer-normal) var(--verlauf-ein),
+    transform var(--dauer-schnell) var(--verlauf-ein), box-shadow var(--dauer-schnell) var(--verlauf-ein);
+}
+
+@media (hover: hover) {
+  .knopf-zugwahl:hover {
+    background: var(--zugknopf-hover);
+    box-shadow: var(--zugknopf-schatten-hover);
+  }
+}
+
+.knopf-zugwahl:active {
+  background: var(--zugknopf-druck);
+  box-shadow: var(--zugknopf-schatten-druck);
 }
 
 /* — Hinweis-/Fehlerflächen — */
@@ -643,7 +634,6 @@
   padding: 14px 16px;
   border-radius: var(--radius-mittel);
   background: var(--color-accent-100);
-  border: 1px solid var(--color-accent-300);
   color: var(--color-accent-700);
   font-size: var(--schrift-label);
 }
@@ -659,7 +649,6 @@
   padding: 14px 16px;
   border-radius: var(--radius-mittel);
   background: var(--color-surface);
-  border: 1px solid var(--color-neutral-300);
 }
 
 /*
@@ -676,14 +665,12 @@
   border-radius: var(--radius-mittel);
   font-size: var(--schrift-label);
   background: var(--color-neutral-100);
-  border: 1px solid var(--color-neutral-300);
   color: var(--color-neutral-800);
 }
 
 /* Gleiswechsel ist der Fall, der die Route ungültig macht – deutlich absetzen. */
 .live-banner-warnung {
   background: var(--color-accent-100);
-  border-color: var(--color-accent-300);
   color: var(--color-accent-700);
 }
 
@@ -830,10 +817,8 @@
   display: flex;
   gap: 14px;
   align-items: flex-start;
-  padding: 14px 16px;
-  border: 1px solid var(--color-neutral-300);
+  padding: 12px 10px;
   border-radius: var(--radius-mittel);
-  background: var(--color-neutral-100);
 }
 
 .schritt-nummer {
@@ -915,7 +900,6 @@
  * wie ein eigenes Bedienelement.
  */
 .tafel-bloecke {
-  border: 1px solid var(--color-neutral-300);
   border-radius: var(--radius-klein);
   overflow: hidden;
   background: var(--color-neutral-100);
@@ -981,7 +965,6 @@
   font-family: var(--font-heading);
   font-size: var(--schrift-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
   color: var(--color-neutral-700);
 }
 
@@ -1138,10 +1121,10 @@
   border-radius: var(--radius-klein);
   background: var(--color-neutral-300);
 }
-/* Die gewaehlte Zeile: Rotschleier und ein Saum links - nicht allein Farbe. */
+/* Die gewaehlte Zeile: Rotschleier und kraeftigere Schrift - nicht allein Farbe. */
 .tafel button[aria-pressed='true'] {
   background: var(--color-accent-100);
-  box-shadow: inset 4px 0 0 var(--color-accent);
+  font-weight: 700;
 }
 
 .gleiswechsel {
@@ -1153,7 +1136,6 @@
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  border: 1px solid var(--color-accent-300);
   border-radius: var(--radius-klein);
   background: var(--color-accent-100);
 }
@@ -1169,7 +1151,6 @@
 .zug-gewaehlt .knopf-sekundaer {
   min-height: 40px;
   padding: 0 14px;
-  background: var(--color-bg);
 }
 
 /* — Karte (einklappbar, Text vor Karte) — */
@@ -1181,7 +1162,6 @@
 }
 
 .karte-rahmen {
-  border: 1px solid var(--color-neutral-300);
   border-radius: var(--radius-gross);
   overflow: hidden;
   background: var(--color-neutral-100);
@@ -1201,15 +1181,14 @@
   font: inherit;
   font-size: var(--schrift-label);
   font-weight: 600;
-  border: 1px solid var(--color-neutral-300);
+  border: 0;
   border-radius: var(--radius-pille);
-  background: var(--color-bg);
+  background: var(--color-surface);
   cursor: pointer;
 }
 
 .karte-ebene-knopf[aria-pressed='true'] {
   background: var(--color-text);
-  border-color: var(--color-text);
   color: var(--color-bg);
 }
 
@@ -1304,7 +1283,6 @@
    sichtbar, die Gegenwart hebt sich ab. */
 .schritt-aktiv {
   background: var(--color-accent-100);
-  border: 2px solid var(--color-accent);
   font-size: 1.15rem;
 }
 
@@ -1380,7 +1358,7 @@
   margin-top: auto;
   padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
   background: var(--color-bg);
-  border-top: 2px solid var(--color-divider);
+  border-top: 1px solid var(--color-neutral-300);
   /*
    * Ueber der Ampel (5), unter der Stoermeldung (50). Ohne eigenen Wert hing
    * die Stapelreihenfolge allein daran, dass die Leiste zufaellig das letzte
@@ -1480,7 +1458,6 @@
   flex-direction: column;
   justify-content: center;
   padding: 0 12px;
-  border: 1px solid var(--color-schema-band-rand);
   border-radius: var(--radius-gross);
   background: var(--color-schema-band);
   overflow: hidden;
@@ -1491,8 +1468,6 @@
 .schema-band.aktiv {
   justify-content: flex-start;
   padding: 12px;
-  border: 1.5px solid var(--color-accent);
-  border-radius: var(--radius-gross);
   background: var(--color-neutral-100);
 }
 .schema-bandkopf {
@@ -1755,12 +1730,12 @@
   padding: 12px 0;
   min-height: 44px;
 }
+/* Keine Box seit dem 01.11.2026: Eine Linie trennt die Bedienung vom Bild. */
 .schrittsheet {
   margin-top: 20px;
-  padding: 16px;
-  border-radius: var(--radius-gross);
+  padding: 14px 0 0;
   background: var(--color-bg);
-  border: 2px solid var(--color-text);
+  border-top: 1px solid var(--color-neutral-300);
 }
 
 /* Unten am Rand festgesetzt, wie die Navileiste. `flex: none` haelt sie auf
@@ -1772,7 +1747,6 @@
 }
 .schrittsheet-zaehler {
   font-size: var(--schrift-label);
-  letter-spacing: 0.14em;
   /* Rotschrift - Signalrot ist als Schrift unter 22 px zu schwach (4,2:1). */
   color: var(--color-accent-700);
 }
@@ -1833,25 +1807,23 @@
 }
 
 /* Dashboard-Bloecke (Screen 2) */
+/* Zwei Spalten mit einer Linie dazwischen, keine Karten (01.11.2026). */
 .dashboard-bloecke {
   display: flex;
-  gap: 10px;
+  gap: 16px;
   margin-top: 16px;
 }
 .dashboard-block {
   flex: 1;
-  padding: 14px;
-  border-radius: var(--radius-mittel);
-  border: 2px solid var(--color-divider);
+  min-width: 0;
+}
+.dashboard-block + .dashboard-block {
+  padding-left: 16px;
+  border-left: 1px solid var(--color-neutral-300);
 }
 
-/* Die Zielkarte darf rot sein: Rot ist Sekundaerfarbe der App, kein Alarm.
-   Der Alarm unterscheidet sich stattdessen durch den gelb-roten Saum an der
-   Ampel - siehe `.ampel-alarm`. */
-.dashboard-block.ziel {
-  border-color: var(--color-accent);
-  background: var(--color-accent-100);
-}
+/* Das Ziel traegt die rote Gleisnummer: Rot ist Sekundaerfarbe der App, kein
+   Alarm. Der Alarm unterscheidet sich durch den gelb-roten Saum an der Ampel. */
 .dashboard-block.ziel .dashboard-gleis {
   color: var(--color-accent-700);
 }
@@ -1890,8 +1862,9 @@
   min-height: 33dvh;
   background: var(--color-gruen);
   color: var(--color-bg);
-  border-radius: var(--radius-mittel);
-  padding: 26px 20px;
+  /* Bis an den Rand statt als Karte: hebt das Polster von `.app` auf. */
+  margin: calc(-24px - env(safe-area-inset-top)) -20px 0;
+  padding: calc(26px + env(safe-area-inset-top)) 20px 26px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1910,18 +1883,14 @@
 }
 .angekommen-kacheln {
   display: flex;
-  gap: 8px;
+  gap: 16px;
   margin-top: 16px;
 }
 .angekommen-kachel {
   flex: 1;
-  padding: 12px;
-  border-radius: var(--radius-mittel);
-  border: 2px solid var(--color-divider);
 }
 .angekommen-kachel-label {
   font-size: var(--schrift-label);
-  letter-spacing: 0.12em;
   color: var(--color-neutral-700);
 }
 .angekommen-kachel-wert {
@@ -1934,8 +1903,8 @@
   margin-top: 12px;
   padding: 14px;
   border-radius: var(--radius-klein);
-  background: var(--color-text);
-  color: var(--color-bg);
+  background: var(--color-surface);
+  color: var(--color-text);
   font-size: var(--schrift-label);
 }
 
@@ -2020,7 +1989,7 @@
   margin: 18px 0 0;
   padding: 14px;
   border-radius: var(--radius-mittel);
-  border: 2px solid var(--color-divider);
+  background: var(--color-surface);
   font-size: var(--schrift-label);
   color: var(--color-neutral-700);
 }
@@ -2035,15 +2004,13 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
 }
 .meldungen-verlauf li {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  padding: 10px 12px;
-  border-radius: var(--radius-klein);
-  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+  padding: 10px 0;
+  border-top: 1px solid var(--color-neutral-300);
   font-size: var(--schrift-label);
 }
 .meldungen-zeit {
@@ -2083,13 +2050,6 @@
 }
 .stoerung-seite {
   flex: 1;
-  padding: 14px;
-  border-radius: var(--radius-klein);
-  border: 2px solid var(--color-divider);
-}
-.stoerung-neu {
-  border-color: var(--color-accent);
-  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
 }
 .stoerung-gleis {
   font-size: 1.444rem;
@@ -2122,8 +2082,8 @@
   margin: 18px 0;
   padding: 14px;
   border-radius: var(--radius-klein);
-  background: var(--color-text);
-  color: var(--color-bg);
+  background: var(--color-surface);
+  color: var(--color-text);
   font-size: var(--schrift-label);
   line-height: 1.4;
 }
@@ -2209,7 +2169,6 @@
 .routenwahl {
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 .routenwahl-zeile {
   display: flex;
@@ -2217,10 +2176,9 @@
   gap: 12px;
   width: 100%;
   text-align: left;
-  padding: 13px 14px;
+  padding: 13px 0;
   min-height: 56px;
-  border: 1px solid var(--color-divider);
-  border-radius: var(--radius-klein);
+  border: 0;
   background: transparent;
   font-family: inherit;
   font-size: var(--schrift-label);
@@ -2240,10 +2198,17 @@
 .routenwahl-zeile:active {
   transform: scale(0.97);
 }
+/* Zeilen einer Liste statt Knoepfe (01.11.2026): Die gewaehlte zeigt der
+   volle rote Punkt und die kraeftigere Schrift. Vorher war sie eine rote
+   Flaeche - direkt ueber dem roten „Navigation starten", nachts im selben Ton. */
+.routenwahl-zeile + .routenwahl-zeile {
+  box-shadow: inset 0 1px 0 var(--color-neutral-300);
+}
 .routenwahl-zeile.gewaehlt {
-  border-color: var(--color-akzent-tief);
-  background: var(--color-akzent-tief);
-  color: var(--color-auf-akzent);
+  font-weight: 800;
+}
+.routenwahl-zeile.gewaehlt .routenwahl-punkt {
+  color: var(--color-accent);
 }
 .routenwahl-punkt {
   width: 20px;
@@ -2277,7 +2242,6 @@
 }
 .routenwahl-zeile.laedt {
   opacity: 1;
-  border-color: var(--color-text);
 }
 /*
  * Standortwahl am Ankunftsgleis (Artboard „Kopfbahnhof").
@@ -2426,7 +2390,6 @@
   padding: 10px 12px;
   border-radius: var(--radius-klein);
   background: var(--color-neutral-100);
-  border-left: 3px solid var(--color-accent);
   font-size: var(--schrift-label);
   line-height: 1.4;
   color: var(--color-text);
@@ -2678,13 +2641,6 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-  padding: 14px;
-  border: 2px solid var(--color-divider);
-  border-radius: var(--radius-mittel);
-}
-.gleiskachel.ziel {
-  border-color: var(--color-accent);
-  background: var(--color-accent-100);
 }
 .gleiskachel-label {
   font-size: var(--schrift-label);
@@ -2704,7 +2660,6 @@
 }
 .gleiskachel.ziel .gleiskachel-feld {
   color: var(--color-accent-700);
-  background: var(--color-bg);
 }
 .gleiskachel-zug {
   margin: 0;
@@ -2730,7 +2685,6 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--color-neutral-300);
   border-radius: var(--radius-mittel);
   background: var(--color-neutral-100);
 }
@@ -2739,8 +2693,8 @@
   flex-direction: column;
   gap: 6px;
   padding: 14px;
-  border: 2px dashed var(--color-divider);
   border-radius: var(--radius-mittel);
+  background: var(--color-neutral-100);
   font-size: var(--schrift-label);
   color: var(--color-neutral-700);
 }

@@ -69,6 +69,9 @@
 
   /* Tertiaer - Grau */
   --color-surface: #eae9e9;
+  /* Eingabefelder: Sie haben keinen Rahmen und muessen sich allein ueber den
+     Ton vom Grund abheben. Platzhalter darauf in neutral-700 (4,8:1, nachts 4,6:1). */
+  --color-feld: #dedcdc;
   --color-text: #201e1d;
   --color-neutral-100: #f8f4f4;
   --color-neutral-300: #d7d3d3;
@@ -85,7 +88,6 @@
      Reihenfolge nachts nicht mehr. */
   --color-schema-band: #edebeb;
   --color-schema-band-besucht: #e2dfdf;
-  --color-schema-band-rand: #e0dcdc;
   --color-schema-bahnsteig: #c4bfbf;
   --color-schema-netz: #c9c4c4;
 
@@ -117,12 +119,12 @@
   --schrift-text: 1rem; /* 18px / 400 */
   --schrift-label: 0.833rem; /* 15px / 500 - die Untergrenze */
 
-  /* Rundung. Die App hat keine spitzen Ecken; rechte Winkel gibt es nur bei
-     Trennlinien, die keine Flaeche sind. Verschachtelte Flaechen nehmen nach
-     innen die naechstkleinere Stufe. */
-  --radius-klein: 14px; /* Felder, Vervollstaendigungszeilen, Abzeichen */
-  --radius-mittel: 20px; /* Karten, Bloecke, Hinweisflaechen, Banner */
-  --radius-gross: 28px; /* Bahnsteigstreifen, Ebenenbaender, Sheets, Dialoge */
+  /* Rundung. Knapp seit dem 01.11.2026 (vorher 14/20/28 px): Flaechen sollen
+     wie Schilder wirken, nicht wie Kacheln. Verschachtelte Flaechen nehmen
+     nach innen die naechstkleinere Stufe. */
+  --radius-klein: 6px; /* Felder, Vervollstaendigungszeilen, Abzeichen */
+  --radius-mittel: 8px; /* Hinweisflaechen, Banner, Tafeln */
+  --radius-gross: 10px; /* Bahnsteigstreifen, Ebenenbaender, Dialoge */
   --radius-pille: 9999px; /* Hauptknopf, Routenzeilen, Chips, Marken, Lampen */
 
   /* Bewegung. Nur als Antwort auf eine Handlung - nie von selbst.
@@ -138,6 +140,16 @@
 
   --shadow-md: 0 3px 10px color-mix(in srgb, #2d2b2b 16%, transparent);
   --shadow-lg: 0 12px 32px color-mix(in srgb, #2d2b2b 22%, transparent);
+
+  /* Die Knoepfe der Zugauswahl (App.css, `.knopf-zugwahl`): innen die Kante
+     unten, aussen der weiche Schatten. */
+  --zugknopf-flaeche: #dedcdc;
+  --zugknopf-hover: #e5e3e3;
+  --zugknopf-druck: #d3d1d1;
+  --zugknopf-rand: #c9c6c6;
+  --zugknopf-schatten: inset 0 -2.1px 0 0 #c4c1c1, 0 1.2px 6.3px 0 color-mix(in srgb, #2d2b2b 10%, transparent);
+  --zugknopf-schatten-hover: inset 0 -2.5px 0 0 #cfcccc, 0 1.4px 7.6px 0 color-mix(in srgb, #2d2b2b 12%, transparent);
+  --zugknopf-schatten-druck: inset 0 -1.5px 0 0 #b9b6b6, 0 0.5px 2px 0 color-mix(in srgb, #2d2b2b 15%, transparent);
 
   /* Das Lockup im Kopf ist ein Bild mit dunkler Wortmarke. */
   /* Hell- und Nachtfassung des Lockups: Welche zu sehen ist, entscheidet die
@@ -166,9 +178,10 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-darstellung='hell']) {
     color-scheme: dark;
-    --color-bg: #17161a;
-    --color-papier: #1c1b20;
-    --color-surface: #221f24;
+    --color-bg: #171615;
+    --color-papier: #1c1b1a;
+    --color-surface: #222120;
+    --color-feld: #454240;
     --color-text: #f3f2f2;
 
     --color-accent: #ff5233; /* 5,6:1 auf Nachtgrund */
@@ -180,14 +193,17 @@
     /* Nachtrot ist hell genug, um kleine Schrift zu tragen - aber
        tintenschwarze (5,6:1), nicht weisse (3,2:1). */
     --color-akzent-tief: #ff5233;
-    --color-auf-akzent: #17161a;
+    --color-auf-akzent: #171615;
+
+    /* Die Grautoene sind warm wie die helle Palette (R >= G >= B). Bis zum
+       01.11.2026 hatten sie einen Violettstich. */
 
     /* Felder, Schritt-Box, Tafel, aktives Band. Fehlte bis 26.09. - die
        Flaechen blieben nachts #f8f4f4 unter Lichtschrift (1,1:1). */
-    --color-neutral-100: #27242b; /* Lichtschrift darauf 13,7:1 */
-    --color-neutral-300: #3a3740;
-    --color-neutral-500: #6f6b74;
-    --color-neutral-600: #8d8990;
+    --color-neutral-100: #282625; /* Lichtschrift darauf 13,5:1 */
+    --color-neutral-300: #3b3938;
+    --color-neutral-500: #706d6b;
+    --color-neutral-600: #8e8b89;
     --color-neutral-700: #b4b0ae; /* 8,4:1 - Nebentext */
     --color-neutral-800: #d5d1cf;
     --color-divider: color-mix(in srgb, #f3f2f2 30%, transparent);
@@ -195,15 +211,14 @@
     /* Nachts liegt das Band ueber dem Grund, das besuchte heller als das
        offene; die Balken halten 3:1 auf beiden (3,5 bzw. 3,2:1), die
        Symbole darauf ebenso. Gemessen mit kontrast-dunkel.py. */
-    --color-schema-band: #1f1d23;
-    --color-schema-band-besucht: #2b2830;
-    --color-schema-band-rand: #34313a;
-    --color-schema-bahnsteig: #75717c;
-    --color-schema-netz: #57535e;
+    --color-schema-band: #1f1e1d;
+    --color-schema-band-besucht: #2c2a29;
+    --color-schema-bahnsteig: #787472;
+    --color-schema-netz: #585553;
 
     /* Tintenschwarz verschwaende auf dem Nachtgrund (1,1:1). */
-    --color-ampel-gehaeuse: #2f2c34;
-    --color-ampel-lampe-aus: #534e59;
+    --color-ampel-gehaeuse: #302e2d;
+    --color-ampel-lampe-aus: #54504e;
 
     --color-gruen: #3cc98a; /* 8,5:1 */
     --color-gelb: #f0a832; /* 8,9:1 */
@@ -213,6 +228,15 @@
 
     --shadow-md: 0 3px 10px color-mix(in srgb, #000000 50%, transparent);
     --shadow-lg: 0 12px 32px color-mix(in srgb, #000000 60%, transparent);
+
+    /* Lichtschrift auf dem Zugknopf 8,9:1. */
+    --zugknopf-flaeche: #454240;
+    --zugknopf-hover: #4f4c4a;
+    --zugknopf-druck: #3b3836;
+    --zugknopf-rand: #5c5957;
+    --zugknopf-schatten: inset 0 -2.1px 0 0 #121110, 0 1.2px 6.3px 0 color-mix(in srgb, #000000 50%, transparent);
+    --zugknopf-schatten-hover: inset 0 -2.5px 0 0 #121110, 0 1.4px 7.6px 0 color-mix(in srgb, #000000 55%, transparent);
+    --zugknopf-schatten-druck: inset 0 -1.5px 0 0 #121110, 0 0.5px 2px 0 color-mix(in srgb, #000000 60%, transparent);
 
     /* Nachts die eigene Fassung des Lockups: helle Schrift, Rot im Nachtrot
        wie Knopf und Ueberschriften. Bis zum 21.10.2026 kehrte ein Filter das
@@ -224,9 +248,10 @@
 
 :root[data-darstellung='dunkel'] {
   color-scheme: dark;
-  --color-bg: #17161a;
-  --color-papier: #1c1b20;
-  --color-surface: #221f24;
+  --color-bg: #171615;
+  --color-papier: #1c1b1a;
+  --color-surface: #222120;
+  --color-feld: #454240;
   --color-text: #f3f2f2;
 
   --color-accent: #ff5233; /* 5,6:1 auf Nachtgrund */
@@ -238,14 +263,17 @@
   /* Nachtrot ist hell genug, um kleine Schrift zu tragen - aber
      tintenschwarze (5,6:1), nicht weisse (3,2:1). */
   --color-akzent-tief: #ff5233;
-  --color-auf-akzent: #17161a;
+  --color-auf-akzent: #171615;
+
+  /* Die Grautoene sind warm wie die helle Palette (R >= G >= B). Bis zum
+     01.11.2026 hatten sie einen Violettstich. */
 
   /* Felder, Schritt-Box, Tafel, aktives Band. Fehlte bis 26.09. - die
      Flaechen blieben nachts #f8f4f4 unter Lichtschrift (1,1:1). */
-  --color-neutral-100: #27242b; /* Lichtschrift darauf 13,7:1 */
-  --color-neutral-300: #3a3740;
-  --color-neutral-500: #6f6b74;
-  --color-neutral-600: #8d8990;
+  --color-neutral-100: #282625; /* Lichtschrift darauf 13,5:1 */
+  --color-neutral-300: #3b3938;
+  --color-neutral-500: #706d6b;
+  --color-neutral-600: #8e8b89;
   --color-neutral-700: #b4b0ae; /* 8,4:1 - Nebentext */
   --color-neutral-800: #d5d1cf;
   --color-divider: color-mix(in srgb, #f3f2f2 30%, transparent);
@@ -253,15 +281,14 @@
   /* Nachts liegt das Band ueber dem Grund, das besuchte heller als das
      offene; die Balken halten 3:1 auf beiden (3,5 bzw. 3,2:1), die
      Symbole darauf ebenso. Gemessen mit kontrast-dunkel.py. */
-  --color-schema-band: #1f1d23;
-  --color-schema-band-besucht: #2b2830;
-  --color-schema-band-rand: #34313a;
-  --color-schema-bahnsteig: #75717c;
-  --color-schema-netz: #57535e;
+  --color-schema-band: #1f1e1d;
+  --color-schema-band-besucht: #2c2a29;
+  --color-schema-bahnsteig: #787472;
+  --color-schema-netz: #585553;
 
   /* Tintenschwarz verschwaende auf dem Nachtgrund (1,1:1). */
-  --color-ampel-gehaeuse: #2f2c34;
-  --color-ampel-lampe-aus: #534e59;
+  --color-ampel-gehaeuse: #302e2d;
+  --color-ampel-lampe-aus: #54504e;
 
   --color-gruen: #3cc98a; /* 8,5:1 */
   --color-gelb: #f0a832; /* 8,9:1 */
@@ -271,6 +298,15 @@
 
   --shadow-md: 0 3px 10px color-mix(in srgb, #000000 50%, transparent);
   --shadow-lg: 0 12px 32px color-mix(in srgb, #000000 60%, transparent);
+
+  /* Lichtschrift auf dem Zugknopf 8,9:1. */
+  --zugknopf-flaeche: #454240;
+  --zugknopf-hover: #4f4c4a;
+  --zugknopf-druck: #3b3836;
+  --zugknopf-rand: #5c5957;
+  --zugknopf-schatten: inset 0 -2.1px 0 0 #121110, 0 1.2px 6.3px 0 color-mix(in srgb, #000000 50%, transparent);
+  --zugknopf-schatten-hover: inset 0 -2.5px 0 0 #121110, 0 1.4px 7.6px 0 color-mix(in srgb, #000000 55%, transparent);
+  --zugknopf-schatten-druck: inset 0 -1.5px 0 0 #121110, 0 0.5px 2px 0 color-mix(in srgb, #000000 60%, transparent);
 
   /* Nachts die eigene Fassung des Lockups: helle Schrift, Rot im Nachtrot
      wie Knopf und Ueberschriften. Bis zum 21.10.2026 kehrte ein Filter das

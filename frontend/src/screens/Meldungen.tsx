@@ -79,7 +79,6 @@ export function Meldungen({
   if (!neueste) {
     return (
       <section className="meldungen">
-        <div className="kicker">Deine Fahrt</div>
         <h2 className="stoerung-titel">Meldungen</h2>
         <p className="stoerung-satz">Aktuell keine Meldungen.</p>
         {/* Der Zeitstempel belegt, dass noch hingehoert wird. Ohne ihn waere
@@ -110,7 +109,6 @@ export function Meldungen({
 
   return (
     <section className="meldungen">
-      <div className="kicker">Änderung auf deiner Fahrt</div>
       <h2 className="stoerung-titel">{titel}</h2>
       <p className="stoerung-satz">
         {text}

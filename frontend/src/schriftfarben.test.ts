@@ -35,13 +35,7 @@ describe('App.css: Schriftfarben', () => {
  * in der Leiste. Grafik darf Signalrot tragen (3:1 genuegt dort).
  */
 describe('App.css: Signalrot als Schrift', () => {
-  const GRAFIK = new Set(['.schema-scheibe.ankunft'])
-  /*
-   * Ab 22 px fett ist es grosse Schrift (WCAG 1.4.3: 3:1 genuegt), Signalrot
-   * hat 4,2:1. Die Ortsueberschriften der Eingabe tragen es seit dem
-   * 21.10.2026 im Rot von „Umstieg starten" (Julian).
-   */
-  const GROSSE_SCHRIFT = new Set(['.ortsfeld .kicker'])
+  const GRAFIK = new Set(['.schema-scheibe.ankunft', '.routenwahl-zeile.gewaehlt .routenwahl-punkt'])
 
   const regeln = () => {
     const ohneKommentare = css.replace(/\/\*[\s\S]*?\*\//g, '')
@@ -49,16 +43,10 @@ describe('App.css: Signalrot als Schrift', () => {
   }
   const signalrot = (rumpf: string) => /(^|;)\s*color:\s*var\(--color-accent\)\s*(;|$)/.test(rumpf)
 
-  it('steht nur an Grafik und grosser Schrift, nie an Fliesstext', () => {
+  it('steht nur an Grafik, nie an Schrift', () => {
     const treffer = regeln()
       .filter((r) => signalrot(r.rumpf))
       .map((r) => r.selektor)
-    expect(treffer.filter((s) => !GRAFIK.has(s) && !GROSSE_SCHRIFT.has(s))).toEqual([])
-  })
-
-  it('wo es Schrift ist, ist sie mindestens 22 px', () => {
-    for (const regel of regeln().filter((r) => GROSSE_SCHRIFT.has(r.selektor) && signalrot(r.rumpf))) {
-      expect(regel.rumpf).toMatch(/font-size:\s*var\(--schrift-(anweisung|titel|gleis)\)/)
-    }
+    expect(treffer.filter((s) => !GRAFIK.has(s))).toEqual([])
   })
 })

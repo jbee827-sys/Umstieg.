@@ -142,7 +142,7 @@ export function GewaehlteFahrt({
           {steigText(auswahl)} <Kennzeichen e={auswahl} />
         </span>
       </div>
-      <button type="button" className="knopf-sekundaer" onClick={onAendern}>
+      <button type="button" className="knopf-sekundaer knopf-zugwahl" onClick={onAendern}>
         Ändern
       </button>
     </div>
@@ -263,7 +263,7 @@ export function Fahrtauswahl({ ort, typ, label, auswahl, onAuswahl, immerOffen }
 
   return (
     <div className="zugauswahl">
-      <button type="button" className="knopf-sekundaer" aria-expanded={offen} onClick={klappeUm}>
+      <button type="button" className="knopf-sekundaer knopf-zugwahl" aria-expanded={offen} onClick={klappeUm}>
         {label}
       </button>
       {offen && laden && <div className="lade-hinweis">Tafel wird geladen …</div>}
