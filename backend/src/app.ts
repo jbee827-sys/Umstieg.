@@ -42,6 +42,7 @@ import {
   type SseGrenzen,
 } from './routes/live.js';
 import { registriereHaltestellenRouten } from './routes/haltestellen.js';
+import { registriereZaehlerRoute } from './routes/zaehler.js';
 import { erzeugeHaltestellenClient, type HaltestellenClient } from './clients/haltestellen.js';
 import { erzeugeMotisKern } from './clients/motis.js';
 import { erzeugeMotisPausen } from './clients/motis-pausen.js';
@@ -98,6 +99,8 @@ const GRENZEN: Record<string, number> = {
   // die Zahl gleichzeitiger Verbindungen, nicht die der Anfragen.
   '/api/live/:eva': 14,
   '/api/live/haltestelle': 14,
+  // Nutzungszaehlung der App: ein Mensch loest wenige je Minute aus.
+  '/api/zaehle': 30,
 };
 
 /** Fuer alles, was keine eigene Grenze hat. */
@@ -178,7 +181,8 @@ export function buildApp(
     .map((h) => h.trim())
     .filter(Boolean);
   if (erlaubteHerkuenfte.length > 0) {
-    app.register(cors, { origin: erlaubteHerkuenfte, methods: ['GET'] });
+    // POST nur fuer /api/zaehle (Nutzungszaehlung der App, routes/zaehler.ts).
+    app.register(cors, { origin: erlaubteHerkuenfte, methods: ['GET', 'POST'] });
   }
 
   /**
@@ -424,6 +428,16 @@ export function buildApp(
         clients.fasta ??
         mitCache((nr: string) => holeAnlagen(nr), (nr) => nr, FASTA_TTL_MS, 200),
     });
+
+    // Nutzungszaehlung der iOS-App, nur mit Einwilligung (Plan App Store,
+    // Paket 4). Summen je Stunde ins Protokoll, nichts sonst.
+    const appZaehler = erzeugeAnfragezaehler({
+      log: instanz.log,
+      ereignis: 'app-nutzung',
+      nachricht: 'Nutzung der App in dieser Stunde',
+    });
+    instanz.addHook('onClose', async () => appZaehler.beende());
+    registriereZaehlerRoute(instanz, appZaehler);
 
     // Haltestellenpfad (Umstieg 2.0) – dieselbe Bahnhofssuche wie oben, damit
     // `/api/orte` ihren Zwischenspeicher teilt.

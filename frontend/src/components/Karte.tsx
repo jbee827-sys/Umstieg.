@@ -12,6 +12,7 @@ import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&ur
 setWorkerUrl(maplibreWorkerUrl)
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { Schritt } from '../api/typen'
+import { KARTENSTIL } from './kartenstil'
 import { genauigkeitsPolygon } from '../standort/distanz'
 import { GENAUIGKEIT_MAX_M } from '../standort/schwellen'
 import type { Standort } from '../standort/typen'
@@ -42,6 +43,12 @@ const LEER: FeatureCollection = { type: 'FeatureCollection', features: [] }
 
 /** Naeher geht die Karte nicht heran - Begruendung beim Erzeugen der Karte. */
 const MAX_ZOOM = 18
+
+function dunkleKarte(): boolean {
+  const wahl = document.documentElement.dataset.darstellung
+  if (wahl) return wahl === 'dunkel'
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
+}
 
 function ebenenLabel(ebene: string): string {
   const n = Number(ebene)
@@ -131,24 +138,13 @@ export function Karte({ karte, standort, aktiverSchritt, anfangsOffen = false }:
     const map = new MapLibreMap({
       container: behaelter.current,
       ...(routengrenzen ? { bounds: routengrenzen, fitBoundsOptions: { padding: 48, maxZoom: 17.5 } } : {}),
-      // MapLibre holt 256er-Kacheln eine Stufe tiefer als der Kartenzoom. Bei
-      // 19 waren das Kacheln der Stufe 20 - die liefert tile.openstreetmap.org
-      // nicht, jeder Schritt endete mit fehlgeschlagenen Abrufen
-      // (Browserpruefung 19.10.2026). Bei 18 sind es hoechstens Stufe 19.
+      // Hoechstens 18: Mit den Rasterkacheln bis 24.10.2026 holte Stufe 19
+      // Kacheln, die es nicht gab (Browserpruefung 19.10.2026). Die
+      // Vektorkacheln von OpenFreeMap reichen bis 14 und werden vergroessert -
+      // naeher als 18 bringt im Bahnhof aber nichts mehr.
       maxZoom: MAX_ZOOM,
       attributionControl: { compact: false },
-      style: {
-        version: 8,
-        sources: {
-          osm: {
-            type: 'raster',
-            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-            tileSize: 256,
-            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende (ODbL)',
-          },
-        },
-        layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
-      },
+      style: dunkleKarte() ? KARTENSTIL.dunkel : KARTENSTIL.hell,
     })
 
     map.on('load', () => {

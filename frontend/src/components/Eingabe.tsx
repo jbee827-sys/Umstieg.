@@ -23,6 +23,9 @@ import type { Umstieg } from '../reise/reisetext'
 import type { EingabeEntwurf } from '../sitzung/eingabespeicher'
 import { meldeFormularAn } from '../einfuehrung/formularstand'
 import { ladeDarstellung, waehleDarstellung, type Darstellung } from '../einstellungen/darstellung'
+import { setzeEinwilligung, useEinwilligung } from '../analytik/einwilligung'
+import { istApp } from '../plattform/istApp'
+import { useGeteilterText, verwirfGeteiltenText } from '../plattform/uebergabe'
 import { useBreitesLayout } from '../aufbau/breite'
 
 /** Haltestellenpfad (Umstieg 2.0): beide Orte mit der gewählten Fahrt. */
@@ -175,6 +178,7 @@ export function Eingabe({
   // Keine Reiseangabe, sondern eine Geraeteeinstellung: Sie steht nicht im
   // Entwurf, sondern im eigenen Speicher (einstellungen/darstellung.ts).
   const [darstellung, setDarstellung] = useState<Darstellung>(ladeDarstellung)
+  const einwilligung = useEinwilligung()
   const [zugAnkunft, setZugAnkunft] = useState<TafelEintrag | null>(entwurf?.zugAnkunft ?? null)
   const [zugAbfahrt, setZugAbfahrt] = useState<TafelEintrag | null>(entwurf?.zugAbfahrt ?? null)
   // Haltestellenpfad: die Fahrten aus den Haltestellentafeln.
@@ -182,6 +186,8 @@ export function Eingabe({
   const [fahrtAbfahrt, setFahrtAbfahrt] = useState<HaltestellenTafelEintrag | null>(entwurf?.fahrtAbfahrt ?? null)
   const [erkennungVerworfen, setErkennungVerworfen] = useState(false)
   const [importOffen, setImportOffen] = useState(false)
+  // In der App: eine Verbindung aus dem Teilen-Menue wartet (Paket 7).
+  const geteilt = useGeteilterText()
   /*
    * Bewegung nur auf eine Handlung hin (DESIGN.md 6): eine Wahl oder ihr
    * Aufheben durch den Nutzer. Setzt die Standorterkennung oder der Entwurf
@@ -1066,13 +1072,6 @@ export function Eingabe({
           </>
         )}
 
-        {importOffen && (
-          <ReiseImport
-            onSchliessen={() => setImportOffen(false)}
-            onUebernehmen={uebernimmUmstieg}
-          />
-        )}
-
         <details className="einstellungen">
           <summary>Einstellungen</summary>
           <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
@@ -1110,10 +1109,42 @@ export function Eingabe({
               ))}
             </div>
           </fieldset>
+          {/* Widerruf der Nutzungszaehlung - nur in der App, wo sie gefragt
+              wird (analytik/einwilligung.ts). */}
+          {istApp() && (
+            <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
+              <label>Anonyme Nutzungszählung</label>
+              <div className="wahl-gruppe" role="group" aria-label="Anonyme Nutzungszählung">
+                {(['ja', 'nein'] as const).map((wert) => (
+                  <button
+                    key={wert}
+                    type="button"
+                    className="wahl-knopf"
+                    aria-pressed={einwilligung === wert}
+                    onClick={() => setzeEinwilligung(wert)}
+                  >
+                    {wert === 'ja' ? 'Erlaubt' : 'Aus'}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          )}
         </details>
 
         {fehler && <div className="fehler-box">{fehler}</div>}
         {fuss}
+        {(importOffen || geteilt !== null) && (
+          <ReiseImport
+            // Ein neu geteilter Text oeffnet den Dialog frisch.
+            key={geteilt ?? 'von-hand'}
+            vorgabe={geteilt ?? undefined}
+            onSchliessen={() => {
+              setImportOffen(false)
+              verwirfGeteiltenText()
+            }}
+            onUebernehmen={uebernimmUmstieg}
+          />
+        )}
       </div>
 
       {breit && (

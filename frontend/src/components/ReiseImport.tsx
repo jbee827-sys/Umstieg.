@@ -6,6 +6,12 @@ interface ReiseImportProps {
   onUebernehmen: (umstieg: Umstieg, datum: string) => void
   /** Injizierbar, damit Tests den Reisetag stellen koennen. */
   jetzt?: Date
+  /**
+   * Schon eingesetzter Text - in der App aus der Teilen-Erweiterung
+   * („An Umstieg senden“, plattform/uebergabe.ts). Er wird gelesen wie ein
+   * eingefuegter: angezeigt, ausgewertet, aber nichts von selbst uebernommen.
+   */
+  vorgabe?: string
 }
 
 /**
@@ -22,7 +28,7 @@ interface ReiseImportProps {
  * normale Teilen-Menü des Betriebssystems – einfügen ist auf dem Handy ein
  * Handgriff, eine Datei suchen sind vier.
  */
-export function ReiseImport({ onSchliessen, onUebernehmen, jetzt }: ReiseImportProps) {
+export function ReiseImport({ onSchliessen, onUebernehmen, jetzt, vorgabe }: ReiseImportProps) {
   const [reise, setReise] = useState<Reise | null>(null)
   const [unlesbar, setUnlesbar] = useState(false)
   /**
@@ -38,7 +44,11 @@ export function ReiseImport({ onSchliessen, onUebernehmen, jetzt }: ReiseImportP
   const feldRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
-    feldRef.current?.focus()
+    // Mit geteiltem Text kein Fokus ins Feld: Die Tastatur verdeckte sonst
+    // genau die Auswahl, um die es jetzt geht.
+    if (vorgabe) verarbeite(vorgabe)
+    else feldRef.current?.focus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- nur beim Oeffnen; ein neuer Text oeffnet den Dialog neu (key)
   }, [])
 
   // Escape schliesst. Ein Dialog, den man nur ueber einen Knopf wieder
@@ -114,6 +124,7 @@ export function ReiseImport({ onSchliessen, onUebernehmen, jetzt }: ReiseImportP
             className="eingabefeld reisetext"
             rows={4}
             placeholder="Hier einfügen …"
+            defaultValue={vorgabe}
             onChange={(e) => verarbeite(e.target.value)}
           />
         </div>

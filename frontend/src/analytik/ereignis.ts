@@ -1,5 +1,7 @@
 import { track, type BeforeSendEvent } from '@vercel/analytics'
 import { vorfuehrungLaeuft } from '../einfuehrung/zustand'
+import { istApp } from '../plattform/istApp'
+import { zaehleInApp } from './einwilligung'
 
 /**
  * Die vier Messpunkte aus BRIEF.md 3 (Konzept Nutzergewinnung AP 4).
@@ -21,6 +23,12 @@ export function melde(name: Messpunkt): void {
   // Die Einführungstour fährt eine Beispielreise durch - sie ist keine Reise
   // und gehört nicht in die Zahlen.
   if (vorfuehrungLaeuft()) return
+  // In der App kein Vercel - dort zaehlt das eigene Backend, und nur mit
+  // Einwilligung (einwilligung.ts).
+  if (istApp()) {
+    zaehleInApp(name)
+    return
+  }
   try {
     track(name)
   } catch {

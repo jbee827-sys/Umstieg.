@@ -44,12 +44,31 @@ import type { Bildschirm } from './navigation/bildschirme'
 import { PFAD, bildschirmAusPfad, brauchtReise, startBildschirm } from './navigation/adressen'
 import { rechtsseiteAusPfad, schliesseRechtsseite, useRechtsseite } from './navigation/rechtsseiten'
 import { useMesspunkte } from './analytik/messpunkte'
+import { setzeEinwilligung, sollFragen, useEinwilligung, zaehleInApp } from './analytik/einwilligung'
 import { leereReise, liesReise, schreibeReise } from './sitzung/reisespeicher'
 import { mitUebergang, uebergangsart, type Ausloeser } from './navigation/uebergang'
 import { erkenneBahnhof } from './standort/bahnhofErkennung'
 import { useStandort } from './standort/useStandort'
 import { vorfuehrungLaeuft } from './einfuehrung/zustand'
 import { formularVorgabe, setzeFormularVorgabe } from './einfuehrung/formularstand'
+import { istApp } from './plattform/istApp'
+import { beobachteUebergabe } from './plattform/uebergabe'
+import {
+  bereiteMitteilungenVor,
+  planeErinnerung,
+  teileEreignisMit,
+  teileGefaehrdungMit,
+  vergissErinnerung,
+  wirdRot,
+} from './plattform/mitteilungen'
+import { ampelFarbe } from './navigation/ampel'
+import type { Ampelfarbe } from './api/typen'
+import {
+  halteBildschirmWach,
+  meldeAnkunftSpuerbar,
+  meldeEreignisSpuerbar,
+  tippeSchrittwechsel,
+} from './plattform/geraet'
 
 
 const FEHLER_TEXTE: Record<string, string> = {
@@ -293,7 +312,8 @@ function App() {
   /** Zeitstempel des Tafelausfalls, solange er anhaelt (null = Quelle antwortet). */
   const [quelleWegSeit, setQuelleWegSeit] = useState<string | null>(null)
   const [stand, setStand] = useState<string | null>(null)
-  const { status: standortStatus, standort, starteVerfolgung, stoppeVerfolgung } = useStandort()
+  const { status: standortStatus, standort, starteVerfolgung, stoppeVerfolgung, erlaube: erlaubeStandort } =
+    useStandort()
   const [erkannt, setErkannt] = useState<Ort[]>([])
   const [standortZuUngenau, setStandortZuUngenau] = useState(false)
   const erkennungLaeuft = useRef(false)
@@ -352,6 +372,72 @@ function App() {
     starteVerfolgung()
     return stoppeVerfolgung
   }, [bildschirm, starteVerfolgung, stoppeVerfolgung])
+
+  // Mitteilungen in der App (Plan App Store, Paket 6). Gefragt wird, sobald
+  // eine Reise laeuft - nicht beim Start und nicht in der Einfuehrungstour.
+  useEffect(() => {
+    if (!AUF_REISE.includes(bildschirm) || vorfuehrungLaeuft()) return
+    bereiteMitteilungenVor()
+  }, [bildschirm])
+
+  // Erinnerung fuenf Minuten vor der Ankunft - geplant, damit sie auch kommt,
+  // wenn iOS die App laengst angehalten hat. Neu bei jeder Aenderung von
+  // Ankunftszeit oder Anschlussgleis, weg mit der Reise.
+  const reiseLaeuft = route !== null
+  const erinnerungAnkunft = werte?.ankunftZeit
+  const erinnerungBahnhof = werte?.bahnhofName
+  const erinnerungGleis = werte?.gleisAb
+  const erinnerungZug = werte?.zugAbName
+  useEffect(() => {
+    if (!reiseLaeuft || !erinnerungAnkunft || !erinnerungBahnhof || !erinnerungGleis) return
+    if (vorfuehrungLaeuft()) return
+    planeErinnerung({
+      ankunft: heuteUm(erinnerungAnkunft),
+      bahnhofName: erinnerungBahnhof,
+      gleisAb: erinnerungGleis,
+      zugAbName: erinnerungZug,
+    })
+  }, [reiseLaeuft, erinnerungAnkunft, erinnerungBahnhof, erinnerungGleis, erinnerungZug])
+
+  // Springt die Ampel auf Rot, waehrend die App im Hintergrund ist, sagt es
+  // eine Mitteilung. Dieselbe Rechnung wie auf der Uebersicht.
+  const anschlussFarbe: Ampelfarbe | null = (() => {
+    if (!AUF_REISE.includes(bildschirm) || !route || !werte?.abfahrtZeit) return null
+    const restSek = (heuteUm(werte.abfahrtZeit).getTime() - jetzt) / 1000
+    if (restSek * 1000 < -ABGEFAHREN_KULANZ_MS) return null
+    return ampelFarbe(restSek, route.gehzeitSek)
+  })()
+  const letzteFarbe = useRef<Ampelfarbe | null>(null)
+  useEffect(() => {
+    const vorher = letzteFarbe.current
+    letzteFarbe.current = anschlussFarbe
+    if (wirdRot(vorher, anschlussFarbe) && werte && !vorfuehrungLaeuft()) teileGefaehrdungMit(werte.gleisAb)
+  }, [anschlussFarbe, werte])
+
+  // Nutzungszaehlung der App mit Einwilligung (Plan App Store, Paket 4): die
+  // Bildschirme, wie auf der Website die Seitenaufrufe. Im Browser nichts.
+  const einwilligung = useEinwilligung()
+  useEffect(() => {
+    zaehleInApp(`bildschirm-${PFAD[bildschirm].slice(1)}`)
+  }, [bildschirm])
+
+  // „An Umstieg senden“ (Plan App Store, Paket 7): Kommt eine geteilte
+  // Verbindung an, geht es auf die Eingabe - dort oeffnet sich der Dialog
+  // „Reise importieren“ mit dem Text. Eine laufende Reise bleibt gesichert.
+  useEffect(
+    () =>
+      beobachteUebergabe(() => {
+        if (bildschirmRef.current !== 'eingabe') setBildschirm('eingabe')
+      }),
+    [setBildschirm],
+  )
+
+  // In der App bleibt der Bildschirm an, solange der Weg zu sehen ist.
+  useEffect(() => {
+    if (bildschirm !== 'navigation') return
+    halteBildschirmWach(true)
+    return () => halteBildschirmWach(false)
+  }, [bildschirm])
 
   // Wie weit der Nutzer sich durchgetippt hat. Summe der Weiter- und
   // Zurueck-Tipps; die Uhr redet hier nicht mehr mit (siehe fortschritt.ts).
@@ -729,7 +815,8 @@ function App() {
             haltWort: haltWort(betroffen),
           }
           setLiveEreignis(ereignis)
-          navigator.vibrate?.([200, 100, 200])
+          meldeEreignisSpuerbar()
+          teileEreignisMit(ereignis)
 
           if (ereignis.typ === 'verspaetung' && ereignis.neu) {
             // Wie im Bahnhofspfad auf dem letzten Vorschlag aufsetzen. Eine
@@ -798,7 +885,8 @@ function App() {
         const betrifftAnkunftszug = roh.zug !== undefined && roh.zug === werte.zugAnName && roh.zug !== werte.zugAbName
         const ereignis: LiveEreignis = { ...roh, seite: betrifftAnkunftszug ? 'an' : 'ab' }
         setLiveEreignis(ereignis)
-        navigator.vibrate?.([200, 100, 200])
+        meldeEreignisSpuerbar()
+        teileEreignisMit(ereignis)
 
         // Eine neue Abfahrtszeit aendert die Restzeit, nicht den Weg - die
         // Route bleibt, nur die Zeit wird neu. Ein Gleiswechsel dagegen
@@ -909,6 +997,8 @@ function App() {
     ankunft.current = { ...ankunft.current, bestaetigt: true }
     setAnkunftVorschlag(false)
     stoppeVerfolgung()
+    vergissErinnerung()
+    meldeAnkunftSpuerbar()
     setBildschirm('angekommen')
   }
 
@@ -1064,8 +1154,14 @@ function App() {
           bahnhofName={werte.bahnhofName || 'Umstieg'}
           position={position}
           standort={standort}
-          onZurueck={() => setVersatz((v) => v - 1)}
-          onWeiter={() => setVersatz((v) => v + 1)}
+          onZurueck={() => {
+            tippeSchrittwechsel()
+            setVersatz((v) => v - 1)
+          }}
+          onWeiter={() => {
+            tippeSchrittwechsel()
+            setVersatz((v) => v + 1)
+          }}
           onAngekommen={bestaetigeAnkunft}
           pfad={werte.haltestellen ? 'haltestelle' : 'bahnhof'}
           // Die Streckenhinweise standen bis zum 19.09.2026 lose unter der
@@ -1148,10 +1244,44 @@ function App() {
                 i
               </button>
             </header>
+            {/* Nur in der App: erst der Satz, dann die Systemabfrage
+                (Plan App Store, Paket 5; standort/useStandort.ts). */}
+            {/* Nur in der App, einmal: gleichwertige Knoepfe, nichts
+                vorgewaehlt (Plan App Store, Paket 4). Widerruf unter
+                „Einstellungen“. */}
+            {sollFragen(einwilligung) && (
+              <div className="hinweis-box" role="group" aria-label="Nutzungszählung">
+                <p style={{ margin: '0 0 8px' }}>
+                  Darf Umstieg anonym zählen, welche Schritte genutzt werden? Gezählt wird nur, wie
+                  oft ein Bildschirm oder Schritt erreicht wird – kein Bahnhof, kein Standort, keine
+                  Kennung. Ändern kannst du das jederzeit unter „Einstellungen“.
+                </p>
+                <div className="wahl-gruppe">
+                  <button type="button" className="knopf-sekundaer" onClick={() => setzeEinwilligung('ja')}>
+                    Ja, zählen
+                  </button>
+                  <button type="button" className="knopf-sekundaer" onClick={() => setzeEinwilligung('nein')}>
+                    Nein
+                  </button>
+                </div>
+              </div>
+            )}
+            {standortStatus === 'erklaeren' && (
+              <div className="hinweis-box">
+                <p style={{ margin: '0 0 8px' }}>
+                  Mit deinem Standort erkennt Umstieg den Bahnhof und merkt unterwegs, wann du am Gleis
+                  bist. Die Position wird gerundet und nicht gespeichert.
+                </p>
+                <button type="button" className="knopf-sekundaer" onClick={erlaubeStandort}>
+                  Standort verwenden
+                </button>
+              </div>
+            )}
             {standortStatus === 'verweigert' && (
               <div className="hinweis-box">
-                Ohne Standortfreigabe suchst du den Bahnhof von Hand. Du kannst sie in den
-                Browsereinstellungen für diese Seite wieder erlauben.
+                {istApp()
+                  ? 'Ohne Standortfreigabe suchst du den Bahnhof von Hand. Du kannst sie in den Einstellungen deines Geräts unter „Umstieg.“ wieder erlauben.'
+                  : 'Ohne Standortfreigabe suchst du den Bahnhof von Hand. Du kannst sie in den Browsereinstellungen für diese Seite wieder erlauben.'}
               </div>
             )}
             {standortStatus === 'nicht-verfuegbar' && (

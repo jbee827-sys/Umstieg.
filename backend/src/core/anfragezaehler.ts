@@ -19,7 +19,18 @@ export interface Anfragezaehler {
 }
 
 export function erzeugeAnfragezaehler(
-  o: { log?: ZaehlerProtokoll; jetzt?: () => Date; intervallMs?: number } = {},
+  o: {
+    log?: ZaehlerProtokoll;
+    jetzt?: () => Date;
+    intervallMs?: number;
+    /**
+     * Name des Protokolleintrags. Derselbe Zaehler zaehlt seit dem 24.10.2026
+     * auch die Nutzung der iOS-App (routes/zaehler.ts) - mit eigenem Namen,
+     * damit beide Summen im Protokoll auseinanderzuhalten sind.
+     */
+    ereignis?: string;
+    nachricht?: string;
+  } = {},
 ): Anfragezaehler {
   const jetzt = o.jetzt ?? (() => new Date());
   // Map statt Objekt: Der Endpunktname ist zwar intern, aber `stand()` gibt
@@ -44,14 +55,14 @@ export function erzeugeAnfragezaehler(
         const summe = Object.values(stand).reduce((s, n) => s + n, 0);
         o.log?.info(
           {
-            ereignis: 'motis-anfragen',
+            ereignis: o.ereignis ?? 'motis-anfragen',
             stunde: beginn.toISOString().slice(0, 13),
             von: beginn.toISOString(),
             bis: ende.toISOString(),
             je: stand,
             summe,
           },
-          'MOTIS-Anfragen der Stunde',
+          o.nachricht ?? 'MOTIS-Anfragen der Stunde',
         );
         je = new Map();
       }

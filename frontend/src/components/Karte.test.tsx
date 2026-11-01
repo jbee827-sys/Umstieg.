@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render } from '@testing-library/react'
 import { Karte } from './Karte'
+import { KARTENSTIL } from './kartenstil'
 
 /**
  * MapLibre zeichnet in jsdom nichts - die Karte wird hier nachgestellt und
@@ -13,7 +14,12 @@ const karten: {
   laden?: () => void
   grenzen: unknown[]
   einpassungen: { maxZoom?: number }[]
-  optionen: { maxZoom?: number; bounds?: unknown; fitBoundsOptions?: { maxZoom?: number; padding?: number } }
+  optionen: {
+    maxZoom?: number
+    bounds?: unknown
+    fitBoundsOptions?: { maxZoom?: number; padding?: number }
+    style?: unknown
+  }
 }[] = []
 vi.mock('maplibre-gl', () => {
   class Map {
@@ -119,5 +125,36 @@ describe('Karte: MapLibre-Worker (Browserpruefung 18.10.2026)', () => {
   it('gibt MapLibre eine gebuendelte Worker-Adresse - sonst lud der Browser index.html und keine Linie erschien', () => {
     expect(workerAdressen.length).toBeGreaterThan(0)
     expect(workerAdressen[0]).toMatch(/maplibre-gl-worker/)
+  })
+})
+
+/*
+ * Seit dem 24.10.2026 kommt das Kartenbild von OpenFreeMap (Plan App Store,
+ * Paket 9): Die Regeln von tile.openstreetmap.org verlangen eine erkennbare
+ * Anwendungskennung, die die iOS-App nicht senden kann.
+ */
+describe('Karte: Stil von OpenFreeMap (24.10.2026)', () => {
+  const zeige = () => {
+    karten.length = 0
+    render(<Karte karte={{ '0': linie(13.37) }} anfangsOffen />)
+    return karten[0].optionen.style
+  }
+
+  it('hell der Stil mit den meisten Einzelheiten', () => {
+    expect(zeige()).toBe(KARTENSTIL.hell)
+    expect(KARTENSTIL.hell).toBe('https://tiles.openfreemap.org/styles/liberty')
+  })
+
+  it('dunkel, wenn Dunkel gewaehlt ist', () => {
+    document.documentElement.dataset.darstellung = 'dunkel'
+    try {
+      expect(zeige()).toBe(KARTENSTIL.dunkel)
+    } finally {
+      delete document.documentElement.dataset.darstellung
+    }
+  })
+
+  it('keine Kacheln mehr von tile.openstreetmap.org', () => {
+    expect(JSON.stringify(zeige())).not.toContain('tile.openstreetmap.org')
   })
 })

@@ -166,3 +166,50 @@ describe('Datenschutzerklaerung sagt, was die App wirklich tut', () => {
     expect(zeige()).toMatch(/Steigkoordinaten/)
   })
 })
+
+/**
+ * Die App (Plan App Store, Pakete 5, 6 und 10). Eine Seite fuer Web und App -
+ * sie muss sagen, was in der App anders ist, und darf nichts zusagen, was die
+ * App nicht haelt.
+ */
+describe('Datenschutz: die App', () => {
+  it('hat einen eigenen Abschnitt', () => {
+    expect(zeige()).toContain('Die App für iPhone und iPad')
+  })
+
+  it('sagt, dass der Standort erst nach dem Tipp auf „Standort verwenden“ abgefragt wird', () => {
+    expect(zeige()).toContain('Erst wenn du auf „Standort verwenden“ tippst')
+  })
+
+  it('sagt, dass Mitteilungen auf dem Geraet entstehen und es keinen Push-Dienst gibt', () => {
+    const text = zeige()
+    expect(text).toContain('entstehen auf deinem Gerät')
+    expect(text).toContain('keinen Push-Dienst')
+  })
+
+  it('sagt, dass die App nur mit Einwilligung zaehlt - und was dabei hinausgeht', () => {
+    const text = zeige()
+    expect(text).toContain('Nutzungszählung nur mit Einwilligung')
+    expect(text).toContain('Ohne Antwort und mit „Nein“ wird nichts gesendet')
+    expect(text).toContain('Namen des Ereignisses')
+    expect(text).toContain('Art. 6 Abs. 1 lit. a DSGVO')
+    expect(text).toContain('„Anonyme Nutzungszählung“ → „Aus“')
+  })
+
+  it('nennt den zweiten Eintrag im localStorage der App', () => {
+    expect(zeige()).toMatch(/localStorage\s*als Wort „ja“ oder „nein“/)
+  })
+
+  it('nennt den Widerruf in den Einstellungen von iOS', () => {
+    const text = zeige()
+    expect(text).toContain('„Umstieg.“ → „Standort“')
+    expect(text).toContain('„Umstieg.“ → „Mitteilungen“')
+  })
+
+  it('sagt, was mit einer geteilten Verbindung geschieht - und dass sie das Geraet nicht verlaesst', () => {
+    const text = zeige()
+    expect(text).toContain('Verbindung teilen')
+    expect(text).toContain('löscht ihn dabei')
+    expect(text).toContain('Der Text verlässt dein Gerät nicht.')
+  })
+})

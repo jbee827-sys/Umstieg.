@@ -11,7 +11,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 **UI-Design (Claude Design Import):** [`design/Umstieg.dc.html`](./design/Umstieg.dc.html)
 **Designregeln (Farben, Schrift, Bauteile):** [`design/DESIGN.md`](./design/DESIGN.md), Begründungen in [`BRIEF.md`](./BRIEF.md)
 
-**Lizenz:** Quellcode unter AGPL-3.0-only für alle Stände ([`LICENSE`](./LICENSE), zur früheren MIT-Datei siehe [`NOTICE`](./NOTICE)); die zur Laufzeit abgerufenen Daten (DB, Transitous/DELFI, OpenStreetMap) stehen unter eigenen Lizenzen, siehe [`NOTICE`](./NOTICE). Zugangsdaten liegen nie im Repository – welche nötig sind, zeigt [`.env.example`](./.env.example).
+**Lizenz:** Quellcode unter AGPL-3.0-only für alle Stände ([`LICENSE`](./LICENSE), zur früheren MIT-Datei siehe [`NOTICE`](./NOTICE)), mit einer zusätzlichen Erlaubnis nach § 7 AGPL für den Vertrieb über App-Marktplätze wie den Apple App Store (Wortlaut in [`NOTICE`](./NOTICE), Beiträge nur einschließlich dieser Erlaubnis, siehe [`CONTRIBUTING.md`](./CONTRIBUTING.md)); die zur Laufzeit abgerufenen Daten (DB, Transitous/DELFI, OpenStreetMap) stehen unter eigenen Lizenzen, siehe [`NOTICE`](./NOTICE). Zugangsdaten liegen nie im Repository – welche nötig sind, zeigt [`.env.example`](./.env.example).
 
 ## Architektur
 
@@ -20,6 +20,27 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
 ## Hier weitermachen (Stand 21.10.2026, abends)
+
+### iOS-App (Stand 24.10.2026, Zweig `feat/app-ios`, nicht ausgeliefert)
+
+Plan: `Umstieg_Konzepte/05-umsetzungsplan-app-store.md`. Aufbau und
+Einrichtung: [`docs/app-ios.md`](./docs/app-ios.md). Web und App teilen einen
+Code (`istApp()`); die Web-Fassung ändert sich nur im Suchfeld
+(Autokorrektur aus) und im Datenschutztext.
+
+| Paket | Stand |
+|---|---|
+| 0 Apple-Konto | erledigt (Julian, 24.10.2026) |
+| 1 Lizenz-Ausnahme (§ 7 AGPL) | umgesetzt in `NOTICE`, `CONTRIBUTING.md` – **Freigabe Julian** |
+| 2 Capacitor + Cloud-Bau | fertig; Actions-Lauf grün mit 12 Fotos (iPhone 6,9", iPad 13", hell/dunkel); `capacitor://localhost` steht seit 24.10.2026 in `CORS_ORIGIN` auf Fly |
+| 3 TestFlight | Job `testflight` steht; braucht Paket 0 und die vier Geheimnisse (`docs/app-ios.md`) |
+| 4 Messung mit Einwilligung | fertig: eigener Zähler `POST /api/zaehle` (nur Ereignisname, Summen je Stunde als `app-nutzung` im Fly-Protokoll), Abfrage beim ersten Start, Widerruf unter „Einstellungen“. Backend auf Fly ausgerollt am 24.10.2026 |
+| 5 Native Grundfunktionen | fertig (Standort mit Erklärung vor der Abfrage, Haptik, Wachhalten, Statusleiste, Start, Symbol, Safari-Ansicht, Datenschutz-Manifest) |
+| 6 Lokale Mitteilungen | fertig (Gleiswechsel/Ausfall des Anschlusses, Ampel Rot, Erinnerung 5 min vor Ankunft) |
+| 7 Teilen-Erweiterung | gebaut: Ziel `Teilen` (Share Extension) legt den Text in der App Group ab, die App holt ihn beim Öffnen und zeigt „Reise importieren“. Prüfbar erst mit TestFlight am iPhone (Julian, mit DB Navigator) |
+| 8 iPad/HIG | teilweise: Wischgeste (greift seit 24.10.2026 wirklich – `SceneDelegate` setzte vorher Capacitors eigenen ViewController), Textgröße des Geräts, Suchfeld, Platzhalter entfernt; Sichtprüfung iPad steht aus |
+| 9 Datenquellen | Karte auf OpenFreeMap umgestellt (Web und App, `liberty`/`dark`, CSP, Datenschutz, `NOTICE`) – geht mit dem nächsten Web-Release live; DB-Prüfliste und Transitous-Anfrage in `docs/app-store-datenquellen.md`, Julian schickt ab |
+| 10 Store-Eintrag | Vorlagen in `docs/app-store-eintrag.md`; Datenschutz-Abschnitt „App“ – **Freigabe Julian** |
 
 ### Zugbild und Zugspitze (Stand 25.10.2026, Zweig `feat/zugbild`, nicht ausgeliefert)
 

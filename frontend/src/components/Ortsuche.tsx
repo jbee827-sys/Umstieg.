@@ -86,6 +86,12 @@ export function Ortsuche({
         className="eingabefeld"
         type="text"
         autoComplete="off"
+        // Bahnhofsnamen: keine Autokorrektur („Hbf“ wuerde zu „Hof“), grosse
+        // Anfangsbuchstaben, und die Eingabetaste heisst „Suchen“.
+        autoCorrect="off"
+        autoCapitalize="words"
+        spellCheck={false}
+        enterKeyHint="search"
         placeholder={platzhalter}
         value={text}
         onChange={(e) => onText(e.target.value)}
