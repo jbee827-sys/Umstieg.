@@ -20,6 +20,7 @@ interface IrisEreignis {
   pt?: string; // Sollzeit YYMMDDHHmm
   pp?: string; // Sollgleis
   ppth?: string; // Laufweg, '|'-getrennt
+  cpth?: string; // geänderter Laufweg
   ct?: string; // geänderte Zeit
   cp?: string; // geändertes Gleis
 }
@@ -56,8 +57,14 @@ async function holeXml(url: string, fetchFn: typeof fetch): Promise<string> {
   return antwort.text();
 }
 
+/** Die Halte eines Laufwegs - der geaenderte, wenn es einen gibt. */
+function halteVon(plan: IrisEreignis | undefined, aenderung: IrisEreignis | undefined): string[] {
+  const roh = aenderung?.cpth ?? plan?.ppth ?? '';
+  return roh.split('|').filter(Boolean);
+}
+
 /** Aus den Plaenen beider Stunden und den Aenderungen die Tafel einer Richtung. */
-function baueTafel(planXmls: string[], aenderungenXml: string, typ: 'arr' | 'dep'): TafelEintrag[] {
+export function baueTafel(planXmls: string[], aenderungenXml: string, typ: 'arr' | 'dep'): TafelEintrag[] {
   const aenderungen = new Map<string, IrisHalt>();
   for (const halt of parseHalte(aenderungenXml)) {
     if (halt.id) aenderungen.set(halt.id, halt);
@@ -79,6 +86,15 @@ function baueTafel(planXmls: string[], aenderungenXml: string, typ: 'arr' | 'dep
     const geaendert = typ === 'arr' ? aenderung?.ar : aenderung?.dp;
 
     const laufweg = (ereignis.ppth ?? '').split('|').filter(Boolean);
+    // Nachbarhalte fuer die Zugspitze am Bahnsteig: der letzte Halt VOR
+    // diesem Bahnhof steht am Ende des Ankunfts-Laufwegs, der naechste am
+    // Anfang des Abfahrts-Laufwegs. Ein geaenderter Laufweg (Umleitung) gilt
+    // vor dem geplanten - sonst kaeme der Zug fuer die App von der falschen
+    // Seite.
+    const vorher = halteVon(halt.ar, aenderung?.ar);
+    const nachher = halteVon(halt.dp, aenderung?.dp);
+    const vonHalt = vorher[vorher.length - 1];
+    const nachHalt = nachher[0];
     const zeitSoll = zeitText(ereignis.pt) ?? '';
     const zeitIst = zeitText(geaendert?.ct);
     const gleisSoll = ereignis.pp ?? '';
@@ -92,6 +108,8 @@ function baueTafel(planXmls: string[], aenderungenXml: string, typ: 'arr' | 'dep
       ...(gleisIst && gleisIst !== gleisSoll ? { gleisIst } : {}),
       // Abfahrt: Endbahnhof; Ankunft: Startbahnhof des Laufwegs
       ziel: (typ === 'dep' ? laufweg[laufweg.length - 1] : laufweg[0]) ?? '',
+      ...(vonHalt ? { vonHalt } : {}),
+      ...(nachHalt ? { nachHalt } : {}),
     });
   }
   // Chronologisch - die Tafel soll lesen wie eine Anzeigetafel.

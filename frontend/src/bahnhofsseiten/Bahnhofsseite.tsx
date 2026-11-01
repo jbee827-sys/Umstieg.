@@ -10,6 +10,7 @@ import {
   wegText,
 } from './texte'
 import type { Bahnhofsdaten, Gleispaar } from './typen'
+import { fragen, kmText, ueberblickSaetze, type Nachbar } from './ueberblick'
 
 /**
  * Inhalt der vorgerenderten Seiten (Konzept Nutzergewinnung AP 5b). Nur
@@ -68,7 +69,25 @@ function Zeile({ p }: { p: Gleispaar }) {
   )
 }
 
-export function Bahnhofsseite({ d }: { d: Bahnhofsdaten }) {
+/** Interne Verlinkung: jede Seite fuehrt zu ihren Nachbarn (26.10.2026). */
+function InDerNaehe({ nachbarn }: { nachbarn: Nachbar[] }) {
+  if (nachbarn.length === 0) return null
+  return (
+    <section className="bs-naehe">
+      <h2>Bahnhöfe in der Nähe</h2>
+      <ul className="bs-liste">
+        {nachbarn.map((n) => (
+          <li key={n.d.slug}>
+            <a href={BAHNHOF_PFAD(n.d.slug)}>{n.d.name}</a>{' '}
+            <span className="bs-gleiszahl">· {kmText(n.km)}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+export function Bahnhofsseite({ d, nachbarn }: { d: Bahnhofsdaten; nachbarn: Nachbar[] }) {
   return (
     <>
       <Seitenkopf />
@@ -78,9 +97,13 @@ export function Bahnhofsseite({ d }: { d: Bahnhofsdaten }) {
           Gehzeiten zwischen {d.gleise.length} Gleisen, berechnet aus dem Bahnhofsplan, bei
           normalem Gehtempo ab Bahnsteigmitte.
         </p>
+        {/* Der Knopf bleibt oben - die meisten Besucher kommen ueber diese Seiten (Julian, 26.10.2026). */}
         <a className="bs-knopf" href={eingabeLink(d)}>
-          Weg für meinen Umstieg anzeigen
+          Weg anzeigen
         </a>
+
+        <h2>Der Bahnhof im Überblick</h2>
+        <p className="bs-ueberblick">{ueberblickSaetze(d).join(' ')}</p>
 
         <h2>Gehzeiten nach Ankunftsgleis</h2>
         {d.gleise.map((von) => (
@@ -108,10 +131,19 @@ export function Bahnhofsseite({ d }: { d: Bahnhofsdaten }) {
 
         <LaengsteUmstiege d={d} />
 
+        <h2>Häufige Fragen</h2>
+        {fragen(d).map((f) => (
+          <div key={f.frage} className="bs-frage">
+            <h3>{f.frage}</h3>
+            <p>{f.antwort}</p>
+          </div>
+        ))}
+
         <p className="bs-hinweis">
           Richtwerte. Mit Gepäck oder wenig Ortskenntnis mehr Zeit einplanen. Live-Lage,
           Gleiswechsel und Aufzugsstörungen zeigt die App.
         </p>
+        <InDerNaehe nachbarn={nachbarn} />
         <p className="bs-stand">
           Bahnhofsplan vom {standText(d.geholtAm)}. Kartendaten ©{' '}
           <a href="https://www.openstreetmap.org/copyright">OpenStreetMap-Mitwirkende</a>.
@@ -137,7 +169,7 @@ export function Uebersicht({ alle }: { alle: Bahnhofsdaten[] }) {
           Aufzügen und stufenfreien Wegen – berechnet aus dem Bahnhofsplan.
         </p>
         <a className="bs-knopf" href="/eingabe">
-          Weg für meinen Umstieg anzeigen
+          Weg anzeigen
         </a>
         {gruppiereNachBuchstabe(alle, (d) => d.name).map(([buchstabe, gruppe]) => (
           <section key={buchstabe} className="bs-buchstabe">

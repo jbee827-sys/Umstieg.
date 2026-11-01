@@ -5,6 +5,7 @@ import { BAHNHOF_PFAD } from './adressen'
 import { Bahnhofsseite, Uebersicht } from './Bahnhofsseite'
 import { beschreibungFuer, titelFuer } from './texte'
 import type { Bahnhofsdaten } from './typen'
+import { fragen, type Nachbar } from './ueberblick'
 
 export { BAHNHOF_PFAD, eingabeLink } from './adressen'
 
@@ -33,7 +34,7 @@ function dokument(o: {
   beschreibung: string
   pfad: string
   bauteile: Bauteile
-  strukturiert?: object
+  strukturiert?: object[]
   inhalt: string
 }): string {
   const url = maskiere(`${BASIS_URL}${o.pfad}`)
@@ -62,7 +63,7 @@ function dokument(o: {
     `<meta name="twitter:description" content="${b}" />`,
     `<link rel="stylesheet" href="${maskiere(o.bauteile.css)}" />`,
     `<script defer src="${maskiere(o.bauteile.messung)}"></script>`,
-    ...(o.strukturiert ? [`<script type="application/ld+json">${jsonLd(o.strukturiert)}</script>`] : []),
+    ...(o.strukturiert ?? []).map((s) => `<script type="application/ld+json">${jsonLd(s)}</script>`),
     '</head>',
     `<body>${o.inhalt}</body>`,
     '</html>',
@@ -70,21 +71,33 @@ function dokument(o: {
   ].join('\n')
 }
 
-export function bahnhofsseiteHtml(d: Bahnhofsdaten, bauteile: Bauteile): string {
+/** `nachbarn`: die naechsten Bahnhoefe mit eigener Seite (ueberblick.ts, naechsteBahnhoefe). */
+export function bahnhofsseiteHtml(d: Bahnhofsdaten, bauteile: Bauteile, nachbarn: Nachbar[] = []): string {
   const pfad = BAHNHOF_PFAD(d.slug)
   return dokument({
     titel: titelFuer(d.name),
     beschreibung: beschreibungFuer(d.name),
     pfad,
     bauteile,
-    strukturiert: {
-      '@context': 'https://schema.org',
-      '@type': 'TrainStation',
-      name: d.name,
-      url: `${BASIS_URL}${pfad}`,
-      geo: { '@type': 'GeoCoordinates', latitude: d.lat, longitude: d.lon },
-    },
-    inhalt: renderToStaticMarkup(createElement(Bahnhofsseite, { d })),
+    strukturiert: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'TrainStation',
+        name: d.name,
+        url: `${BASIS_URL}${pfad}`,
+        geo: { '@type': 'GeoCoordinates', latitude: d.lat, longitude: d.lon },
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: fragen(d).map((f) => ({
+          '@type': 'Question',
+          name: f.frage,
+          acceptedAnswer: { '@type': 'Answer', text: f.antwort },
+        })),
+      },
+    ],
+    inhalt: renderToStaticMarkup(createElement(Bahnhofsseite, { d, nachbarn })),
   })
 }
 

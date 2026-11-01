@@ -41,10 +41,23 @@ const ENDE_NACH_RICHTUNG: Record<Himmelsrichtung, string> = {
  * nichts - welches Ende das im Bahnhof ist, stand nirgends, und in OSM war es
  * das zufaellig zuerst gezeichnete. Ohne gemessene Achse (Standardmodell)
  * bleibt es bei Anfang und Ende: Dort waere eine Himmelsrichtung erfunden.
+ *
+ * Seit dem 25.10.2026 zuerst nach der Stelle im ZUG: Kennt das Backend die
+ * Zugspitze, heissen die Knoepfe „Zuganfang · Zugmitte · Zugende" - wo man
+ * im Zug sitzt, weiss jeder, wo Norden ist, kaum jemand. Die Reihenfolge
+ * bleibt die des Bahnsteigs; nur die Namen folgen der Fahrtrichtung.
  */
 export function standortNamen(
   richtung?: SchemaBahnsteig['himmelsrichtung'],
+  zugspitze?: SchemaBahnsteig['zugspitze'],
 ): Record<Bahnsteigabschnitt, string> {
+  if (zugspitze) {
+    return {
+      anfang: zugspitze === 'anfang' ? 'Zuganfang' : 'Zugende',
+      mitte: 'Zugmitte',
+      ende: zugspitze === 'ende' ? 'Zuganfang' : 'Zugende',
+    }
+  }
   if (!richtung) return ABSCHNITT_NAMEN
   return {
     anfang: ENDE_NACH_RICHTUNG[richtung.von],
@@ -53,15 +66,26 @@ export function standortNamen(
   }
 }
 
+function ankunftsBahnsteig(schema: BahnhofSchema | undefined): SchemaBahnsteig | undefined {
+  for (const ebene of schema?.ebenen ?? []) {
+    const start = ebene.bahnsteige.find((b) => b.rolle === 'start')
+    if (start) return start
+  }
+  return undefined
+}
+
 /** Die Himmelsrichtung des Ankunftsbahnsteigs, wenn das Schema sie kennt. */
 export function ankunftsRichtung(
   schema: BahnhofSchema | undefined,
 ): SchemaBahnsteig['himmelsrichtung'] {
-  for (const ebene of schema?.ebenen ?? []) {
-    const start = ebene.bahnsteige.find((b) => b.rolle === 'start')
-    if (start) return start.himmelsrichtung
-  }
-  return undefined
+  return ankunftsBahnsteig(schema)?.himmelsrichtung
+}
+
+/** An welchem Ende des Ankunftsbahnsteigs die Zugspitze steht, wenn es sicher ist. */
+export function ankunftsZugspitze(
+  schema: BahnhofSchema | undefined,
+): SchemaBahnsteig['zugspitze'] {
+  return ankunftsBahnsteig(schema)?.zugspitze
 }
 
 /**

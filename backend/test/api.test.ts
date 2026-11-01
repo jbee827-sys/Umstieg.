@@ -277,6 +277,99 @@ describe('GET /api/route – Wagenposition', () => {
   });
 });
 
+/**
+ * Zugspitze am Ankunftsbahnsteig (25.10.2026): Der vorherige Halt kommt als
+ * Name aus der Tafel, seine Lage aus RIS::Stations.
+ */
+describe('GET /api/route – Zugspitze aus dem vorherigen Halt', () => {
+  /** Gleis 1 der Ministadt liegt West-Ost, Anfang im Westen. */
+  function mitHalten() {
+    const clients = macheClients();
+    clients.stations.sucheBahnhoefe = vi.fn(async (q: string) => {
+      if (q === 'Weststadt') return [{ name: 'Weststadt', eva: '8000002', lat: 52.0, lon: 11.9 }];
+      if (q === 'Nordheim') return [{ name: 'Nordheim', eva: '8000003', lat: 52.1, lon: 12.001 }];
+      // Ein anderer Bahnhof mit aehnlichem Namen - nicht der gesuchte.
+      if (q === 'Oststadt') return [{ name: 'Oststadt Süd', eva: '8000004', lat: 52.0, lon: 12.1 }];
+      return [];
+    });
+    return clients;
+  }
+  const start = (e: RouteErgebnis) =>
+    e.schema!.ebenen[0].bahnsteige.find((b) => b.rolle === 'start')!;
+
+  it('stellt die Spitze an das Ende, das vom vorherigen Halt weg zeigt', async () => {
+    const app = buildApp(mitHalten());
+    const res = await app.inject({ method: 'GET', url: `${ROUTE_URL}&vonHalt=Weststadt` });
+    expect(res.statusCode).toBe(200);
+    expect(start(res.json() as RouteErgebnis).zugspitze).toBe('ende');
+  });
+
+  it('fragt jeden Halt nur einmal nach, auch ueber mehrere Routen', async () => {
+    const clients = mitHalten();
+    const app = buildApp(clients);
+    await app.inject({ method: 'GET', url: `${ROUTE_URL}&vonHalt=Weststadt` });
+    await app.inject({ method: 'GET', url: `${ROUTE_URL}&vonHalt=Weststadt&abschnitt=ende` });
+    expect(clients.stations.sucheBahnhoefe).toHaveBeenCalledTimes(1);
+  });
+
+  it('schweigt bei einem Halt quer zum Bahnsteig', async () => {
+    const app = buildApp(mitHalten());
+    const res = await app.inject({ method: 'GET', url: `${ROUTE_URL}&vonHalt=Nordheim` });
+    expect(start(res.json() as RouteErgebnis).zugspitze).toBeUndefined();
+  });
+
+  it('nimmt nur einen Treffer mit genau diesem Namen', async () => {
+    const app = buildApp(mitHalten());
+    const res = await app.inject({ method: 'GET', url: `${ROUTE_URL}&vonHalt=Oststadt` });
+    expect(res.statusCode).toBe(200);
+    expect(start(res.json() as RouteErgebnis).zugspitze).toBeUndefined();
+  });
+
+  it('liefert die Route auch, wenn die Suche nach dem Halt scheitert', async () => {
+    const clients = mitHalten();
+    clients.stations.sucheBahnhoefe = vi.fn(async () => {
+      throw new Error('RIS::Stations weg (Test)');
+    });
+    const app = buildApp(clients);
+    const res = await app.inject({ method: 'GET', url: `${ROUTE_URL}&vonHalt=Weststadt` });
+    expect(res.statusCode).toBe(200);
+    expect(start(res.json() as RouteErgebnis).zugspitze).toBeUndefined();
+  });
+
+  /** Mehr als 60° neben der Achse - am Durchgangsgleis entscheidet dann der naechste Halt. */
+  it('nimmt bei querem vorherigen Halt den naechsten: Spitze zu ihm hin', async () => {
+    const app = buildApp(mitHalten());
+    const res = await app.inject({ method: 'GET', url: `${ROUTE_URL}&vonHalt=Nordheim&nachHalt=Weststadt` });
+    expect(start(res.json() as RouteErgebnis).zugspitze).toBe('anfang');
+  });
+
+  it('stellt am Kopfgleis laut RIS die Spitze entgegen dem naechsten Halt', async () => {
+    const clients = mitHalten();
+    clients.stations.holeStationsInfo = vi.fn(async () => ({
+      ...ministadt,
+      gleise: [{ gleis: '1', ris: { name: '1', headPlatform: true } }, { gleis: '2' }],
+    }));
+    const app = buildApp(clients);
+    const res = await app.inject({ method: 'GET', url: `${ROUTE_URL}&vonHalt=Nordheim&nachHalt=Weststadt` });
+    expect(start(res.json() as RouteErgebnis).zugspitze).toBe('ende');
+  });
+
+  it('findet einen Halt auch ohne Zusatz wie „(tief)"', async () => {
+    const clients = mitHalten();
+    const app = buildApp(clients);
+    const res = await app.inject({ method: 'GET', url: `${ROUTE_URL}&vonHalt=${encodeURIComponent('Weststadt (tief)')}` });
+    expect(start(res.json() as RouteErgebnis).zugspitze).toBe('ende');
+    expect(clients.stations.sucheBahnhoefe).toHaveBeenCalledWith('Weststadt');
+  });
+
+  it('ohne vonHalt wird nicht gesucht', async () => {
+    const clients = mitHalten();
+    const app = buildApp(clients);
+    await app.inject({ method: 'GET', url: ROUTE_URL });
+    expect(clients.stations.sucheBahnhoefe).not.toHaveBeenCalled();
+  });
+});
+
 describe('GET /api/board/:eva', () => {
   it('liefert die Tafel über den injizierten Client', async () => {
     const clients = macheClients();

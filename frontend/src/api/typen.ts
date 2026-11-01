@@ -64,6 +64,8 @@ export interface SchemaBahnsteig {
   anlagen?: { aufzug: number; rolltreppe: number; treppe: number };
   /** Wohin die Enden zeigen: `von` ist der Anfang. Nur bei gemessener Achse. */
   himmelsrichtung?: { von: Himmelsrichtung; bis: Himmelsrichtung };
+  /** Nur am Ankunftsbahnsteig: an welchem Ende die Zugspitze steht (fehlt = unsicher). */
+  zugspitze?: 'anfang' | 'ende';
   von?: SchemaPunkt;
   bis?: SchemaPunkt;
   /** Nur am Ankunfts- und Abfahrtsbahnsteig. */
@@ -178,6 +180,10 @@ export interface TafelEintrag {
   gleisSoll: string;
   gleisIst?: string;
   ziel: string;
+  /** Letzter Halt vor diesem Bahnhof - fehlt, wo der Zug beginnt. */
+  vonHalt?: string;
+  /** Naechster Halt - fehlt, wo der Zug endet. */
+  nachHalt?: string;
 }
 
 /** Spiegel von backend/src/core/ueberwachung.ts – SSE-Ereignisse. */
@@ -202,6 +208,10 @@ export interface RouteParameter {
   gleisAn: string;
   gleisAb: string;
   zugAn?: string;
+  /** Letzter Halt des Ankunftszugs - daraus bestimmt das Backend die Zugspitze. */
+  vonHalt?: string;
+  /** Naechster Halt des Ankunftszugs - entscheidet, wenn der vorherige quer liegt. */
+  nachHalt?: string;
   wagen?: string;
   abschnitt?: Bahnsteigabschnitt;
   profil: Gehprofil;

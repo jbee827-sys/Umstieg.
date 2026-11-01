@@ -106,3 +106,101 @@ export function himmelsrichtungen(
   }
   return ost >= 0 ? { von: 'O', bis: 'W' } : { von: 'W', bis: 'O' };
 }
+
+/** Welches der beiden Bahnsteigenden die Spitze des Zuges hat. */
+export type Zugspitze = 'anfang' | 'ende';
+
+/**
+ * Wie weit der vorherige Halt hoechstens neben der Bahnsteigachse liegen darf
+ * (Winkel von der Bahnsteigmitte aus). Darueber ist die Seite geraten: Kurz
+ * vor dem Bahnhof kann die Strecke in einer Kurve oder ueber eine Bruecke
+ * kommen, und der Halt dahinter liegt dann eher neben als hinter dem
+ * Bahnsteig.
+ */
+export const ZUGSPITZE_HOECHSTWINKEL_GRAD = 60;
+
+/**
+ * Dasselbe am Kopfgleis. Dort kommt und geht jeder Zug ueber das Gleisvorfeld
+ * - eine Kurve dahinter kann die Seite nicht vertauschen, nur verschieben. In
+ * Frankfurt(Main)Hbf laufen die Gleise nach Westsueden aus und biegen dann
+ * nach Norden: Frankfurt-West liegt 77° neben der Achse und doch eindeutig
+ * auf der Seite des Vorfelds. Nur fast genau senkrecht bleibt es offen.
+ */
+export const KOPFGLEIS_HOECHSTWINKEL_GRAD = 85;
+
+/** Was ueber den Zug bekannt ist, um seine Spitze zu finden. */
+export interface Zuglauf {
+  /** Lage des letzten Halts vor diesem Bahnhof. */
+  vorher?: Ort;
+  /** Lage des naechsten Halts - fehlt, wo der Zug endet. */
+  nachher?: Ort;
+  /** Das Ankunftsgleis endet am Prellbock (RIS::Stations `headPlatform`). */
+  kopfgleis?: boolean;
+  /** Am Kopfgleis: welches Ende der Prellbock ist, wenn der Graph es zeigt (`prellbockEnde`). */
+  prellbock?: Zugspitze;
+}
+
+/**
+ * Auf welcher Seite des Bahnsteigs ein Ort liegt - das Ende, hinter dem er
+ * liegt. `undefined`, wenn er quer zur Achse liegt, auf dem Bahnsteig selbst
+ * oder der Bahnsteig keine Laenge hat.
+ */
+function seiteVon(
+  anfang: Ort,
+  ende: Ort,
+  ort: Ort | undefined,
+  hoechstwinkelGrad = ZUGSPITZE_HOECHSTWINKEL_GRAD,
+): Zugspitze | undefined {
+  if (!ort) return undefined;
+  const mitte = { lat: (anfang.lat + ende.lat) / 2, lon: (anfang.lon + ende.lon) / 2 };
+  const mLon = M_LAT * Math.cos(mitte.lat * BOGEN);
+  const achseOst = (ende.lon - anfang.lon) * mLon;
+  const achseNord = (ende.lat - anfang.lat) * M_LAT;
+  const laenge = Math.hypot(achseOst, achseNord);
+  const ost = (ort.lon - mitte.lon) * mLon;
+  const nord = (ort.lat - mitte.lat) * M_LAT;
+  const abstand = Math.hypot(ost, nord);
+  if (laenge < 1 || abstand <= laenge / 2) return undefined;
+  const cos = (ost * achseOst + nord * achseNord) / (laenge * abstand);
+  if (Math.abs(cos) < Math.cos(hoechstwinkelGrad * BOGEN)) return undefined;
+  return cos > 0 ? 'ende' : 'anfang';
+}
+
+const gegenueber = (s: Zugspitze): Zugspitze => (s === 'anfang' ? 'ende' : 'anfang');
+
+/**
+ * Wo die Zugspitze am Ankunftsbahnsteig steht (25.10.2026).
+ *
+ * Die Spitze zeigt zum naechsten Bahnhof. Im Kopfbahnhof steht sie bei der
+ * Ankunft am Prellbock und kehrt sich erst mit der Abfahrt um.
+ *
+ * - Durchgangsgleis: Zuerst der vorherige Halt - die Spitze steht am Ende,
+ *   das von ihm weg zeigt. Liegt er quer (Kurve, Abzweig) oder ist seine Lage
+ *   unbekannt, der naechste Halt - die Spitze steht am Ende zu ihm hin.
+ * - Kopfgleis: Die Spitze steht am Prellbock, wenn der Graph ihn zeigt - der
+ *   sicherste Fall, denn die Halte koennen hier taeuschen: Frankfurt(Main)Sued
+ *   liegt suedoestlich von Frankfurt(Main)Hbf, und doch fahren die Zuege von
+ *   dort im Bogen von Westen ein. Sonst steht sie entgegen dem naechsten Halt
+ *   - der Zug kehrt und faehrt dorthin zurueck, woher er kam. Endet er hier,
+ *   entscheidet der vorherige Halt. Quer ist hier erst, was fast senkrecht
+ *   liegt (`KOPFGLEIS_HOECHSTWINKEL_GRAD`).
+ *
+ * Simulation vom 25.10.2026: Bei 2865 von 2892 Ankuenften mit beiden Halten
+ * laengs lag der naechste Halt hinter der Spitze - die Rueckfallregel ueber
+ * den naechsten Halt widerspricht der Hauptregel also kaum.
+ *
+ * `undefined` heisst „nicht sicher". Die Knoepfe bleiben dann bei der
+ * Himmelsrichtung.
+ */
+export function bestimmeZugspitze(anfang: Ort, ende: Ort, zuglauf: Zuglauf): Zugspitze | undefined {
+  const winkel = zuglauf.kopfgleis ? KOPFGLEIS_HOECHSTWINKEL_GRAD : ZUGSPITZE_HOECHSTWINKEL_GRAD;
+  const seiteVorher = seiteVon(anfang, ende, zuglauf.vorher, winkel);
+  const seiteNachher = seiteVon(anfang, ende, zuglauf.nachher, winkel);
+  if (zuglauf.kopfgleis) {
+    if (zuglauf.prellbock) return zuglauf.prellbock;
+    if (seiteNachher) return gegenueber(seiteNachher);
+    return seiteVorher ? gegenueber(seiteVorher) : undefined;
+  }
+  if (seiteVorher) return gegenueber(seiteVorher);
+  return seiteNachher;
+}

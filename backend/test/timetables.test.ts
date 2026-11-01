@@ -110,3 +110,36 @@ describe('Tafel-Abfrage in deutscher Zeit', () => {
     expect(new Set(zuege).size).toBe(zuege.length);
   });
 });
+
+/**
+ * Der Halt vor und nach diesem Bahnhof (25.10.2026). Aus dem vorherigen
+ * bestimmt die Route, an welchem Bahnsteigende die Zugspitze steht.
+ */
+describe('holeTafel – Nachbarhalte aus dem Laufweg', () => {
+  beforeEach(() => {
+    vi.stubEnv('DB_CLIENT_ID', 'test-id');
+    vi.stubEnv('DB_CLIENT_SECRET', 'test-secret');
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('nennt den letzten Halt des Ankunfts-Laufwegs und den ersten der Abfahrt', async () => {
+    const tafel = await holeTafel('8011160', 'arr', tafelFetchMock());
+    const ice = tafel.find((e) => e.zug === 'ICE 1006')!;
+    expect(ice.vonHalt).toBe('Prenzlau');
+    expect(ice.nachHalt).toBe('Hamburg Hbf');
+  });
+
+  it('laesst den naechsten Halt weg, wo der Zug endet', async () => {
+    const tafel = await holeTafel('8011160', 'arr', tafelFetchMock());
+    const re = tafel.find((e) => e.zug === 'RE 3')!;
+    expect(re.vonHalt).toBe('Greifswald');
+    expect(re.nachHalt).toBeUndefined();
+  });
+
+  it('laesst den vorherigen Halt weg, wo der Zug beginnt', async () => {
+    const tafel = await holeTafel('8011160', 'dep', tafelFetchMock());
+    const rb = tafel.find((e) => e.zug === 'RB 23')!;
+    expect(rb.vonHalt).toBeUndefined();
+    expect(rb.nachHalt).toBe('Potsdam Hbf');
+  });
+});

@@ -42,6 +42,54 @@ Code (`istApp()`); die Web-Fassung ändert sich nur im Suchfeld
 | 9 Datenquellen | Karte auf OpenFreeMap umgestellt (Web und App, `liberty`/`dark`, CSP, Datenschutz, `NOTICE`) – geht mit dem nächsten Web-Release live; DB-Prüfliste und Transitous-Anfrage in `docs/app-store-datenquellen.md`, Julian schickt ab |
 | 10 Store-Eintrag | Vorlagen in `docs/app-store-eintrag.md`; Datenschutz-Abschnitt „App“ – **Freigabe Julian** |
 
+### Zugbild und Zugspitze (Stand 25.10.2026, Zweig `feat/zugbild`, nicht ausgeliefert)
+
+Konzept `Umstieg_Konzepte/06-Zugbild` plus Fahrtrichtung. Die Standortwahl
+fragt „Wo befindest du dich im Zug?"; über dem Bahnsteigstreifen steht ein
+dreiteiliger Zug. Kennt die App die Zugspitze, heißen Knöpfe und
+Schema-Marken „Zuganfang · Zugmitte · Zugende", der vordere Endwagen trägt
+das weiße Spitzenlicht (Zg 1), der hintere das rote Schlusslicht (Zg 2) –
+Viertelkreise oben im roten Bug. Die Reihenfolge bleibt die des Bahnsteigs
+(links Nord-/Westende); die Spitze steht links oder rechts je nach
+Fahrtrichtung. Ohne sichere Richtung bleibt es bei „Nordende · Mitte ·
+Südende". Bei Ankunft mit Bus oder Tram (Haltestellenpfad) gibt es weder
+Zug noch Standortwahl.
+
+- **Regel** (`bestimmeZugspitze`, `core/richtung.ts`): Durchgangsgleis – weg
+  vom vorherigen Halt; liegt er mehr als 60° neben der Bahnsteigachse oder
+  fehlt seine Lage, zum nächsten Halt hin. Kopfgleis (RIS::Stations
+  `headPlatform`) – am Prellbock, den `prellbockEnde` (`core/routing.ts`) aus
+  dem Graphen liest (Wegknoten außerhalb von Bahnsteigen in 25 m um die Enden
+  aller Kopfgleise der Ebene: Frankfurt und München Osten, Leipzig und
+  Stuttgart Süden); sonst entgegen dem nächsten Halt, endet der Zug, weg vom
+  vorherigen; quer erst ab 85°. Die Halte kommen aus dem IRIS-Laufweg
+  (`vonHalt`/`nachHalt`, bei Umleitung `cpth`), ihre Lage aus RIS::Stations,
+  nur bei genau gleichem Namen, notfalls ohne Zusatz wie „(tief)", „(S-Bahn)",
+  „(S)", „Gl.27-36" (`core/haltname.ts`). Warum der Prellbock vorgeht: Der RE
+  aus Bad Hersfeld kommt über Frankfurt(Main)Süd, das südöstlich liegt, und
+  fährt doch im Bogen von Westen in Frankfurt(Main)Hbf ein.
+- **Simulation** (`backend/scripts/simulation-zugspitze.ts`, echte
+  Ankunftstafeln je einer Stunde, 382 Bahnhöfe des Startbestands):
+
+  | Lauf | Ankünfte | bestimmt | Bahnhöfe immer / teils / nie |
+  |---|---|---|---|
+  | 1 (25.10., 18 Uhr), nur vorheriger Halt | 5203 | 4049 (78 %) | 168 / 202 / 8 |
+  | 2 (25.10., 19 Uhr), alle Regeln | 5211 | **4627 (89 %)** | **236 / 134 / 7** |
+
+  Lauf 2 offen: quer 249 (z. B. Hamburg Hbf 35 – die Strecken kommen von
+  Osten und gehen nach Westen ab, beide Halte quer), Gleis nicht im
+  OSM-Graphen 161 (München S-Bahn-Stammstrecke, Hamburg-Altona S-Bahn),
+  Tafel ohne Gleis 108, Stufe 3 44, Halt ohne Lage 22 (Ausland, Karlsruher
+  Stadtbahn). Nie: Hamburg-Eidelstedt, -Sternschanze (Stufe 3), München
+  Marienplatz, München-Giesing (Gleis), Plattling (ohne Gleis), Konstanz
+  (Schweizer Halte), Plauen ob Bf (quer). Gegenprobe, wo beide Halte längs
+  liegen: 3332 stimmig, 45 Widerspruch – meist Züge, die kehren (München
+  Ost, Halle), dort gewinnt richtig der vorherige Halt; an den Kopfgleisen
+  (86 Ankünfte, alle über den Prellbock) hätten die Halte 12-mal das falsche
+  Ende genannt.
+- Lokal mit Startbestand: `OSM_STARTBESTAND_PFAD=<repo>/backend/osm-bestand`
+  setzen, sonst fragt der Server Overpass.
+
 ### Einführungstour (Stand 22.10.2026, Zweig `feat/einfuehrungstour`, nicht ausgeliefert)
 
 Umgesetzt nach dem Plan in `Umstieg_Konzepte/04-einführungstour/`. Ein
@@ -131,7 +179,8 @@ den Stand im Zweig.
 | AP 3 Rechtsseiten | `/impressum`, `/datenschutz` per `pushState` (`navigation/rechtsseiten.ts`), alte `#impressum`-Links werden umgeschrieben, beim Build als statisches HTML aus denselben Komponenten |
 | AP 4 Messpunkte | `eingabe-fertig`, `navigation-start`, `schritt-1`, `ziel` je Reise genau einmal, nur der Name (`analytik/messpunkte.ts`); `/uebersicht`, `/weg`, `/angekommen` entstehen nachweislich per `pushState`; Datenschutzerklärung ergänzt |
 | AP 5a Gehzeiten | `cd backend && npm run bahnhofsseiten` (offline, ~2,5 min) → `frontend/src/bahnhofsseiten/daten/` – 379 Bahnhöfe, 19 894 Gleispaare, 2,72 MB. Keine Seite für Stufe 3 (Hamburg-Eidelstedt, -Sternschanze) und Saarlouis Hbf (nur ein Gleis). Gleise 5–34 bzw. 51–56 von München Hbf, die OSM auch Hackerbrücke und Karlsplatz zuschlägt, bleiben beim Hbf. **Nach jeder Erneuerung des Startbestands erneut laufen lassen.** |
-| AP 5b/5c Seiten | `npm run build` schreibt 379 × `/bahnhof/<slug>`, `/bahnhoefe`, `/sitemap.xml`; CSS und Messung als Dateien unter `/assets/` (CSP). Knopf „Weg für meinen Umstieg anzeigen" belegt die Eingabe vor (`sitzung/vorbelegung.ts`); Fußzeile verlinkt `/bahnhoefe` |
+| AP 5b/5c Seiten | `npm run build` schreibt 379 × `/bahnhof/<slug>`, `/bahnhoefe`, `/sitemap.xml`; CSS und Messung als Dateien unter `/assets/` (CSP). Knopf „Weg anzeigen" (bis 26.10.2026 „Weg für meinen Umstieg anzeigen") belegt die Eingabe vor (`sitzung/vorbelegung.ts`); Fußzeile verlinkt `/bahnhoefe` |
+| Indexierung (26.10.2026) | Search Console: 310 Bahnhofsseiten „Gefunden – zurzeit nicht indexiert“, 20 „Gecrawlt – zurzeit nicht indexiert“ – technisch einwandfrei, aber bis auf Zahlen gleich und kaum verlinkt. Dagegen: Absatz „Der Bahnhof im Überblick“ und „Häufige Fragen“ (auch als FAQPage-JSON-LD) aus den Daten (`bahnhofsseiten/ueberblick.ts`), „Bahnhöfe in der Nähe“ (6 nächste, Luftlinie), 20 große Umsteigebahnhöfe im Vortext der Startseite |
 | AP 2 | `robots.txt`, `vercel.json` `"trailingSlash": false` |
 | AP 6 | Kurzanleitung für Julian: `docs/deployment.md`, „Suchmaschinen anmelden" |
 

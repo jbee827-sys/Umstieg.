@@ -81,9 +81,19 @@ describe('bahnhofsseiteHtml: Inhalt', () => {
   })
 
   it('fuehrt mit vorbelegtem Bahnhof in die App', () => {
-    const knopf = [...doc.querySelectorAll('a')].find((a) => a.textContent === 'Weg für meinen Umstieg anzeigen')
+    const knopf = [...doc.querySelectorAll('a')].find((a) => a.textContent === 'Weg anzeigen')
     expect(knopf?.getAttribute('href')).toBe(eingabeLink(HANNOVER))
     expect(eingabeLink(HANNOVER)).toMatch(/^\/eingabe\?bahnhof=8000152&/)
+  })
+
+  // Die meisten Besucher kommen ueber die Bahnhofsseiten (Julian,
+  // 26.10.2026): Der Knopf bleibt oben, vor allen neuen Abschnitten.
+  it('zeigt den Knopf direkt nach der Einleitung, vor der ersten Zwischenueberschrift', () => {
+    const main = doc.querySelector('main')!
+    const kinder = [...main.children]
+    const knopf = kinder.findIndex((e) => e.classList.contains('bs-knopf'))
+    expect(kinder[knopf - 1].classList.contains('bs-einleitung')).toBe(true)
+    expect(kinder.findIndex((e) => e.tagName === 'H2')).toBeGreaterThan(knopf)
   })
 
   it('hat je Ankunftsgleis einen aufklappbaren Block mit Tabelle', () => {
@@ -133,6 +143,43 @@ describe('bahnhofsseiteHtml: Inhalt', () => {
     expect(ziele).toContain('/datenschutz')
   })
 
+  it('beschreibt den Bahnhof im Ueberblick als Fliesstext', () => {
+    const ueberblick = doc.querySelector('.bs-ueberblick')?.textContent ?? ''
+    expect(ueberblick).toContain('Hannover Hbf hat 3 Gleise an 2 Bahnsteigen.')
+    expect(ueberblick).toContain('Am selben Bahnsteig liegen Gleis 1 und 2')
+    expect([...doc.querySelectorAll('h2')].map((h) => h.textContent)).toContain('Der Bahnhof im Überblick')
+  })
+
+  it('beantwortet die haeufigen Fragen sichtbar und als FAQPage (JSON-LD)', () => {
+    const fragen = [...doc.querySelectorAll('.bs-frage h3')].map((h) => h.textContent)
+    expect(fragen).toEqual([
+      'Wie lange dauert der Umstieg in Hannover Hbf?',
+      'Kann ich in Hannover Hbf stufenfrei umsteigen?',
+    ])
+    const bloecke = [...doc.querySelectorAll('script[type="application/ld+json"]')].map(
+      (s) => JSON.parse(s.textContent!) as { '@type': string; mainEntity?: { name: string; acceptedAnswer: { text: string } }[] },
+    )
+    const faq = bloecke.find((b) => b['@type'] === 'FAQPage')
+    expect(faq?.mainEntity?.map((f) => f.name)).toEqual(fragen)
+    const antworten = [...doc.querySelectorAll('.bs-frage p')].map((p) => p.textContent)
+    expect(faq?.mainEntity?.map((f) => f.acceptedAnswer.text)).toEqual(antworten)
+  })
+
+  it('verlinkt die Bahnhoefe in der Naehe mit Entfernung', () => {
+    const nachbar: Bahnhofsdaten = { ...HANNOVER, name: 'Hannover Messe/Laatzen', slug: 'hannover-messe-laatzen' }
+    const d = new DOMParser().parseFromString(
+      bahnhofsseiteHtml(HANNOVER, BAUTEILE, [{ d: nachbar, km: 7.4 }]),
+      'text/html',
+    )
+    const eintrag = d.querySelector('.bs-naehe li')
+    expect(eintrag?.querySelector('a')?.getAttribute('href')).toBe('/bahnhof/hannover-messe-laatzen')
+    expect(eintrag?.textContent).toBe('Hannover Messe/Laatzen · 7 km')
+  })
+
+  it('ohne Nachbarn kein Abschnitt „In der Nähe“', () => {
+    expect(doc.querySelector('.bs-naehe')).toBeNull()
+  })
+
   it('maskiert Namen mit Sonderzeichen', () => {
     const seltsam = bahnhofsseiteHtml({ ...HANNOVER, name: 'A & B <C>' }, BAUTEILE)
     expect(seltsam).not.toContain('<C>')
@@ -162,6 +209,10 @@ describe('uebersichtHtml (/bahnhoefe)', () => {
 
   it('kommt ohne Inline-Stil aus', () => {
     expect(uebersichtHtml([HANNOVER], BAUTEILE)).not.toMatch(/\sstyle=/)
+  })
+
+  it('fuehrt mit demselben Knopf in die App', () => {
+    expect(ueb.querySelector('a.bs-knopf')?.textContent).toBe('Weg anzeigen')
   })
 })
 

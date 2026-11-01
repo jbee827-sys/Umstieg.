@@ -173,6 +173,15 @@ export interface SchemaBahnsteig {
    * es von hier; im Standardmodell wäre die Richtung erfunden.
    */
   himmelsrichtung?: { von: Himmelsrichtung; bis: Himmelsrichtung };
+  /**
+   * An welchem Ende die Spitze des ankommenden Zuges steht (25.10.2026).
+   *
+   * Nur am Ankunftsbahnsteig, nur bei gemessener Achse und nur, wenn der
+   * vorherige Halt des Zuges sicher hinter einem der Enden liegt. Dann heissen
+   * die Knoepfe „Zuganfang · Zugmitte · Zugende"; sonst bleibt es bei der
+   * Himmelsrichtung.
+   */
+  zugspitze?: 'anfang' | 'ende';
   /** Bahnsteigenden im Bezugsrahmen - fehlen ohne Achse (Stufe 3). */
   von?: SchemaPunkt;
   bis?: SchemaPunkt;
@@ -414,6 +423,10 @@ export interface TafelEintrag {
   gleisSoll: string;
   gleisIst?: string;
   ziel: string;
+  /** Bahnhofspfad: letzter Halt vor diesem Bahnhof - fehlt, wo der Zug beginnt. */
+  vonHalt?: string;
+  /** Bahnhofspfad: naechster Halt - fehlt, wo der Zug endet. */
+  nachHalt?: string;
   /** Nur Haltestellenpfad (Umstieg 2.0): Fahrt fällt aus. Der Bahnhofspfad setzt es nie. */
   ausfall?: boolean;
   /** Nur Haltestellenpfad: Linie zum Anzeigen; `zug` ist dort die Fahrt-ID. */

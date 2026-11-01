@@ -706,7 +706,7 @@ export function zeichneGleisebene(
     )
     const namen: Standortmarke['name'][] = ['Anfang', 'Mitte', 'Ende']
     // Dieselben Wörter wie auf den Knöpfen: `a` ist `von`, der Anfang.
-    const texte = standortNamen(startBs.b.himmelsrichtung)
+    const texte = standortNamen(startBs.b.himmelsrichtung, startBs.b.zugspitze)
     const naechster = Math.round(t * 2)
     standorte = {
       y: kante(nutzH + STANDORT_ZEILE / 2),

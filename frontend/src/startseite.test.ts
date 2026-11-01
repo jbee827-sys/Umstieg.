@@ -52,6 +52,19 @@ describe('Startseite ohne JavaScript', () => {
     expect(link).not.toBeNull()
   })
 
+  // Interne Verlinkung (26.10.2026): Die Startseite ist die staerkste Seite;
+  // von ihr aus fuehren Links direkt auf die grossen Umsteigebahnhoefe.
+  it('verlinkt die großen Umsteigebahnhöfe, jeden mit einer vorhandenen Seite', () => {
+    const daten = resolve(dirname(fileURLToPath(import.meta.url)), 'bahnhofsseiten/daten')
+    const links = [...doc.querySelectorAll('#root .vortext-bahnhoefe a')]
+    expect(links.length).toBeGreaterThanOrEqual(15)
+    for (const a of links) {
+      const slug = a.getAttribute('href')!.replace(/^\/bahnhof\//, '')
+      const datei = readFileSync(resolve(daten, `${slug}.json`), 'utf8')
+      expect(a.textContent, slug).toBe((JSON.parse(datei) as { name: string }).name)
+    }
+  })
+
   // CSP: style-src 'self' - ein style-Attribut würde blockiert.
   it('kommt ohne Inline-Stile aus', () => {
     expect(html).not.toMatch(/\sstyle=/)
