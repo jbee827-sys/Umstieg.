@@ -69,8 +69,8 @@ describe('Kopf der Startseite', () => {
     // Der ersetzte Text ist weg - sonst stuende die Wortmarke doppelt da.
     expect(screen.queryByText('Dein Umstieg')).toBeNull()
 
-    // Der Untertitel bleibt.
-    expect(screen.getByText(/Vom Ankunftsgleis zum Anschlusszug/)).toBeDefined()
+    // Der Untertitel ist seit dem 01.11.2026 weg - der Claim steht im Lockup.
+    expect(screen.queryByText(/Vom Ankunftsgleis zum Anschlusszug/)).toBeNull()
   })
 
   // Plan Einführungstour, Paket 6: oben rechts ein „i“, das die Tour startet.

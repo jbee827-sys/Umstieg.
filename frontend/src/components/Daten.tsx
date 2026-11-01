@@ -15,7 +15,6 @@ export function Daten({ onZurueck }: { onZurueck?: () => void }) {
   return (
     <main className="app">
       <header className="kopf">
-        <div className="kicker">Umstieg.</div>
         <h1>Daten und Quellen</h1>
       </header>
       <hr className="trennlinie" />

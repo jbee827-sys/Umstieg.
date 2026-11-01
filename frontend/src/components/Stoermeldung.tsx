@@ -23,7 +23,6 @@ export function Stoermeldung({ ereignis, onAnsehen, onSchliessen }: Stoermeldung
   return (
     <div className="stoermeldung" role="alert">
       <div className="stoermeldung-inhalt">
-        <div className="kicker-hell">Änderung auf deiner Fahrt</div>
         <h2>{titel}</h2>
         <p>{text}</p>
         <p className="stoermeldung-stand">Stand: {uhrzeit(ereignis.zeitstempel)} Uhr</p>

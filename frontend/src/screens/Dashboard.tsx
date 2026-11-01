@@ -129,7 +129,6 @@ export function Dashboard({
       <div className="dashboard-rollbereich">
         <div className="routen-kopf">
           <div>
-            <div className="kicker">Umstieg in</div>
             <h2>{werte.bahnhofName || 'diesem Bahnhof'}</h2>
           </div>
         </div>
@@ -151,7 +150,7 @@ export function Dashboard({
             {werte.ankunftZeit && <div className="dashboard-zeit">an {werte.ankunftZeit}</div>}
           </section>
           {/*
-            * `ziel` faerbt die Karte rot. Das ist seit dem 20.09.2026 erlaubt:
+            * `ziel` faerbt die Gleisnummer rot. Das ist seit dem 20.09.2026 erlaubt:
             * Rot ist Sekundaerfarbe der App, nicht mehr allein die Alarmfarbe.
             * Unterscheidbar bleibt der Alarm ueber den gelb-roten Saum an der
             * Ampel, nicht ueber die Farbe allein.

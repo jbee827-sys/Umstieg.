@@ -1,7 +1,7 @@
 # Design System: Umstieg.
 
 Vorlage für die Bildschirm-Erzeugung mit Google Stitch.
-Stand 20.09.2026 · abgeleitet aus `BRIEF.md` im Projektstamm.
+Stand 01.11.2026 · abgeleitet aus `BRIEF.md` im Projektstamm.
 
 **Diese Datei hat Vorrang vor jeder Stitch-Voreinstellung.** Abschnitt 8 hat
 Vorrang vor allen anderen Abschnitten dieser Datei.
@@ -68,7 +68,9 @@ gemessen, nicht geschätzt.
 - **Rotschleier** (`#fff2ef`) — sehr helle rote Tönung für Akzentflächen
 
 **Tertiär — Grau**
-- **Kartengrau** (`#eae9e9`) — Karten, Felder, eingefasste Blöcke
+- **Kartengrau** (`#eae9e9`) — Hinweise und Tonflächen
+- **Feldgrau** (`#dedcdc`) — Eingabefelder und Knöpfe der Eingabe (1,4:1 auf Weiß,
+  Schrift 12,2:1, Platzhalter in Nebelgrau 4,8:1)
 - **Tintenschwarz** (`#201e1d`) — Haupttext (16,6:1 auf Weiß)
 - **Nebelgrau** (`#605d5d`) — Nebentext, Beschriftungen (6,5:1)
 - **Linienstrich** (`#d7d3d3`) — Trennlinien, Feldränder
@@ -99,8 +101,13 @@ Warngelb `#ffd400` trägt tintenschwarze Schrift mit 11,6:1. **Weiß auf Gelb
 
 Nachts im Bahnhof ist ein weißer Bildschirm eine Blendgranate.
 
-- **Nachtgrund** (`#17161a`) — Grundfläche
-- **Nachtfläche** (`#221f24`) — Karten und Felder
+Die Grautöne sind warm wie die helle Palette (Rot ≥ Grün ≥ Blau). Bis zum
+01.11.2026 hatten sie einen Violettstich.
+
+- **Nachtgrund** (`#171615`) — Grundfläche
+- **Nachtfläche** (`#222120`) — Hinweise und Felder
+- **Nachtfeld** (`#454240`) — Eingabefelder und Knöpfe der Eingabe (1,8:1 auf
+  dem Nachtgrund, Lichtschrift 8,9:1, Platzhalter in Dämmergrau 4,6:1)
 - **Lichtschrift** (`#f3f2f2`) — Haupttext (16,1:1)
 - **Dämmergrau** (`#b4b0ae`) — Nebentext (8,4:1)
 - **Nachtrot** (`#ff5233`) — Sekundärfarbe und Alarm (5,6:1)
@@ -161,27 +168,38 @@ darf diese Beschriftungen also klein zeigen, alle übrigen nicht.
 (`EBENE −2 · GLEISE 1–8`), weil sie die Beschriftung am Bahnsteig nachbilden.
 Verboten als Kicker über Überschriften („DU KOMMST AN", „ROUTE"): In kleiner,
 gesperrter Schrift geht die Wortform verloren, an der man Wörter erkennt — für
-ältere Leser der schwerste Fall. Solche Beschriftungen stehen in normaler
-Schreibweise, dafür eine Stufe größer.
+ältere Leser der schwerste Fall. Beschriftungen stehen in normaler Schreibweise
+und ungesperrt.
+
+**Keine Überzeile über einer Überschrift (seit 01.11.2026)**, auch nicht in
+normaler Schreibweise: Eine Überschrift steht allein. `kicker` ist nur noch die
+Beschriftung eines Wertes im Block („Du kommst an", „Alt", „Neu"), ruhig in
+Nebengrau. Auch nichts doppelt sagen: Im Block „Ankunft" heißt das Feld „Gleis",
+„Ankunft: Gleis" hören nur Vorleser.
 
 ---
 
 ## 4. Bauteile
 
-### Rundung — gilt für alle Blöcke, ohne Ausnahme
+### Rahmen und Rundung (seit 01.11.2026)
 
-Die App hat **keine spitzen Ecken.** Jede Fläche, jedes Feld, jeder Knopf, jede
-Karte, jedes Band und jedes Sheet ist gerundet. Scharfe Kanten gibt es nur bei
-Trennlinien, die keine Fläche sind.
+**Keine Rahmen und keine Kästen.** Blöcke gliedern sich über Abstand, Tonfläche
+und Trennlinie. Was zwei gleichrangige Werte zeigt, steht in zwei Spalten mit
+einer Linie dazwischen, nicht in zwei Karten. Keine Fläche in einer Fläche.
+*(Bis zum 01.11.2026 galt hier: alles
+rund und eingefasst, 14/20/28 px. Das Ergebnis sah nach Kachelbaukasten aus.)*
+
+Wo es eine Fläche gibt, ist sie knapp gerundet, wie ein Schild. Was von Rand zu
+Rand reicht („Angekommen"), hat keine Rundung.
 
 | Stufe | Radius | Gilt für |
 |---|---|---|
-| klein | 14 px | Eingabefelder, Vervollständigungszeilen, kleine Schaltflächen, Abzeichen |
-| mittel | 20 px | Karten, Blöcke, Hinweisflächen, Live-Banner, Tafelblöcke |
-| groß | 28 px | Bahnsteigstreifen, Ebenenbänder, Schritt-Sheet, Kartenrahmen, Dialoge |
-| Pille | vollrund | Hauptknopf, Routenzeilen, Zeit-Chip, Auswahlmarken, Lampen |
+| klein | 6 px | Eingabefelder, Vervollständigungszeilen, kleine Schaltflächen, Abzeichen |
+| mittel | 8 px | Hinweisflächen, Live-Banner, Tafeln |
+| groß | 10 px | Bahnsteigstreifen, Ebenenbänder, Kartenrahmen, Dialoge |
+| Pille | vollrund | Hauptknopf, Zeit-Chip, Auswahlmarken, Lampen |
 
-Nichts unter 14 px. Verschachtelte Flächen bekommen nach innen die nächstkleinere
+Verschachtelte Flächen bekommen nach innen die nächstkleinere
 Stufe, nie dieselbe — sonst wirkt der Rand doppelt. Das Ebenenschema zeichnet
 auch seine Bahnsteige und Wegstücke mit runden Enden (`stroke-linecap: round`).
 
@@ -196,14 +214,21 @@ auch seine Bahnsteige und Wegstücke mit runden Enden (`stroke-linecap: round`).
   unteren Rand des Rollbereichs, der Inhalt rollt darunter durch – kein
   Streifen um ihn (`.knopf-schwebend`). Den sicheren Bereich unten hält die
   Navileiste darunter. Mindestens 44 px hoch. Kein Pfeil `→` hinter dem Text.
-- **Karten:** Nur, wenn die Erhebung eine Hierarchie ausdrückt. Weiche
-  Abrundung, gedämpfter Schatten in der Grundfarbe getönt. Keine Karte in einer
-  Karte in einer Karte.
+  Nebenknöpfe sind eine graue Tonfläche ohne Rand.
+- **Zugauswahl-Knöpfe** („Ankunftszug wählen", „Ändern"): die eine Ausnahme von
+  „flach" und „kein Rand" (Julian, 01.11.2026). Look des Neumorph-Buttons von
+  cult-ui: Grund im Feldton, 1 px Rand, Kante unten, weicher Schatten, 9 px Radius,
+  nachts eigene Fassung. Nachgebaut in `.knopf-zugwahl`, ohne Tailwind und Motion,
+  ohne Großbuchstaben, Federn und Spinner.
+- **Karten:** Gibt es nicht mehr. Hinweise sind Tonflächen, Werte stehen frei.
+- **Routenzeilen:** Zeilen einer Liste mit Trennlinie, keine Knöpfe. Die gewählte
+  zeigen der volle rote Punkt und die kräftigere Schrift.
+- **Schritt-Sheet:** Keine Box. Eine Linie trennt die Bedienung vom Bild.
 - **Auswahlgruppen:** Höchstens **eine** Dreiergruppe gleicher Knöpfe je
   Bildschirm. Zwei gleich aussehende Dreiergruppen untereinander sind verboten —
   siehe Abschnitt 8.
-- **Eingabefelder:** Beschriftung über dem Feld, Fehlermeldung darunter,
-  sichtbarer Fokusring auf beiden Paletten. Keine wandernden Beschriftungen.
+- **Eingabefelder:** Tonfläche ohne Rand, Beschriftung über dem Feld,
+  Fehlermeldung darunter, sichtbarer Fokusring auf beiden Paletten. Keine wandernden Beschriftungen.
 - **Ladezustände:** Skelettflächen in den Maßen des erwarteten Inhalts. **Keine
   Kreisel.** Die App hat heute `.lade-kreisel` — das wird ersetzt.
 - **Leere Zustände:** sagen, was fehlt und was zu tun ist. Die Meldungsseite
@@ -345,9 +370,8 @@ Seitenübergänge fallen darunter — ohne Ausnahme.
 - Emojis als Symbole. Alle Symbole sind eigene SVG (`AnlagenSymbol.tsx`).
 - Reines Schwarz, Neonfarben, Leuchtschatten, Schmuckverläufe.
 - Rot ohne Gelb als Alarmkennzeichen. Rot allein ist in dieser App ein Knopf.
-- **Spitze Ecken an Flächen.** Jeder Block ist gerundet, siehe Abschnitt 4.
-  Rechte Winkel gibt es nur bei Trennlinien.
-- Großbuchstaben-Kicker über Überschriften.
+- **Rahmen und Kästen um Blöcke**, siehe Abschnitt 4.
+- Überzeilen über Überschriften, in jeder Schreibweise (Abschnitt 3).
 - Pfeile `→` im Knopftext, „Mehr erfahren"-Nebenknöpfe, Fülltexte wie
   „Nach unten wischen".
 - Zwei gleich aussehende Auswahlgruppen auf einem Bildschirm.
@@ -439,6 +463,12 @@ einführt, bekommt sie einen deutschen Namen in derselben Machart.
    importieren" als Knopf, kein Titel, keine Kacheln. Angeheftet ist nur noch
    der rote Knopf – er schwebt über dem Inhalt, Schrift 18 px und mittig.
    Das breite Layout bleibt wie gebaut.
+   **Redesign am 01.11.2026:** Auf beiden Breiten steht ein Titel, „Wo steigst
+   du um?". Eine rote Fläche hinter den Feldern wurde am selben Tag wieder
+   zurückgenommen (Julian): Kein Entwurf setzt die Eingabe auf Rot.
+   „Du kommst an" über dem Bahnhofsfeld und der Satz unter dem Logo sind weg.
+   „Reise importieren" ist auf dem Handy ein Textknopf am Bahnhofsfeld wie
+   „Verbindung einfügen" im breiten Layout.
 2. ~~**Der Bahnsteigstreifen** als Ersatz für die Standortwahl-Knopfliste —
    räumliche Frage, räumliche Antwort.~~ **Gebaut am 07.10.2026:** ein Balken,
    drei Stellen mit Ring, EIN Standortpunkt wie im Ebenenschema, der in 200 ms

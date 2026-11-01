@@ -26,9 +26,11 @@
   line-height: 0;
 }
 
+/* 100 % statt 60 %: Der Link ist so breit wie sein Bild, 60 % davon liessen
+   die Marke auf 96 px schrumpfen - auf jeder Schirmbreite. */
 .bs-marke img {
   width: 160px;
-  max-width: 60%;
+  max-width: 100%;
   height: auto;
 }
 /* Eine Fassung je Darstellung (index.css), wie in der App. */
@@ -89,11 +91,7 @@
 
 /* Je Ankunftsgleis ein Block zum Aufklappen - ohne JavaScript. */
 .bs-gleis {
-  margin: 0 0 10px;
-  border: 1px solid var(--color-neutral-300);
-  border-radius: var(--radius-mittel);
-  background: var(--color-papier);
-  overflow: hidden;
+  border-top: 1px solid var(--color-neutral-300);
 }
 
 .bs-gleis summary {

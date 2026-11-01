@@ -51,6 +51,47 @@ describe('App.css: die Groesse der Hauptknoepfe', () => {
   })
 })
 
+/**
+ * Die Knoepfe der Zugauswahl tragen seit dem 01.11.2026 den Look des
+ * Neumorph-Buttons von cult-ui, Fassung „secondary": Grund im Feldton, Rand, eine
+ * Kante unten, weicher Schatten. Nur der Look - ohne Tailwind, Motion,
+ * Grossbuchstaben, Federn und Spinner, dafuer mit Nachtfassung.
+ */
+describe('App.css: die Knoepfe der Zugauswahl', () => {
+  it('traegt Grund, Rand, Schatten und 9 px Radius aus den Token', () => {
+    const knopf = deklarationenVon(css, '.knopf-zugwahl')
+    expect(knopf).toContain('background: var(--zugknopf-flaeche)')
+    expect(knopf).toContain('border: 1px solid var(--zugknopf-rand)')
+    expect(knopf).toContain('box-shadow: var(--zugknopf-schatten)')
+    expect(knopf).toContain('border-radius: 9px')
+  })
+
+  it('senkt sich beim Druecken und bleibt dabei bei 0.97 aus .knopf-sekundaer', () => {
+    const gedrueckt = deklarationenVon(css, '.knopf-zugwahl:active')
+    expect(gedrueckt).toContain('background: var(--zugknopf-druck)')
+    expect(gedrueckt).toContain('box-shadow: var(--zugknopf-schatten-druck)')
+    expect(gedrueckt.filter((d) => d.startsWith('transform'))).toEqual([])
+  })
+
+  it('wird von .zug-gewaehlt nicht uebermalt', () => {
+    expect(deklarationenVon(css, '.zug-gewaehlt .knopf-sekundaer').filter((d) => d.startsWith('background'))).toEqual([])
+  })
+
+  it('hat eine Nachtfassung in beiden dunklen Bloecken', () => {
+    const treffer = cssVon('index.css').match(/--zugknopf-flaeche: #454240/g) ?? []
+    expect(treffer).toHaveLength(2)
+  })
+
+  it.each(['components/Zugauswahl.tsx', 'components/Fahrtauswahl.tsx'])(
+    '%s nutzt ihn fuer Waehlen und Aendern',
+    (datei) => {
+      const quelle = cssVon(datei)
+      expect(quelle.match(/knopf-sekundaer knopf-zugwahl/g)).toHaveLength(2)
+      expect(quelle).not.toContain('className="knopf-sekundaer"')
+    },
+  )
+})
+
 describe('App.css: der schwebende Knopf', () => {
   const schwebend = () => deklarationenVon(css, '.knopf-schwebend')
 

@@ -314,7 +314,7 @@ export function Zugauswahl({ eva, typ, label, auswahl, onAuswahl, immerOffen, na
             )}
           </span>
         </div>
-        <button type="button" className="knopf-sekundaer" onClick={() => onAuswahl(null)}>
+        <button type="button" className="knopf-sekundaer knopf-zugwahl" onClick={() => onAuswahl(null)}>
           Ändern
         </button>
       </div>
@@ -327,7 +327,7 @@ export function Zugauswahl({ eva, typ, label, auswahl, onAuswahl, immerOffen, na
     <div className="zugauswahl">
       <button
         type="button"
-        className="knopf-sekundaer"
+        className="knopf-sekundaer knopf-zugwahl"
         aria-expanded={offen}
         onClick={klappeUm}
       >
