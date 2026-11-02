@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { baueGraph, graphZuGeoJSON, haversineM, pfadZuGeoJSON } from '../src/core/graph.js';
+import { gehzeitSekunden } from '../src/core/gehzeit.js';
+import { erreichbareGleisPaare } from '../src/core/klassifikation.js';
 import { berechneRoute } from '../src/core/routing.js';
 import type { OverpassAntwort, StationGraph } from '../src/core/typen.js';
 
@@ -553,5 +555,134 @@ describe('pfadZuGeoJSON (ohne Graph, Umstieg 2.0)', () => {
     expect(pfadZuGeoJSON(pfad)).toEqual(graphZuGeoJSON(leer, pfad));
     expect(Object.keys(pfadZuGeoJSON(pfad)).sort()).toEqual(['-1', '0']);
     expect(pfadZuGeoJSON({ knoten: [], kanten: [], laengeM: 0 })).toEqual({});
+  });
+});
+
+/**
+ * Stuttgart Hbf, gemeldet 02.11.2026: Der Baustellensteg traegt `level=1`, seine
+ * Fortsetzung gar keines und gilt damit als Ebene 0. Derselbe OSM-Punkt wurde zu
+ * zwei Knoten ohne Kante dazwischen, und die S-Bahn (99 von 156 Abfahrten) hing
+ * an keinem Weg mehr. Die Naht greift nur, wenn Gleise sonst getrennt blieben.
+ */
+describe('Naht bei getrennten Gleisen', () => {
+  const punkt = (id: number, lat: number, lon: number): OverpassAntwort['elements'][number] => ({ type: 'node', id, lat, lon });
+  const weg = (id: number, nodes: number[], tags: Record<string, string>): OverpassAntwort['elements'][number] => ({ type: 'way', id, nodes, tags });
+  const punkte = [
+    punkt(1, 52.0, 12.0), punkt(2, 52.0, 12.001),
+    punkt(3, 52.001, 12.0), punkt(4, 52.001, 12.001),
+    punkt(5, 52.0003, 12.0005), punkt(6, 52.0007, 12.0005),
+  ];
+  const fussweg = { highway: 'footway' };
+  const rampen = (graph: StationGraph): string[] => {
+    const kanten = new Set([...graph.adjazenz.values()].flat().filter((k) => k.typ === 'rampe'));
+    return [...kanten].map((k) => `${k.von}>${k.nach}:${k.deltaLevel}:${k.laengeM}`).sort();
+  };
+
+  it('verbindet belegte Ebene und erratenen Weg am gemeinsamen OSM-Punkt', () => {
+    const graph = baueGraph({ elements: [
+      ...punkte,
+      weg(10, [1, 2], { railway: 'platform', ref: '1', level: '1' }),
+      weg(11, [3, 4], { railway: 'platform', ref: '2', level: '-1' }),
+      weg(20, [1, 5], { ...fussweg, level: '1' }),
+      weg(21, [5, 6], fussweg),
+      weg(22, [6, 3], { ...fussweg, level: '-1' }),
+    ] });
+    expect(rampen(graph)).toEqual(['n5@0>n5@1:1:0', 'n6@0>n6@-1:-1:0']);
+    expect(berechneRoute(graph, 'gleis1:mitte', 'gleis2:mitte', 'barrierefrei')).not.toBeNull();
+  });
+
+  it('gibt einem erratenen Verbindungsstueck die Ebene seiner Nachbarn statt zweier Rampen', () => {
+    const graph = baueGraph({ elements: [
+      ...punkte,
+      weg(10, [1, 2], { railway: 'platform', ref: '1', level: '1' }),
+      weg(11, [3, 4], { railway: 'platform', ref: '2', level: '1' }),
+      weg(20, [1, 5], { ...fussweg, level: '1' }),
+      weg(21, [5, 6], fussweg),
+      weg(22, [6, 3], { ...fussweg, level: '1' }),
+    ] });
+    expect(rampen(graph)).toEqual([]);
+    expect(graph.knoten.has('n5@0')).toBe(false);
+    expect(erreichbar(graph, 'gleis1:mitte', 'gleis2:mitte')).toBe(true);
+  });
+
+  it('laesst einen verbundenen Bahnhof unangetastet', () => {
+    const graph = baueGraph({ elements: [
+      ...punkte,
+      weg(10, [1, 2], { railway: 'platform', ref: '1', level: '1' }),
+      weg(11, [3, 4], { railway: 'platform', ref: '2', level: '1' }),
+      weg(20, [1, 3], { ...fussweg, level: '1' }),
+      weg(21, [1, 6], fussweg),
+    ] });
+    expect(rampen(graph)).toEqual([]);
+    expect(erreichbar(graph, 'n6@0', 'gleis1:mitte')).toBe(false);
+  });
+
+  it('verbindet zwei belegte Ebenen nicht - das waere geraten', () => {
+    const graph = baueGraph({ elements: [
+      ...punkte,
+      weg(10, [1, 2], { railway: 'platform', ref: '1', level: '1' }),
+      weg(11, [3, 4], { railway: 'platform', ref: '2', level: '-1' }),
+      weg(20, [1, 5], { ...fussweg, level: '1' }),
+      weg(22, [5, 3], { ...fussweg, level: '-1' }),
+    ] });
+    expect(erreichbar(graph, 'gleis1:mitte', 'gleis2:mitte')).toBe(false);
+  });
+
+  it('ersetzt am Aufzugknoten nicht den Aufzug durch eine Rampe', () => {
+    const graph = baueGraph({ elements: [
+      ...punkte.filter((p) => p.id !== 5),
+      { ...punkt(5, 52.0003, 12.0005), tags: { highway: 'elevator' } },
+      punkt(7, 52.002, 12.0), punkt(8, 52.002, 12.001), punkt(9, 52.0015, 12.0005),
+      weg(10, [1, 2], { railway: 'platform', ref: '1', level: '1' }),
+      weg(11, [3, 4], { railway: 'platform', ref: '2', level: '0' }),
+      weg(12, [7, 8], { railway: 'platform', ref: '3', level: '1' }),
+      weg(20, [1, 5], { ...fussweg, level: '1' }),
+      weg(21, [5, 3], fussweg),
+      // Der dritte Bahnsteig haengt nur ueber ein erratenes Stueck dran: Das
+      // loest die Naht aus, und erst dann kann der Aufzugknoten falsch laufen.
+      weg(23, [7, 9], { ...fussweg, level: '1' }),
+      weg(24, [9, 2], fussweg),
+    ] });
+    expect(erreichbar(graph, 'gleis1:mitte', 'gleis3:mitte')).toBe(true);
+    expect(rampen(graph)).toEqual([]);
+    expect([...graph.adjazenz.get('n5@1')!].some((k) => k.typ === 'aufzug')).toBe(true);
+  });
+
+  it('gibt die Eingabe nicht veraendert zurueck', () => {
+    const verbindung = weg(21, [5, 6], fussweg);
+    baueGraph({ elements: [
+      ...punkte,
+      weg(10, [1, 2], { railway: 'platform', ref: '1', level: '1' }),
+      weg(11, [3, 4], { railway: 'platform', ref: '2', level: '1' }),
+      weg(20, [1, 5], { ...fussweg, level: '1' }),
+      verbindung,
+      weg(22, [6, 3], { ...fussweg, level: '1' }),
+    ] });
+    expect(verbindung.tags).toEqual({ highway: 'footway' });
+  });
+
+  describe('Stuttgart Hbf (Bestand vom 14.10.2026)', () => {
+    const stuttgart = baueGraph(ladeFixture('overpass/stuttgart-hbf'));
+    const zeit = (von: string, nach: string, variante: 'schnellste' | 'barrierefrei'): number | null => {
+      const pfad = berechneRoute(stuttgart, `gleis${von}:mitte`, `gleis${nach}:mitte`, variante);
+      return pfad ? gehzeitSekunden(pfad, 'normal') : null;
+    };
+
+    it('verbindet alle 18 Gleise', () => {
+      expect(stuttgart.gleise).toHaveLength(18);
+      expect(erreichbareGleisPaare(stuttgart)).toBe(1);
+    });
+
+    it.each(['schnellste', 'barrierefrei'] as const)('findet 1 -> 101 als %s: laenger als die Luftlinie, ohne Kurzschluss', (variante) => {
+      // Luftlinie Gleis 1 zu 101: rund 490 m. Der Weg ueber Querbahnsteig, Steg
+      // und Klett-Passage ist deutlich laenger, aber kein Vielfaches davon.
+      const sekunden = zeit('1', '101', variante)!;
+      expect(sekunden).toBeGreaterThan(600);
+      expect(sekunden).toBeLessThan(1300);
+    });
+
+    it('laesst die Wege zwischen den oberen Gleisen, wo sie waren', () => {
+      expect(zeit('8', '16', 'schnellste')).toBe(477);
+    });
   });
 });

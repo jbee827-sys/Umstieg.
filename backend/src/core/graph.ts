@@ -1,3 +1,4 @@
+import { erreichbareGleisPaare } from './klassifikation.js';
 import { mittlereAchse, nachNordwesten, peilungGrad, richteEndenAus } from './richtung.js';
 import type {
   GraphKante,
@@ -132,6 +133,14 @@ function istEbenenwechselWeg(tags: Record<string, string>): boolean {
   return tags.highway === 'steps' || tags.highway === 'elevator' || tags.conveying !== undefined;
 }
 
+/** Ebenen an Anfang und Ende eines Ebenenwechsels; ohne zwei Ebenen im Tag nichts Belegtes. */
+function ebenenDerEnden(tags: Record<string, string>): [number, number] | null {
+  const levels = parseLevels(tags.level);
+  if (levels.length < 2) return null;
+  const [lo, hi] = [levels[0], levels[levels.length - 1]];
+  return tags.incline === 'down' ? [hi, lo] : [lo, hi];
+}
+
 function kantenTypFuerWay(tags: Record<string, string>): KantenTyp {
   if (tags.highway === 'elevator') return 'aufzug';
   if (tags.conveying && tags.conveying !== 'no') return 'rolltreppe';
@@ -180,6 +189,112 @@ function knotenId(osmId: number, level: number): string {
 }
 
 export function baueGraph(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise']): StationGraph {
+  const graph = baueGraphOhneNaht(osm, dbGleise);
+  const vorher = erreichbareGleisPaare(graph);
+  if (vorher === 1) return graph;
+  const elements = vererbeEbenen(osm.elements);
+  const mitNaht = baueGraphOhneNaht({ ...osm, elements }, dbGleise);
+  zieheNaehte(mitNaht, elements);
+  return erreichbareGleisPaare(mitNaht) > vorher ? mitNaht : graph;
+}
+
+/**
+ * Die belegten Ebenen je OSM-Punkt – geraten zaehlt nicht.
+ *
+ * Grundlage der Naht (Stuttgart Hbf, gemeldet 02.11.2026): Der Baustellensteg
+ * traegt `level=1`, seine Fortsetzung gar keines und gilt damit als Ebene 0.
+ * Derselbe OSM-Punkt wurde zu zwei Knoten ohne Kante dazwischen, und 99 von 156
+ * Abfahrten (S-Bahn, Gleis 101/102) hingen an keinem Weg mehr.
+ */
+function belegteEbenen(elemente: OsmElement[]): Map<number, Set<number>> {
+  const belegt = new Map<number, Set<number>>();
+  const merke = (id: number, ebene: number): void => {
+    if (!belegt.has(id)) belegt.set(id, new Set());
+    belegt.get(id)!.add(ebene);
+  };
+  for (const el of elemente) {
+    if (el.type !== 'way' || !el.nodes) continue;
+    const tags = el.tags ?? {};
+    if (istEbenenwechselWeg(tags)) {
+      const enden = ebenenDerEnden(tags);
+      if (enden) {
+        merke(el.nodes[0], enden[0]);
+        merke(el.nodes[el.nodes.length - 1], enden[1]);
+      }
+    } else if (istEbenerWeg(tags) || tags.railway === 'platform' || tags.railway === 'platform_edge') {
+      const { ebene, ebeneBelegt } = wayEbeneMitBeleg(tags);
+      if (ebeneBelegt) for (const id of el.nodes) merke(id, ebene);
+    }
+  }
+  return belegt;
+}
+
+function hatGeratenenWeg(el: OsmElement): el is OsmElement & { nodes: number[] } {
+  if (el.type !== 'way' || !el.nodes) return false;
+  const tags = el.tags ?? {};
+  return istEbenerWeg(tags) && !istEbenenwechselWeg(tags) && !wayEbeneMitBeleg(tags).ebeneBelegt;
+}
+
+/**
+ * Ein erratener Weg, der nur eine einzige belegte Ebene beruehrt, liegt auf ihr.
+ *
+ * Ohne diesen Schritt hiesse ein 4-m-Stueck zwischen zwei Abschnitten des
+ * Querbahnsteigs „Rampe hinunter zur Ebene 0, Rampe hoch zur Ebene 1“. Bewusst
+ * nur ein Schritt weit: Weitergereicht hinge bald das ganze Strassennetz an
+ * Ebene 1, und die Treppen hinab endeten im Nichts. Die Eingabe bleibt
+ * unveraendert, sie liegt im Bestand und wird wiederverwendet.
+ */
+function vererbeEbenen(elemente: OsmElement[]): OsmElement[] {
+  const belegt = belegteEbenen(elemente);
+  return elemente.map((el) => {
+    if (!hatGeratenenWeg(el)) return el;
+    const ebenen = new Set(el.nodes.flatMap((id) => [...(belegt.get(id) ?? [])]));
+    if (ebenen.size !== 1) return el;
+    const [ebene] = ebenen;
+    return ebene === 0 ? el : { ...el, tags: { ...el.tags, level: String(ebene) } };
+  });
+}
+
+/**
+ * Verbindet am gemeinsamen OSM-Punkt, was nur eine Vermutung getrennt hat.
+ *
+ * Zwei Wege an einem Punkt sind in OSM verbunden. Sonst wuerde er nicht geteilt.
+ * Zur Rampe wird das, weil sich die Ebene ohne Treppe aendert – am Steg, der zur
+ * Strasse hinabfuehrt, stimmt das woertlich.
+ *
+ * **Die Regel ist bewusst schmal**, gemessen an allen 382 Bahnhoefen des
+ * Bestands. Ueberall angewandt verkuerzte sie Routen auch dort, wo alle Gleise
+ * laengst verbunden sind (Potsdam Hbf 1 -> 6: 317 s auf 149 s). Deshalb nur, wo
+ * sie Gleise verbindet, die sonst getrennt blieben (siehe `baueGraph`). Zwei
+ * belegte Ebenen an einem Punkt bleiben getrennt, und der Aufzugknoten bleibt
+ * Aufzug (Pass C).
+ */
+function zieheNaehte(graph: StationGraph, elemente: OsmElement[]): void {
+  const belegt = belegteEbenen(elemente);
+  const aufzuege = new Set(
+    elemente.filter((el) => el.type === 'node' && el.tags?.highway === 'elevator').map((el) => el.id),
+  );
+  const gezogen = new Set<string>();
+  for (const el of elemente) {
+    if (!hatGeratenenWeg(el)) continue;
+    for (const id of el.nodes) {
+      if (aufzuege.has(id)) continue;
+      for (const ebene of belegt.get(id) ?? []) {
+        const von = knotenId(id, 0);
+        const nach = knotenId(id, ebene);
+        if (ebene === 0 || gezogen.has(nach) || !graph.knoten.has(von) || !graph.knoten.has(nach)) continue;
+        gezogen.add(nach);
+        const kante: GraphKante = { von, nach, laengeM: 0, deltaLevel: ebene, typ: 'rampe', barrierefrei: true };
+        for (const ende of [von, nach]) {
+          if (!graph.adjazenz.has(ende)) graph.adjazenz.set(ende, []);
+          graph.adjazenz.get(ende)!.push(kante);
+        }
+      }
+    }
+  }
+}
+
+function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise']): StationGraph {
   const osmKnoten = new Map<number, OsmElement>();
   const ways: OsmElement[] = [];
   const waysNachId = new Map<number, OsmElement>();
@@ -253,17 +368,11 @@ export function baueGraph(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise'
     // Ebenen bestimmen: explizites level-Tag hat Vorrang (incline gibt die
     // Richtung), sonst bereits bekannte Instanz-Ebenen der Endknoten.
     const levels = parseLevels(tags.level);
+    const enden = ebenenDerEnden(tags);
     let ebeneErster: number;
     let ebeneLetzter: number;
-    if (levels.length >= 2) {
-      const [lo, hi] = [levels[0], levels[levels.length - 1]];
-      if (tags.incline === 'down') {
-        ebeneErster = hi;
-        ebeneLetzter = lo;
-      } else {
-        ebeneErster = lo;
-        ebeneLetzter = hi;
-      }
+    if (enden) {
+      [ebeneErster, ebeneLetzter] = enden;
     } else {
       const bekannteErster = instanzEbenen.get(ersterOsm);
       const bekannteLetzter = instanzEbenen.get(letzterOsm);
