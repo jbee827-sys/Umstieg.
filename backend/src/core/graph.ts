@@ -257,6 +257,7 @@ export function baueGraph(osmRoh: OverpassAntwort, dbGleise?: StationsInfo['glei
   const elements = vererbeEbenen(osm.elements);
   const mitNaht = baueGraphOhneNaht({ ...osm, elements }, dbGleise);
   zieheNaehte(mitNaht, elements);
+  zieheTreppenenden(mitNaht, elements);
   return erreichbareGleisPaare(mitNaht) > vorher ? mitNaht : graph;
 }
 
@@ -348,6 +349,62 @@ function zieheNaehte(graph: StationGraph, elemente: OsmElement[]): void {
         gezogen.add(nach);
         const kante: GraphKante = { von, nach, laengeM: 0, deltaLevel: ebene, typ: 'rampe', barrierefrei: true };
         for (const ende of [von, nach]) {
+          if (!graph.adjazenz.has(ende)) graph.adjazenz.set(ende, []);
+          graph.adjazenz.get(ende)!.push(kante);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Das Ende einer Treppe, Rolltreppe oder eines Aufzugwegs ist ein Ort, auch wenn
+ * sich die Ebenen dort widersprechen.
+ *
+ * In Duesseldorf und Frankfurt-Hoechst sagt die Treppe `level=0;1`, die Passage an
+ * ihrem Fuss `level=-1`, und der geteilte OSM-Punkt wird zu zwei Knoten ohne Kante.
+ * Anders als mitten im Weg ist das hier kein Hinweis auf zwei Stockwerke: Wer die
+ * Treppe hinabsteigt, steht in dieser Passage. Verbunden wird nur, was noch getrennt
+ * ist, und nicht stufenfrei, solange kein Aufzug im Spiel ist.
+ */
+function zieheTreppenenden(graph: StationGraph, elemente: OsmElement[]): void {
+  const insel = new Map<string, string>();
+  const wurzel = (id: string): string => {
+    let w = id;
+    while (insel.has(w)) w = insel.get(w)!;
+    return w;
+  };
+  for (const liste of graph.adjazenz.values()) {
+    for (const k of liste) {
+      const [a, b] = [wurzel(k.von), wurzel(k.nach)];
+      if (a !== b) insel.set(a, b);
+    }
+  }
+  const instanzen = new Map<number, GraphKnoten[]>();
+  for (const k of graph.knoten.values()) {
+    const m = k.id.match(/^n(\d+)@/);
+    if (!m) continue;
+    const id = Number(m[1]);
+    if (!instanzen.has(id)) instanzen.set(id, []);
+    instanzen.get(id)!.push(k);
+  }
+  for (const el of elemente) {
+    if (el.type !== 'way' || !el.nodes || !istEbenenwechselWeg(el.tags ?? {})) continue;
+    for (const id of [el.nodes[0], el.nodes[el.nodes.length - 1]]) {
+      const hier = [...(instanzen.get(id) ?? [])].sort((a, b) => a.level - b.level);
+      for (let i = 0; i < hier.length - 1; i++) {
+        const [a, b] = [wurzel(hier[i].id), wurzel(hier[i + 1].id)];
+        if (a === b) continue;
+        insel.set(a, b);
+        const kante: GraphKante = {
+          von: hier[i].id,
+          nach: hier[i + 1].id,
+          laengeM: 0,
+          deltaLevel: hier[i + 1].level - hier[i].level,
+          typ: 'rampe',
+          barrierefrei: el.tags?.highway === 'elevator',
+        };
+        for (const ende of [kante.von, kante.nach]) {
           if (!graph.adjazenz.has(ende)) graph.adjazenz.set(ende, []);
           graph.adjazenz.get(ende)!.push(kante);
         }

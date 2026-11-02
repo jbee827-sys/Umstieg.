@@ -888,3 +888,42 @@ describe('Bahnsteigmitte im Bogen', () => {
     expect(haversineM(mitte.lat, mitte.lon, kante.lat, kante.lon)).toBeLessThan(15);
   });
 });
+
+/**
+ * Duesseldorf, Frankfurt-Hoechst: Die Treppe sagt `level=0;1`, die Passage an ihrem
+ * Fuss `level=-1`. Derselbe OSM-Punkt wird so zu zwei Knoten, beide belegt, ohne
+ * Kante. An einem Treppenende widersprechen sich nur die Angaben: Der geteilte
+ * Punkt ist die Verbindung, wie es OSM meint.
+ */
+describe('Naht am Treppenende', () => {
+  const punkte: OverpassAntwort['elements'] = [
+    { type: 'node', id: 1, lat: 52.0, lon: 12.0 }, { type: 'node', id: 2, lat: 52.0, lon: 12.002 },
+    { type: 'node', id: 3, lat: 52.001, lon: 12.0 }, { type: 'node', id: 4, lat: 52.001, lon: 12.002 },
+    { type: 'node', id: 5, lat: 52.0003, lon: 12.0 }, { type: 'node', id: 6, lat: 52.0007, lon: 12.0 },
+  ];
+  const stufen = (level: string): OverpassAntwort => ({ elements: [
+    ...punkte,
+    { type: 'way', id: 10, nodes: [1, 2], tags: { railway: 'platform', ref: '1', level: '1' } },
+    { type: 'way', id: 11, nodes: [3, 4], tags: { railway: 'platform', ref: '2', level: '1' } },
+    { type: 'way', id: 20, nodes: [1, 5], tags: { highway: 'steps', level, incline: 'down' } },
+    { type: 'way', id: 21, nodes: [5, 6], tags: { highway: 'footway', level: '-1' } },
+    { type: 'way', id: 22, nodes: [6, 3], tags: { highway: 'steps', level: '-1;1', incline: 'up' } },
+  ] });
+
+  it('verbindet die Treppe mit dem Weg an ihrem Fuss, auch wenn die Ebenen sich widersprechen', () => {
+    const graph = baueGraph(stufen('0;1'));
+    expect(erreichbar(graph, 'gleis1:mitte', 'gleis2:mitte')).toBe(true);
+  });
+
+  it('bleibt stufenfrei getrennt: Die Treppe bleibt eine Treppe', () => {
+    const graph = baueGraph(stufen('0;1'));
+    expect(berechneRoute(graph, 'gleis1:mitte', 'gleis2:mitte', 'barrierefrei')).toBeNull();
+  });
+
+  it('braucht keine Naht, wenn die Ebenen stimmen', () => {
+    const graph = baueGraph(stufen('-1;1'));
+    expect(erreichbar(graph, 'gleis1:mitte', 'gleis2:mitte')).toBe(true);
+    const kanten = new Set([...graph.adjazenz.values()].flat());
+    expect([...kanten].filter((k) => k.laengeM === 0 && k.typ === 'rampe')).toEqual([]);
+  });
+});
