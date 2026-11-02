@@ -39,7 +39,12 @@ import type {
 /** Nur ein Bahnsteig in der Nähe zählt als „liegt an Gleis X". */
 const ANLAGE_MAX_M = 60;
 
-/** Quer zur Bahnsteigachse: weiter weg heisst, die Anlage gehört nicht dazu. */
+/**
+ * Quer zur Bahnsteigachse: weiter weg heisst, die Anlage gehört nicht dazu.
+ * Gemessen wird an der Geraden von Ende zu Ende, im Bogen kommt deshalb die
+ * Bogenhöhe hinzu (`zugangQuerGrenze`): Die Mitte liegt auf dem Bahnsteig, ihr
+ * Abstand zur Geraden ist genau diese Höhe. Berlin Hbf 13/14: 23 m.
+ */
 const ZUGANG_QUER_MAX_M = 30;
 
 /** Zwei Anlagen näher als das sind derselbe Zugang, kein zweiter. */
@@ -285,6 +290,10 @@ function* ebenenwechselKanten(
  * Bei einem 430-m-Bahnsteig sagt die Entfernung zur MITTE wenig; der halbe
  * Bahnsteig zaehlt deshalb als Spielraum mit.
  */
+function zugangQuerGrenze(bahnsteig: Bahnsteigrohbau): number {
+  return ZUGANG_QUER_MAX_M + (aufAchse(bahnsteig, bahnsteig.mitte)?.querM ?? 0);
+}
+
 function bahnsteigBei(
   knoten: GraphKnoten,
   bahnsteige: Bahnsteigrohbau[],
@@ -333,7 +342,7 @@ function zugaengeFuer(
       if (ende.level !== bahnsteig.level) continue;
       const lage = aufAchse(bahnsteig, ende);
       if (!lage) continue;
-      if (lage.querM > ZUGANG_QUER_MAX_M) continue;
+      if (lage.querM > zugangQuerGrenze(bahnsteig)) continue;
       if (lage.laengsM < -5 || lage.laengsM > lage.laengeM + 5) continue;
       treffer.push({
         typ: kante.typ,
@@ -612,7 +621,7 @@ function elementeFuer(
       if (bahnsteig.level !== level) continue;
       if (!wichtigeBahnsteige.has(bahnsteig.bahnsteigId)) continue;
       const lage = aufAchse(bahnsteig, aufEbene);
-      if (!lage || lage.querM > ZUGANG_QUER_MAX_M) continue;
+      if (!lage || lage.querM > zugangQuerGrenze(bahnsteig)) continue;
       if (lage.laengsM < -5 || lage.laengsM > lage.laengeM + 5) continue;
       beiM = Math.round(lage.laengsM);
       break;

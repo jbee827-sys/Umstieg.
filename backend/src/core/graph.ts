@@ -81,6 +81,46 @@ function abstandZumUmriss(
   return min;
 }
 
+/**
+ * Die Mitte eines Bahnsteigs: die Sehnenmitte, wenn sie auf ihm liegt, sonst der
+ * naechste Punkt seines Umrisses.
+ *
+ * Im Bogen liegt die Sehnenmitte neben dem Bahnsteig - an Berlin Hbf fuer Gleis
+ * 13/14 23 m neben dem eigenen und 1,6 m neben dem Nachbarbahnsteig. Jeder Weg ab
+ * „Bahnsteigmitte“ begann so auf der falschen Seite der Gleise.
+ */
+function mitteAufDemBahnsteig(
+  mitte: { lat: number; lon: number },
+  nodeListen: number[][],
+  osmKnoten: Map<number, OsmElement>,
+): { lat: number; lon: number } {
+  if (abstandZumUmriss(mitte, nodeListen, osmKnoten) <= BAHNSTEIG_FLAECHE_M) return mitte;
+  const mLat = 111_320;
+  const mLon = mLat * Math.cos((mitte.lat * Math.PI) / 180);
+  let beste = mitte;
+  let min = Number.POSITIVE_INFINITY;
+  for (const liste of nodeListen) {
+    for (let i = 0; i < liste.length - 1; i++) {
+      const a = osmKnoten.get(liste[i]);
+      const b = osmKnoten.get(liste[i + 1]);
+      if (a?.lat === undefined || b?.lat === undefined) continue;
+      const ax = (a.lon! - mitte.lon) * mLon;
+      const ay = (a.lat - mitte.lat) * mLat;
+      const dx = (b.lon! - mitte.lon) * mLon - ax;
+      const dy = (b.lat - mitte.lat) * mLat - ay;
+      const l2 = dx * dx + dy * dy;
+      const t = l2 === 0 ? 0 : Math.max(0, Math.min(1, -(ax * dx + ay * dy) / l2));
+      const [x, y] = [ax + t * dx, ay + t * dy];
+      const d = Math.hypot(x, y);
+      if (d < min) {
+        min = d;
+        beste = { lat: mitte.lat + y / mLat, lon: mitte.lon + x / mLon };
+      }
+    }
+  }
+  return beste;
+}
+
 export function haversineM(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const rad = Math.PI / 180;
   const dLat = (lat2 - lat1) * rad;
@@ -765,8 +805,6 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
     return ids;
   };
 
-  /** Anbindungen auf den Umriss eines anderen Bahnsteigs – siehe nach Pass E. */
-  const ankerUeberGleis: GraphKante[] = [];
   const gleisSet = new Set<string>();
   for (const bahnsteig of bahnsteige) {
     const { bahnsteigId, refs, ebene, tags, nodeListen } = bahnsteig;
@@ -798,8 +836,11 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
     const enden = endenJeBahnsteig.get(bahnsteig);
     if (!enden) continue;
     const [endeA, endeB] = enden;
-    const mitteLat = (endeA.lat + endeB.lat) / 2;
-    const mitteLon = (endeA.lon + endeB.lon) / 2;
+    const { lat: mitteLat, lon: mitteLon } = mitteAufDemBahnsteig(
+      { lat: (endeA.lat + endeB.lat) / 2, lon: (endeA.lon + endeB.lon) / 2 },
+      nodeListen,
+      osmKnoten,
+    );
 
     for (const gleis of refs) {
       gleisSet.add(gleis);
@@ -851,22 +892,28 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
             nahester = kandidat;
           }
         }
+        // Nie auf einen anderen Bahnsteig: Dazwischen liegt ein Gleis. In Stuttgart
+        // liegt die Mitte von Gleis 3/4 22 m von der Kante von Gleis 2, aber 31 m
+        // vom eigenen Knoten - 1 -> 3 lief so in 86 s ueber die Gleise statt in
+        // 379 s ueber den Querbahnsteig. Auch dann nicht, wenn es die einzige
+        // Verbindung waere: Die Kette haelt den Punkt ohnehin am eigenen Bahnsteig,
+        // und fehlt der Weg im Kartenmaterial, sagt die Antwort das ehrlich.
         if (nahester && nahesteDist <= ANBINDUNG_MAX_M) {
-          const kante: GraphKante = {
-            von: syntId,
-            nach: nahester.id,
-            laengeM: nahesteDist,
-            deltaLevel: 0,
-            typ: 'eben',
-            barrierefrei: true,
-          };
-          const umriss = umrissVon.get(nahester.id);
+          const andere = bahnsteigVon(nahester);
           const jenseitsDesGleises =
-            umriss !== undefined &&
-            !umriss.has(bahnsteig) &&
+            andere.size > 0 &&
+            !andere.has(bahnsteigId) &&
             abstandZumUmriss(nahester, nodeListen, osmKnoten) > KANTE_AM_BAHNSTEIG_M;
-          if (jenseitsDesGleises) ankerUeberGleis.push(kante);
-          else fuegeKanteHinzu(kante);
+          if (!jenseitsDesGleises) {
+            fuegeKanteHinzu({
+              von: syntId,
+              nach: nahester.id,
+              laengeM: nahesteDist,
+              deltaLevel: 0,
+              typ: 'eben',
+              barrierefrei: true,
+            });
+          }
         }
       }
     }
@@ -884,22 +931,6 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
   // entstehen dabei keine - nur die Kanten, die den Bahnsteig zu dem machen,
   // was er ist: eine Flaeche, auf der man der Laenge nach gehen kann.
   verdichteBahnsteigketten(knoten, bahnsteigVon, fuegeKanteHinzu);
-
-  // Eine Anbindung auf den Umriss eines anderen Bahnsteigs fuehrt ueber ein
-  // Gleis: In Stuttgart liegt die Mitte von Gleis 3/4 22 m von der Kante von
-  // Gleis 2, aber 31 m vom eigenen Knoten, und 1 -> 3 lief in 86 s ueber die
-  // Gleise statt in 379 s ueber den Querbahnsteig.
-  //
-  // Sie faellt nur weg, wo auch ohne sie ein Weg besteht – zu Fuss wie stufenfrei.
-  // Ohne jede Ausnahme verloren elf Bahnhoefe 120 Gleispaare und 334 stufenfreie
-  // Wege (gemessen am Bestand, 02.11.2026): Dort ist sie die einzige Verbindung,
-  // die das Kartenmaterial kennt. Das Entfernen macht Wege nur laenger, nie
-  // kuerzer, und neue Kanten entstehen keine.
-  for (const kante of ankerUeberGleis) {
-    if (!verbunden(adjazenz, kante.von, kante.nach, false) || !verbunden(adjazenz, kante.von, kante.nach, true)) {
-      fuegeKanteHinzu(kante);
-    }
-  }
 
   // --- Pass POI: Zwischenziele der Variante `mit-stopp` ---
   //
@@ -1106,29 +1137,6 @@ function verdichteBahnsteigketten(
       }
     }
   }
-}
-
-/** Gibt es zwischen zwei Knoten schon einen Weg – auf Wunsch nur ueber stufenfreie Kanten? */
-function verbunden(
-  adjazenz: Map<string, GraphKante[]>,
-  vonId: string,
-  nachId: string,
-  nurBarrierefrei: boolean,
-): boolean {
-  const besucht = new Set<string>([vonId]);
-  const stapel = [vonId];
-  while (stapel.length > 0) {
-    const aktuell = stapel.pop()!;
-    if (aktuell === nachId) return true;
-    for (const kante of adjazenz.get(aktuell) ?? []) {
-      if (nurBarrierefrei && !kante.barrierefrei) continue;
-      const nachbar = kante.von === aktuell ? kante.nach : kante.von;
-      if (besucht.has(nachbar)) continue;
-      besucht.add(nachbar);
-      stapel.push(nachbar);
-    }
-  }
-  return false;
 }
 
 function verbindeVerwaisteAufzuege(

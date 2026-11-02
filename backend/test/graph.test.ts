@@ -713,13 +713,32 @@ describe('Anbindung an den Bahnsteig', () => {
     expect(pfad!.laengeM).toBeGreaterThan(130);
   });
 
-  it('behaelt die Anbindung, wenn sie die einzige Verbindung ist', () => {
-    expect(erreichbar(nachbarn(), 'gleis1:mitte', 'gleis2:mitte')).toBe(true);
+  // Bis zum 02.11.2026 blieb die Kante, wenn sie die einzige Verbindung war - und
+  // 803 Routen kreuzten deshalb ein Gleis. Fehlt der Weg im Kartenmaterial, sagt
+  // das die Antwort ehrlich (Standardmodell, Absage), statt einen falschen zu zeigen.
+  it('kennt keinen Weg, wenn nur das Gleis dazwischen liegt', () => {
+    expect(erreichbar(nachbarn(), 'gleis1:mitte', 'gleis2:mitte')).toBe(false);
   });
 
-  it('behaelt die Anbindung, wenn sie die einzige stufenfreie Verbindung ist', () => {
+  it('kennt keinen stufenfreien Weg, wenn es nur das Gleis waere', () => {
     const graph = nachbarn({ wheelchair: 'no' });
-    expect(berechneRoute(graph, 'gleis1:mitte', 'gleis2:mitte', 'barrierefrei')).not.toBeNull();
+    expect(berechneRoute(graph, 'gleis1:mitte', 'gleis2:mitte', 'schnellste')).not.toBeNull();
+    expect(berechneRoute(graph, 'gleis1:mitte', 'gleis2:mitte', 'barrierefrei')).toBeNull();
+  });
+
+  it('springt auch nicht auf einen Fussweg, der zum Nachbarbahnsteig gehoert', () => {
+    // Knoten 6 liegt 26 m von der Mitte von Gleis 1, aber 5,5 m vom Umriss von Gleis 2.
+    const graph = baueGraph({ elements: [
+      { type: 'node', id: 1, lat: 52.0, lon: 12.0 },
+      { type: 'node', id: 2, lat: 52.0, lon: 12.002 },
+      { type: 'node', id: 3, lat: 52.00028, lon: 12.0 },
+      { type: 'node', id: 4, lat: 52.00028, lon: 12.002 },
+      { type: 'node', id: 6, lat: 52.00023, lon: 12.001 },
+      { type: 'way', id: 11, nodes: [3, 4], tags: { railway: 'platform', ref: '2', level: '0' } },
+      { type: 'way', id: 10, nodes: [1, 2], tags: { railway: 'platform', ref: '1', level: '0' } },
+      { type: 'way', id: 20, nodes: [6, 4], tags: { highway: 'footway', level: '0' } },
+    ] });
+    expect(erreichbar(graph, 'gleis1:mitte', 'gleis2:mitte')).toBe(false);
   });
 
   it('fuehrt Stuttgart 1 -> 3 ueber den Querbahnsteig statt ueber die Gleise', () => {
@@ -828,5 +847,44 @@ describe('Bahnsteig-Zugehoerigkeit', () => {
     const pfad = berechneRoute(koeln, 'gleis8:mitte', 'gleis10:mitte', 'schnellste');
     expect(pfad!.kanten.some((k) => k.deltaLevel !== 0)).toBe(true);
     expect(gehzeitSekunden(pfad!, 'normal')).toBeGreaterThan(120);
+  });
+});
+
+/**
+ * Die Mitte war die Sehnenmitte der beiden Enden. An Berlin Hbf liegt sie fuer
+ * Gleis 13/14 23 m neben dem eigenen und 1,6 m neben dem Nachbarbahnsteig: Jeder
+ * Weg begann auf dem falschen Bahnsteig. 635 Routen kreuzten so ein Gleis.
+ */
+describe('Bahnsteigmitte im Bogen', () => {
+  it('liegt auf dem Bahnsteig, nicht auf der Sehne', () => {
+    const graph = baueGraph({ elements: [
+      { type: 'node', id: 1, lat: 52.0, lon: 12.0 },
+      { type: 'node', id: 2, lat: 52.0004, lon: 12.001 },
+      { type: 'node', id: 3, lat: 52.0004, lon: 12.002 },
+      { type: 'node', id: 4, lat: 52.0, lon: 12.003 },
+      { type: 'way', id: 10, nodes: [1, 2, 3, 4], tags: { railway: 'platform', ref: '1', level: '0' } },
+    ] });
+    const mitte = graph.knoten.get('gleis1:mitte')!;
+    // Die Sehnenmitte laege 44 m unter dem flachen Scheitel des Bahnsteigs.
+    expect(haversineM(mitte.lat, mitte.lon, 52.0004, 12.0015)).toBeLessThan(1);
+  });
+
+  it('bleibt in der Sehnenmitte, wo sie auf dem Bahnsteig liegt', () => {
+    const graph = baueGraph({ elements: [
+      { type: 'node', id: 1, lat: 52.0, lon: 12.0 },
+      { type: 'node', id: 2, lat: 52.0, lon: 12.002 },
+      { type: 'way', id: 10, nodes: [1, 2], tags: { railway: 'platform', ref: '1', level: '0' } },
+    ] });
+    const mitte = graph.knoten.get('gleis1:mitte')!;
+    expect(mitte.lat).toBeCloseTo(52.0, 6);
+    expect(mitte.lon).toBeCloseTo(12.001, 6);
+  });
+
+  it('beginnt der Weg in Berlin auf dem eigenen Bahnsteig', () => {
+    const berlin = baueGraph(ladeFixture('overpass/berlin-hbf'));
+    const mitte = berlin.knoten.get('gleis14:mitte')!;
+    const kante = berlin.knoten.get('n721945115@2')!; // Kante von Gleis 13/14
+    // Rund 23 m waren es von der Sehnenmitte; auf dem Umriss sind es hoechstens wenige.
+    expect(haversineM(mitte.lat, mitte.lon, kante.lat, kante.lon)).toBeLessThan(15);
   });
 });
