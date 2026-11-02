@@ -258,6 +258,7 @@ export function baueGraph(osmRoh: OverpassAntwort, dbGleise?: StationsInfo['glei
   const mitNaht = baueGraphOhneNaht({ ...osm, elements }, dbGleise);
   zieheNaehte(mitNaht, elements);
   zieheTreppenenden(mitNaht, elements);
+  schliesseLueckenAmTreppenfuss(mitNaht, elements);
   return erreichbareGleisPaare(mitNaht) > vorher ? mitNaht : graph;
 }
 
@@ -357,6 +358,27 @@ function zieheNaehte(graph: StationGraph, elemente: OsmElement[]): void {
   }
 }
 
+/** Die zusammenhaengenden Teile des Graphen, mit Zusammenlegen fuer neue Kanten. */
+function inselnVon(graph: StationGraph): {
+  wurzel: (id: string) => string;
+  verbinde: (a: string, b: string) => void;
+} {
+  const eltern = new Map<string, string>();
+  const wurzel = (id: string): string => {
+    let w = id;
+    while (eltern.has(w)) w = eltern.get(w)!;
+    return w;
+  };
+  const verbinde = (a: string, b: string): void => {
+    const [x, y] = [wurzel(a), wurzel(b)];
+    if (x !== y) eltern.set(x, y);
+  };
+  for (const liste of graph.adjazenz.values()) {
+    for (const k of liste) verbinde(k.von, k.nach);
+  }
+  return { wurzel, verbinde };
+}
+
 /**
  * Das Ende einer Treppe, Rolltreppe oder eines Aufzugwegs ist ein Ort, auch wenn
  * sich die Ebenen dort widersprechen.
@@ -368,18 +390,7 @@ function zieheNaehte(graph: StationGraph, elemente: OsmElement[]): void {
  * ist, und nicht stufenfrei, solange kein Aufzug im Spiel ist.
  */
 function zieheTreppenenden(graph: StationGraph, elemente: OsmElement[]): void {
-  const insel = new Map<string, string>();
-  const wurzel = (id: string): string => {
-    let w = id;
-    while (insel.has(w)) w = insel.get(w)!;
-    return w;
-  };
-  for (const liste of graph.adjazenz.values()) {
-    for (const k of liste) {
-      const [a, b] = [wurzel(k.von), wurzel(k.nach)];
-      if (a !== b) insel.set(a, b);
-    }
-  }
+  const { wurzel, verbinde } = inselnVon(graph);
   const instanzen = new Map<number, GraphKnoten[]>();
   for (const k of graph.knoten.values()) {
     const m = k.id.match(/^n(\d+)@/);
@@ -393,9 +404,8 @@ function zieheTreppenenden(graph: StationGraph, elemente: OsmElement[]): void {
     for (const id of [el.nodes[0], el.nodes[el.nodes.length - 1]]) {
       const hier = [...(instanzen.get(id) ?? [])].sort((a, b) => a.level - b.level);
       for (let i = 0; i < hier.length - 1; i++) {
-        const [a, b] = [wurzel(hier[i].id), wurzel(hier[i + 1].id)];
-        if (a === b) continue;
-        insel.set(a, b);
+        if (wurzel(hier[i].id) === wurzel(hier[i + 1].id)) continue;
+        verbinde(hier[i].id, hier[i + 1].id);
         const kante: GraphKante = {
           von: hier[i].id,
           nach: hier[i + 1].id,
@@ -403,6 +413,80 @@ function zieheTreppenenden(graph: StationGraph, elemente: OsmElement[]): void {
           deltaLevel: hier[i + 1].level - hier[i].level,
           typ: 'rampe',
           barrierefrei: el.tags?.highway === 'elevator',
+        };
+        for (const ende of [kante.von, kante.nach]) {
+          if (!graph.adjazenz.has(ende)) graph.adjazenz.set(ende, []);
+          graph.adjazenz.get(ende)!.push(kante);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Wie weit ein Treppenfuss neben einem Weg liegen darf, um als dessen Ende zu gelten.
+ * Kein gemessener Wert: In Duesseldorf sind es 2 bis 5 m. Ueber alle 382 Bahnhoefe
+ * bringt die Grenze 78 Gleispaare zurueck und keine neue Kreuzung.
+ */
+const LUECKE_MAX_M = 5;
+
+/**
+ * Schliesst die Luecke zwischen einem Treppenfuss und dem Weg daneben.
+ *
+ * In Duesseldorf endet die Treppe von Gleis 9 auf Ebene 0, 3 m neben dem Fussweg der
+ * Passage auf Ebene -1: Getrennt gezeichnet, gemeint ist derselbe Gang. Ohne die
+ * Kanten, die frueher quer ueber die Gleise fuehrten, fehlte damit jeder Weg.
+ *
+ * **Bewusst schmal.** Nur Treppenenden, die nicht auf einem Bahnsteig liegen, und nur
+ * zu Wegen, die es auch nicht tun: So kann die Kante kein Gleis ueberspringen. Nur
+ * zwischen Teilen mit Gleisen, und jeder Teil nur einmal. Nicht stufenfrei, denn
+ * eine geratene Verbindung sagt nichts ueber Stufen.
+ */
+function schliesseLueckenAmTreppenfuss(graph: StationGraph, elemente: OsmElement[]): void {
+  const { wurzel, verbinde } = inselnVon(graph);
+  const relationsWege = new Set<number>();
+  for (const el of elemente) {
+    if (el.type === 'relation' && el.tags?.railway === 'platform') {
+      for (const m of el.members ?? []) if (m.type === 'way') relationsWege.add(m.ref);
+    }
+  }
+  const aufBahnsteig = new Set<number>();
+  for (const el of elemente) {
+    if (el.type !== 'way') continue;
+    if (relationsWege.has(el.id) || el.tags?.railway === 'platform' || el.tags?.railway === 'platform_edge') {
+      for (const n of el.nodes ?? []) aufBahnsteig.add(n);
+    }
+  }
+  const osmIdVon = (id: string): number => Number(id.slice(1, id.indexOf('@')));
+  const frei = [...graph.knoten.values()].filter((k) => k.id.startsWith('n') && !aufBahnsteig.has(osmIdVon(k.id)));
+  const mitGleis = new Set<string>();
+  for (const k of graph.knoten.values()) if (k.gleis) mitGleis.add(wurzel(k.id));
+  for (const el of elemente) {
+    if (el.type !== 'way' || !el.nodes || !istEbenenwechselWeg(el.tags ?? {})) continue;
+    for (const id of [el.nodes[0], el.nodes[el.nodes.length - 1]]) {
+      if (aufBahnsteig.has(id)) continue;
+      for (const k of graph.knoten.values()) {
+        if (!k.id.startsWith('n' + id + '@') || !mitGleis.has(wurzel(k.id))) continue;
+        let bester: GraphKnoten | null = null;
+        let abstand = LUECKE_MAX_M;
+        for (const f of frei) {
+          if (wurzel(f.id) === wurzel(k.id) || !mitGleis.has(wurzel(f.id))) continue;
+          if (Math.abs(f.level - k.level) > 2) continue;
+          const d = haversineM(k.lat, k.lon, f.lat, f.lon);
+          if (d <= abstand) {
+            abstand = d;
+            bester = f;
+          }
+        }
+        if (!bester) continue;
+        verbinde(k.id, bester.id);
+        const kante: GraphKante = {
+          von: k.id,
+          nach: bester.id,
+          laengeM: abstand,
+          deltaLevel: bester.level - k.level,
+          typ: bester.level === k.level ? 'eben' : 'rampe',
+          barrierefrei: false,
         };
         for (const ende of [kante.von, kante.nach]) {
           if (!graph.adjazenz.has(ende)) graph.adjazenz.set(ende, []);

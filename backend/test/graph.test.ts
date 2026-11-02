@@ -927,3 +927,52 @@ describe('Naht am Treppenende', () => {
     expect([...kanten].filter((k) => k.laengeM === 0 && k.typ === 'rampe')).toEqual([]);
   });
 });
+
+/**
+ * Duesseldorf Hbf: Die Treppe von Gleis 9 endet 3 m neben dem Passagenweg, ohne
+ * gemeinsamen OSM-Punkt. Gemeint ist derselbe Gang; ohne ihn fehlte jeder Weg.
+ */
+describe('Luecke am Treppenfuss', () => {
+  // Gleis 1 und 2 auf Ebene 1, je eine Treppe hinab; zwischen den Fuessen die Luecke.
+  const mitLuecke = (fussLat: number, weitere: OverpassAntwort['elements'] = []): OverpassAntwort => ({ elements: [
+    { type: 'node', id: 1, lat: 52.0, lon: 12.0 }, { type: 'node', id: 2, lat: 52.0, lon: 12.002 },
+    { type: 'node', id: 3, lat: 52.001, lon: 12.0 }, { type: 'node', id: 4, lat: 52.001, lon: 12.002 },
+    { type: 'node', id: 5, lat: 52.0004, lon: 12.0 }, { type: 'node', id: 6, lat: fussLat, lon: 12.0 },
+    { type: 'way', id: 10, nodes: [1, 2], tags: { railway: 'platform', ref: '1', level: '1' } },
+    { type: 'way', id: 11, nodes: [3, 4], tags: { railway: 'platform', ref: '2', level: '1' } },
+    { type: 'way', id: 20, nodes: [1, 5], tags: { highway: 'steps', level: '0;1', incline: 'down' } },
+    { type: 'way', id: 21, nodes: [3, 6], tags: { highway: 'steps', level: '-1;1', incline: 'down' } },
+    ...weitere,
+  ] });
+
+  it('verbindet einen Treppenfuss mit dem Weg 3 m daneben', () => {
+    const graph = baueGraph(mitLuecke(52.000427));
+    expect(erreichbar(graph, 'gleis1:mitte', 'gleis2:mitte')).toBe(true);
+  });
+
+  it('laesst 20 m Abstand offen', () => {
+    const graph = baueGraph(mitLuecke(52.00058));
+    expect(erreichbar(graph, 'gleis1:mitte', 'gleis2:mitte')).toBe(false);
+  });
+
+  it('macht daraus keinen stufenfreien Weg', () => {
+    const graph = baueGraph(mitLuecke(52.000427));
+    const kanten = new Set([...graph.adjazenz.values()].flat());
+    expect([...kanten].filter((k) => k.laengeM > 0 && k.laengeM < 5 && k.typ === 'rampe').every((k) => !k.barrierefrei)).toBe(true);
+  });
+
+  it('springt nicht von einem Treppenende auf einem Bahnsteig los', () => {
+    // Zwei Bahnsteige 3 m auseinander, jede Treppe endet auf ihrem Bahnsteig:
+    // Das waere die Kante ueber das Gleis, die dieser Umbau abgeschafft hat.
+    const graph = baueGraph({ elements: [
+      { type: 'node', id: 1, lat: 52.0, lon: 12.0 }, { type: 'node', id: 2, lat: 52.0, lon: 12.002 },
+      { type: 'node', id: 3, lat: 52.000027, lon: 12.0 }, { type: 'node', id: 4, lat: 52.000027, lon: 12.002 },
+      { type: 'node', id: 5, lat: 52.0005, lon: 12.0 }, { type: 'node', id: 6, lat: 52.0007, lon: 12.0 },
+      { type: 'way', id: 10, nodes: [1, 2], tags: { railway: 'platform', ref: '1', level: '0' } },
+      { type: 'way', id: 11, nodes: [3, 4], tags: { railway: 'platform', ref: '2', level: '0' } },
+      { type: 'way', id: 20, nodes: [5, 1], tags: { highway: 'steps', level: '-1;0', incline: 'up' } },
+      { type: 'way', id: 21, nodes: [6, 3], tags: { highway: 'steps', level: '-1;0', incline: 'up' } },
+    ] });
+    expect(erreichbar(graph, 'gleis1:mitte', 'gleis2:mitte')).toBe(false);
+  });
+});
