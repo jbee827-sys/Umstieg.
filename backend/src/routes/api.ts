@@ -612,7 +612,30 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
 
     // Profil mitgeben: Die schnellste Route fuer einen Zuegigen ist nicht
     // zwingend die fuer jemanden mit Gepaeck.
-    const pfad = berechneRoute(graph, start.knoten.id, ziel.knoten.id, variante, profil);
+    let pfad = berechneRoute(graph, start.knoten.id, ziel.knoten.id, variante, profil);
+
+    // Beide Gleise bekannt, aber kein Weg dazwischen: eine Luecke im
+    // Kartenmaterial, keine Auskunft ueber den Bahnhof. Wie beim fehlenden Gleis
+    // oben hilft das Standardmodell weiter. `barrierefrei` und `mit-stopp`
+    // bleiben bei der Absage – eine Schaetzung sagt nichts ueber Stufen oder
+    // Toiletten, und dort ist „gibt es nicht“ die richtige Antwort.
+    if (!pfad && graph.stufe !== 3 && (variante === 'schnellste' || variante === 'einfachste')) {
+      req.log.warn(
+        { degradation: 'kartendaten-luecke', eva: eintrag.info.eva, bahnhof: eintrag.info.name, gleisAn, gleisAb },
+        'Kein Weg zwischen den Gleisen im Graphen - Rueckfall auf das Standardmodell',
+      );
+      graph = syntheseGraph(eintrag.info, fastaAnlagen);
+      hinweise.push('Kein durchgehender Weg im Kartenmaterial – Standardmodell mit ungefähren Angaben.');
+      ({ an, ab } = loese());
+      try {
+        start = findeStartknoten(graph, an.gleis, abschnittEffektiv);
+        ziel = findeStartknoten(graph, ab.gleis);
+      } catch {
+        return gleisNichtGefunden();
+      }
+      pfad = berechneRoute(graph, start.knoten.id, ziel.knoten.id, variante, profil);
+    }
+
     if (!pfad) {
       return reply.code(404).send({
         fehler: 'keine-route',

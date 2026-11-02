@@ -489,6 +489,49 @@ describe('GET /api/route – FaSta (barrierefrei)', () => {
   });
 });
 
+/**
+ * Stuttgart Hbf, gemeldet 02.11.2026: Beide Gleise stehen im Graphen, aber kein
+ * Weg verbindet sie – die Antwort war 404, in der App „Keine passende Route".
+ * Fehlt ein Gleis ganz, gibt es das Standardmodell. Wer es kennt, aber keinen
+ * Weg findet, darf nicht schlechter dastehen.
+ */
+describe('GET /api/route – Gleise ohne Weg dazwischen', () => {
+  const getrennt: OverpassAntwort = {
+    elements: [
+      { type: 'node', id: 1, lat: 52.0, lon: 12.0 },
+      { type: 'node', id: 2, lat: 52.0, lon: 12.002 },
+      { type: 'node', id: 3, lat: 52.002, lon: 12.0 },
+      { type: 'node', id: 4, lat: 52.002, lon: 12.002 },
+      { type: 'way', id: 10, nodes: [1, 2], tags: { railway: 'platform', ref: '1', level: '0' } },
+      { type: 'way', id: 11, nodes: [3, 4], tags: { railway: 'platform', ref: '2', level: '0' } },
+    ],
+  };
+  const url = (variante: string): string =>
+    `/api/route?eva=8000001&gleisAn=1&gleisAb=2&profil=normal&variante=${variante}`;
+  const clients = () => ({
+    ...macheClients(),
+    overpass: vi.fn(async () => getrennt),
+    fasta: vi.fn(async (): Promise<FastaAnlage[]> => []),
+  });
+
+  it.each(['schnellste', 'einfachste'])('%s faellt auf das Standardmodell zurueck', async (variante) => {
+    const res = await buildApp(clients()).inject({ method: 'GET', url: url(variante) });
+    expect(res.statusCode).toBe(200);
+    const ergebnis = res.json() as RouteErgebnis;
+    expect(ergebnis.stufe).toBe(3);
+    expect(ergebnis.schritte.length).toBeGreaterThan(0);
+    expect(ergebnis.hinweise.some((h) => h.includes('Standardmodell'))).toBe(true);
+  });
+
+  // Ein geschaetzter Weg ist keine Zusage fuer den Rollstuhl, und „mit Stopp"
+  // verspraeche sonst eine Toilette, die niemand gefunden hat.
+  it.each(['barrierefrei', 'mit-stopp'])('%s bleibt bei der ehrlichen Absage', async (variante) => {
+    const res = await buildApp(clients()).inject({ method: 'GET', url: url(variante) });
+    expect(res.statusCode).toBe(404);
+    expect(res.json().fehler).toBe('keine-route');
+  });
+});
+
 describe('GET /api/stations', () => {
   afterEach(() => vi.unstubAllEnvs());
 
