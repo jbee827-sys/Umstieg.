@@ -13,17 +13,17 @@
     "4"
   ],
   "paare": [
-    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":25,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":25},
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":51,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":51},
     {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":33,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":33},
     {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":33,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":33},
-    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":25,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":25},
-    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":33,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":33},
-    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":33,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":33},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":51,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":51},
+    {"von":"2","nach":"3","gleicherBahnsteig":false,"sek":85,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":85},
+    {"von":"2","nach":"4","gleicherBahnsteig":false,"sek":85,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":85},
     {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":33,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":33},
-    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":33,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":33},
+    {"von":"3","nach":"2","gleicherBahnsteig":false,"sek":85,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":85},
     {"von":"3","nach":"4","gleicherBahnsteig":true,"sek":18,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":18},
     {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":33,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":33},
-    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":33,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":33},
+    {"von":"4","nach":"2","gleicherBahnsteig":false,"sek":85,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":85},
     {"von":"4","nach":"3","gleicherBahnsteig":true,"sek":18,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":18}
   ]
 }
