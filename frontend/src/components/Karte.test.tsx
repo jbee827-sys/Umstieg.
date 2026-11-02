@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render } from '@testing-library/react'
 import { Karte } from './Karte'
-import { KARTENSTIL } from './kartenstil'
 
 /**
  * MapLibre zeichnet in jsdom nichts - die Karte wird hier nachgestellt und
@@ -140,17 +139,30 @@ describe('Karte: Stil von OpenFreeMap (24.10.2026)', () => {
     return karten[0].optionen.style
   }
 
-  it('hell der Stil mit den meisten Einzelheiten', () => {
-    expect(zeige()).toBe(KARTENSTIL.hell)
-    expect(KARTENSTIL.hell).toBe('https://tiles.openfreemap.org/styles/liberty')
+  const LIBERTY = 'https://tiles.openfreemap.org/styles/liberty'
+
+  it('zeigt hell den Stil mit den meisten Einzelheiten', () => {
+    expect(zeige()).toBe(LIBERTY)
   })
 
-  it('dunkel, wenn Dunkel gewaehlt ist', () => {
+  // Julian, 02.11.2026: Der Dunkelmodus faerbte die Karte schwarz. Sie behaelt
+  // ihre natuerlichen Farben, auch wenn die App ringsum dunkel ist.
+  it('bleibt natuerlich, wenn Dunkel gewaehlt ist', () => {
     document.documentElement.dataset.darstellung = 'dunkel'
     try {
-      expect(zeige()).toBe(KARTENSTIL.dunkel)
+      expect(zeige()).toBe(LIBERTY)
     } finally {
       delete document.documentElement.dataset.darstellung
+    }
+  })
+
+  it('bleibt natuerlich, wenn das Geraet auf dunkel steht', () => {
+    const vorher = window.matchMedia
+    window.matchMedia = ((abfrage: string) => ({ matches: abfrage.includes('dark') })) as unknown as typeof window.matchMedia
+    try {
+      expect(zeige()).toBe(LIBERTY)
+    } finally {
+      window.matchMedia = vorher
     }
   })
 

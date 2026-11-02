@@ -9,10 +9,8 @@
  * OpenStreetMap). Stil, Kacheln, Schriften und Symbole liegen alle unter
  * tiles.openfreemap.org - die CSP in vercel.json nennt genau diese Domain.
  *
- * „liberty" zeigt im Bahnhof am meisten (Gebaeude, Wege, Gleise), „dark" ist
- * die Nachtfassung. Gewaehlt wird beim Aufklappen nach der geltenden Palette.
+ * „liberty" zeigt im Bahnhof am meisten (Gebaeude, Wege, Gleise). Er gilt auch
+ * im Dunkelmodus: Die Karte behaelt ihre natuerlichen Farben (Julian,
+ * 02.11.2026), die Nachtfassung „dark" zeigte sie schwarz.
  */
-export const KARTENSTIL = {
-  hell: 'https://tiles.openfreemap.org/styles/liberty',
-  dunkel: 'https://tiles.openfreemap.org/styles/dark',
-} as const
+export const KARTENSTIL = 'https://tiles.openfreemap.org/styles/liberty'

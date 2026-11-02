@@ -44,12 +44,6 @@ const LEER: FeatureCollection = { type: 'FeatureCollection', features: [] }
 /** Naeher geht die Karte nicht heran - Begruendung beim Erzeugen der Karte. */
 const MAX_ZOOM = 18
 
-function dunkleKarte(): boolean {
-  const wahl = document.documentElement.dataset.darstellung
-  if (wahl) return wahl === 'dunkel'
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
-}
-
 function ebenenLabel(ebene: string): string {
   const n = Number(ebene)
   if (n === -1) return 'Unterführung (−1)'
@@ -144,7 +138,7 @@ export function Karte({ karte, standort, aktiverSchritt, anfangsOffen = false }:
       // naeher als 18 bringt im Bahnhof aber nichts mehr.
       maxZoom: MAX_ZOOM,
       attributionControl: { compact: false },
-      style: dunkleKarte() ? KARTENSTIL.dunkel : KARTENSTIL.hell,
+      style: KARTENSTIL,
     })
 
     map.on('load', () => {

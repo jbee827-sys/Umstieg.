@@ -6,7 +6,8 @@ App Store erlaubt ist.
 ## 1. Kartenkacheln – entschieden: OpenFreeMap (Julian, 24.10.2026)
 
 Umgesetzt in `frontend/src/components/kartenstil.ts` und `Karte.tsx`: Stil
-`liberty` (hell) bzw. `dark`, alles von `tiles.openfreemap.org`; CSP,
+`liberty` auch im Dunkelmodus (Julian, 02.11.2026: die Karte behält ihre
+natürlichen Farben), alles von `tiles.openfreemap.org`; CSP,
 Datenschutzerklärung und `NOTICE` angepasst. Sichtprüfung im Browser
 24.10.2026: Karte lädt, Weglinie liegt darauf, Namensnennung steht unten.
 Ein eigener Stil in den Farben der App ist möglich (eigene `style.json`),
