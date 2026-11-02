@@ -701,6 +701,19 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
     endenJeBahnsteig.set(bahnsteig, richteEndenAus(a, e, richtungJeEbene.get(bahnsteig.ebene)!));
   }
 
+  // Wessen Umriss ein Knoten ist. Ein Punkt kann mehreren Bahnsteigen gehoeren,
+  // wenn sie sich beruehren; dann gilt er auch fuer jeden von ihnen als eigener.
+  const umrissVon = new Map<string, Set<BahnsteigDaten>>();
+  for (const bahnsteig of bahnsteige) {
+    for (const id of bahnsteig.nodeListen.flat()) {
+      const schluessel = knotenId(id, bahnsteig.ebene);
+      if (!umrissVon.has(schluessel)) umrissVon.set(schluessel, new Set());
+      umrissVon.get(schluessel)!.add(bahnsteig);
+    }
+  }
+
+  /** Anbindungen auf den Umriss eines anderen Bahnsteigs – siehe nach Pass E. */
+  const ankerUeberGleis: GraphKante[] = [];
   const gleisSet = new Set<string>();
   for (const bahnsteig of bahnsteige) {
     const { bahnsteigId, refs, ebene, tags, nodeListen } = bahnsteig;
@@ -786,14 +799,21 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
           }
         }
         if (nahester && nahesteDist <= ANBINDUNG_MAX_M) {
-          fuegeKanteHinzu({
+          const kante: GraphKante = {
             von: syntId,
             nach: nahester.id,
             laengeM: nahesteDist,
             deltaLevel: 0,
             typ: 'eben',
             barrierefrei: true,
-          });
+          };
+          const umriss = umrissVon.get(nahester.id);
+          const jenseitsDesGleises =
+            umriss !== undefined &&
+            !umriss.has(bahnsteig) &&
+            abstandZumUmriss(nahester, nodeListen, osmKnoten) > KANTE_AM_BAHNSTEIG_M;
+          if (jenseitsDesGleises) ankerUeberGleis.push(kante);
+          else fuegeKanteHinzu(kante);
         }
       }
     }
@@ -811,6 +831,22 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
   // entstehen dabei keine - nur die Kanten, die den Bahnsteig zu dem machen,
   // was er ist: eine Flaeche, auf der man der Laenge nach gehen kann.
   verdichteBahnsteigketten(knoten, fuegeKanteHinzu);
+
+  // Eine Anbindung auf den Umriss eines anderen Bahnsteigs fuehrt ueber ein
+  // Gleis: In Stuttgart liegt die Mitte von Gleis 3/4 22 m von der Kante von
+  // Gleis 2, aber 31 m vom eigenen Knoten, und 1 -> 3 lief in 86 s ueber die
+  // Gleise statt in 379 s ueber den Querbahnsteig.
+  //
+  // Sie faellt nur weg, wo auch ohne sie ein Weg besteht – zu Fuss wie stufenfrei.
+  // Ohne jede Ausnahme verloren elf Bahnhoefe 120 Gleispaare und 334 stufenfreie
+  // Wege (gemessen am Bestand, 02.11.2026): Dort ist sie die einzige Verbindung,
+  // die das Kartenmaterial kennt. Das Entfernen macht Wege nur laenger, nie
+  // kuerzer, und neue Kanten entstehen keine.
+  for (const kante of ankerUeberGleis) {
+    if (!verbunden(adjazenz, kante.von, kante.nach, false) || !verbunden(adjazenz, kante.von, kante.nach, true)) {
+      fuegeKanteHinzu(kante);
+    }
+  }
 
   // --- Pass POI: Zwischenziele der Variante `mit-stopp` ---
   //
@@ -1016,6 +1052,29 @@ function verdichteBahnsteigketten(
       }
     }
   }
+}
+
+/** Gibt es zwischen zwei Knoten schon einen Weg – auf Wunsch nur ueber stufenfreie Kanten? */
+function verbunden(
+  adjazenz: Map<string, GraphKante[]>,
+  vonId: string,
+  nachId: string,
+  nurBarrierefrei: boolean,
+): boolean {
+  const besucht = new Set<string>([vonId]);
+  const stapel = [vonId];
+  while (stapel.length > 0) {
+    const aktuell = stapel.pop()!;
+    if (aktuell === nachId) return true;
+    for (const kante of adjazenz.get(aktuell) ?? []) {
+      if (nurBarrierefrei && !kante.barrierefrei) continue;
+      const nachbar = kante.von === aktuell ? kante.nach : kante.von;
+      if (besucht.has(nachbar)) continue;
+      besucht.add(nachbar);
+      stapel.push(nachbar);
+    }
+  }
+  return false;
 }
 
 function verbindeVerwaisteAufzuege(

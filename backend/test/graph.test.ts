@@ -686,3 +686,46 @@ describe('Naht bei getrennten Gleisen', () => {
     });
   });
 });
+
+/**
+ * Stuttgart Hbf: Die Mitte von Gleis 3/4 liegt 31 m vom eigenen naechsten Knoten
+ * entfernt, aber nur 22 m von der Kante des Nachbarbahnsteigs. Die Anbindung nahm
+ * den naechsten Knoten ueberhaupt - und 1 -> 3 lief in 86 s ueber die Gleise.
+ */
+describe('Anbindung an den Bahnsteig', () => {
+  /** Zwei parallele Bahnsteige 22 m auseinander, die Mitte des zweiten ohne eigenen Knoten in Reichweite. */
+  const nachbarn = (verbindung?: Record<string, string>): StationGraph => baueGraph({ elements: [
+    { type: 'node', id: 1, lat: 52.0, lon: 12.0 },
+    { type: 'node', id: 2, lat: 52.0, lon: 12.002 },
+    { type: 'node', id: 3, lat: 52.0002, lon: 12.0 },
+    { type: 'node', id: 4, lat: 52.0002, lon: 12.001 },
+    { type: 'node', id: 5, lat: 52.0002, lon: 12.002 },
+    { type: 'node', id: 6, lat: 52.0001, lon: 11.9995 },
+    // Der Nachbar zuerst: Die Anbindung sieht nur Knoten, die schon angelegt sind.
+    { type: 'way', id: 11, nodes: [3, 4, 5], tags: { railway: 'platform', ref: '2', level: '0' } },
+    { type: 'way', id: 10, nodes: [1, 2], tags: { railway: 'platform', ref: '1', level: '0' } },
+    ...(verbindung ? [{ type: 'way' as const, id: 20, nodes: [1, 6, 3], tags: { highway: 'footway', level: '0', ...verbindung } }] : []),
+  ] });
+
+  it('nimmt den Weg um den Bahnsteig statt ueber das Gleis, wenn es ihn gibt', () => {
+    // Je 68 m von der Mitte zum Bahnsteigende, dazu die Verbindung: nie die 22 m ueber das Gleis.
+    const pfad = berechneRoute(nachbarn({}), 'gleis1:mitte', 'gleis2:mitte', 'schnellste');
+    expect(pfad!.laengeM).toBeGreaterThan(130);
+  });
+
+  it('behaelt die Anbindung, wenn sie die einzige Verbindung ist', () => {
+    expect(erreichbar(nachbarn(), 'gleis1:mitte', 'gleis2:mitte')).toBe(true);
+  });
+
+  it('behaelt die Anbindung, wenn sie die einzige stufenfreie Verbindung ist', () => {
+    const graph = nachbarn({ wheelchair: 'no' });
+    expect(berechneRoute(graph, 'gleis1:mitte', 'gleis2:mitte', 'barrierefrei')).not.toBeNull();
+  });
+
+  it('fuehrt Stuttgart 1 -> 3 ueber den Querbahnsteig statt ueber die Gleise', () => {
+    const stuttgart = baueGraph(ladeFixture('overpass/stuttgart-hbf'));
+    const pfad = berechneRoute(stuttgart, 'gleis1:mitte', 'gleis3:mitte', 'schnellste');
+    // Beide Bahnsteigmitten liegen rund 150 und 220 m vor dem Querbahnsteig.
+    expect(gehzeitSekunden(pfad!, 'normal')).toBeGreaterThan(300);
+  });
+});
