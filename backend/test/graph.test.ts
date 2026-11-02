@@ -784,3 +784,49 @@ describe('Gesperrte Wege', () => {
     expect(graph.gleise).toEqual(['1']);
   });
 });
+
+/**
+ * Bahnsteig-Zugehoerigkeit (02.11.2026). 3655 Routen fuehrten ueber Gleise, und
+ * nur 4 ihrer 411 verursachenden Kanten waren echte OSM-Wege: Den Rest riet der
+ * Graph aus der Naehe zu einer Geraden. Jetzt gehoert jeder Knoten zu hoechstens
+ * einem Bahnsteig, gemessen am Umriss, und geraten wird nur innerhalb davon.
+ */
+describe('Bahnsteig-Zugehoerigkeit', () => {
+  const knoten = (id: number, lat: number, lon: number): OverpassAntwort['elements'][number] => ({ type: 'node', id, lat, lon });
+  const bahnsteig = (id: number, nodes: number[], ref: string): OverpassAntwort['elements'][number] => ({
+    type: 'way', id, nodes, tags: { railway: 'platform', ref, level: '0' },
+  });
+
+  it('nimmt keinen Knoten vom Umriss des Nachbarbahnsteigs in die Kette', () => {
+    // Gleis 2 beult zur Achse von Gleis 1 aus: Knoten 4 liegt 9 m von deren
+    // Gerader, aber 24 m von der eigenen - und bleibt trotzdem Gleis 2.
+    const graph = baueGraph({ elements: [
+      knoten(1, 52.0, 12.0), knoten(6, 52.0, 12.001), knoten(2, 52.0, 12.002),
+      knoten(3, 52.0003, 12.0), knoten(4, 52.00008, 12.001), knoten(5, 52.0003, 12.002),
+      bahnsteig(10, [1, 6, 2], '1'),
+      bahnsteig(11, [3, 4, 5], '2'),
+    ] });
+    expect(erreichbar(graph, 'gleis1:mitte', 'gleis2:mitte')).toBe(false);
+  });
+
+  it('nimmt einen Knoten am eigenen Bogen auf, auch weit neben der Geraden', () => {
+    // Der Bahnsteig biegt sich 26 m von seiner Sehne weg. Knoten 7 liegt 3 m neben
+    // ihm, aber rund 23 m neben der Geraden und ausserhalb der 30 m um die Mitte.
+    const graph = baueGraph({ elements: [
+      knoten(1, 52.0, 12.0), knoten(2, 52.00023, 12.001), knoten(3, 52.0, 12.004),
+      knoten(7, 52.00021, 12.001), knoten(8, 52.001, 12.001),
+      knoten(9, 52.001, 12.0), knoten(10, 52.001, 12.002),
+      bahnsteig(20, [1, 2, 3], '1'),
+      bahnsteig(21, [9, 8, 10], '2'),
+      { type: 'way', id: 30, nodes: [7, 8], tags: { highway: 'footway', level: '0' } },
+    ] });
+    expect(erreichbar(graph, 'gleis1:mitte', 'gleis2:mitte')).toBe(true);
+  });
+
+  it('Koeln Hbf 8 -> 10 laeuft ueber die Passage, nicht quer ueber die Gleise', () => {
+    const koeln = baueGraph(ladeFixture('overpass/koeln-hbf'));
+    const pfad = berechneRoute(koeln, 'gleis8:mitte', 'gleis10:mitte', 'schnellste');
+    expect(pfad!.kanten.some((k) => k.deltaLevel !== 0)).toBe(true);
+    expect(gehzeitSekunden(pfad!, 'normal')).toBeGreaterThan(120);
+  });
+});

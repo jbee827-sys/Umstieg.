@@ -33,15 +33,15 @@ const ANBINDUNG_MAX_M = 30;
 const VERWAIST_MAX_M = 10;
 
 /**
- * Wie nah ein begehbarer Knoten an der Bahnsteigachse liegen muss, um als
- * „auf dem Bahnsteig" zu gelten.
+ * Wie nah ein Knoten am UMRISS eines Bahnsteigs liegen muss, um zu ihm zu
+ * gehoeren: eine halbe Bahnsteigbreite.
  *
- * Berlins Tiefbahnsteige liegen 24 m auseinander; 12 m ist die Haelfte davon
- * und damit die groesste Weite, die nicht auf den Nachbarbahnsteig greifen
- * kann. Zusaetzlich gewinnt immer der NAECHSTE Bahnsteig - ein Knoten haengt
- * nie an zweien.
+ * Bis zum 02.11.2026 waren es 12 m um eine Gerade von Ende zu Ende. Im Bogen
+ * lag diese Gerade neben dem Bahnsteig, und 3655 Routen fuehrten ueber Gleise -
+ * Koeln Hbf 8 -> 10 in 44 s. Am Umriss gemessen ist die Bogenform egal. Gemessen
+ * ueber alle 382 Bahnhoefe sind 6 m besser als 8 m.
  */
-const BAHNSTEIG_NAEHE_M = 12;
+const BAHNSTEIG_FLAECHE_M = 6;
 
 /**
  * So nah am Umriss eines Bahnsteigs liegt JEDER Punkt seiner Kante.
@@ -734,6 +734,37 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
     }
   }
 
+  /**
+   * Zu welchem Bahnsteig ein Knoten gehoert: Wer auf einem Umriss liegt, zu
+   * diesem, sonst zum naechsten der Ebene innerhalb `BAHNSTEIG_FLAECHE_M`. Das ist
+   * die eine Regel gegen Wege ueber Gleise: Geratene Kanten gibt es nur innerhalb
+   * eines Bahnsteigs, verlassen wird er nur ueber echte OSM-Wege.
+   */
+  const zugehoerigkeit = new Map<string, ReadonlySet<string>>();
+  const bahnsteigVon = (k: GraphKnoten): ReadonlySet<string> => {
+    const bekannt = zugehoerigkeit.get(k.id);
+    if (bekannt) return bekannt;
+    const ids = new Set<string>();
+    const umriss = umrissVon.get(k.id);
+    if (umriss) {
+      for (const b of umriss) ids.add(b.bahnsteigId);
+    } else {
+      let naechster: BahnsteigDaten | null = null;
+      let abstand = BAHNSTEIG_FLAECHE_M;
+      for (const b of bahnsteige) {
+        if (b.ebene !== k.level) continue;
+        const d = abstandZumUmriss(k, b.nodeListen, osmKnoten);
+        if (d <= abstand) {
+          abstand = d;
+          naechster = b;
+        }
+      }
+      if (naechster) ids.add(naechster.bahnsteigId);
+    }
+    zugehoerigkeit.set(k.id, ids);
+    return ids;
+  };
+
   /** Anbindungen auf den Umriss eines anderen Bahnsteigs – siehe nach Pass E. */
   const ankerUeberGleis: GraphKante[] = [];
   const gleisSet = new Set<string>();
@@ -852,7 +883,7 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
   // dem Bahnsteig liegen, in ihrer Reihenfolge entlang der Achse. Neue Knoten
   // entstehen dabei keine - nur die Kanten, die den Bahnsteig zu dem machen,
   // was er ist: eine Flaeche, auf der man der Laenge nach gehen kann.
-  verdichteBahnsteigketten(knoten, fuegeKanteHinzu);
+  verdichteBahnsteigketten(knoten, bahnsteigVon, fuegeKanteHinzu);
 
   // Eine Anbindung auf den Umriss eines anderen Bahnsteigs fuehrt ueber ein
   // Gleis: In Stuttgart liegt die Mitte von Gleis 3/4 22 m von der Kante von
@@ -976,9 +1007,9 @@ function achsenLage(
 /**
  * Die Bahnsteigketten um die Knoten ergaenzen, die auf ihnen liegen.
  *
- * Ein Knoten haengt an HOECHSTENS einem Bahnsteig - dem naechsten. Sonst
- * entstuende zwischen zwei Bahnsteigen eine ebene Kante, also ein Weg ueber
- * die Gleise.
+ * Ein Knoten haengt an HOECHSTENS einem Bahnsteig - dem, zu dem er gehoert
+ * (`bahnsteigVon`). Sonst entstuende zwischen zwei Bahnsteigen eine ebene Kante,
+ * also ein Weg ueber die Gleise. Die Achse legt nur noch die Reihenfolge fest.
  *
  * Aber an JEDER Kette dieses Bahnsteigs. Ein Bahnsteig traegt meist zwei
  * Gleise, und jedes hat seine eigenen Punkte `gleisN:anfang|mitte|ende`.
@@ -991,6 +1022,7 @@ function achsenLage(
  */
 function verdichteBahnsteigketten(
   knoten: Map<string, GraphKnoten>,
+  bahnsteigVon: (k: GraphKnoten) => ReadonlySet<string>,
   fuegeKanteHinzu: (kante: GraphKante) => void,
 ): void {
   interface Kette {
@@ -1026,18 +1058,18 @@ function verdichteBahnsteigketten(
   const geometrie = (achse: Achse): Kette | undefined =>
     [...achse.ketten.values()].find((k) => k.anfang !== k.ende);
 
-  // Jeden begehbaren Knoten seinem naechsten Bahnsteig zuordnen.
+  // Jeden begehbaren Knoten seinem Bahnsteig zuordnen.
   const mitglieder = new Map<string, GraphKnoten[]>();
   for (const kandidat of knoten.values()) {
     if (!kandidat.id.startsWith('n')) continue; // nur physische Knoten
+    const eigene = bahnsteigVon(kandidat);
     let bester: { id: string; querM: number } | null = null;
     for (const [id, achse] of achsen) {
-      if (achse.level !== kandidat.level) continue;
+      if (!eigene.has(id) || achse.level !== kandidat.level) continue;
       const lage = geometrie(achse);
       if (!lage) continue;
       const hier = achsenLage(lage.anfang, lage.ende, kandidat);
       if (!hier) continue;
-      if (hier.querM > BAHNSTEIG_NAEHE_M) continue;
       if (hier.anteil < 0 || hier.anteil > 1) continue;
       if (!bester || hier.querM < bester.querM) bester = { id, querM: hier.querM };
     }
