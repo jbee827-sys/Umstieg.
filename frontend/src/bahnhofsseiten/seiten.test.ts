@@ -121,7 +121,7 @@ describe('bahnhofsseiteHtml: Inhalt', () => {
     )
     expect(zeilen).toEqual([
       ['Gleis 1', 'Gleicher Bahnsteig', 'über den Bahnsteig', 'ja'],
-      ['Gleis 3', '3 min', 'Treppe, Unterführung', 'nicht möglich'],
+      ['Gleis 3', '3 min', 'Treppe, Unterführung', 'im Plan nicht bekannt'],
     ])
   })
 

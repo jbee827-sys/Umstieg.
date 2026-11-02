@@ -641,7 +641,7 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
         fehler: 'keine-route',
         detail:
           variante === 'barrierefrei'
-            ? 'Keine barrierefreie Route gefunden (Treppen gesperrt, kein nutzbarer Aufzug).'
+            ? 'Keine barrierefreie Route bekannt: Das Kartenmaterial kennt keinen Weg, oder ein Aufzug ist gestört.'
             : variante === 'mit-stopp'
               ? 'Kein WC und kein Kiosk auf dem Weg gefunden.'
               : 'Keine Route zwischen den Gleisen gefunden.',

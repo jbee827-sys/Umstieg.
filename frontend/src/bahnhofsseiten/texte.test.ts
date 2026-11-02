@@ -85,9 +85,9 @@ describe('wegText', () => {
 })
 
 describe('stufenfreiText', () => {
-  it('nennt Minuten oder „nicht möglich"', () => {
+  it('nennt Minuten, und bei einer Luecke im Plan nicht „nicht möglich"', () => {
     expect(stufenfreiText(paar({ stufenfreiSek: 245 }))).toBe('5 min')
-    expect(stufenfreiText(paar({ stufenfreiSek: null }))).toBe('nicht möglich')
+    expect(stufenfreiText(paar({ stufenfreiSek: null }))).toBe('im Plan nicht bekannt')
   })
 
   it('am gleichen Bahnsteig: ja', () => {

@@ -49,7 +49,8 @@ export function wegText(p: Gleispaar): string {
 
 export function stufenfreiText(p: Gleispaar): string {
   if (p.gleicherBahnsteig) return 'ja'
-  if (p.stufenfreiSek === null) return 'nicht möglich'
+  // Der Plan kennt keinen Weg - das sagt nichts darueber, ob es vor Ort einen gibt.
+  if (p.stufenfreiSek === null) return 'im Plan nicht bekannt'
   return `${minuten(p.stufenfreiSek)} min`
 }
 

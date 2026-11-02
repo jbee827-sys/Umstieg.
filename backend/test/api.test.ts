@@ -525,6 +525,14 @@ describe('GET /api/route – Gleise ohne Weg dazwischen', () => {
 
   // Ein geschaetzter Weg ist keine Zusage fuer den Rollstuhl, und „mit Stopp"
   // verspraeche sonst eine Toilette, die niemand gefunden hat.
+  // Die Absage galt frueher als „Treppen gesperrt, kein nutzbarer Aufzug“. Hier ist
+  // nichts gesperrt: Das Kartenmaterial kennt schlicht keinen Weg.
+  it('behauptet bei einer Luecke keine gesperrte Treppe', async () => {
+    const res = await buildApp(clients()).inject({ method: 'GET', url: url('barrierefrei') });
+    expect(res.json().detail).not.toContain('gesperrt');
+    expect(res.json().detail).toContain('Kartenmaterial');
+  });
+
   it.each(['barrierefrei', 'mit-stopp'])('%s bleibt bei der ehrlichen Absage', async (variante) => {
     const res = await buildApp(clients()).inject({ method: 'GET', url: url(variante) });
     expect(res.statusCode).toBe(404);
