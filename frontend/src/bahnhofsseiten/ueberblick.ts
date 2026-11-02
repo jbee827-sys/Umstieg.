@@ -145,7 +145,9 @@ export function stufenfreiSatz(d: Bahnhofsdaten): string {
     return `Für ${ohne.length} von ${mitWeg(d).length} Umstiegen kennt der Bahnhofsplan keinen stufenfreien Weg, zum Beispiel von Gleis ${beispiel.von} nach Gleis ${beispiel.nach}.`
   }
   const umweg = Math.max(...zwischen.map((p) => minuten(p.stufenfreiSek!) - minuten(p.sek!)))
-  return `Ja, laut Bahnhofsplan geht jeder Umstieg auch stufenfrei${umweg > 0 ? `, dann bis zu ${minutenWort(umweg)} länger` : ''}.`
+  // Kein „Ja“: Der Plan kennt den Weg, nicht den Betrieb. Stuttgart Hbf hat laut
+  // VVS-Plan (29.10.2026) zwei Aufzuege ausser Betrieb, die auf der Karte stehen.
+  return `Laut Bahnhofsplan gibt es für jeden Umstieg einen stufenfreien Weg${umweg > 0 ? `, dann bis zu ${minutenWort(umweg)} länger` : ''}. Ob die Aufzüge gerade laufen, sagt der Plan nicht.`
 }
 
 export interface Frage {

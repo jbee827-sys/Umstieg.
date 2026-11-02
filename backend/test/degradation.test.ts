@@ -166,6 +166,39 @@ describe('Zeile 3: FaSta faellt aus', () => {
     const ergebnis = res.json() as RouteErgebnis;
     expect(ergebnis.hinweise.some((h) => h.includes('Aufzugstatus unbekannt'))).toBe(false);
   });
+
+  // Stuttgart Hbf: FaSta antwortet, fuehrt aber nur Rolltreppen. Die stufenfreie
+  // Route haengt dann an einem Aufzug, von dem niemand weiss, ob er laeuft – und
+  // die Antwort sah genauso aus wie bei einem gemeldet laufenden Aufzug.
+  const KEIN_STATUS = 'meldet die Bahn keinen Betriebsstatus';
+
+  it('nennt einen Aufzug auf dem Weg, fuer den die Bahn keinen Status meldet', async () => {
+    const app = buildApp(aufzugClients(async () => []));
+    const res = await app.inject({ method: 'GET', url: BF_URL });
+    const ergebnis = res.json() as RouteErgebnis;
+    expect(ergebnis.schritte.some((s) => s.typ === 'aufzug')).toBe(true);
+    expect(ergebnis.hinweise.some((h) => h.includes(KEIN_STATUS))).toBe(true);
+  });
+
+  it('schweigt, wenn die Bahn den Aufzug als laufend meldet', async () => {
+    // Der Weg nimmt beide Aufzuege der Testdaten - beide muessen gemeldet sein.
+    const anlagen = [
+      { id: 'aufzug-1', typ: 'AUFZUG' as const, lat: 52.00015, lon: 12.001, status: 'ACTIVE' as const },
+      { id: 'aufzug-2', typ: 'AUFZUG' as const, lat: 52.00075, lon: 12.001, status: 'ACTIVE' as const },
+    ];
+    const app = buildApp(aufzugClients((async () => anlagen) as never));
+    const res = await app.inject({ method: 'GET', url: BF_URL });
+    const ergebnis = res.json() as RouteErgebnis;
+    expect(ergebnis.schritte.some((s) => s.typ === 'aufzug')).toBe(true);
+    expect(ergebnis.hinweise.some((h) => h.includes(KEIN_STATUS))).toBe(false);
+  });
+
+  it('sagt es beim FaSta-Ausfall nicht doppelt', async () => {
+    const app = buildApp(aufzugClients(async () => { throw new Error('FaSta nicht erreichbar (Test)'); }));
+    const res = await app.inject({ method: 'GET', url: BF_URL });
+    const ergebnis = res.json() as RouteErgebnis;
+    expect(ergebnis.hinweise.some((h) => h.includes(KEIN_STATUS))).toBe(false);
+  });
 });
 
 describe('Zeile 4: Gleis nicht im OSM-Graphen', () => {

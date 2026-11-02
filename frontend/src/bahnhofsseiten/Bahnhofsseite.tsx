@@ -140,8 +140,8 @@ export function Bahnhofsseite({ d, nachbarn }: { d: Bahnhofsdaten; nachbarn: Nac
         ))}
 
         <p className="bs-hinweis">
-          Richtwerte. Mit Gepäck oder wenig Ortskenntnis mehr Zeit einplanen. Live-Lage,
-          Gleiswechsel und Aufzugsstörungen zeigt die App.
+          Richtwerte. Mit Gepäck oder wenig Ortskenntnis mehr Zeit einplanen. Live-Lage und
+          Gleiswechsel zeigt die App, Aufzugsstörungen nur, wo die Bahn sie meldet.
         </p>
         <InDerNaehe nachbarn={nachbarn} />
         <p className="bs-stand">

@@ -189,13 +189,15 @@ describe('dauerSatz', () => {
 describe('stufenfreiSatz', () => {
   it('alle stufenfrei: nennt den Umweg', () => {
     expect(stufenfreiSatz(OFFENBURG)).toBe(
-      'Ja, laut Bahnhofsplan geht jeder Umstieg auch stufenfrei, dann bis zu 2 Minuten länger.',
+      'Laut Bahnhofsplan gibt es für jeden Umstieg einen stufenfreien Weg, dann bis zu 2 Minuten länger. Ob die Aufzüge gerade laufen, sagt der Plan nicht.',
     )
   })
 
   it('stufenfrei ohne Umweg', () => {
     const d: Bahnhofsdaten = { ...OFFENBURG, gleise: ['1', '3'], paare: hinUndZurueck('1', '3', { stufenfreiSek: 120 }) }
-    expect(stufenfreiSatz(d)).toBe('Ja, laut Bahnhofsplan geht jeder Umstieg auch stufenfrei.')
+    expect(stufenfreiSatz(d)).toBe(
+      'Laut Bahnhofsplan gibt es für jeden Umstieg einen stufenfreien Weg. Ob die Aufzüge gerade laufen, sagt der Plan nicht.',
+    )
   })
 
   it('teils ohne stufenfreien Weg: zaehlt und nennt ein Beispiel', () => {

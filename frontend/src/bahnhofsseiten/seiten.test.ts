@@ -32,6 +32,16 @@ const html = bahnhofsseiteHtml(HANNOVER, BAUTEILE)
 const doc = new DOMParser().parseFromString(html, 'text/html')
 const meta = (sel: string) => doc.querySelector(sel)?.getAttribute('content')
 
+// Stuttgart Hbf, 02.11.2026: FaSta fuehrt dort keinen einzigen Aufzug, der VVS-Plan
+// nennt zwei als ausser Betrieb. „Aufzugsstörungen zeigt die App“ stimmte also nicht.
+describe('bahnhofsseiteHtml: Hinweis', () => {
+  it('verspricht Aufzugsstörungen nur, wo die Bahn sie meldet', () => {
+    const hinweis = doc.querySelector('.bs-hinweis')?.textContent ?? ''
+    expect(hinweis).toContain('Aufzugsstörungen nur, wo die Bahn sie meldet')
+    expect(hinweis).not.toContain('Aufzugsstörungen zeigt die App')
+  })
+})
+
 describe('bahnhofsseiteHtml: Kopf', () => {
   it('ist ein vollstaendiges deutsches HTML-Dokument', () => {
     expect(html.startsWith('<!doctype html>')).toBe(true)

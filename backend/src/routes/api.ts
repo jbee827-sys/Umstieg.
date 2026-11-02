@@ -662,6 +662,17 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
           }
         : {};
 
+    // FaSta kann antworten und den Aufzug trotzdem nicht kennen: In Stuttgart Hbf
+    // fuehrt es nur Rolltreppen. Ohne diesen Satz sah „niemand weiss es“ genauso
+    // aus wie „laeuft“, und wer auf den Aufzug angewiesen ist, plant darauf.
+    if (
+      variante === 'barrierefrei' &&
+      !hinweise.some((h) => h.startsWith('Aufzugstatus unbekannt')) &&
+      pfad.kanten.some((k) => k.typ === 'aufzug' && k.status === undefined)
+    ) {
+      hinweise.push('Für einen Aufzug auf diesem Weg meldet die Bahn keinen Betriebsstatus – er kann gestört sein.');
+    }
+
     return {
       stufe: graph.stufe,
       schritte: generiereSchritte(pfad, { ungefaehr: graph.stufe === 3, profil }),
