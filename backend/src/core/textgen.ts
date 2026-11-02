@@ -341,17 +341,22 @@ export function generiereSchritte(pfad: RoutenPfad, optionen: TextOptionen = {})
     let text: string;
     let distanzM: number | undefined;
 
-    if (segment.typ === 'eben') {
+    // Eine geneigte Linie auf EINER Ebene ist ein Weg, kein Ebenenwechsel. In OSM
+    // traegt sie `incline`, und ohne diese Abzweigung hiess jede „hinunter zur
+    // Ebene“, auf der sie schon lag: 340 m Steg in Stuttgart ohne Streckenangabe.
+    const flacheRampe = segment.typ === 'rampe' && segment.deltaLevel === 0;
+    if (segment.typ === 'eben' || flacheRampe) {
       const delta =
         referenzPeilung === null || segment.peilungStart === null
           ? 0
           : winkelDelta(referenzPeilung, segment.peilungStart);
       const richtung = richtungsWort(delta);
+      const vorsatz = flacheRampe ? 'Rampe ' : '';
       if (segment.laengeM < 10) {
-        text = `wenige Meter ${richtung}`;
+        text = `${vorsatz}wenige Meter ${richtung}`;
       } else {
         distanzM = rund10(segment.laengeM);
-        text = `${distanzPraefix}${distanzM} m ${richtung}`;
+        text = `${vorsatz}${distanzPraefix}${distanzM} m ${richtung}`;
       }
     } else if (segment.typ === 'aufzug') {
       text = `Aufzug zur ${ebenenName(segment.zielLevel)}`;

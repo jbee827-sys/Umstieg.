@@ -153,6 +153,34 @@ describe('generiereSchritte', () => {
     expect(schritte[0].text).toBe('Nach Ausstieg Rampe hinunter zur Unterführung (-1) zu Gleis 3');
     expect(schritte[0].distanzM).toBe(30);
   });
+
+  // Der Steg in Stuttgart ist in OSM eine geneigte Linie auf einer Ebene: 340 m,
+  // und der Text hiess „Rampe hinunter zur Ebene 1“, ohne Strecke und ohne Wahrheit.
+  it('Rampe ohne Ebenenwechsel nennt Strecke und Richtung statt „hinunter“', () => {
+    const knoten = [xy('a', 0, 0, 1), xy('b', 0, 340, 1, '3')];
+    const schritte = generiereSchritte(machePfad(knoten, [kante('a', 'b', 'rampe', 340)]));
+    expect(schritte[0].text).toBe('Nach Ausstieg Rampe 340 m geradeaus zu Gleis 3');
+    expect(schritte[0].distanzM).toBe(340);
+    expect(schritte[0].typ).toBe('rampe');
+  });
+
+  it('flache Rampe nach einer Abbiegung nennt die Richtung', () => {
+    const knoten = [xy('a', 0, 0), xy('b', 0, 100), xy('c', 200, 100, 0, '3')];
+    const schritte = generiereSchritte(machePfad(knoten, [kante('a', 'b', 'eben', 100), kante('b', 'c', 'rampe', 200)]));
+    expect(schritte.map((s) => s.text)).toEqual(['Nach Ausstieg 100 m geradeaus', 'Rampe 200 m rechts zu Gleis 3']);
+  });
+
+  it('kurze flache Rampe heisst wenige Meter', () => {
+    const knoten = [xy('a', 0, 0), xy('b', 0, 6, 0, '3')];
+    const schritte = generiereSchritte(machePfad(knoten, [kante('a', 'b', 'rampe', 6)]));
+    expect(schritte[0].text).toBe('Nach Ausstieg Rampe wenige Meter geradeaus zu Gleis 3');
+  });
+
+  it('Rampe mit Anstieg heisst weiter „hoch“', () => {
+    const knoten = [xy('a', 0, 0), xy('b', 0, 28, 1, '3')];
+    const schritte = generiereSchritte(machePfad(knoten, [kante('a', 'b', 'rampe', 28, 1)]));
+    expect(schritte[0].text).toBe('Nach Ausstieg Rampe hoch zur Ebene 1 zu Gleis 3');
+  });
 });
 
 describe('Glatte Richtung: Versätze der Fußwege sind keine Schritte', () => {
