@@ -188,7 +188,29 @@ function knotenId(osmId: number, level: number): string {
   return `n${osmId}@${level}`;
 }
 
-export function baueGraph(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise']): StationGraph {
+/**
+ * Darf hier niemand gehen? `access=no` und `private` sperren den Weg, ein
+ * ausdruecklich erlaubendes `foot` hebt das auf (Wirtschaftswege mit Fussweg).
+ * `destination` und `customers` bleiben offen: Wer zum Zug will, ist Kunde.
+ *
+ * Das sperrt auch stufenfreie Wege, und das zu Recht: In Ansbach und Fuerth
+ * fuehrten sie ueber einen „betrieblichen Ueberweg“, also ueber die Gleise auf
+ * einem Dienstweg. „Keine barrierefreie Route“ ist dort die wahre Auskunft.
+ *
+ * Gesiebt wird beim Graphbau und nicht in der Abfrage, damit der Bestand gilt.
+ * Der Bahnsteig selbst bleibt: Der Fahrplan nennt sein Gleis, auch wenn OSM ihn
+ * gerade als gesperrt fuehrt.
+ */
+function istGesperrterWeg(el: OsmElement): boolean {
+  if (el.type !== 'way') return false;
+  const tags = el.tags ?? {};
+  if (tags.railway || (!istEbenerWeg(tags) && !istEbenenwechselWeg(tags))) return false;
+  if (tags.access !== 'no' && tags.access !== 'private') return false;
+  return tags.foot !== 'yes' && tags.foot !== 'designated' && tags.foot !== 'permissive';
+}
+
+export function baueGraph(osmRoh: OverpassAntwort, dbGleise?: StationsInfo['gleise']): StationGraph {
+  const osm = { ...osmRoh, elements: osmRoh.elements.filter((el) => !istGesperrterWeg(el)) };
   const graph = baueGraphOhneNaht(osm, dbGleise);
   const vorher = erreichbareGleisPaare(graph);
   if (vorher === 1) return graph;

@@ -729,3 +729,58 @@ describe('Anbindung an den Bahnsteig', () => {
     expect(gehzeitSekunden(pfad!, 'normal')).toBeGreaterThan(300);
   });
 });
+
+/**
+ * Stuttgart fuehrt die Grosse Schalterhalle mit `access=no`, und der Graph lief
+ * trotzdem durch. In Ulm fuehrte `access=private` 2 Nord -> 4 Nord in 38 statt
+ * 218 s durch Gelaende, das niemand betreten darf.
+ */
+describe('Gesperrte Wege', () => {
+  const graphMit = (tags: Record<string, string>): StationGraph => baueGraph({ elements: [
+    { type: 'node', id: 1, lat: 52.0, lon: 12.0 },
+    { type: 'node', id: 2, lat: 52.0, lon: 12.0005 },
+    { type: 'node', id: 3, lat: 52.001, lon: 12.0 },
+    { type: 'node', id: 4, lat: 52.001, lon: 12.0005 },
+    { type: 'way', id: 10, nodes: [1, 2], tags: { railway: 'platform', ref: '1', level: '0' } },
+    { type: 'way', id: 11, nodes: [3, 4], tags: { railway: 'platform', ref: '2', level: '0' } },
+    { type: 'way', id: 20, nodes: [1, 3], tags: { highway: 'footway', level: '0', ...tags } },
+  ] });
+
+  it.each([
+    [{ access: 'no' }, false],
+    [{ access: 'private' }, false],
+    [{ access: 'private', foot: 'designated' }, true],
+    [{ access: 'no', foot: 'yes' }, true],
+    [{ access: 'no', foot: 'permissive' }, true],
+    [{ access: 'private', foot: 'no' }, false],
+    [{ access: 'destination' }, true],
+    [{ access: 'customers' }, true],
+    [{ access: 'yes' }, true],
+    [{}, true],
+  ])('Fussweg mit %o begehbar: %s', (tags, begehbar) => {
+    expect(erreichbar(graphMit(tags as Record<string, string>), 'gleis1:mitte', 'gleis2:mitte')).toBe(begehbar);
+  });
+
+  it('sperrt auch die Treppe', () => {
+    const graph = baueGraph({ elements: [
+      { type: 'node', id: 1, lat: 52.0, lon: 12.0 },
+      { type: 'node', id: 2, lat: 52.0, lon: 12.0005 },
+      { type: 'node', id: 3, lat: 52.001, lon: 12.0 },
+      { type: 'node', id: 4, lat: 52.001, lon: 12.0005 },
+      { type: 'way', id: 10, nodes: [1, 2], tags: { railway: 'platform', ref: '1', level: '0' } },
+      { type: 'way', id: 11, nodes: [3, 4], tags: { railway: 'platform', ref: '2', level: '-1' } },
+      { type: 'way', id: 20, nodes: [3, 1], tags: { highway: 'steps', level: '-1;0', access: 'no' } },
+    ] });
+    expect(erreichbar(graph, 'gleis1:mitte', 'gleis2:mitte')).toBe(false);
+  });
+
+  it('laesst einen Bahnsteig mit access=no als Gleis stehen', () => {
+    const graph = baueGraph({ elements: [
+      { type: 'node', id: 1, lat: 52.0, lon: 12.0 },
+      { type: 'node', id: 2, lat: 52.0, lon: 12.0005 },
+      { type: 'way', id: 10, nodes: [1, 2], tags: { railway: 'platform', ref: '1', level: '0', access: 'no' } },
+    ] });
+    // Der Fahrplan nennt das Gleis. Fehlte es, gaebe die Route „Gleis unbekannt“.
+    expect(graph.gleise).toEqual(['1']);
+  });
+});
