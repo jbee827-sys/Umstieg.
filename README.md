@@ -19,7 +19,86 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 21.10.2026, abends)
+## Hier weitermachen (Stand 02.11.2026, abends)
+
+### Ausgeliefert am 02.11.2026: Stuttgart, Karte, keine Wege mehr über Gleise
+
+**Live:** Backend auf Fly (eine Maschine, `--ha=false`), Frontend aus `main`.
+Der iOS-Code, das Zugbild und die Einführung stehen inzwischen ebenfalls in
+`main`; die Abschnitte darunter tragen noch ihren alten Stand. Nicht in `main`
+sind `feat/monitoring` (9 eigene Commits) und auf `fix/stuttgart-wege` die
+Design-ZIP (`24d3544`) und der README-Commit `da74ad4`: von dort nur einzeln per
+Cherry-Pick holen, die übrigen Commits des Zweigs sind schon übernommen.
+
+**Stuttgart Hbf.** Jede Route zur S-Bahn (99 von 156 Abfahrten) endete mit
+`404 keine-route`: Der Baustellensteg trägt `level=1`, seine Fortsetzung kein
+`level`, und derselbe OSM-Punkt wurde zu zwei Knoten ohne Kante. Jetzt 306 von
+306 Gleispaaren mit Weg, 1→101 in 797 s, 1→3 in 379 s statt 86 s. Gegen den
+VVS-Plan `ME_Hbf.pdf` (Stand 29.10.2026) geprüft: Wege und Aufzüge passen, keine
+Route nutzt die als außer Betrieb gemeldeten Aufzüge 8 und 10. Nicht vor Ort
+geprüft. Der Plan gilt ab 13.11.2026, die OSM-Daten sind vom 14.10.2026.
+
+**Wege über Gleise, generisch gelöst.** Die Gleisprüfung fand 3.782 von 15.538
+Routen über Gleisen (Köln Hbf 8→10 in 44 s), verursacht von wenigen hundert
+Kanten, die der Graph aus der Nähe geraten hatte; echte OSM-Wege waren nur 4
+davon. Die Regel: Jeder Knoten gehört zu höchstens einem Bahnsteig, gemessen am
+Umriss (`BAHNSTEIG_FLAECHE_M`, 6 m). Geratene Kanten gibt es nur innerhalb eines
+Bahnsteigs, verlassen wird er nur über OSM-Wege. Fehlt ein Weg im Kartenmaterial,
+sagt die Antwort das: Standardmodell mit Hinweis, stufenfrei die Absage.
+
+| Gemessen über alle 382 Bahnhöfe | vorher | jetzt |
+|---|---|---|
+| Routen über Gleise | 3.782 von 15.538 (24,3 %) | 169 von 14.812 (1,1 %) |
+| Bahnhöfe mit solchen Routen | 168 | 19 |
+| Schnelle Wege ohne Verbindung | 644 | 748 |
+| Stufenfreie Wege ohne Verbindung | 1.876 | 2.498 |
+
+Geändert je Gleispaar: 1.510 länger, 262 kürzer, 155 fallen aufs Standardmodell,
+51 neu. Von 622 entfallenen stufenfreien Wegen kreuzten 563 vorher ein Gleis.
+Jena Paradies hat keine Bahnhofsseite mehr.
+
+**Außerdem:** Karte auch im Dunkelmodus in natürlichen Farben (immer `liberty`);
+gesperrte Wege (`access=no/private`) sind nicht begehbar; Texte versprechen keine
+Aufzugsstörungen mehr, die niemand meldet (FaSta führt für Stuttgart keinen
+einzigen Aufzug), und die stufenfreie Route nennt einen Aufzug ohne gemeldeten
+Betriebsstatus.
+
+**Geprüft:** Backend 910 von 910, Frontend 1069 von 1069, Lint und Build sauber;
+`anfragen-pruefung.ts` 3.446 Anfragen, 0 Befunde; `simulation-bild.ts` 2.172
+Routen, 0 Befunde; `simulation-lauf3.ts` 263 Befunde, alle „Anlagen im Text“.
+Im Betrieb: Köln 8→10 in 184 s, Düsseldorf 15→17 Standardmodell mit Hinweis.
+
+```bash
+cd backend
+npx tsx scripts/gleiskreuzung-pruefung.ts laden               # Gleise holen, nur einmal (osm-ablage/gleise)
+npx tsx scripts/gleiskreuzung-pruefung.ts neu.json alt.json   # Routen über Gleise, Vergleich gegen eine Basis
+```
+
+Die Prüfung ist eine Schätzung gegen Kartendaten: Gleise aus den
+OpenFreeMap-Kacheln, im Produkt selbst gibt es keine Gleisdaten. „Kreuzt kein
+Gleis“ heißt nicht, dass der Weg offen ist.
+
+**Nächste Schritte, in dieser Reihenfolge:**
+
+1. **Die 169 Reste prüfen.** Dortmund Hbf allein hat 66 (`gleis6:mitte`), dazu
+   Siegen, Bremen, Freising, Schorndorf, Dresden. 15 davon waren vorher nicht
+   gemeldet.
+2. **Zu lange Zeiten:** Flughafen BER 3→5 zeigt 872 s (vorher 130 s), Duisburg
+   10→12 zeigt 598 s, obwohl dort Treppen in Bahnsteigmitte stehen. Vermutlich
+   Lücken im Kartenmaterial.
+3. **Stufenfreie Wege:** 59 entfallene Wege ohne erkannte Kreuzung ansehen (Berlin
+   Ostkreuz 11). In Düsseldorf stehen die Aufzüge an den Bahnsteigen, verbunden
+   ist nur der schnelle Weg: Der Lückenschluss am Treppenfuss gilt bewusst nicht
+   als stufenfrei.
+4. **Noch 49 Gleispaare unter 60 s** sind nicht einzeln geprüft (Saarbrücken und
+   Leer sehen plausibel aus), dazu Ludwigshafen 1→10 und 2→9, die die Bildprüfung
+   zum Ansehen meldet.
+5. **Beim Umschalten auf den Tiefbahnhof** braucht Stuttgart einen neuen Bestand.
+   Tagesaktuelle Sperrungen kennt das System nicht.
+6. **Kleinere Punkte:** Die Beschriftung „Barrierefrei (Aufzug)“ steht auch bei
+   reinen Rampenwegen. Der DB-Shuttleservice aus dem VVS-Plan fehlt in der App. Die
+   App zeigt laufend „Neue Abfahrtszeit“ zu Zügen, die niemand gewählt hat (lokal
+   gesehen, in der Produktion ungeprüft).
 
 ### iOS-App (Stand 24.10.2026, Zweig `feat/app-ios`, nicht ausgeliefert)
 
