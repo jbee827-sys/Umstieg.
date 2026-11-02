@@ -4,7 +4,7 @@
   "slug": "schifferstadt",
   "lat": 49.39291,
   "lon": 8.364945,
-  "stufe": 1,
+  "stufe": 2,
   "geholtAm": "2026-10-14T13:05:07.822Z",
   "gleise": [
     "1",
@@ -12,11 +12,11 @@
     "3"
   ],
   "paare": [
-    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":38,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":38},
-    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":38,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":38},
-    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":38,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":38},
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
     {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":0,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":0},
-    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":38,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":38},
+    {"von":"3","nach":"1","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
     {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":0,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":0}
   ]
 }
