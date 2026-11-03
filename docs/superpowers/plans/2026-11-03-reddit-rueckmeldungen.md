@@ -471,9 +471,9 @@ expect(istErsatzverkehr('BUS', '36')).toBe(false);
 
 Referenzstand für alle Vergleiche ist Commit `d1be87a` (Seitendaten dort eingecheckt).
 
-- [ ] **Step 2:** `cd backend && npm run bahnhofsseiten` und `npm run vorfuehrdaten`. Einführung Schritt 7 („9 statt 6 Minuten“) prüfen; stimmt der Satz nicht mehr, Text an die neue Zahl anpassen (`frontend/src/einfuehrung/schritte.ts`) mit Test.
-- [ ] **Step 3: Messung G2** – Diagnoseskript `osm-ablage/diagnose/aufzug-vergleich.ts` vergleicht `anlagen` und `sek` je Gleispaar zwischen `d1be87a` und jetzt: Zahl der Paare Aufzug→Treppe, Treppe→Aufzug, Mittelwert und Median der Änderung von `sek` und `stufenfreiSek`.
-- [ ] **Step 4: Prüfläufe** – `gleiskreuzung-pruefung.ts` gegen die Basis, `anfragen-pruefung.ts`, `simulation-bild.ts`, `simulation-lauf3.ts`: keine neuen Befunde gegenüber dem Stand im README (02.11.2026).
-- [ ] **Step 5: Suiten** – `cd backend && npx vitest run && npm run lint && npm run build`, danach `cd frontend && npx vitest run && npm run lint && npm run build`. Alles grün.
-- [ ] **Step 6:** README „Hier weitermachen“ um den Stand 03.11.2026 ergänzen: was geändert ist, die Messzahlen aus Step 3/4, die Liste aus Task 15, offene Punkte.
-- [ ] **Step 7:** `git commit -m "chore: Bahnhofsseiten und Vorfuehrdaten neu, README Stand 03.11.2026"`. Kein Push, kein Deploy – Freigabe durch Julian.
+- [ ] **Step 1:** `cd backend && npm run bahnhofsseiten` und `npm run vorfuehrdaten`. Einführung Schritt 7 („9 statt 6 Minuten“) prüfen; stimmt der Satz nicht mehr, Text an die neue Zahl anpassen (`frontend/src/einfuehrung/schritte.ts`) mit Test.
+- [ ] **Step 2: Messung G2** – Diagnoseskript `osm-ablage/diagnose/aufzug-vergleich.ts` vergleicht `anlagen` und `sek` je Gleispaar zwischen `d1be87a` und jetzt: Zahl der Paare Aufzug→Treppe, Treppe→Aufzug, Mittelwert und Median der Änderung von `sek` und `stufenfreiSek`.
+- [ ] **Step 3: Prüfläufe** – `gleiskreuzung-pruefung.ts` gegen die Basis, `anfragen-pruefung.ts`, `simulation-bild.ts`, `simulation-lauf3.ts`: keine neuen Befunde gegenüber dem Stand im README (02.11.2026).
+- [ ] **Step 4: Suiten** – `cd backend && npx vitest run && npm run lint && npm run build`, danach `cd frontend && npx vitest run && npm run lint && npm run build`. Alles grün.
+- [ ] **Step 5:** README „Hier weitermachen“ um den Stand 03.11.2026 ergänzen: was geändert ist, die Messzahlen aus Step 3/4, die Liste aus Task 15, offene Punkte.
+- [ ] **Step 6:** `git commit -m "chore: Bahnhofsseiten und Vorfuehrdaten neu, README Stand 03.11.2026"`. Kein Push, kein Deploy – Freigabe durch Julian.
