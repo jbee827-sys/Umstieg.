@@ -4,8 +4,10 @@ import {
   berechneRoute,
   findeStartknoten,
   istGleicherBahnsteig,
+  istKopfgleis,
   loeseGleis,
 } from '../src/core/routing.js';
+import { normGleis } from '../src/core/gleisname.js';
 import { baueGraph } from '../src/core/graph.js';
 import { gehzeitSekunden, kantenZeitSekunden } from '../src/core/gehzeit.js';
 import { readFileSync } from 'node:fs';
@@ -278,7 +280,41 @@ describe('loeseGleis – Teilgleise aus RIS::Stations', () => {
   });
 
   it('ohne DB-Eintrag wird nichts geraten', () => {
-    expect(loeseGleis(treppeVsAufzugGraph(), '1 A-D', db)).toEqual({ gleis: '1 A-D' });
+    // „1 A-D" wäre seit der Normalform dasselbe wie „1A-D" – hier ein wirklich unbekanntes Teilgleis.
+    expect(loeseGleis(treppeVsAufzugGraph(), '4 A-D', db)).toEqual({ gleis: '4 A-D' });
+  });
+});
+
+describe('normGleis', () => {
+  it('Teilgleise gleich, egal wie geschrieben', () => {
+    expect(normGleis('7 G–I')).toBe(normGleis('7G-I'));
+    expect(normGleis('1 A-B')).toBe('1a-b');
+  });
+});
+
+describe('Gleisnamen ohne Schreibweise vergleichen', () => {
+  it('loeseGleis findet RIS-Teilgleis trotz Leerzeichen', () => {
+    const graph = macheGraph([k('a@0', 52, 13)], [], ['7']);
+    const dbGleise = [{ gleis: '7G-I', ris: { name: '7G-I', parentPlatform: '7' } }];
+    expect(loeseGleis(graph, '7 G-I', dbGleise).gleis).toBe('7');
+  });
+
+  it('loeseGleis ohne DB-Liste: Graphgleis "7G-I" auf Anfrage "7 G–I"', () => {
+    const graph = macheGraph([k('a@0', 52, 13)], [], ['7G-I']);
+    expect(loeseGleis(graph, '7 G–I').gleis).toBe('7G-I');
+  });
+
+  it('istKopfgleis erkennt den DB-Eintrag trotz anderer Schreibweise', () => {
+    const info = { gleise: [{ gleis: '7G-I', ris: { name: '7G-I', headPlatform: true } }] };
+    expect(istKopfgleis(info as never, '7 G–I', '7')).toBe(true);
+  });
+
+  it('istGleicherBahnsteig findet die EVAs trotz anderer Schreibweise', () => {
+    const db = [
+      { gleis: '2', evas: ['1'] },
+      { gleis: '3', evas: ['2'] },
+    ];
+    expect(istGleicherBahnsteig(treppeVsAufzugGraph(), ' 2 ', '3', db)).toBe(false);
   });
 });
 

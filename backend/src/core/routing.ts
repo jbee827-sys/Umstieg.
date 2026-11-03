@@ -10,6 +10,7 @@ import type {
 } from './typen.js';
 import { gehzeitSekunden, kantenZeitSekunden } from './gehzeit.js';
 import { haversineM } from './graph.js';
+import { gleichesGleis } from './gleisname.js';
 
 /**
  * Zuschlaege, die eine VORLIEBE ausdruecken, keine Zeit.
@@ -34,7 +35,7 @@ export function findeStartknoten(
   gleis: string,
   abschnitt?: string,
 ): { knoten: GraphKnoten; hinweis?: string } {
-  const kandidaten = [...graph.knoten.values()].filter((kn) => kn.gleis === gleis);
+  const kandidaten = [...graph.knoten.values()].filter((kn) => kn.gleis !== undefined && gleichesGleis(kn.gleis, gleis));
   if (kandidaten.length === 0) {
     throw new Error(`Gleis ${gleis} ist im Stationsgraphen nicht vorhanden`);
   }
@@ -62,10 +63,14 @@ export function loeseGleis(
   gleis: string,
   dbGleise?: { gleis: string; ris?: { parentPlatform?: string; linkedPlatforms?: string[] } }[],
 ): { gleis: string; hinweis?: string } {
-  if (graph.gleise.includes(gleis)) return { gleis };
-  const ris = dbGleise?.find((g) => g.gleis === gleis)?.ris;
-  const haupt = ris?.parentPlatform;
-  if (haupt && graph.gleise.includes(haupt)) {
+  // Verglichen wird in Normalform („7G-I" = „7 G–I"), zurueck kommt die
+  // Schreibweise des Graphen.
+  const imGraphen = (name: string) => graph.gleise.find((g) => gleichesGleis(g, name));
+  const direkt = imGraphen(gleis);
+  if (direkt !== undefined) return { gleis: direkt };
+  const ris = dbGleise?.find((g) => gleichesGleis(g.gleis, gleis))?.ris;
+  const haupt = imGraphen(ris?.parentPlatform ?? '');
+  if (ris?.parentPlatform && haupt !== undefined) {
     return {
       gleis: haupt,
       hinweis: `Gleis ${gleis} ist ein Abschnitt von Gleis ${haupt} – wo er am Bahnsteig liegt, nennen die Quellen nicht.`,
@@ -76,7 +81,7 @@ export function loeseGleis(
   // Bahnsteig, ist es dieser. Liegen sie an zweien, wird nicht gewählt.
   // (Hagen „5/6" nennt 3, 4, 5 und 6 – OSM führt die vier als EINEN
   // Bahnsteig, also gilt er.)
-  const nachbarn = (ris?.linkedPlatforms ?? []).filter((g) => graph.gleise.includes(g));
+  const nachbarn = (ris?.linkedPlatforms ?? []).map((g) => imGraphen(g)).filter((g): g is string => g !== undefined);
   const bahnsteige = new Set(
     nachbarn.map((g) => [...graph.knoten.values()].find((k) => k.gleis === g && k.bahnsteigId)?.bahnsteigId),
   );
@@ -132,7 +137,7 @@ function evasVonGleis(
 ): Set<string> {
   const evas = new Set<string>();
   for (const eintrag of dbGleise) {
-    if (eintrag.gleis === gleis) for (const eva of eintrag.evas ?? []) evas.add(eva);
+    if (gleichesGleis(eintrag.gleis, gleis)) for (const eva of eintrag.evas ?? []) evas.add(eva);
   }
   return evas;
 }
@@ -140,7 +145,7 @@ function evasVonGleis(
 function bahnsteigIds(graph: StationGraph, gleis: string): Set<string> {
   const ids = new Set<string>();
   for (const kn of graph.knoten.values()) {
-    if (kn.gleis === gleis && kn.bahnsteigId) ids.add(kn.bahnsteigId);
+    if (kn.gleis !== undefined && gleichesGleis(kn.gleis, gleis) && kn.bahnsteigId) ids.add(kn.bahnsteigId);
   }
   return ids;
 }
@@ -370,7 +375,7 @@ export function istKopfgleis(
   angefragt: string,
   imGraphen: string,
 ): boolean {
-  const eintrag = (name: string | undefined) => (name ? info.gleise.find((g) => g.gleis === name) : undefined);
+  const eintrag = (name: string | undefined) => (name ? info.gleise.find((g) => gleichesGleis(g.gleis, name)) : undefined);
   const direkt = eintrag(angefragt);
   return [direkt, eintrag(direkt?.ris?.parentPlatform), eintrag(imGraphen)].some(
     (g) => g?.ris?.headPlatform === true,
@@ -382,7 +387,7 @@ export function kopfgleiseImGraphen(graph: StationGraph, info: Pick<StationsInfo
   return info.gleise
     .filter((g) => g.ris?.headPlatform === true)
     .map((g) => loeseGleis(graph, g.gleis, info.gleise).gleis)
-    .filter((g) => graph.gleise.includes(g));
+    .filter((g) => graph.gleise.some((x) => gleichesGleis(x, g)));
 }
 
 /** Umkreis um ein Bahnsteigende, in dem Wegknoten gezaehlt werden. */
