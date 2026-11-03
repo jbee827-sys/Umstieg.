@@ -18,7 +18,7 @@ export type Ampelfarbe = 'gruen' | 'gelb' | 'rot';
 
 export interface Schritt {
   text: string;
-  typ: KantenTyp | 'start' | 'ziel';
+  typ: KantenTyp | 'start' | 'ziel' | 'stopp';
   distanzM?: number;
   /** Gehzeit dieses Schritts. Summe aller Schritte = gehzeitSek. */
   sekunden?: number;

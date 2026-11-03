@@ -414,3 +414,72 @@ describe('generiereSchritte: weniger kleine Schritte', () => {
     ]);
   });
 });
+
+describe('generiereSchritte: Stopp (Spec 4.2)', () => {
+  /** s -> poi (Ebene 1, 40,3 m) -> z; Rundung je Teil waere 40,3 + 30,4 = 70,7 -> 71 statt 70. */
+  function stoppPfad(): RoutenPfad {
+    const knoten = [xy('s', 0, 0, 1), xy('p', 0, 40.3, 1), xy('z', 30.4, 40.3, 1, '7')];
+    const kanten = [kante('s', 'p', 'eben', 40.3), kante('p', 'z', 'eben', 30.4)];
+    return { ...machePfad(knoten, kanten), stopp: { knotenIndex: 1, art: 'wc', sekunden: 300 } };
+  }
+
+  it('genau ein Stopp-Schritt, Summe der Schritte = gehzeitSek', () => {
+    const pfad = stoppPfad();
+    const s = generiereSchritte(pfad, { profil: 'normal' });
+    expect(s.filter((x) => x.typ === 'stopp').map((x) => x.text)).toEqual(['5 min Stopp: WC']);
+    expect(s.reduce((a, x) => a + (x.sekunden ?? 0), 0)).toBe(gehzeitSekunden(pfad, 'normal'));
+  });
+
+  it('der Stopp-Schritt traegt Ebene und Knoten des POI, keine Distanz, und steht nach dem Schritt zum POI', () => {
+    const s = generiereSchritte(stoppPfad(), { profil: 'normal' });
+    expect(s.map((x) => x.typ)).toEqual(['eben', 'stopp', 'eben']);
+    expect(s[1]).toEqual({ text: '5 min Stopp: WC', typ: 'stopp', sekunden: 300, level: 1, knotenVon: 1, knotenBis: 1 });
+    expect(s[0].knotenBis).toBe(1);
+    expect(s[2].knotenVon).toBe(1);
+    expect(s[0].text.startsWith('Nach Ausstieg')).toBe(true);
+    expect(s[2].text.endsWith('zu Gleis 7')).toBe(true);
+  });
+
+  it('Kiosk heisst Kiosk', () => {
+    const pfad = stoppPfad();
+    pfad.stopp!.art = 'kiosk';
+    expect(generiereSchritte(pfad, { profil: 'normal' })[1].text).toBe('5 min Stopp: Kiosk');
+  });
+
+  it('Stopp-Schritt bricht keinen Ebenenlauf (Ebene wie der Schritt davor)', () => {
+    // Eben auf 0, Treppe hoch, POI oben, eben weiter: Schrittebenen 0,1,1,(Stopp 1),1 -> zwei Laeufe.
+    const knoten = [xy('a', 0, 0, 0), xy('s', 0, 40, 0), xy('t', 0, 50, 1), xy('p', 0, 90, 1), xy('z', 40, 90, 1)];
+    const kanten = [
+      kante('a', 's', 'eben', 40), kante('s', 't', 'treppe', 10, 1),
+      kante('t', 'p', 'eben', 40), kante('p', 'z', 'eben', 40),
+    ];
+    const pfad: RoutenPfad = { ...machePfad(knoten, kanten), stopp: { knotenIndex: 3, art: 'wc', sekunden: 300 } };
+    const s = generiereSchritte(pfad, { profil: 'normal' });
+    const levels = s.map((x) => x.level);
+    const laeufe = levels.filter((l, i) => i === 0 || l !== levels[i - 1]).length;
+    expect(laeufe).toBe(2);
+    const i = s.findIndex((x) => x.typ === 'stopp');
+    expect(s[i].level).toBe(s[i - 1].level);
+  });
+
+  it('Stopp am Start: Stopp-Schritt zuerst, „Nach Ausstieg“ bleibt am ersten Weg-Schritt', () => {
+    const knoten = [xy('p', 0, 0), xy('z', 0, 50, 0, '3')];
+    const pfad: RoutenPfad = {
+      ...machePfad(knoten, [kante('p', 'z', 'eben', 50)]),
+      stopp: { knotenIndex: 0, art: 'wc', sekunden: 300 },
+    };
+    const s = generiereSchritte(pfad, { profil: 'normal' });
+    expect(s.map((x) => x.text)).toEqual(['5 min Stopp: WC', 'Nach Ausstieg 50 m geradeaus zu Gleis 3']);
+    expect(s.reduce((a, x) => a + (x.sekunden ?? 0), 0)).toBe(gehzeitSekunden(pfad, 'normal'));
+  });
+
+  it('Stopp am Ziel: Gleis-Zusatz haengt am letzten Weg-Schritt, nicht am Stopp', () => {
+    const knoten = [xy('s', 0, 0), xy('p', 0, 50, 0, '3')];
+    const pfad: RoutenPfad = {
+      ...machePfad(knoten, [kante('s', 'p', 'eben', 50)]),
+      stopp: { knotenIndex: 1, art: 'kiosk', sekunden: 300 },
+    };
+    const s = generiereSchritte(pfad, { profil: 'normal' });
+    expect(s.map((x) => x.text)).toEqual(['Nach Ausstieg 50 m geradeaus zu Gleis 3', '5 min Stopp: Kiosk']);
+  });
+});

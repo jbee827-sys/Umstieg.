@@ -326,18 +326,57 @@ export interface TextOptionen {
   glaettungM?: number;
 }
 
+/**
+ * Segmente des ganzen Pfads. Mit Stopp wird am POI geteilt und jeder Teil fuer
+ * sich zusammengefasst: Ein Segment ueber den POI hinweg haette keinen Schritt,
+ * der "am POI endet". Gehzeit und Rundung laufen danach ueber ALLE Segmente
+ * gemeinsam (`verteileGehzeit`), sonst bricht die Invariante der Summe.
+ * Rueckgabe: die Segmente und, wie viele davon vor dem Stopp enden.
+ */
+function segmentiere(pfad: RoutenPfad, optionen: TextOptionen): { segmente: Segment[]; vorStopp: number } {
+  const glaettungM = optionen.glaettungM ?? GLAETTUNG_M;
+  const ueberEbenen = optionen.ueberEbenen ?? false;
+  const stopp = pfad.stopp;
+  if (!stopp) {
+    return { segmente: fasseZusammen(baueSegmente(pfad, glaettungM), pfad.knoten, ueberEbenen), vorStopp: 0 };
+  }
+  const i = stopp.knotenIndex;
+  const hin: RoutenPfad = { ...pfad, knoten: pfad.knoten.slice(0, i + 1), kanten: pfad.kanten.slice(0, i) };
+  const weiter: RoutenPfad = { ...pfad, knoten: pfad.knoten.slice(i), kanten: pfad.kanten.slice(i) };
+  const vorher = fasseZusammen(baueSegmente(hin, glaettungM), hin.knoten, ueberEbenen);
+  const nachher = fasseZusammen(baueSegmente(weiter, glaettungM), weiter.knoten, ueberEbenen).map((seg) => ({
+    ...seg,
+    knotenVon: seg.knotenVon + i,
+    knotenBis: seg.knotenBis + i,
+  }));
+  return { segmente: [...vorher, ...nachher], vorStopp: vorher.length };
+}
+
 export function generiereSchritte(pfad: RoutenPfad, optionen: TextOptionen = {}): Schritt[] {
-  const segmente = fasseZusammen(
-    baueSegmente(pfad, optionen.glaettungM ?? GLAETTUNG_M),
-    pfad.knoten,
-    optionen.ueberEbenen ?? false,
-  );
+  const { segmente, vorStopp } = segmentiere(pfad, optionen);
   const zeiten = optionen.profil ? verteileGehzeit(segmente, optionen.profil) : null;
   const schritte: Schritt[] = [];
   const distanzPraefix = optionen.ungefaehr ? 'ca. ' : '';
   let referenzPeilung: number | null = null;
 
-  for (const segment of segmente) {
+  // Der Stopp steht nach dem Schritt, der am POI endet (oder ganz vorn, wenn der
+  // Weg dort beginnt). Er haengt an keinem Nachbarn, traegt die Ebene des POI
+  // und beginnt damit keinen neuen Ebenenlauf (`besuchJeSchritt`).
+  const fuegeStoppEin = (): void => {
+    const stopp = pfad.stopp!;
+    const poi = pfad.knoten[stopp.knotenIndex];
+    schritte.push({
+      text: `5 min Stopp: ${stopp.art === 'wc' ? 'WC' : 'Kiosk'}`,
+      typ: 'stopp',
+      sekunden: stopp.sekunden,
+      level: poi.level,
+      knotenVon: stopp.knotenIndex,
+      knotenBis: stopp.knotenIndex,
+    });
+  };
+
+  for (const [nr, segment] of segmente.entries()) {
+    if (pfad.stopp && nr === vorStopp) fuegeStoppEin();
     let text: string;
     let distanzM: number | undefined;
 
@@ -373,24 +412,27 @@ export function generiereSchritte(pfad: RoutenPfad, optionen: TextOptionen = {})
       text,
       typ: segment.typ,
       ...(distanzM !== undefined ? { distanzM } : {}),
-      ...(zeiten ? { sekunden: zeiten[schritte.length] } : {}),
+      ...(zeiten ? { sekunden: zeiten[nr] } : {}),
       level: segment.zielLevel,
       knotenVon: segment.knotenVon,
       knotenBis: segment.knotenBis,
     });
   }
 
-  if (schritte.length > 0) {
-    schritte[0].text = `Nach Ausstieg ${schritte[0].text}`;
-    for (let i = 1; i < schritte.length; i++) {
-      const t = schritte[i].text;
-      schritte[i].text = t.charAt(0).toUpperCase() + t.slice(1);
-    }
+  if (pfad.stopp && vorStopp >= segmente.length) fuegeStoppEin();
+
+  // Der Stopp ist kein Wegschritt: „Nach Ausstieg“ und das Ziel gehoeren an den
+  // ersten und letzten Schritt des Wegs.
+  const wege = schritte.filter((x) => x.typ !== 'stopp');
+  if (wege.length > 0) {
+    wege[0].text = `Nach Ausstieg ${wege[0].text}`;
+    for (const x of wege.slice(1)) x.text = x.text.charAt(0).toUpperCase() + x.text.slice(1);
     const zielGleis = pfad.knoten[pfad.knoten.length - 1]?.gleis;
+    const letzter = wege[wege.length - 1];
     if (optionen.zielZusatz) {
-      schritte[schritte.length - 1].text += ` ${optionen.zielZusatz}`;
+      letzter.text += ` ${optionen.zielZusatz}`;
     } else if (zielGleis) {
-      schritte[schritte.length - 1].text += ` zu Gleis ${zielGleis}`;
+      letzter.text += ` zu Gleis ${zielGleis}`;
     }
   }
   return schritte;

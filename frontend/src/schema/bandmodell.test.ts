@@ -141,3 +141,15 @@ describe('Was das Bild nicht belegt', () => {
     ])
   })
 })
+
+describe('besuchJeSchritt mit Stopp', () => {
+  it('ein Stopp-Schritt mit der Ebene des POI beginnt keinen neuen Besuch', () => {
+    const schritte: RouteErgebnis['schritte'] = [
+      { text: 'a', typ: 'eben', level: 0 },
+      { text: 'b', typ: 'treppe', level: 1 },
+      { text: '5 min Stopp: WC', typ: 'stopp', level: 1, knotenVon: 2, knotenBis: 2 },
+      { text: 'c', typ: 'eben', level: 1 },
+    ]
+    expect(besuchJeSchritt(schritte)).toEqual([0, 1, 1, 1])
+  })
+})

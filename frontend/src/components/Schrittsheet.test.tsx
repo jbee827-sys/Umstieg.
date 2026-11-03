@@ -123,3 +123,28 @@ describe('Schrittsheet: der letzte Schritt', () => {
     expect(knoepfe[1].className).toContain('knopf-angekommen')
   })
 })
+
+describe('Schrittsheet: Stopp-Schritt', () => {
+  const mitStopp: Schritt[] = [
+    { text: 'Nach Ausstieg 30 m geradeaus', typ: 'eben', level: 0, sekunden: 30 },
+    { text: '5 min Stopp: WC', typ: 'stopp', level: 0, sekunden: 300, knotenVon: 1, knotenBis: 1 },
+    { text: '20 m links zu Gleis 14', typ: 'eben', level: 0, sekunden: 20 },
+  ]
+
+  it('zeigt den Stopp mit seinem Text, ohne Ebenenwechsel-Kachel und ohne Symbol', () => {
+    const { container } = render(
+      <Schrittsheet
+        schritte={mitStopp}
+        position={1}
+        onZurueck={() => {}}
+        onWeiter={() => {}}
+        onAngekommen={() => {}}
+      />,
+    )
+    expect(container.querySelector('.schrittsheet-text')?.textContent).toBe('5 min Stopp: WC')
+    const zeilen = [...container.querySelectorAll('.schrittliste .schritt')]
+    expect(zeilen[1].textContent).toContain('5 min Stopp: WC')
+    expect(container.querySelectorAll('.schritt-nummer.ebenenwechsel')).toHaveLength(0)
+    expect(container.querySelector('.schrittsheet-text [data-symbol]')).toBeNull()
+  })
+})

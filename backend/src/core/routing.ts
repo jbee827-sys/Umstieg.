@@ -8,7 +8,7 @@ import type {
   StationGraph,
   StationsInfo,
 } from './typen.js';
-import { gehzeitSekunden, kantenZeitSekunden } from './gehzeit.js';
+import { gehzeitSekunden, kantenZeitSekunden, STOPP_AUFENTHALT_SEK } from './gehzeit.js';
 import { haversineM } from './graph.js';
 import { gleichesGleis } from './gleisname.js';
 
@@ -246,6 +246,8 @@ function routeMitStopp(
         knoten: [...hin.knoten, ...weiter.knoten.slice(1)],
         kanten: [...hin.kanten, ...weiter.kanten],
         laengeM: hin.laengeM + weiter.laengeM,
+        // Der POI ist der letzte Knoten des Hinwegs (Spec 4.2).
+        stopp: { knotenIndex: hin.knoten.length - 1, art: poi.poi!, sekunden: STOPP_AUFENTHALT_SEK },
       };
     }
   }

@@ -81,11 +81,16 @@ export interface RoutenPfad {
   knoten: GraphKnoten[];
   kanten: GraphKante[]; // kanten[i] verbindet knoten[i] und knoten[i+1]
   laengeM: number;
+  /**
+   * Variante `mit-stopp`: Aufenthalt am Zwischenziel. `knotenIndex` zaehlt im
+   * zusammengesetzten Pfad (`knoten`), `sekunden` geht in die Gehzeit ein.
+   */
+  stopp?: { knotenIndex: number; art: 'wc' | 'kiosk'; sekunden: number };
 }
 
 export interface Schritt {
   text: string; // fertiger deutscher Anweisungssatz
-  typ: KantenTyp | 'start' | 'ziel';
+  typ: KantenTyp | 'start' | 'ziel' | 'stopp';
   distanzM?: number; // auf 10 m gerundet, nur bei eben/rampe
   /** Gehzeit dieses Schritts. Summe aller Schritte = gehzeitSek (Invariante). */
   sekunden?: number;

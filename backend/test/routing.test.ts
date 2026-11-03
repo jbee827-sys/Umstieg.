@@ -9,6 +9,7 @@ import {
 } from '../src/core/routing.js';
 import { normGleis } from '../src/core/gleisname.js';
 import { baueGraph } from '../src/core/graph.js';
+import { generiereSchritte } from '../src/core/textgen.js';
 import { gehzeitSekunden, kantenZeitSekunden } from '../src/core/gehzeit.js';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -490,6 +491,34 @@ describe('berechneRoute mit-stopp', () => {
     const direkt = berechneRoute(graph, 'gleis1:mitte', 'gleis2:mitte', 'schnellste');
     const stopp = berechneRoute(graph, 'gleis1:mitte', 'gleis2:mitte', 'mit-stopp');
     expect(stopp!.laengeM).toBeGreaterThanOrEqual(direkt!.laengeM);
+  });
+
+  it('setzt den Stopp auf den POI und zaehlt 300 s', () => {
+    const graph = graphMitPois();
+    const pfad = berechneRoute(graph, 'gleis1:mitte', 'gleis2:mitte', 'mit-stopp')!;
+    expect(pfad.stopp).toEqual({
+      knotenIndex: pfad.knoten.findIndex((kn) => kn.poi),
+      art: 'wc',
+      sekunden: 300,
+    });
+    expect(pfad.knoten[pfad.stopp!.knotenIndex].poi).toBe('wc');
+    const ohneStopp = { ...pfad, stopp: undefined };
+    expect(gehzeitSekunden(pfad, 'normal')).toBe(gehzeitSekunden(ohneStopp, 'normal') + 300);
+  });
+
+  it('am selben Bahnsteig (Start = Ziel, POI auf dem Weg): genau ein Stopp, 300 s einmal', () => {
+    // Review-Fokus 5. Hin und zurueck laufen ueber denselben POI-Knoten; der
+    // Stopp darf nicht doppelt entstehen und die Schrittsumme nicht abweichen.
+    const graph = graphMitPois();
+    const pfad = berechneRoute(graph, 'gleis1:mitte', 'gleis1:mitte', 'mit-stopp')!;
+    expect(pfad).not.toBeNull();
+    expect(pfad.knoten.filter((kn) => kn.poi === 'wc')).toHaveLength(1);
+    const schritte = generiereSchritte(pfad, { profil: 'normal' });
+    expect(schritte.filter((s) => s.typ === 'stopp')).toHaveLength(1);
+    const summe = schritte.reduce((a, s) => a + (s.sekunden ?? 0), 0);
+    expect(summe).toBe(gehzeitSekunden(pfad, 'normal'));
+    const ohneStopp = gehzeitSekunden({ ...pfad, stopp: undefined }, 'normal');
+    expect(summe - ohneStopp).toBe(300);
   });
 
   it('ohne POI im Graphen gibt es keine Route mit Stopp', () => {

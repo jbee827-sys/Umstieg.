@@ -18,6 +18,10 @@ export const ZUSCHLAG: Partial<Record<KantenTyp, number>> = {
 export const AUFZUG_SEK_JE_EBENE = 10;
 export const AUFZUG_TUEREN_SEK = 15;
 
+// Mit Stopp (Spec 4.2): WC und Kiosk gleich lang. Mit gleichem Wert aendert
+// der Aufenthalt die Wahl des Zwischenziels nicht, nur die ausgewiesene Zeit.
+export const STOPP_AUFENTHALT_SEK = 300;
+
 /**
  * Zuschlag einer Kante in Sekunden, ohne die Gehstrecke.
  *
@@ -70,7 +74,7 @@ export function kantenZeitSekunden(
 export function gehzeitSekunden(pfad: RoutenPfad, profil: Gehprofil): number {
   const laengeM = pfad.kanten.reduce((s, k) => s + k.laengeM, 0);
   const zuschlaege = pfad.kanten.reduce((s, k) => s + zuschlagSekunden(k), 0);
-  return Math.round(laengeM / GESCHWINDIGKEIT[profil]) + zuschlaege;
+  return Math.round(laengeM / GESCHWINDIGKEIT[profil]) + zuschlaege + (pfad.stopp?.sekunden ?? 0);
 }
 
 /**

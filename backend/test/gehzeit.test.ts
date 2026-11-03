@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ampel, berechnePuffer, gehzeitSekunden, verteileGehzeit, zuschlagSekunden } from '../src/core/gehzeit.js';
+import { ampel, berechnePuffer, gehzeitSekunden, STOPP_AUFENTHALT_SEK, verteileGehzeit, zuschlagSekunden } from '../src/core/gehzeit.js';
 import type { GraphKante, KantenTyp, RoutenPfad } from '../src/core/typen.js';
 
 const kante = (typ: KantenTyp, laengeM: number, deltaLevel = 0): GraphKante => ({
@@ -140,5 +140,14 @@ describe('verteileGehzeit', () => {
 
   it('leere Eingabe -> leeres Ergebnis', () => {
     expect(verteileGehzeit([], 'normal')).toEqual([]);
+  });
+});
+
+describe('gehzeitSekunden mit Stopp', () => {
+  it('mit-stopp: 300 s zusaetzlich', () => {
+    const ohne = pfad(kante('eben', 100));
+    const mit = { ...ohne, stopp: { knotenIndex: 0, art: 'wc' as const, sekunden: STOPP_AUFENTHALT_SEK } };
+    expect(STOPP_AUFENTHALT_SEK).toBe(300);
+    expect(gehzeitSekunden(mit, 'normal')).toBe(gehzeitSekunden(ohne, 'normal') + 300);
   });
 });
