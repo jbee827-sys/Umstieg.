@@ -73,6 +73,12 @@ export interface StationGraph {
   adjazenz: Map<string, GraphKante[]>; // ungerichtet: Kante in beiden Listen
   stufe: Stufe;
   gleise: string[]; // sortierte, eindeutige Gleisbezeichner
+  /**
+   * Mittellinie je Bahnsteig (Schlüssel `bahnsteigId`), aus dem OSM-Umriss
+   * bzw. der Linie selbst. Das Schema ordnet und verortet damit; ohne sie
+   * (Synthesemodell) bleibt es bei der Sehne von Ende zu Ende.
+   */
+  bahnsteigLinien?: Map<string, { lat: number; lon: number }[]>;
 }
 
 // --- Route und Ausgabe ---

@@ -1,11 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { beforeAll, describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { baueGraph } from '../src/core/graph.js';
 import { berechneRoute } from '../src/core/routing.js';
+import { mittellinie, querLagen } from '../src/core/mittellinie.js';
 import { baueBahnhofSchema, vereinfacheLinie } from '../src/core/schema.js';
+import { entpackeEintrag } from '../src/osm/bestand.js';
 import { syntheseGraph } from '../src/core/synthmodell.js';
-import type { OverpassAntwort, RoutenPfad, StationGraph, StationsInfo } from '../src/core/typen.js';
+import type { BahnhofSchema, OverpassAntwort, RoutenPfad, StationGraph, StationsInfo } from '../src/core/typen.js';
 
 function ladeFixture(name: string): OverpassAntwort {
   const pfad = fileURLToPath(new URL(`./fixtures/${name}.json`, import.meta.url));
@@ -356,6 +358,118 @@ describe('baueBahnhofSchema – Geometrie der Ebene', () => {
       expect(a.beiM).toBeGreaterThanOrEqual(-10);
       expect(a.beiM).toBeLessThanOrEqual(440);
     }
+  });
+});
+
+/** Die Gleise einer Ebene in der Reihenfolge des Schemas (erster Besuch). */
+function gleisfolgeDerEbene(schema: BahnhofSchema, level: number): string[] {
+  const ebene = schema.ebenen.find((e) => e.level === level)!;
+  return ebene.bahnsteige.flatMap((b) => b.gleise);
+}
+
+/**
+ * Liegen die Gruppen der Reihe nach - in einer der beiden Richtungen? Innerhalb
+ * einer Gruppe ist die Reihenfolge frei: Zwei Bahnsteighaelften 1-4 m
+ * nebeneinander sind im Bild gleichrangig.
+ */
+function istMonoton(gruppen: number[][]): boolean {
+  if (gruppen.some((g) => g.some((p) => p < 0))) return false;
+  const steigend = gruppen.every((g, i) => i === 0 || Math.max(...gruppen[i - 1]) < Math.min(...g));
+  const fallend = gruppen.every((g, i) => i === 0 || Math.min(...gruppen[i - 1]) > Math.max(...g));
+  return steigend || fallend;
+}
+
+/** Wo die Zugaenge eines Bahnsteigs liegen - die Lage im Bezugsrahmen, nicht `beiM`. */
+function zugaengeVon(schema: BahnhofSchema, gleis: string): string[] {
+  const bahnsteig = schema.ebenen.flatMap((e) => e.bahnsteige).find((b) => b.gleise.includes(gleis))!;
+  return (bahnsteig.zugaenge ?? []).map((z) => `${z.pos.x},${z.pos.y}`);
+}
+
+/**
+ * Saarbruecken Hbf: jedes Gleis eine eigene Bahnsteigflaeche, gebogen und
+ * verschieden lang. Die Mitte jedes Bahnsteigs auf eine mittlere Querachse
+ * projiziert ergab 11, 16, 14, 8, 12, 6, 2, 5, 3, 1 - am OSM-Umriss
+ * nachgemessen liegen sie Sued -> Nord 1 | 2/3 | 5/6 | 8, 11 | 12 | 14/16.
+ *
+ * 8 und 11 sind EINE Gruppe: Beide liegen 3 m suedlich von 12 (8 im Osten,
+ * 11 im Westen), nebeneinander liegen sie nirgends - welcher "weiter
+ * suedlich" ist, entschieden 0,4 m Unterschied in ihrem Abstand zu 12. Die
+ * Vorgabe hatte 8 | 11/12; nach ihrem eigenen Mass (1-4 m = eine Gruppe)
+ * gehoert 8 ebenso zu 12 wie 11.
+ */
+describe('baueBahnhofSchema – Saarbrücken Hbf in echter Lage', () => {
+  let schema: BahnhofSchema;
+  beforeAll(async () => {
+    const pfadBestand = fileURLToPath(new URL('../osm-bestand/8000323.json.gz', import.meta.url));
+    const graph = baueGraph((await entpackeEintrag(readFileSync(pfadBestand))).osm);
+    const pfad = berechneRoute(graph, 'gleis12:mitte', 'gleis14:mitte', 'schnellste', 'normal')!;
+    schema = baueBahnhofSchema(graph, pfad);
+  });
+
+  it('Reihenfolge folgt der Lage, nicht der Nummer', () => {
+    const ordnung = gleisfolgeDerEbene(schema, 1);
+    const pos = (g: string): number => ordnung.indexOf(g);
+    const gruppen = [['1'], ['2', '3'], ['5', '6'], ['8', '11'], ['12'], ['14', '16']];
+    expect(istMonoton(gruppen.map((g) => g.map(pos))), ordnung.join(' ')).toBe(true);
+  });
+
+  it('Gleis 12 hat nicht die Zugänge von 14/16', () => {
+    const von14 = new Set(zugaengeVon(schema, '14'));
+    expect(von14.size).toBeGreaterThan(0);
+    expect(zugaengeVon(schema, '12').filter((z) => von14.has(z))).toEqual([]);
+  });
+});
+
+describe('mittellinie', () => {
+  // 100 m x 10 m, Ost-West, auf Breite 50°: Umriss mit nur vier Ecken - die
+  // langen Seiten tragen keinen einzigen Punkt dazwischen.
+  const mLon = 111_320 * Math.cos((50 * Math.PI) / 180);
+  const p = (ost: number, nord: number) => ({ lat: 50 + nord / 111_320, lon: 7 + ost / mLon });
+  const rechteck = [p(0, 0), p(100, 0), p(100, 10), p(0, 10), p(0, 0)];
+
+  it('legt die Linie einer Fläche in ihre Mitte, auch zwischen zwei Ecken', () => {
+    const linie = mittellinie(rechteck);
+    expect(linie.length).toBeGreaterThanOrEqual(9);
+    for (const q of linie) expect((q.lat - 50) * 111_320).toBeCloseTo(5, 1);
+  });
+
+  it('nimmt eine Linie, wie sie ist', () => {
+    const kante = [p(0, 0), p(50, 2), p(100, 0)];
+    expect(mittellinie(kante)).toEqual(kante);
+  });
+});
+
+describe('querLagen', () => {
+  const mLon = 111_320 * Math.cos((50 * Math.PI) / 180);
+  const p = (ost: number, nord: number) => ({ lat: 50 + nord / 111_320, lon: 7 + ost / mLon });
+  /** Ein Stueck eines Bogens: Ost-West ueber 600 m, in der Mitte um `woelbung` m nach Norden. */
+  const bogen = (von: number, bis: number, nord: number, woelbung: number) =>
+    Array.from({ length: 21 }, (_, i) => {
+      const ost = von + ((bis - von) * i) / 20;
+      const t = ost / 600;
+      return p(ost, nord + woelbung * 4 * t * (1 - t));
+    });
+
+  it('ordnet gebogene Bahnsteige nach ihrem Abstand, nicht nach ihrer Mitte', () => {
+    // A und B liegen 10 m auseinander, beide im selben Bogen. A ist kurz und
+    // sitzt am Rand des Bogens - seine Mitte liegt deshalb 7 m suedlich der
+    // von B, obwohl A noerdlich von B liegt.
+    const linien = new Map([
+      ['A', bogen(0, 150, 10, 30)],
+      ['B', bogen(0, 600, 0, 30)],
+    ]);
+    const lagen = querLagen(linien);
+    // Links der gemeinsamen Richtung ist positiv - bei West -> Ost also Norden.
+    expect(lagen.get('A')! - lagen.get('B')!).toBeCloseTo(10, 0);
+  });
+
+  it('lässt einen Bahnsteig ohne Überlappung auf seiner Projektion', () => {
+    const linien = new Map([
+      ['A', [p(0, 0), p(100, 0)]],
+      ['B', [p(500, 30), p(600, 30)]],
+    ]);
+    const lagen = querLagen(linien);
+    expect(Math.abs(lagen.get('A')! - lagen.get('B')!)).toBeCloseTo(30, 0);
   });
 });
 

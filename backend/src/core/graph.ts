@@ -1,5 +1,6 @@
 import { erreichbareGleisPaare } from './klassifikation.js';
 import { mittlereAchse, nachNordwesten, peilungGrad, richteEndenAus } from './richtung.js';
+import { mittellinie } from './mittellinie.js';
 import type {
   GraphKante,
   GraphKnoten,
@@ -997,6 +998,22 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
     endenJeBahnsteig.set(bahnsteig, richteEndenAus(a, e, richtungJeEbene.get(bahnsteig.ebene)!));
   }
 
+  // Die Mittellinie je Bahnsteig fuer das Schema (Spec 6.4): Saarbruecken hat
+  // gebogene Bahnsteige verschiedener Laenge, und die Sehne von Ende zu Ende
+  // liegt dort bis zu 37 m neben dem Bahnsteig. Eine Relation gibt ihre
+  // aeusseren Glieder einzeln weiter, ein Weg sich selbst.
+  const bahnsteigLinien = new Map<string, { lat: number; lon: number }[]>();
+  for (const bahnsteig of endenJeBahnsteig.keys()) {
+    const teile = bahnsteig.nodeListen.map((liste) =>
+      liste
+        .map((id) => osmKnoten.get(id))
+        .filter((n): n is Lagepunkt => n?.lat !== undefined && n?.lon !== undefined)
+        .map((n) => ({ lat: n.lat, lon: n.lon })),
+    );
+    const linie = mittellinie(bahnsteig.bahnsteigId.startsWith('r') ? teile : teile[0]);
+    if (linie.length > 0) bahnsteigLinien.set(bahnsteig.bahnsteigId, linie);
+  }
+
   // Wessen Umriss ein Knoten ist. Ein Punkt kann mehreren Bahnsteigen gehoeren,
   // wenn sie sich beruehren; dann gilt er auch fuer jeden von ihnen als eigener.
   const umrissVon = new Map<string, Set<BahnsteigDaten>>();
@@ -1218,7 +1235,7 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
   verbindeVerwaisteAufzuege(knoten, adjazenz, fuegeKanteHinzu);
 
   // Stufe wird erst durch die Klassifikation (Task 5) gesetzt – Start: 3.
-  return { knoten, adjazenz, stufe: 3, gleise };
+  return { knoten, adjazenz, stufe: 3, gleise, bahnsteigLinien };
 }
 
 /**
@@ -1488,7 +1505,13 @@ export function kopiereGraph(graph: StationGraph): StationGraph {
       }),
     );
   }
-  return { knoten: graph.knoten, adjazenz, stufe: graph.stufe, gleise: graph.gleise };
+  return {
+    knoten: graph.knoten,
+    adjazenz,
+    stufe: graph.stufe,
+    gleise: graph.gleise,
+    ...(graph.bahnsteigLinien ? { bahnsteigLinien: graph.bahnsteigLinien } : {}),
+  };
 }
 
 /**

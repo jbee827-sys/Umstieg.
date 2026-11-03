@@ -1,4 +1,5 @@
 import { haversineM } from './graph.js';
+import { lageZurLinie, querLagen, type Punkt } from './mittellinie.js';
 import { bestimmeZugspitze, himmelsrichtungen, mittlereAchse, peilungGrad, type Zuglauf } from './richtung.js';
 import type {
   BahnhofSchema,
@@ -41,11 +42,25 @@ const ANLAGE_MAX_M = 60;
 
 /**
  * Quer zur Bahnsteigachse: weiter weg heisst, die Anlage gehört nicht dazu.
- * Gemessen wird an der Geraden von Ende zu Ende, im Bogen kommt deshalb die
- * Bogenhöhe hinzu (`zugangQuerGrenze`): Die Mitte liegt auf dem Bahnsteig, ihr
- * Abstand zur Geraden ist genau diese Höhe. Berlin Hbf 13/14: 23 m.
+ * Gemessen wird an der Mittellinie. Ohne sie (Standardmodell) an der Geraden
+ * von Ende zu Ende, und im Bogen kommt dann die Bogenhöhe hinzu
+ * (`zugangQuerGrenze`): Die Mitte liegt auf dem Bahnsteig, ihr Abstand zur
+ * Geraden ist genau diese Höhe. Berlin Hbf 13/14: 23 m.
  */
 const ZUGANG_QUER_MAX_M = 30;
+
+/**
+ * So viel weiter als vom naechsten Bahnsteig darf eine Anlage von der
+ * Mittellinie entfernt sein und gehoert trotzdem dazu.
+ *
+ * Sie gehoert dem Bahnsteig, dessen Mittellinie sie am naechsten liegt - aber
+ * ein Inselbahnsteig ist in OSM oft zwei Flaechen, je Gleis eine: In
+ * Saarbruecken teilen sich 5 und 12 sechzehn Umrissknoten, und eine Treppe
+ * dort liegt 2,9 m von der einen und 3,0 m von der anderen Linie. Sie dient
+ * beiden. Ueber ein Gleis hinweg sind es mehr: Die Abgaenge von 14/16 liegen
+ * 2-4 m von deren Linien und 17-19 m von der von 12.
+ */
+const ZUGANG_GLEICH_NAH_M = 5;
 
 /** Zwei Anlagen näher als das sind derselbe Zugang, kein zweiter. */
 const ZUGANG_BUENDEL_M = 25;
@@ -89,6 +104,11 @@ interface Bahnsteigrohbau {
   anfang?: GraphKnoten;
   ende?: GraphKnoten;
   mitte: GraphKnoten;
+  /** Mittellinie aus dem Graphen; fehlt sie, gilt die Sehne `anfang`–`ende`. */
+  linie?: Punkt[];
+  /** Wo `anfang` und `ende` auf der Linie liegen, in Metern ab ihrem ersten Punkt. */
+  linieAnfangM?: number;
+  linieEndeM?: number;
 }
 
 /**
@@ -140,17 +160,39 @@ function sammleBahnsteige(graph: StationGraph): Bahnsteigrohbau[] {
   }
   for (const eintrag of nachId.values()) {
     eintrag.gleise.sort((a, b) => a.localeCompare(b, 'de', { numeric: true }));
+    const linie = graph.bahnsteigLinien?.get(eintrag.bahnsteigId);
+    if (linie && linie.length >= 2 && eintrag.anfang && eintrag.ende) {
+      const a = lageZurLinie(linie, eintrag.anfang).laengsM;
+      const e = lageZurLinie(linie, eintrag.ende).laengsM;
+      if (a !== e) Object.assign(eintrag, { linie, linieAnfangM: a, linieEndeM: e });
+    }
   }
   return [...nachId.values()];
 }
 
-/** Lage eines Punktes auf der Bahnsteigachse: Meter entlang, Meter quer. */
+/**
+ * Lage eines Punktes auf der Bahnsteigachse: Meter entlang ab `anfang`, Meter quer.
+ *
+ * Achse ist die Mittellinie, wo es eine gibt. Die Sehne von Ende zu Ende
+ * liegt im Bogen neben dem Bahnsteig - an Saarbruecken Gleis 12 in der Mitte
+ * 37 m -, und quer zu ihr gemessen lag der Nachbarbahnsteig naeher als der
+ * eigene.
+ */
 function aufAchse(
   bahnsteig: Bahnsteigrohbau,
   knoten: { lat: number; lon: number },
 ): { laengsM: number; querM: number; laengeM: number } | null {
-  const { anfang, ende } = bahnsteig;
+  const { anfang, ende, linie, linieAnfangM, linieEndeM } = bahnsteig;
   if (!anfang || !ende) return null;
+  if (linie && linieAnfangM !== undefined && linieEndeM !== undefined) {
+    const lage = lageZurLinie(linie, knoten);
+    const vorwaerts = linieEndeM > linieAnfangM;
+    return {
+      laengsM: vorwaerts ? lage.laengsM - linieAnfangM : linieAnfangM - lage.laengsM,
+      querM: lage.querM,
+      laengeM: Math.abs(linieEndeM - linieAnfangM),
+    };
+  }
   const mLon = M_LAT * Math.cos(anfang.lat * BOGEN);
   const bx = (ende.lon - anfang.lon) * mLon;
   const by = (ende.lat - anfang.lat) * M_LAT;
@@ -173,6 +215,13 @@ function aufAchse(
  * Nicht nach Gleisnummer: Am Berliner Tiefbahnsteig liegt Gleis 22 neben
  * 7/8, nicht hinter 1/2. Eine Sortierung nach Nummer zeichnete den Bahnhof
  * falsch herum.
+ *
+ * Und nicht nach der Mitte allein, wo Mittellinien da sind: In Saarbruecken
+ * sind die Bahnsteige gebogen und verschieden lang, und die Mitten auf eine
+ * Querachse projiziert ergaben 11, 16, 14, 8, 12, 6, 2, 5, 3, 1 statt
+ * 1 | 2/3 | 5/6 | 8, 11 | 12 | 14/16. Gemessen wird dann dort, wo zwei
+ * Bahnsteige nebeneinanderliegen (`querLagen`); wer mit keinem anderen
+ * ueberlappt, behaelt die Projektion seiner Mitte.
  */
 function ordneQuer(bahnsteige: Bahnsteigrohbau[]): {
   reihenfolge: Bahnsteigrohbau[];
@@ -190,10 +239,21 @@ function ordneQuer(bahnsteige: Bahnsteigrohbau[]): {
   const mLon = M_LAT * Math.cos(bezug.lat * BOGEN);
 
   const lagen = new Map<string, number>();
-  for (const b of mitAchse) {
-    const dx = (b.mitte.lon - bezug.lon) * mLon;
-    const dy = (b.mitte.lat - bezug.lat) * M_LAT;
-    lagen.set(b.bahnsteigId, dx * qx + dy * qy);
+  if (mitAchse.every((b) => b.linie)) {
+    // `querLagen` zaehlt links der Richtung positiv, die Querachse hier
+    // rechts - umgedreht, damit eine Ebene ohne ueberlappende Bahnsteige
+    // genau so liegt wie bisher.
+    const linksPositiv = querLagen(new Map(mitAchse.map((b) => [b.bahnsteigId, b.linie!])), {
+      richtungGrad: richtung,
+      mitten: new Map(mitAchse.map((b) => [b.bahnsteigId, b.mitte])),
+    });
+    for (const [id, lage] of linksPositiv) lagen.set(id, -lage);
+  } else {
+    for (const b of mitAchse) {
+      const dx = (b.mitte.lon - bezug.lon) * mLon;
+      const dy = (b.mitte.lat - bezug.lat) * M_LAT;
+      lagen.set(b.bahnsteigId, dx * qx + dy * qy);
+    }
   }
 
   const sortiert = [...mitAchse].sort(
@@ -291,7 +351,32 @@ function* ebenenwechselKanten(
  * Bahnsteig zaehlt deshalb als Spielraum mit.
  */
 function zugangQuerGrenze(bahnsteig: Bahnsteigrohbau): number {
+  // An der Mittellinie gibt es keine Bogenhoehe, die hinzukaeme.
+  if (bahnsteig.linie) return ZUGANG_QUER_MAX_M;
   return ZUGANG_QUER_MAX_M + (aufAchse(bahnsteig, bahnsteig.mitte)?.querM ?? 0);
+}
+
+/**
+ * Wo ein Ebenenwechsel an einem Bahnsteig liegt - oder `null`, wenn er nicht
+ * zu ihm gehoert: zu weit quer, jenseits der Enden oder, wo Mittellinien da
+ * sind, deutlich naeher an einem anderen Bahnsteig derselben Ebene.
+ */
+function lageAmBahnsteig(
+  bahnsteig: Bahnsteigrohbau,
+  knoten: GraphKnoten,
+  bahnsteige: Bahnsteigrohbau[],
+): { laengsM: number; querM: number; laengeM: number } | null {
+  const lage = aufAchse(bahnsteig, knoten);
+  if (!lage || lage.querM > zugangQuerGrenze(bahnsteig)) return null;
+  if (lage.laengsM < -5 || lage.laengsM > lage.laengeM + 5) return null;
+  if (!bahnsteig.linie) return lage;
+  for (const anderer of bahnsteige) {
+    if (anderer === bahnsteig || anderer.level !== bahnsteig.level || !anderer.linie) continue;
+    const dort = aufAchse(anderer, knoten);
+    if (!dort || dort.laengsM < -5 || dort.laengsM > dort.laengeM + 5) continue;
+    if (dort.querM + ZUGANG_GLEICH_NAH_M < lage.querM) return null;
+  }
+  return lage;
 }
 
 function bahnsteigBei(
@@ -323,6 +408,7 @@ function bahnsteigBei(
  */
 function zugaengeFuer(
   bahnsteig: Bahnsteigrohbau,
+  bahnsteige: Bahnsteigrohbau[],
   graph: StationGraph,
   aufRoute: Set<string>,
   zuXY: (k: { lat: number; lon: number }) => SchemaPunkt,
@@ -340,10 +426,8 @@ function zugaengeFuer(
   for (const kante of ebenenwechselKanten(graph)) {
     for (const ende of [kante.von, kante.nach]) {
       if (ende.level !== bahnsteig.level) continue;
-      const lage = aufAchse(bahnsteig, ende);
+      const lage = lageAmBahnsteig(bahnsteig, ende, bahnsteige);
       if (!lage) continue;
-      if (lage.querM > zugangQuerGrenze(bahnsteig)) continue;
-      if (lage.laengsM < -5 || lage.laengsM > lage.laengeM + 5) continue;
       treffer.push({
         typ: kante.typ,
         laengsM: lage.laengsM,
@@ -620,9 +704,8 @@ function elementeFuer(
     for (const bahnsteig of bahnsteige) {
       if (bahnsteig.level !== level) continue;
       if (!wichtigeBahnsteige.has(bahnsteig.bahnsteigId)) continue;
-      const lage = aufAchse(bahnsteig, aufEbene);
-      if (!lage || lage.querM > zugangQuerGrenze(bahnsteig)) continue;
-      if (lage.laengsM < -5 || lage.laengsM > lage.laengeM + 5) continue;
+      const lage = lageAmBahnsteig(bahnsteig, aufEbene, bahnsteige);
+      if (!lage) continue;
       beiM = Math.round(lage.laengsM);
       break;
     }
@@ -710,7 +793,7 @@ export function baueBahnhofSchema(
       // Zugänge nur dort, wo der Reisende wirklich steht. An den übrigen
       // Bahnsteigen ist die Stelle ohne Belang und die Antwort bliebe sonst
       // nicht klein.
-      const zugaenge = rolle && hatAchse ? zugaengeFuer(b, graph, aufRoute, zuXY) : undefined;
+      const zugaenge = rolle && hatAchse ? zugaengeFuer(b, bahnsteige, graph, aufRoute, zuXY) : undefined;
       // Wie die Himmelsrichtung nur bei gemessener Achse - im Standardmodell
       // gaebe es kein Ende, an das die Spitze sich stellen koennte.
       const zugspitze =
