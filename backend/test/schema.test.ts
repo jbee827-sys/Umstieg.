@@ -416,8 +416,56 @@ describe('baueBahnhofSchema – Saarbrücken Hbf in echter Lage', () => {
   it('Gleis 12 hat nicht die Zugänge von 14/16', () => {
     const von14 = new Set(zugaengeVon(schema, '14'));
     expect(von14.size).toBeGreaterThan(0);
+    expect(zugaengeVon(schema, '12').length).toBeGreaterThan(0);
     expect(zugaengeVon(schema, '12').filter((z) => von14.has(z))).toEqual([]);
   });
+
+  it('hängt jede verortete Anlage an ihren Bahnsteig', () => {
+    // Das Bild legt die Symbole auf den Balken, den das Backend nennt - nicht
+    // auf den, dessen Sehne am naechsten liegt. Die Sehne von 12 liegt im
+    // Bogen 37 m neben dem Bahnsteig.
+    const ebene = schema.ebenen.find((e) => e.level === 1)!;
+    const zwoelf = ebene.bahnsteige.find((b) => b.gleise.includes('12'))!;
+    const verortet = (ebene.elemente ?? []).filter((el) => el.beiM !== undefined);
+    expect(verortet.length).toBeGreaterThan(0);
+    for (const el of verortet) expect(el.bahnsteigId).toBeDefined();
+    expect(verortet.some((el) => el.bahnsteigId === zwoelf.bahnsteigId)).toBe(true);
+  });
+
+  it('legt beiM auf den Bahnsteig, zwischen 0 und seine Länge', () => {
+    for (const b of schema.ebenen.flatMap((e) => e.bahnsteige)) {
+      for (const z of b.zugaenge ?? []) {
+        expect(z.beiM).toBeGreaterThanOrEqual(0);
+        expect(z.beiM).toBeLessThanOrEqual(b.laengeM!);
+      }
+    }
+  });
+});
+
+/**
+ * Den Zugang, den die Route nimmt, hat ihr Bahnsteig immer.
+ *
+ * Mit der Mittellinie gehoert eine Anlage dem naechsten Bahnsteig. Ueber
+ * 6.265 Routen verloren dadurch 61 den Zugang, ueber den sie den Start- oder
+ * Zielbahnsteig verlassen (Review 04.11.2026) - neun Bahnsteige standen ganz
+ * ohne da. Der Weg geht trotzdem dort hin, also gehoert er dazu.
+ */
+describe('baueBahnhofSchema – der genutzte Zugang bleibt', () => {
+  const faelle: [string, string, string, 'schnellste' | 'barrierefrei', 'start' | 'ziel'][] = [
+    ['8013470', '1', '4', 'barrierefrei', 'start'],
+    ['8000259', '5', '1', 'barrierefrei', 'ziel'],
+    ['8000023', '5', '6', 'schnellste', 'start'],
+  ];
+  for (const [eva, von, nach, variante, rolle] of faelle) {
+    it(`${eva} ${von} -> ${nach} (${variante}): ${rolle}bahnsteig trägt den genutzten Zugang`, async () => {
+      const datei = fileURLToPath(new URL(`../osm-bestand/${eva}.json.gz`, import.meta.url));
+      const graph = baueGraph((await entpackeEintrag(readFileSync(datei))).osm);
+      const pfad = berechneRoute(graph, `gleis${von}:mitte`, `gleis${nach}:mitte`, variante, 'normal')!;
+      const schema = baueBahnhofSchema(graph, pfad);
+      const bahnsteig = schema.ebenen.flatMap((e) => e.bahnsteige).find((b) => b.rolle === rolle)!;
+      expect(bahnsteig.zugaenge!.some((z) => z.aufRoute)).toBe(true);
+    });
+  }
 });
 
 describe('mittellinie', () => {

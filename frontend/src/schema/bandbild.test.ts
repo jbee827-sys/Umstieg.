@@ -442,3 +442,51 @@ describe('Ankunft und Abfahrt nebeneinander', () => {
     expect(b.y - a.y).toBeGreaterThanOrEqual(16)
   })
 })
+
+/**
+ * Saarbrücken Hbf, 04.11.2026: Das Backend ordnet die Bahnsteige an ihren
+ * Mittellinien (16 14 12 8 11 6 5 3 2 1). Das Bild sortierte erneut nach der
+ * Sehnenmitte und hängte jede Anlage an den Balken mit der nächsten Sehne –
+ * Gleis 12 liegt im Bogen, seine Sehne 37 m daneben. Gezeichnet wurde
+ * 12 16 14 11 5 8 6 2 3 1, und Balken 12 trug kein Symbol.
+ *
+ * Nachgestellt: Die Sehne von 12 liegt jenseits von 8, das Backend sagt
+ * 14 | 12 | 8, und die Treppe von 12 liegt an der Sehne von 14.
+ */
+describe('Gleisebene folgt der Lage aus dem Backend', () => {
+  const ebene = (mitLage: boolean): SchemaEbene => ({
+    level: 1,
+    rolle: 'start',
+    art: 'gleise',
+    bahnsteige: [
+      { bahnsteigId: 'w14', gleise: ['14'], laengeM: 300, rolle: 'ziel', von: { x: 0, y: 0 }, bis: { x: 300, y: 0 }, ...(mitLage ? { querM: 0 } : {}) },
+      { bahnsteigId: 'w12', gleise: ['12'], laengeM: 500, rolle: 'start', von: { x: -200, y: 30 }, bis: { x: 300, y: 30 }, ...(mitLage ? { querM: 15 } : {}) },
+      { bahnsteigId: 'w8', gleise: ['8'], laengeM: 200, von: { x: 0, y: 20 }, bis: { x: 200, y: 20 }, ...(mitLage ? { querM: 20 } : {}) },
+    ],
+    weg: [{ x: 0, y: 30 }, { x: 0, y: 0 }],
+    elemente: [
+      { typ: 'treppe', punkte: [{ x: -100, y: 2 }, { x: -90, y: 2 }], aufRoute: false, beiM: 100, ...(mitLage ? { bahnsteigId: 'w12' } : {}) },
+    ],
+  })
+  const zeichne = (e: SchemaEbene) =>
+    gleisbild(zeichneBand(e, 360, 400, { lage: bildlageFuer([e]), erster: true, letzter: true })!)
+  const folge = (bild: Gleisbild) => [...bild.balken].sort((p, q) => p.y - q.y).map((b) => b.gleise.join('/'))
+  const balkenVon = (bild: Gleisbild, gleis: string) => bild.balken.find((b) => b.gleise.includes(gleis))!
+
+  it('zeichnet die Reihenfolge des Backends, nicht die der Sehnenmitten', () => {
+    expect([['14', '12', '8'], ['8', '12', '14']]).toContainEqual(folge(zeichne(ebene(true))))
+  })
+
+  it('legt eine Anlage auf den Balken, dem das Backend sie zuordnet', () => {
+    const bild = zeichne(ebene(true))
+    expect(balkenVon(bild, '12').symbole.length).toBe(1)
+    expect(balkenVon(bild, '14').symbole.length).toBe(0)
+  })
+
+  it('bleibt ohne Querlage und Zuordnung (ältere Antworten) bei der Sehne', () => {
+    const bild = zeichne(ebene(false))
+    expect([['14', '8', '12'], ['12', '8', '14']]).toContainEqual(folge(bild))
+    expect(balkenVon(bild, '14').symbole.length).toBe(1)
+    expect(balkenVon(bild, '12').symbole.length).toBe(0)
+  })
+})

@@ -28,7 +28,6 @@ const FACH_M = 10;
 /** So viele Fächer müssen zwei Bahnsteige gemeinsam haben, damit ihr Abstand zählt. */
 const MIN_GEMEINSAME_FAECHER = 3;
 
-const GAUSS_SEIDEL_DURCHLAEUFE = 50;
 
 const BOGEN = Math.PI / 180;
 const M_LAT = 111_320;
@@ -224,15 +223,19 @@ function median(werte: number[]): number {
  * 10-m-Fach entlang der gemeinsamen Richtung der Abstand jedes Bahnsteigs zu
  * seinem Nachbarn im Fach, links positiv. Der Median dieser Abstände ist der
  * Abstand des Paares – ab drei Fächern; zwei Bahnsteige, die sich nur an den
- * Spitzen berühren, sagen über ihren Abstand nichts. Aus allen Paarabständen
- * werden die Lagen ausgeglichen (gewichtete kleinste Quadrate, Gauß-Seidel ab
- * der Projektion der Mitte). Wer mit keinem anderen überlappt, behält diese
- * Projektion.
+ * Spitzen berühren, sagen über ihren Abstand nichts. Die Lagen minimieren
+ * Σ w·(x_b − x_a − d_ab)² über alle Paare (gewichtete kleinste Quadrate,
+ * Normalgleichungen je zusammenhängender Gruppe direkt gelöst). Wer mit
+ * keinem anderen überlappt, behält die Projektion seiner Mitte.
  *
- * Die Projektion bleibt der Anker: Jede zusammenhängende Gruppe wird nach dem
- * Ausgleich so verschoben, dass ihr Mittel dem Mittel ihrer Projektionen
- * gleicht. Sonst hinge ihre Lage zu den übrigen Bahnsteigen davon ab, in
- * welcher Reihenfolge Gauß-Seidel sie besucht.
+ * Die Abstände legen eine Gruppe nur bis auf eine Verschiebung fest. Die
+ * Projektion ist der Anker: Das Mittel der Gruppe gleicht dem Mittel ihrer
+ * Projektionen.
+ *
+ * Bis zum 04.11.2026 rechnete hier Gauß-Seidel mit fest 50 Durchläufen. Mit
+ * Gewichten, die zwischen Inselhälften (1 m) und Nachbarbahnsteigen (15 m)
+ * um das Hundertfache auseinanderliegen, war das nicht konvergiert - die
+ * Lage hing an der Zahl der Durchläufe.
  *
  * `richtungGrad` und `mitten` erlauben dem Aufrufer, dieselbe Richtung und
  * dieselben Mitten zu verwenden wie bisher - ohne Paar ändert sich dann nichts.
@@ -348,22 +351,6 @@ export function querLagen(
     paare.get(a)!.push({ anderer: b, versatz: -m, gewicht });
   }
 
-  const x = new Map(start);
-  for (let durchlauf = 0; durchlauf < GAUSS_SEIDEL_DURCHLAEUFE; durchlauf++) {
-    for (const id of ids) {
-      const nachbarn = paare.get(id)!;
-      if (nachbarn.length === 0) continue;
-      let summe = 0;
-      let gewichte = 0;
-      for (const n of nachbarn) {
-        summe += n.gewicht * (x.get(n.anderer)! + n.versatz);
-        gewichte += n.gewicht;
-      }
-      x.set(id, summe / gewichte);
-    }
-  }
-
-  // Jede zusammenhängende Gruppe auf das Mittel ihrer Projektionen setzen.
   const gesehen = new Set<string>();
   for (const id of ids) {
     if (gesehen.has(id)) continue;
@@ -379,9 +366,54 @@ export function querLagen(
         offen.push(n.anderer);
       }
     }
-    const verschiebung =
-      gruppe.reduce((s, g) => s + start.get(g)! - x.get(g)!, 0) / gruppe.length;
-    for (const g of gruppe) lagen.set(g, x.get(g)! + verschiebung);
+    const x = loeseGruppe(gruppe, paare);
+    const verschiebung = gruppe.reduce((s, g, i) => s + start.get(g)! - x[i], 0) / gruppe.length;
+    gruppe.forEach((g, i) => lagen.set(g, x[i] + verschiebung));
   }
   return lagen;
+}
+
+/**
+ * Die Normalgleichungen einer zusammenhängenden Gruppe: L·x = r mit der
+ * gewichteten Laplace-Matrix L. Sie ist singulär (eine Verschiebung ändert
+ * nichts), deshalb wird das erste Mitglied auf 0 gesetzt und der Rest per
+ * Gauß-Elimination gelöst - bei höchstens einigen Dutzend Bahnsteigen je
+ * Ebene ist das klein.
+ */
+function loeseGruppe(
+  gruppe: string[],
+  paare: Map<string, { anderer: string; versatz: number; gewicht: number }[]>,
+): number[] {
+  const n = gruppe.length;
+  if (n === 1) return [0];
+  const index = new Map(gruppe.map((g, i) => [g, i]));
+  // Zeile/Spalte 0 entfällt (x0 = 0), es bleiben n − 1 Unbekannte.
+  const m = n - 1;
+  const a = Array.from({ length: m }, () => new Array<number>(m + 1).fill(0));
+  for (let i = 1; i < n; i++) {
+    for (const p of paare.get(gruppe[i])!) {
+      const j = index.get(p.anderer)!;
+      // Ableitung von w·(x_i − x_j − versatz)² nach x_i.
+      a[i - 1][i - 1] += p.gewicht;
+      if (j > 0) a[i - 1][j - 1] -= p.gewicht;
+      a[i - 1][m] += p.gewicht * p.versatz;
+    }
+  }
+  for (let k = 0; k < m; k++) {
+    let pivot = k;
+    for (let r = k + 1; r < m; r++) if (Math.abs(a[r][k]) > Math.abs(a[pivot][k])) pivot = r;
+    [a[k], a[pivot]] = [a[pivot], a[k]];
+    for (let r = k + 1; r < m; r++) {
+      const f = a[r][k] / a[k][k];
+      if (f === 0) continue;
+      for (let c = k; c <= m; c++) a[r][c] -= f * a[k][c];
+    }
+  }
+  const x = new Array<number>(n).fill(0);
+  for (let k = m - 1; k >= 0; k--) {
+    let summe = a[k][m];
+    for (let c = k + 1; c < m; c++) summe -= a[k][c] * x[c + 1];
+    x[k + 1] = summe / a[k][k];
+  }
+  return x;
 }

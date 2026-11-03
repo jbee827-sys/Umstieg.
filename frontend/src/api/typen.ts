@@ -106,6 +106,13 @@ export interface SchemaElement {
   aufRoute: boolean;
   /** Meter entlang des Bahnsteigs, wenn die Anlage an einem liegt. */
   beiM?: number;
+  /**
+   * An welchem Bahnsteig (`SchemaBahnsteig.bahnsteigId`) - immer zusammen mit
+   * `beiM`. Das Bild haengt die Anlage an diesen Balken, statt sie nach der
+   * Querlage zu raten: Saarbruecken 12 liegt im Bogen, seine Sehne 37 m
+   * neben ihm.
+   */
+  bahnsteigId?: string;
 }
 
 /**

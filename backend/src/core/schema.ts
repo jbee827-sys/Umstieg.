@@ -185,13 +185,14 @@ function aufAchse(
   const { anfang, ende, linie, linieAnfangM, linieEndeM } = bahnsteig;
   if (!anfang || !ende) return null;
   if (linie && linieAnfangM !== undefined && linieEndeM !== undefined) {
+    // Laengs auf die Sehne umgerechnet: Die Antwort nennt als Laenge die
+    // Sehne (`laengeM`), und `beiM` muss auf derselben Strecke liegen - im
+    // Bogen ist die Linie laenger (Saarbruecken 12: 565 gegen 561 m).
     const lage = lageZurLinie(linie, knoten);
-    const vorwaerts = linieEndeM > linieAnfangM;
-    return {
-      laengsM: vorwaerts ? lage.laengsM - linieAnfangM : linieAnfangM - lage.laengsM,
-      querM: lage.querM,
-      laengeM: Math.abs(linieEndeM - linieAnfangM),
-    };
+    const bogen = Math.abs(linieEndeM - linieAnfangM);
+    const sehne = haversineM(anfang.lat, anfang.lon, ende.lat, ende.lon);
+    const entlang = linieEndeM > linieAnfangM ? lage.laengsM - linieAnfangM : linieAnfangM - lage.laengsM;
+    return { laengsM: (entlang * sehne) / bogen, querM: lage.querM, laengeM: sehne };
   }
   const mLon = M_LAT * Math.cos(anfang.lat * BOGEN);
   const bx = (ende.lon - anfang.lon) * mLon;
@@ -365,8 +366,16 @@ function lageAmBahnsteig(
   bahnsteig: Bahnsteigrohbau,
   knoten: GraphKnoten,
   bahnsteige: Bahnsteigrohbau[],
+  eigen = false,
 ): { laengsM: number; querM: number; laengeM: number } | null {
   const lage = aufAchse(bahnsteig, knoten);
+  // Die Anlage, ueber die die Route diesen Bahnsteig verlaesst oder erreicht,
+  // gehoert ihm - ohne Grenze. Ueber 6.265 Routen mit Ebenenwechsel verloren
+  // sonst 61 ihren genutzten Zugang (04.11.2026): die Treppe einer
+  // Inselhaelfte mehr als 5 m naeher an der anderen Haelfte, ein Abgang
+  // ueber 30 m neben der Linie, einer knapp hinter dem Ende. Der Weg geht
+  // dort trotzdem hin.
+  if (eigen) return lage;
   if (!lage || lage.querM > zugangQuerGrenze(bahnsteig)) return null;
   if (lage.laengsM < -5 || lage.laengsM > lage.laengeM + 5) return null;
   if (!bahnsteig.linie) return lage;
@@ -409,6 +418,7 @@ function bahnsteigBei(
 function zugaengeFuer(
   bahnsteig: Bahnsteigrohbau,
   bahnsteige: Bahnsteigrohbau[],
+  eigene: ReadonlySet<string>,
   graph: StationGraph,
   aufRoute: Set<string>,
   zuXY: (k: { lat: number; lon: number }) => SchemaPunkt,
@@ -426,7 +436,7 @@ function zugaengeFuer(
   for (const kante of ebenenwechselKanten(graph)) {
     for (const ende of [kante.von, kante.nach]) {
       if (ende.level !== bahnsteig.level) continue;
-      const lage = lageAmBahnsteig(bahnsteig, ende, bahnsteige);
+      const lage = lageAmBahnsteig(bahnsteig, ende, bahnsteige, eigene.has(kante.schluessel));
       if (!lage) continue;
       treffer.push({
         typ: kante.typ,
@@ -451,7 +461,7 @@ function zugaengeFuer(
     const mittelLaengs = gruppe.reduce((s, t) => s + t.laengsM, 0) / gruppe.length;
     const punkte = gruppe.map((t) => zuXY(t.knoten));
     zugaenge.push({
-      beiM: Math.round(mittelLaengs),
+      beiM: aufDemBahnsteig(mittelLaengs, bahnsteig),
       pos: {
         x: Math.round(punkte.reduce((s, p) => s + p.x, 0) / punkte.length),
         y: Math.round(punkte.reduce((s, p) => s + p.y, 0) / punkte.length),
@@ -470,6 +480,39 @@ function zugaengeFuer(
   }
   schliesse();
   return zugaenge;
+}
+
+/** `beiM` liegt auf dem Bahnsteig: zwischen 0 und seiner Laenge. */
+function aufDemBahnsteig(laengsM: number, bahnsteig: Bahnsteigrohbau): number {
+  const { anfang, ende } = bahnsteig;
+  const laenge = anfang && ende ? Math.round(haversineM(anfang.lat, anfang.lon, ende.lat, ende.lon)) : Infinity;
+  return Math.min(Math.max(Math.round(laengsM), 0), laenge);
+}
+
+/**
+ * Ueber welche Ebenenwechsel-Kante die Route ihren Start- bzw. Zielbahnsteig
+ * verlaesst oder erreicht - je Bahnsteig, in beiden Schreibrichtungen.
+ */
+function eigeneKantenDerRoute(pfad: RoutenPfad): Map<string, Set<string>> {
+  const ergebnis = new Map<string, Set<string>>();
+  const merke = (bahnsteigId: string | undefined, i: number): void => {
+    if (!bahnsteigId) return;
+    const k = pfad.kanten[i];
+    const menge = ergebnis.get(bahnsteigId) ?? new Set<string>();
+    menge.add(`${k.von}|${k.nach}`).add(`${k.nach}|${k.von}`);
+    ergebnis.set(bahnsteigId, menge);
+  };
+  const wechsel = pfad.kanten.map((k, i) => (k.deltaLevel !== 0 ? i : -1)).filter((i) => i >= 0);
+  const start = pfad.knoten[0];
+  const ziel = pfad.knoten[pfad.knoten.length - 1];
+  if (wechsel.length > 0 && start && pfad.knoten[wechsel[0]]?.level === start.level) {
+    merke(start.bahnsteigId, wechsel[0]);
+  }
+  const letzter = wechsel[wechsel.length - 1];
+  if (letzter !== undefined && ziel && pfad.knoten[letzter + 1]?.level === ziel.level) {
+    merke(ziel.bahnsteigId, letzter);
+  }
+  return ergebnis;
 }
 
 /** Die Anlagen, die die Route nutzt – in der Reihenfolge des Wegs. */
@@ -493,7 +536,7 @@ function anlagenDerRoute(
       nachLevel: nach.level,
       ...(bahnsteig ? { beiGleisen: bahnsteig.gleise } : {}),
       pos: zuXY(von),
-      ...(lage ? { beiM: Math.round(lage.laengsM) } : {}),
+      ...(lage && bahnsteig ? { beiM: aufDemBahnsteig(lage.laengsM, bahnsteig) } : {}),
     });
   }
   return anlagen;
@@ -680,6 +723,7 @@ function elementeFuer(
   weg: SchemaPunkt[],
   bahnsteige: Bahnsteigrohbau[],
   wichtigeBahnsteige: Set<string>,
+  eigeneKanten: Map<string, Set<string>>,
   aufRoute: Set<string>,
   zuXY: (k: { lat: number; lon: number }) => SchemaPunkt,
 ): SchemaElement[] {
@@ -701,12 +745,18 @@ function elementeFuer(
     // Nur am Ankunfts- und Abfahrtsbahnsteig zaehlt die Stelle. An den
     // Nachbarbahnsteigen ist jede Anlage nur Gewirr - dort genuegt die Zahl.
     let beiM: number | undefined;
-    for (const bahnsteig of bahnsteige) {
-      if (bahnsteig.level !== level) continue;
-      if (!wichtigeBahnsteige.has(bahnsteig.bahnsteigId)) continue;
-      const lage = lageAmBahnsteig(bahnsteig, aufEbene, bahnsteige);
+    let amBahnsteigId: string | undefined;
+    // Die eigene Kante der Route zuerst: Sie gehoert ihrem Bahnsteig auch
+    // dann, wenn ein anderer naeher laege (siehe `lageAmBahnsteig`).
+    const kandidaten = bahnsteige
+      .filter((kandidat) => kandidat.level === level && wichtigeBahnsteige.has(kandidat.bahnsteigId))
+      .map((kandidat) => ({ b: kandidat, eigen: eigeneKanten.get(kandidat.bahnsteigId)?.has(kante.schluessel) ?? false }))
+      .sort((p, q) => Number(q.eigen) - Number(p.eigen));
+    for (const { b: bahnsteig, eigen } of kandidaten) {
+      const lage = lageAmBahnsteig(bahnsteig, aufEbene, bahnsteige, eigen);
       if (!lage) continue;
-      beiM = Math.round(lage.laengsM);
+      beiM = aufDemBahnsteig(lage.laengsM, bahnsteig);
+      amBahnsteigId = bahnsteig.bahnsteigId;
       break;
     }
 
@@ -714,7 +764,7 @@ function elementeFuer(
       typ: kante.typ,
       punkte,
       aufRoute: aufRoute.has(kante.schluessel) || aufRoute.has(`${kante.nach.id}|${kante.von.id}`),
-      ...(beiM !== undefined ? { beiM } : {}),
+      ...(beiM !== undefined ? { beiM, bahnsteigId: amBahnsteigId } : {}),
     };
 
     // Am eigenen Bahnsteig zaehlt JEDE Anlage, auch die am fernen Ende: "wo
@@ -773,6 +823,7 @@ export function baueBahnhofSchema(
     if (kante.deltaLevel !== 0) aufRoute.add(`${kante.von}|${kante.nach}`);
   }
   const besuche = besucheDerRoute(pfad, zuXY);
+  const eigeneKanten = eigeneKantenDerRoute(pfad);
 
   /** Die Bahnsteige einer Ebene, fertig fuer die Antwort. */
   const bahnsteigeVon = (level: number): { liste: SchemaBahnsteig[]; richtungGrad?: number; ohneAchse: number } => {
@@ -793,7 +844,9 @@ export function baueBahnhofSchema(
       // Zugänge nur dort, wo der Reisende wirklich steht. An den übrigen
       // Bahnsteigen ist die Stelle ohne Belang und die Antwort bliebe sonst
       // nicht klein.
-      const zugaenge = rolle && hatAchse ? zugaengeFuer(b, bahnsteige, graph, aufRoute, zuXY) : undefined;
+      const zugaenge = rolle && hatAchse
+          ? zugaengeFuer(b, bahnsteige, eigeneKanten.get(b.bahnsteigId) ?? new Set(), graph, aufRoute, zuXY)
+          : undefined;
       // Wie die Himmelsrichtung nur bei gemessener Achse - im Standardmodell
       // gaebe es kein Ende, an das die Spitze sich stellen koennte.
       const zugspitze =
@@ -834,7 +887,7 @@ export function baueBahnhofSchema(
     const wichtige = new Set(liste.filter((b) => b.rolle !== undefined).map((b) => b.bahnsteigId));
     // Netz und Anlagen gelten je BESUCH: Was beim ersten Mal in Sichtweite
     // lag, muss es beim zweiten nicht sein - der Weg verlaeuft dort anders.
-    const elemente = elementeFuer(graph, besuch.level, besuch.weg, bahnsteige, wichtige, aufRoute, zuXY);
+    const elemente = elementeFuer(graph, besuch.level, besuch.weg, bahnsteige, wichtige, eigeneKanten, aufRoute, zuXY);
 
     // Wie diese Ebene im Bezugsrahmen liegt: 0 = waagerecht wie die
     // Startebene. Auf −90..+90 gefaltet, weil eine Gleisachse keine Richtung

@@ -1,4 +1,4 @@
-import type { KantenTyp, SchemaEbene, SchemaElement, SchemaPunkt, SchemaWechsel } from '../api/typen'
+import type { KantenTyp, SchemaBahnsteig, SchemaEbene, SchemaElement, SchemaPunkt, SchemaWechsel } from '../api/typen'
 import { istSymboltyp, ohneGenutzte, orteAuf, orteImGrundriss, setzeSymbole } from './symbole'
 import type { GesetztesSymbol, Hindernis, Symboltyp } from './symbole'
 import { ABSCHNITTE, standortNamen } from '../api/standorte'
@@ -420,20 +420,42 @@ function legeAufBalken(marke: Wechselmarke, balken: Bildbalken[]): Wechselmarke 
 }
 
 /**
+ * Die Reihenfolge, die das Backend nennt – nur in die Richtung des Bildes
+ * gedreht. `null`, wenn das Schema keine Querlage trägt (ältere Antworten):
+ * Dann bleibt es bei der Sortierung nach der Sehnenmitte.
+ *
+ * Seit dem 04.11.2026: Das Backend misst die Lage dort, wo zwei Bahnsteige
+ * nebeneinanderliegen, an ihren Mittellinien. Die Sehnenmitte liegt im Bogen
+ * daneben – in Saarbrücken zeichnete die Sortierung danach 12 16 14 11 5 8 6
+ * 2 3 1, obwohl das Schema 16 14 12 8 11 6 5 3 2 1 lieferte.
+ */
+function inBackendReihenfolge<T extends { b: SchemaBahnsteig; yM: number }>(liste: T[]): T[] | null {
+  if (liste.length === 0 || liste.some((p) => p.b.querM === undefined)) return null
+  // Wie herum: so, dass die Querlage im Mittel mit dem y des Bildes steigt.
+  const mq = liste.reduce((s, p) => s + p.b.querM!, 0) / liste.length
+  const my = liste.reduce((s, p) => s + p.yM, 0) / liste.length
+  const gleichsinnig = liste.reduce((s, p) => s + (p.b.querM! - mq) * (p.yM - my), 0) >= 0
+  // Die Liste selbst ist die Reihenfolge; `querM` ist auf Meter gerundet und
+  // kann bei Inselhälften gleich sein.
+  const geordnet = [...liste]
+  return gleichsinnig ? geordnet : geordnet.reverse()
+}
+
+/**
  * Welche Bahnsteige in welcher Reihenfolge, mit welchem Abstand quer –
  * ungestaucht. EINE Rechnung für `bildBedarf` und `zeichneGleisebene`.
  */
 function querreihe(ebene: SchemaEbene, opt: Bandoptionen) {
   const drehe = ausrichtung(ebene, opt.lage)
 
-  const platziert = ebene.bahnsteige
+  const mitAchse = ebene.bahnsteige
     .filter((b) => b.von && b.bis)
     .map((b) => {
       const a = drehe(b.von!)
       const e = drehe(b.bis!)
       return { b, a, e, yM: (a.y + e.y) / 2 }
     })
-    .sort((p, q) => p.yM - q.yM)
+  const platziert = inBackendReihenfolge(mitAchse) ?? [...mitAchse].sort((p, q) => p.yM - q.yM)
   // Ohne Achse keine Lage: unten angehängt, in voller Breite, als ungemessen.
   const frei = ebene.bahnsteige.filter((b) => !(b.von && b.bis))
 
@@ -441,8 +463,15 @@ function querreihe(ebene: SchemaEbene, opt: Bandoptionen) {
   const mitStandorten = opt.erster && startBs !== undefined
 
   // --- quer: Balkenlagen ---
+  // Der Abstand aus `querM`, wo es ihn gibt - er ist am Bahnsteig gemessen,
+  // die Sehnenmitte `yM` liegt im Bogen daneben.
+  const abstand = (i: number): number => {
+    const p = platziert[i]
+    const q = platziert[i - 1]
+    return p.b.querM !== undefined && q.b.querM !== undefined ? p.b.querM - q.b.querM : p.yM - q.yM
+  }
   const roh = [
-    ...platziert.map((p, i) => (i === 0 ? 0 : gasseZwischen(p.yM - platziert[i - 1].yM))),
+    ...platziert.map((_, i) => (i === 0 ? 0 : gasseZwischen(abstand(i)))),
     ...frei.map((_, i) => (i === 0 && platziert.length === 0 ? 0 : 34)),
   ]
   const rollen = [...platziert.map((p) => p.b.rolle !== undefined), ...frei.map((b) => b.rolle !== undefined)]
@@ -630,10 +659,18 @@ export function zeichneGleisebene(
     if (element.beiM === undefined || element.punkte.length === 0) continue
     const mitte = drehe(mitteVon(element))
     let bester: (typeof wichtige)[number] | undefined
-    for (const w of wichtige) {
-      const abstand = Math.abs(mitte.y - w.yM)
-      if (abstand > ANLAGE_QUER_MAX_M) continue
-      if (!bester || abstand < Math.abs(mitte.y - bester.yM)) bester = w
+    if (element.bahnsteigId !== undefined) {
+      // Das Backend hat die Anlage ihrem Bahnsteig zugeordnet, an seiner
+      // Mittellinie. Die Sehne von Saarbrücken 12 liegt im Bogen 37 m neben
+      // ihm – nach ihr gemessen bekam Balken 12 kein einziges Symbol.
+      bester = wichtige.find((w) => w.b.bahnsteigId === element.bahnsteigId)
+    } else {
+      // Ältere Antworten ohne Zuordnung: der Balken mit der nächsten Sehne.
+      for (const w of wichtige) {
+        const abstand = Math.abs(mitte.y - w.yM)
+        if (abstand > ANLAGE_QUER_MAX_M) continue
+        if (!bester || abstand < Math.abs(mitte.y - bester.yM)) bester = w
+      }
     }
     if (!bester) continue
     const liste = markenJe.get(bester.b.bahnsteigId) ?? []
