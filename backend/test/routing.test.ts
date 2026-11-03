@@ -309,12 +309,20 @@ describe('Gleisnamen ohne Schreibweise vergleichen', () => {
     expect(istKopfgleis(info as never, '7 G–I', '7')).toBe(true);
   });
 
-  it('istGleicherBahnsteig findet die EVAs trotz anderer Schreibweise', () => {
+  it('istGleicherBahnsteig: DB-Eintrag mit anderer Schreibweise trennt trotzdem (evasVonGleis)', () => {
     const db = [
-      { gleis: '2', evas: ['1'] },
+      { gleis: '2 ', evas: ['1'] },
       { gleis: '3', evas: ['2'] },
     ];
-    expect(istGleicherBahnsteig(treppeVsAufzugGraph(), ' 2 ', '3', db)).toBe(false);
+    expect(istGleicherBahnsteig(treppeVsAufzugGraph(), '2', '3', db)).toBe(false);
+  });
+
+  it('istGleicherBahnsteig: angefragtes Gleis in anderer Schreibweise findet den Bahnsteig (bahnsteigIds)', () => {
+    const db = [
+      { gleis: '2', evas: ['1'] },
+      { gleis: '3', evas: ['1'] },
+    ];
+    expect(istGleicherBahnsteig(treppeVsAufzugGraph(), ' 2', '3', db)).toBe(true);
   });
 });
 
