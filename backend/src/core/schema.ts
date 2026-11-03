@@ -330,7 +330,7 @@ function besucheDerRoute(
 /** Die Ebenenwechsel-Kanten des Graphen, jede genau einmal. */
 function* ebenenwechselKanten(
   graph: StationGraph,
-): Generator<{ typ: KantenTyp; von: GraphKnoten; nach: GraphKnoten; schluessel: string }> {
+): Generator<{ typ: KantenTyp; von: GraphKnoten; nach: GraphKnoten; schluessel: string; anlage: string }> {
   const gesehen = new Set<string>();
   for (const liste of graph.adjazenz.values()) {
     for (const kante of liste) {
@@ -340,7 +340,10 @@ function* ebenenwechselKanten(
       gesehen.add(schluessel);
       const von = graph.knoten.get(kante.von);
       const nach = graph.knoten.get(kante.nach);
-      if (von && nach) yield { typ: kante.typ, von, nach, schluessel };
+      // Die Anlage hinter der Kante: ein Schacht ist eine Clique aus Kanten,
+      // eine Treppe kann aus mehreren bestehen. Gezaehlt wird die Anlage.
+      const anlage = kante.anlageSchluessel ?? kante.anlageId ?? schluessel;
+      if (von && nach) yield { typ: kante.typ, von, nach, schluessel, anlage };
     }
   }
 }
@@ -427,6 +430,7 @@ function zugaengeFuer(
 
   interface Treffer {
     typ: string;
+    anlage: string;
     laengsM: number;
     knoten: GraphKnoten;
     aufRoute: boolean;
@@ -440,6 +444,7 @@ function zugaengeFuer(
       if (!lage) continue;
       treffer.push({
         typ: kante.typ,
+        anlage: kante.anlage,
         laengsM: lage.laengsM,
         knoten: ende,
         aufRoute: aufRoute.has(kante.schluessel) || aufRoute.has(`${kante.nach.id}|${kante.von.id}`),
@@ -455,8 +460,14 @@ function zugaengeFuer(
   let gruppe: Treffer[] = [treffer[0]];
   const schliesse = (): void => {
     const zahl = { aufzug: 0, rolltreppe: 0, treppe: 0 };
+    // Je Anlage einmal: Ein Schacht ueber fuenf Ebenen liefert vier Kanten
+    // am selben Bahnsteig und ist doch ein Aufzug.
+    const gezaehlt = new Set<string>();
     for (const t of gruppe) {
-      if (t.typ === 'aufzug' || t.typ === 'rolltreppe' || t.typ === 'treppe') zahl[t.typ]++;
+      if (t.typ !== 'aufzug' && t.typ !== 'rolltreppe' && t.typ !== 'treppe') continue;
+      if (gezaehlt.has(`${t.typ}|${t.anlage}`)) continue;
+      gezaehlt.add(`${t.typ}|${t.anlage}`);
+      zahl[t.typ]++;
     }
     const mittelLaengs = gruppe.reduce((s, t) => s + t.laengsM, 0) / gruppe.length;
     const punkte = gruppe.map((t) => zuXY(t.knoten));
@@ -553,12 +564,17 @@ function zaehleAnlagen(
   bahnsteige: Bahnsteigrohbau[],
 ): Map<string, { aufzug: number; rolltreppe: number; treppe: number }> {
   const zahlen = new Map<string, { aufzug: number; rolltreppe: number; treppe: number }>();
+  // Je Bahnsteig jede Anlage nur einmal, egal wie viele Kanten dort enden.
+  const gezaehlt = new Set<string>();
   for (const kante of ebenenwechselKanten(graph)) {
     if (kante.typ !== 'aufzug' && kante.typ !== 'rolltreppe' && kante.typ !== 'treppe') continue;
     // Eine Anlage verbindet zwei Ebenen und gehört damit an beide Enden.
     for (const ende of [kante.von, kante.nach]) {
       const bahnsteig = bahnsteigBei(ende, bahnsteige);
       if (!bahnsteig) continue;
+      const marke = `${bahnsteig.bahnsteigId}|${kante.typ}|${kante.anlage}`;
+      if (gezaehlt.has(marke)) continue;
+      gezaehlt.add(marke);
       let eintrag = zahlen.get(bahnsteig.bahnsteigId);
       if (!eintrag) {
         eintrag = { aufzug: 0, rolltreppe: 0, treppe: 0 };

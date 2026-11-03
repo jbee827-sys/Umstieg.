@@ -9,10 +9,6 @@ import { massgeblicherBahnsteig, wechselAnweisung, wegLaengeM } from './bandmode
  * lesen wie das Telefon.
  */
 
-function mehrzahl(n: number, eins: string, viele: string): string {
-  return `${n} ${n === 1 ? eins : viele}`
-}
-
 /** Die Fußzeile eines aktiven Bandes — die Auskunft, die dort zählt. */
 export function fusstext(band: Band): string | null {
   const meter = wegLaengeM(band.ebene.weg)
@@ -28,14 +24,10 @@ export function fusstext(band: Band): string | null {
   const genutzt = (bahnsteig?.zugaenge ?? []).find((z) => z.aufRoute)
   if (band.wechselNachher) {
     if (!genutzt) return `${wechselAnweisung(band.wechselNachher)} nach ${meter} m`
-    const anlagen = [
-      genutzt.rolltreppe > 0 ? mehrzahl(genutzt.rolltreppe, 'Rolltreppe', 'Rolltreppen') : null,
-      genutzt.treppe > 0 ? mehrzahl(genutzt.treppe, 'Treppe', 'Treppen') : null,
-      genutzt.aufzug > 0 ? mehrzahl(genutzt.aufzug, 'Aufzug', 'Aufzüge') : null,
-    ]
-      .filter(Boolean)
-      .join(', ')
-    return `${wechselAnweisung(band.wechselNachher)} bei ${genutzt.beiM} m${anlagen ? ` · ${anlagen}` : ''}`
+    // Nur die Anlage, die der Weg nimmt. Wie viele Treppen und Aufzuege
+    // sonst noch am Bahnsteig liegen, zeichnet das Schema; im Satz waere es
+    // Laerm (Julian, 03.11.2026).
+    return `${wechselAnweisung(band.wechselNachher)} bei ${genutzt.beiM} m`
   }
   if (band.wechselVorher) {
     return genutzt

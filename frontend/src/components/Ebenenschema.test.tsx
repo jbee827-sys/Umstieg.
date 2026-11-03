@@ -33,10 +33,10 @@ describe('Ebenenschema mit echter Geometrie', () => {
     )
   })
 
-  it('nennt am Ankunftsbahnsteig den Abgang und seine Anlagen', () => {
+  it('nennt am Ankunftsbahnsteig nur den genutzten Abgang', () => {
     const { container } = zeige(MITTE, 0)
     expect(container.querySelector('.schema-bandfuss')?.textContent).toBe(
-      'Treppe hinunter bei 32 m · 2 Treppen',
+      'Treppe hinunter bei 32 m',
     )
   })
 

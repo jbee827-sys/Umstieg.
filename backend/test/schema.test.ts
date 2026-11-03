@@ -191,6 +191,42 @@ describe('baueBahnhofSchema – Berlin Hbf, Gleis 14 nach 6', () => {
   });
 });
 
+describe('baueBahnhofSchema – eine Anlage zählt einmal', () => {
+  // Berlin Hbf, 14 -> 6. Seit Task 3 ist ein Aufzug ein Schacht: eine Clique
+  // aus einer Kante je Ebenenpaar, alle mit demselben `anlageSchluessel`.
+  // Ein Schacht ueber fuenf Ebenen stand vorher vierfach an jedem Bahnsteig
+  // (13/14: 24 Aufzuege, 5/6: 12), obwohl der ganze Bahnhof nur neun Schaechte hat.
+  const graph = baueGraph(ladeFixture('overpass/berlin-hbf'));
+  const schluessel = new Set<string>();
+  for (const kanten of graph.adjazenz.values()) {
+    for (const k of kanten) if (k.typ === 'aufzug' && k.anlageSchluessel) schluessel.add(k.anlageSchluessel);
+  }
+  const schema = baueBahnhofSchema(graph, berlinUeberRolltreppen(graph));
+  const bahnsteige = schema.ebenen.flatMap((e) => e.bahnsteige);
+
+  it('zählt einen Schacht über fünf Ebenen am Bahnsteig als einen Aufzug', () => {
+    expect(schluessel.size).toBe(9);
+    const oben = schema.ebenen.find((e) => e.level === 2)!.bahnsteige.find((b) => b.gleise.includes('14'))!;
+    expect(oben.anlagen!.aufzug).toBe(6);
+    const unten = schema.ebenen.find((e) => e.level === -2)!.bahnsteige.find((b) => b.gleise.includes('6'))!;
+    expect(unten.anlagen!.aufzug).toBe(3);
+  });
+
+  it('nennt nie mehr Aufzüge an einem Bahnsteig, als der Bahnhof Schächte hat', () => {
+    for (const b of bahnsteige) {
+      expect(b.anlagen?.aufzug ?? 0).toBeLessThanOrEqual(schluessel.size);
+    }
+  });
+
+  it('zählt auch die Aufzüge einer Zugangsstelle je Schacht', () => {
+    // Vorher [8,0,0] und [4,0,0] fuer dieselben zwei bzw. einen Schacht.
+    const oben = schema.ebenen.find((e) => e.level === 2)!.bahnsteige.find((b) => b.gleise.includes('14'))!;
+    expect(Math.max(...oben.zugaenge!.map((z) => z.aufzug))).toBe(2);
+    const unten = schema.ebenen.find((e) => e.level === -2)!.bahnsteige.find((b) => b.gleise.includes('6'))!;
+    expect(Math.max(...unten.zugaenge!.map((z) => z.aufzug))).toBe(2);
+  });
+});
+
 describe('baueBahnhofSchema – Standardmodell ohne Bahnsteigachsen', () => {
   const info: StationsInfo = {
     eva: '8000001',
