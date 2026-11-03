@@ -54,6 +54,18 @@ export interface GraphKante {
    * Entfernung, die im verankerten Modell nicht mehr traegt.
    */
   anlageId?: string;
+  /**
+   * Aufzug: Hoehenunterschied des GANZEN Schachts (max - min der Schachtebenen),
+   * nicht der Kante. Bestimmt die Wartezeit der Kabine (`zuschlagSekunden`).
+   * Fehlt er, gilt |deltaLevel|.
+   */
+  schachtSpanne?: number;
+  /**
+   * Aufzug: Kennung der Anlage (OSM `n<id>`/`w<id>`, im Synthesemodell die
+   * `anlageId`). Alle Kanten eines Schachts tragen denselben Schluessel, damit
+   * eine Stoerung den ganzen Schacht sperrt. Wird erst vom Graphbau gesetzt.
+   */
+  anlageSchluessel?: string;
 }
 
 export interface StationGraph {

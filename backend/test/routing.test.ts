@@ -96,12 +96,12 @@ describe('GEWICHTE', () => {
     // Frueher standen hier `basisMproSek`, `rolltreppeBonusSek` und
     // `aufzugMalusSek` - ein zweites Kostenmodell neben dem der Gehzeit.
     // Genau daran ging die Behauptung "schnellste" kaputt.
-    expect(kantenZeitSekunden({ laengeM: 100, typ: 'eben' }, 'normal')).toBe(100);
-    expect(kantenZeitSekunden({ laengeM: 0, typ: 'rolltreppe' }, 'normal')).toBe(10);
-    expect(kantenZeitSekunden({ laengeM: 0, typ: 'treppe' }, 'normal')).toBe(20);
-    expect(kantenZeitSekunden({ laengeM: 0, typ: 'aufzug' }, 'normal')).toBe(60);
+    expect(kantenZeitSekunden({ laengeM: 100, typ: 'eben', deltaLevel: 0 }, 'normal')).toBe(100);
+    expect(kantenZeitSekunden({ laengeM: 0, typ: 'rolltreppe', deltaLevel: 0 }, 'normal')).toBe(10);
+    expect(kantenZeitSekunden({ laengeM: 0, typ: 'treppe', deltaLevel: 0 }, 'normal')).toBe(20);
+    expect(kantenZeitSekunden({ laengeM: 0, typ: 'aufzug', deltaLevel: 1 }, 'normal')).toBe(50); // Zeitmodell Spec 4.1: eine Ebene = 25 s Warten + 25 s Fahrt (vorher pauschal 60)
     // Zuschlaege sind fest, Strecke skaliert mit dem Profil.
-    expect(kantenZeitSekunden({ laengeM: 60, typ: 'treppe' }, 'langsam')).toBe(120);
+    expect(kantenZeitSekunden({ laengeM: 60, typ: 'treppe', deltaLevel: 0 }, 'langsam')).toBe(120);
   });
 });
 

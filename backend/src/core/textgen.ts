@@ -1,4 +1,4 @@
-import { verteileGehzeit, ZUSCHLAG } from './gehzeit.js';
+import { verteileGehzeit, zuschlagSekunden } from './gehzeit.js';
 import type { Gehprofil, GraphKnoten, KantenTyp, RoutenPfad, Schritt } from './typen.js';
 
 /** Peilung a→b in Grad (0 = Nord, 90 = Ost), äquirektangulare Näherung – Bahnhofsmaßstab. */
@@ -114,7 +114,7 @@ function baueSegmente(pfad: RoutenPfad, glaettungM: number): Segment[] {
     let zuschlagSek = 0;
     for (let k = von; k < bis; k++) {
       laengeM += pfad.kanten[k].laengeM;
-      zuschlagSek += ZUSCHLAG[pfad.kanten[k].typ] ?? 0;
+      zuschlagSek += zuschlagSekunden(pfad.kanten[k]);
     }
     const a = pfad.knoten[von];
     const b = pfad.knoten[bis];

@@ -1,4 +1,4 @@
-import type { Gehprofil, KantenTyp, RoutenPfad } from './typen.js';
+import type { GraphKante, Gehprofil, KantenTyp, RoutenPfad } from './typen.js';
 
 // Gehgeschwindigkeiten in m/s je Profil (Konzept 6.4).
 export const GESCHWINDIGKEIT: Record<Gehprofil, number> = {
@@ -7,12 +7,42 @@ export const GESCHWINDIGKEIT: Record<Gehprofil, number> = {
   langsam: 0.6,
 };
 
-// Pauschale Zuschläge in Sekunden je Ebenenwechsel-Kante.
+// Pauschale Zuschlaege in Sekunden je Ebenenwechsel-Kante. Der Aufzug steht
+// hier nicht: seine Zeit haengt von Schacht und Fahrt ab (`zuschlagSekunden`).
 export const ZUSCHLAG: Partial<Record<KantenTyp, number>> = {
   treppe: 20,
   rolltreppe: 10,
-  aufzug: 60,
 };
+
+// Aufzug (Spec 4.1): je Ebene 10 s Fahrt, je Tuerphase 15 s (Oeffnen/Schliessen).
+export const AUFZUG_SEK_JE_EBENE = 10;
+export const AUFZUG_TUEREN_SEK = 15;
+
+/**
+ * Zuschlag einer Kante in Sekunden, ohne die Gehstrecke.
+ *
+ * Aufzug im schlechtesten Fall: die Kabine steht am anderen Ende des Schachts.
+ *   Warten = Spanne x 10 + 15   (Kabine kommt vom fernen Ende, Tueren auf)
+ *   Fahrt  = |deltaLevel| x 10 + 15
+ * Beispiel: von -2 nach +1 in einem Schacht -2..+2 (Spanne 4): Warten 55 +
+ * Fahrt 45 = 100 s. Die alte Pauschale von 60 s je Kante traf das nur zufaellig.
+ * `schachtSpanne` ist max - min der Schachtebenen; fehlt sie, gilt
+ * |deltaLevel| (Kabine steht schlimmstenfalls auf der Gegenseite der Fahrt).
+ * Eine Kante ueber eine Ebene kostet so 50 s.
+ */
+export function zuschlagSekunden(
+  kante: Pick<GraphKante, 'typ' | 'deltaLevel' | 'schachtSpanne'>,
+): number {
+  if (kante.typ === 'aufzug') {
+    const fahrt = Math.abs(kante.deltaLevel);
+    const spanne = kante.schachtSpanne ?? fahrt;
+    return (
+      spanne * AUFZUG_SEK_JE_EBENE + AUFZUG_TUEREN_SEK +
+      fahrt * AUFZUG_SEK_JE_EBENE + AUFZUG_TUEREN_SEK
+    );
+  }
+  return ZUSCHLAG[kante.typ] ?? 0;
+}
 
 /**
  * Zeit fuer EINE Kante - dieselbe Rechnung, die auch die ausgewiesene
@@ -27,15 +57,15 @@ export const ZUSCHLAG: Partial<Record<KantenTyp, number>> = {
  * minimieren, die er nachher hinschreibt.
  */
 export function kantenZeitSekunden(
-  kante: { laengeM: number; typ: KantenTyp },
+  kante: Pick<GraphKante, 'laengeM' | 'typ' | 'deltaLevel' | 'schachtSpanne'>,
   profil: Gehprofil,
 ): number {
-  return kante.laengeM / GESCHWINDIGKEIT[profil] + (ZUSCHLAG[kante.typ] ?? 0);
+  return kante.laengeM / GESCHWINDIGKEIT[profil] + zuschlagSekunden(kante);
 }
 
 export function gehzeitSekunden(pfad: RoutenPfad, profil: Gehprofil): number {
   const laengeM = pfad.kanten.reduce((s, k) => s + k.laengeM, 0);
-  const zuschlaege = pfad.kanten.reduce((s, k) => s + (ZUSCHLAG[k.typ] ?? 0), 0);
+  const zuschlaege = pfad.kanten.reduce((s, k) => s + zuschlagSekunden(k), 0);
   return Math.round(laengeM / GESCHWINDIGKEIT[profil]) + zuschlaege;
 }
 
@@ -52,7 +82,10 @@ export function verteileGehzeit(
    * zwei Treppen umfassen (`textgen.ts`, 21.10.2026) - der Zuschlag seines
    * Typs allein unterschlaege dann eine.
    */
-  segmente: { laengeM: number; typ: KantenTyp; zuschlagSek?: number }[],
+  segmente: (Pick<GraphKante, 'typ' | 'deltaLevel' | 'schachtSpanne'> & {
+    laengeM: number;
+    zuschlagSek?: number;
+  })[],
   profil: Gehprofil,
 ): number[] {
   const v = GESCHWINDIGKEIT[profil];
@@ -63,7 +96,7 @@ export function verteileGehzeit(
     const gerundet = Math.round(laengeBisher / v);
     const anteil = gerundet - gerundetBisher;
     gerundetBisher = gerundet;
-    return anteil + (segment.zuschlagSek ?? ZUSCHLAG[segment.typ] ?? 0);
+    return anteil + (segment.zuschlagSek ?? zuschlagSekunden(segment));
   });
 }
 

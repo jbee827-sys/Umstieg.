@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ampel, berechnePuffer, gehzeitSekunden, verteileGehzeit } from '../src/core/gehzeit.js';
+import { ampel, berechnePuffer, gehzeitSekunden, verteileGehzeit, zuschlagSekunden } from '../src/core/gehzeit.js';
 import type { GraphKante, KantenTyp, RoutenPfad } from '../src/core/typen.js';
 
 const kante = (typ: KantenTyp, laengeM: number, deltaLevel = 0): GraphKante => ({
@@ -25,14 +25,35 @@ describe('gehzeitSekunden', () => {
     expect(gehzeitSekunden(pfad(kante('eben', 60)), 'langsam')).toBe(100);
   });
 
-  it('Zuschläge: Rolltreppe +10, Aufzug +60, Rampe +0', () => {
+  it('Zuschläge: Rolltreppe +10, Aufzug +50 (eine Ebene), Rampe +0', () => {
     expect(gehzeitSekunden(pfad(kante('eben', 100), kante('rolltreppe', 0, -1)), 'normal')).toBe(110);
-    expect(gehzeitSekunden(pfad(kante('eben', 100), kante('aufzug', 0, 1)), 'normal')).toBe(160);
+    expect(gehzeitSekunden(pfad(kante('eben', 100), kante('aufzug', 0, 1)), 'normal')).toBe(150); // Aufzug eine Ebene: 10+15 Warten + 10+15 Fahrt = 50 s (vorher pauschal 60)
     expect(gehzeitSekunden(pfad(kante('eben', 50), kante('rampe', 50, 1)), 'normal')).toBe(100);
   });
 
   it('Treppenlänge zählt zusätzlich zum Zuschlag', () => {
     expect(gehzeitSekunden(pfad(kante('eben', 50), kante('treppe', 15, -1)), 'normal')).toBe(85);
+  });
+});
+
+describe('zuschlagSekunden', () => {
+  it('Aufzug zwei Ebenen: 50 s', () => {
+    expect(zuschlagSekunden({ typ: 'aufzug', deltaLevel: 1 })).toBe(50);
+  });
+  it('Aufzug -2 → +1 im Schacht -2..2: Warten 55 + Fahrt 45 = 100 s', () => {
+    expect(zuschlagSekunden({ typ: 'aufzug', deltaLevel: 3, schachtSpanne: 4 })).toBe(100);
+  });
+  it('Fahrt abwärts zählt gleich (Betrag von deltaLevel)', () => {
+    expect(zuschlagSekunden({ typ: 'aufzug', deltaLevel: -3, schachtSpanne: 4 })).toBe(100);
+  });
+  it('halbe Ebene zählt halb', () => {
+    expect(zuschlagSekunden({ typ: 'aufzug', deltaLevel: 0.5, schachtSpanne: 0.5 })).toBe(40);
+  });
+  it('Treppe 20, Rolltreppe 10, Rampe und eben 0 unverändert', () => {
+    expect(zuschlagSekunden({ typ: 'treppe', deltaLevel: 1 })).toBe(20);
+    expect(zuschlagSekunden({ typ: 'rolltreppe', deltaLevel: 1 })).toBe(10);
+    expect(zuschlagSekunden({ typ: 'rampe', deltaLevel: 1 })).toBe(0);
+    expect(zuschlagSekunden({ typ: 'eben', deltaLevel: 0 })).toBe(0);
   });
 });
 
@@ -76,21 +97,21 @@ describe('berechnePuffer', () => {
 
 describe('verteileGehzeit', () => {
   it('verteilt auf ein Segment die volle Zeit', () => {
-    const werte = verteileGehzeit([{ laengeM: 100, typ: 'eben' }], 'normal');
+    const werte = verteileGehzeit([{ laengeM: 100, typ: 'eben', deltaLevel: 0 }], 'normal');
     expect(werte).toEqual([100]);
   });
 
   it('rechnet den Zuschlag je Segmenttyp dazu', () => {
     // 10 m bei 1,0 m/s = 10 s, Treppenzuschlag 20 s
-    const werte = verteileGehzeit([{ laengeM: 10, typ: 'treppe' }], 'normal');
+    const werte = verteileGehzeit([{ laengeM: 10, typ: 'treppe', deltaLevel: 0 }], 'normal');
     expect(werte).toEqual([30]);
   });
 
   it('haelt die Summe exakt auf gehzeitSekunden - auch bei krummen Laengen', () => {
     const segmente = [
-      { laengeM: 3.7, typ: 'eben' as const },
-      { laengeM: 3.7, typ: 'eben' as const },
-      { laengeM: 3.7, typ: 'eben' as const },
+      { laengeM: 3.7, typ: 'eben' as const, deltaLevel: 0 },
+      { laengeM: 3.7, typ: 'eben' as const, deltaLevel: 0 },
+      { laengeM: 3.7, typ: 'eben' as const, deltaLevel: 0 },
     ];
     const werte = verteileGehzeit(segmente, 'normal');
     const summe = werte.reduce((a, b) => a + b, 0);
@@ -100,15 +121,15 @@ describe('verteileGehzeit', () => {
   });
 
   it('liefert nie negative Werte', () => {
-    const segmente = Array.from({ length: 20 }, () => ({ laengeM: 0.4, typ: 'eben' as const }));
+    const segmente = Array.from({ length: 20 }, () => ({ laengeM: 0.4, typ: 'eben' as const, deltaLevel: 0 }));
     for (const w of verteileGehzeit(segmente, 'zuegig')) {
       expect(w).toBeGreaterThanOrEqual(0);
     }
   });
 
   it('beruecksichtigt das Gehprofil', () => {
-    const schnell = verteileGehzeit([{ laengeM: 140, typ: 'eben' }], 'zuegig');
-    const langsam = verteileGehzeit([{ laengeM: 140, typ: 'eben' }], 'langsam');
+    const schnell = verteileGehzeit([{ laengeM: 140, typ: 'eben', deltaLevel: 0 }], 'zuegig');
+    const langsam = verteileGehzeit([{ laengeM: 140, typ: 'eben', deltaLevel: 0 }], 'langsam');
     expect(schnell[0]).toBeLessThan(langsam[0]);
   });
 
