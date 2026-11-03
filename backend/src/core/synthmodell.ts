@@ -367,7 +367,23 @@ export function wendeFastaAn(graph: StationGraph, anlagen: FastaAnlage[]): void 
         beste = kante;
       }
     }
-    if (beste && besterAbstand <= FASTA_MAX_ABSTAND_M) beste.status = anlage.status;
+    if (!beste || besterAbstand > FASTA_MAX_ABSTAND_M) continue;
+    // Der Treffer gilt der Anlage, nicht der einen Kante: Ein Aufzug ueber
+    // mehrere Ebenen ist ein Schacht aus mehreren Kanten (eine je Ebenenpaar)
+    // mit gleichem `anlageSchluessel`. Bekaeme nur die naechste den Status,
+    // faehre die barrierefreie Route ueber eine andere Kante desselben,
+    // gestoerten Aufzugs. Weg 1 bleibt unberuehrt:
+    // Dort tragen alle Kanten einer Anlage dieselbe `anlageId` und treffen einzeln.
+    const schluessel = beste.anlageSchluessel;
+    if (schluessel === undefined) {
+      beste.status = anlage.status;
+      continue;
+    }
+    for (const kante of offen) {
+      if (kante.typ === gesucht && kante.anlageSchluessel === schluessel) {
+        kante.status = anlage.status;
+      }
+    }
   }
 }
 

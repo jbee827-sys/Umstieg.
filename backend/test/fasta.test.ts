@@ -5,7 +5,8 @@ import { holeAnlagen } from '../src/clients/fasta.js';
 import { FehlendeZugangsdatenError } from '../src/clients/stations.js';
 import { wendeFastaAn } from '../src/core/synthmodell.js';
 import { berechneRoute } from '../src/core/routing.js';
-import type { FastaAnlage, GraphKante, GraphKnoten, StationGraph } from '../src/core/typen.js';
+import { baueGraph } from '../src/core/graph.js';
+import type { FastaAnlage, GraphKante, GraphKnoten, OverpassAntwort, StationGraph } from '../src/core/typen.js';
 
 function ladeFixture(name: string): string {
   return readFileSync(fileURLToPath(new URL(`./fixtures/db/${name}`, import.meta.url)), 'utf8');
@@ -160,5 +161,45 @@ describe('wendeFastaAn: Zuordnung ueber Identitaet', () => {
       berechneRoute(graph, 'gleis1:mitte', 'quer:bs0@-1', 'barrierefrei'),
       '145 m entfernt - ausserhalb der Schranke, Status darf nicht greifen',
     ).not.toBeNull();
+  });
+});
+
+// Review-Fokus 3: Ein Aufzug ueber mehrere Ebenen ist ein Schacht aus mehreren
+// Kanten. Meldet FaSta ihn als gestoert, darf keine davon auf der stufenfreien
+// Route bleiben - auch nicht die, die gar nicht die naechste zur Anlage ist.
+describe('wendeFastaAn: gestoerter Schacht', () => {
+  const punkt = (id: number, lat: number, lon: number, tags?: Record<string, string>): OverpassAntwort['elements'][number] =>
+    ({ type: 'node', id, lat, lon, ...(tags ? { tags } : {}) });
+  const weg = (id: number, nodes: number[], tags: Record<string, string>): OverpassAntwort['elements'][number] => ({ type: 'way', id, nodes, tags });
+  const baue = (): StationGraph => baueGraph({ elements: [
+    punkt(1, 52.0, 12.0), punkt(2, 52.0, 12.001),
+    punkt(3, 52.001, 12.0), punkt(4, 52.001, 12.001),
+    punkt(5, 52.0005, 12.002),
+    punkt(42, 52.0005, 12.0, { highway: 'elevator', level: '-2;-1;0;1;2' }),
+    weg(10, [1, 2], { railway: 'platform', ref: '1', level: '-2' }),
+    weg(11, [3, 4], { railway: 'platform', ref: '2', level: '1' }),
+    weg(20, [1, 42], { highway: 'footway', level: '-2' }),
+    weg(21, [42, 5], { highway: 'footway', level: '0' }),
+    weg(22, [42, 3], { highway: 'footway', level: '1' }),
+  ] });
+  const aufzugKanten = (graph: StationGraph): GraphKante[] =>
+    [...new Set([...graph.adjazenz.values()].flat())].filter((k) => k.typ === 'aufzug');
+  // ~3 m noerdlich des Aufzugknotens
+  const naheAnlage = (status: 'ACTIVE' | 'INACTIVE'): FastaAnlage =>
+    ({ id: 'F1', typ: 'AUFZUG', lat: 52.00053, lon: 12.0, status });
+
+  it('INACTIVE sperrt alle Kanten des Schachts, nicht nur die naechste', () => {
+    const graph = baue();
+    expect(aufzugKanten(graph)).toHaveLength(3);
+    wendeFastaAn(graph, [naheAnlage('INACTIVE')]);
+    expect(aufzugKanten(graph).every((k) => k.status === 'INACTIVE')).toBe(true);
+    expect(berechneRoute(graph, 'gleis1:mitte', 'gleis2:mitte', 'barrierefrei')).toBeNull();
+    expect(berechneRoute(graph, 'gleis1:mitte', 'gleis2:mitte', 'schnellste')).not.toBeNull();
+  });
+
+  it('ACTIVE setzt ebenfalls alle Kanten des Schachts', () => {
+    const graph = baue();
+    wendeFastaAn(graph, [naheAnlage('ACTIVE')]);
+    expect(aufzugKanten(graph).every((k) => k.status === 'ACTIVE')).toBe(true);
   });
 });

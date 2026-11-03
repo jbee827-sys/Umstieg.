@@ -650,7 +650,17 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
     if (knotenListe.length < 2) return;
     const tagEbenen = parseLevels(tag);
     const ebenen = tagEbenen.length >= 2 ? tagEbenen : knotenListe.map((k) => k.level);
-    const schachtSpanne = Math.max(...ebenen) - Math.min(...ebenen);
+    // Die Kabine faehrt mindestens so weit, wie der Tag sagt, und mindestens
+    // bis zum entferntesten Halt. Vom 03.11.2026 an gilt der groessere Wert:
+    // Sagt der Tag `0;1`, steht aber am Fuss ein Halt auf -1 (Aufzug-Way, dessen
+    // Gang davor `level=-1` traegt), ist die Fahrt -1 -> 1 zwei Ebenen lang. Mit
+    // der Tag-Spanne 1 waere sie billiger als ihre Strecke - Warten und Fahrt
+    // rechneten eine Ebene zu wenig.
+    const haltEbenen = knotenListe.map((k) => k.level);
+    const schachtSpanne = Math.max(
+      Math.max(...ebenen) - Math.min(...ebenen),
+      Math.max(...haltEbenen) - Math.min(...haltEbenen),
+    );
     for (let i = 0; i < knotenListe.length; i++) {
       for (let j = i + 1; j < knotenListe.length; j++) {
         const [a, b] = [knotenListe[i], knotenListe[j]];

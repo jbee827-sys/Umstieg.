@@ -1048,7 +1048,29 @@ describe('Aufzug als Schacht', () => {
     const aufzug = stufenfrei.kanten.filter((k) => k.typ === 'aufzug');
     expect(aufzug).toHaveLength(1);
     expect(aufzug[0].anlageSchluessel).toBe('w30');
-    expect(aufzug[0].schachtSpanne).toBe(1);
+    // Tag 0;1 (Spanne 1), aber der Halt am Fuss liegt auf -1: Die Fahrt -1 -> 1
+    // ist zwei Ebenen lang, die Spanne ist das Maximum aus Tag und Halten.
+    expect(Math.abs(aufzug[0].deltaLevel)).toBe(2);
+    expect(aufzug[0].schachtSpanne).toBe(2);
+  });
+
+  it('Aufzug mit wheelchair=no ueber drei Ebenen: keine Kante barrierefrei, keine stufenfreie Route', () => {
+    const gesperrt = baueGraph({ elements: [
+      punkt(1, 52.0, 12.0), punkt(2, 52.0, 12.001),
+      punkt(3, 52.001, 12.0), punkt(4, 52.001, 12.001),
+      punkt(5, 52.0005, 12.002),
+      punkt(42, 52.0005, 12.0, { highway: 'elevator', level: '-2;0;1', wheelchair: 'no' }),
+      weg(10, [1, 2], { railway: 'platform', ref: '1', level: '-2' }),
+      weg(11, [3, 4], { railway: 'platform', ref: '2', level: '1' }),
+      weg(20, [1, 42], { highway: 'footway', level: '-2' }),
+      weg(21, [42, 5], { highway: 'footway', level: '0' }),
+      weg(22, [42, 3], { highway: 'footway', level: '1' }),
+    ] });
+    const k = aufzugKanten(gesperrt);
+    expect(k).toHaveLength(3);
+    expect(k.some((x) => x.barrierefrei)).toBe(false);
+    expect(berechneRoute(gesperrt, 'gleis1:mitte', 'gleis2:mitte', 'barrierefrei')).toBeNull();
+    expect(berechneRoute(gesperrt, 'gleis1:mitte', 'gleis2:mitte', 'schnellste')).not.toBeNull();
   });
 
   it('Treppe und Rolltreppe tragen ihren Weg als Anlagenschluessel', () => {
