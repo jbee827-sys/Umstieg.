@@ -207,6 +207,8 @@ describe('syntheseGraph: Verankerung aus FaSta (§5)', () => {
     const rolltreppe = kanten.find((k) => k.typ === 'rolltreppe');
     expect(aufzug, 'ein Aufzug muss eine Kante erzeugen').toBeDefined();
     expect(aufzug!.anlageId).toBe('a1');
+    // Der Schacht ist die Anlage: Ihre Kennung ist zugleich der Anlagenschluessel.
+    expect(aufzug!.anlageSchluessel).toBe('a1');
     // Die Rolltreppe steht ~27 m oestlich des Schwerpunkts, der Aufzug ~14 m
     // westlich davon: Der gerechnete Weg unterscheidet die beiden.
     expect(rolltreppe!.laengeM).toBeGreaterThan(aufzug!.laengeM);
@@ -237,6 +239,7 @@ describe('syntheseGraph: Verankerung aus FaSta (§5)', () => {
     ];
     const kanten = alleKanten(syntheseGraph(info, namenlos));
     expect(kanten.filter((k) => k.typ === 'aufzug').length).toBeGreaterThan(0);
+    expect(kanten.filter((k) => k.typ === 'aufzug').every((k) => k.anlageSchluessel === k.anlageId)).toBe(true);
   });
 
   it('ohne Anlagen bleibt der Aufbau wie bisher - nur der Abstand ist 20 m', () => {

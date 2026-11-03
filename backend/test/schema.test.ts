@@ -5,11 +5,27 @@ import { baueGraph } from '../src/core/graph.js';
 import { berechneRoute } from '../src/core/routing.js';
 import { baueBahnhofSchema, vereinfacheLinie } from '../src/core/schema.js';
 import { syntheseGraph } from '../src/core/synthmodell.js';
-import type { OverpassAntwort, StationsInfo } from '../src/core/typen.js';
+import type { OverpassAntwort, RoutenPfad, StationGraph, StationsInfo } from '../src/core/typen.js';
 
 function ladeFixture(name: string): OverpassAntwort {
   const pfad = fileURLToPath(new URL(`./fixtures/${name}.json`, import.meta.url));
   return JSON.parse(readFileSync(pfad, 'utf8')) as OverpassAntwort;
+}
+
+/**
+ * Berlin Hbf 14 -> 6 ueber die vier Rolltreppen, durch alle fuenf Ebenen.
+ *
+ * Seit dem 03.11.2026 ist ein Aufzug ein Schacht, und die schnellste Route
+ * faehrt in einem Zug von 2 nach -2 (237 s gegen 280 s ueber die Rolltreppen).
+ * Diese Tests pruefen aber das Schema einer Route durch alle Ebenen. Gesucht
+ * wird deshalb ohne Aufzugkanten; das Schema bekommt den ganzen Graphen.
+ */
+function berlinUeberRolltreppen(graph: StationGraph): RoutenPfad {
+  const ohneAufzug: StationGraph = {
+    ...graph,
+    adjazenz: new Map([...graph.adjazenz].map(([id, kanten]) => [id, kanten.filter((k) => k.typ !== 'aufzug')])),
+  };
+  return berechneRoute(ohneAufzug, 'gleis14:mitte', 'gleis6:mitte', 'schnellste', 'normal')!;
 }
 
 describe('baueBahnhofSchema – Lage der Bahnsteige', () => {
@@ -124,7 +140,7 @@ describe('baueBahnhofSchema – Bänder und Route', () => {
 
 describe('baueBahnhofSchema – Berlin Hbf, Gleis 14 nach 6', () => {
   const graph = baueGraph(ladeFixture('overpass/berlin-hbf'));
-  const pfad = berechneRoute(graph, 'gleis14:mitte', 'gleis6:mitte', 'schnellste', 'normal')!;
+  const pfad = berlinUeberRolltreppen(graph);
   const schema = baueBahnhofSchema(graph, pfad);
 
   it('nennt die echte Bahnsteiglänge', () => {
@@ -199,7 +215,7 @@ describe('baueBahnhofSchema – Standardmodell ohne Bahnsteigachsen', () => {
 
 describe('baueBahnhofSchema – echte Lage auf der Ebene', () => {
   const graph = baueGraph(ladeFixture('overpass/berlin-hbf'));
-  const pfad = berechneRoute(graph, 'gleis14:mitte', 'gleis6:mitte', 'schnellste', 'normal')!;
+  const pfad = berlinUeberRolltreppen(graph);
   const schema = baueBahnhofSchema(graph, pfad);
   const oben = schema.ebenen.find((e) => e.level === 2)!;
   const unten = schema.ebenen.find((e) => e.level === -2)!;
@@ -305,7 +321,7 @@ describe('baueBahnhofSchema – ohne Geometrie bleibt die Lage leer', () => {
 
 describe('baueBahnhofSchema – Geometrie der Ebene', () => {
   const graph = baueGraph(ladeFixture('overpass/berlin-hbf'));
-  const pfad = berechneRoute(graph, 'gleis14:mitte', 'gleis6:mitte', 'schnellste', 'normal')!;
+  const pfad = berlinUeberRolltreppen(graph);
   const schema = baueBahnhofSchema(graph, pfad);
   const uebergang = schema.ebenen.find((e) => e.level === 1)!;
   const gleisebene = schema.ebenen.find((e) => e.level === -2)!;

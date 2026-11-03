@@ -380,14 +380,19 @@ function inselnVon(graph: StationGraph): {
 }
 
 /**
- * Das Ende einer Treppe, Rolltreppe oder eines Aufzugwegs ist ein Ort, auch wenn
+ * Das Ende einer Treppe oder Rolltreppe ist ein Ort, auch wenn
  * sich die Ebenen dort widersprechen.
  *
  * In Duesseldorf und Frankfurt-Hoechst sagt die Treppe `level=0;1`, die Passage an
  * ihrem Fuss `level=-1`, und der geteilte OSM-Punkt wird zu zwei Knoten ohne Kante.
  * Anders als mitten im Weg ist das hier kein Hinweis auf zwei Stockwerke: Wer die
  * Treppe hinabsteigt, steht in dieser Passage. Verbunden wird nur, was noch getrennt
- * ist, und nicht stufenfrei, solange kein Aufzug im Spiel ist.
+ * ist, und nie stufenfrei.
+ *
+ * Aufzug-Wege nicht mehr (03.11.2026): Bis dahin legte die Naht an ihren Enden eine
+ * stufenfreie Rampe der Laenge 0 - eine Aufzugfahrt, die nichts kostete und keinen
+ * Schritt hatte. Seitdem ist jede Instanz ihrer Enden ein Halt des Schachts
+ * (Pass C in `baueGraphOhneNaht`), und die Fahrt dorthin ist eine Aufzugkante.
  */
 function zieheTreppenenden(graph: StationGraph, elemente: OsmElement[]): void {
   const { wurzel, verbinde } = inselnVon(graph);
@@ -401,6 +406,7 @@ function zieheTreppenenden(graph: StationGraph, elemente: OsmElement[]): void {
   }
   for (const el of elemente) {
     if (el.type !== 'way' || !el.nodes || !istEbenenwechselWeg(el.tags ?? {})) continue;
+    if (el.tags?.highway === 'elevator') continue;
     for (const id of [el.nodes[0], el.nodes[el.nodes.length - 1]]) {
       const hier = [...(instanzen.get(id) ?? [])].sort((a, b) => a.level - b.level);
       for (let i = 0; i < hier.length - 1; i++) {
@@ -412,7 +418,7 @@ function zieheTreppenenden(graph: StationGraph, elemente: OsmElement[]): void {
           laengeM: 0,
           deltaLevel: hier[i + 1].level - hier[i].level,
           typ: 'rampe',
-          barrierefrei: el.tags?.highway === 'elevator',
+          barrierefrei: false,
         };
         for (const ende of [kante.von, kante.nach]) {
           if (!graph.adjazenz.has(ende)) graph.adjazenz.set(ende, []);
@@ -561,6 +567,8 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
 
   // --- Pass B: Ebenenwechsel-Ways (Treppen, Rolltreppen, Aufzug-Ways) ---
   // werden zu genau einer Kante zwischen Anfangs- und Endknoten kollabiert.
+  // Aufzug-Ways nur vorgemerkt: Ihre Kanten zieht Pass C, als Schacht.
+  const aufzugWege: { way: OsmElement; vonId: string; nachId: string; laengeM: number }[] = [];
   for (const way of ways) {
     const tags = way.tags ?? {};
     if (!istEbenenwechselWeg(tags)) continue;
@@ -598,6 +606,10 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
     }
 
     const typ = kantenTypFuerWay(tags);
+    if (typ === 'aufzug') {
+      aufzugWege.push({ way, vonId, nachId, laengeM: laenge });
+      continue;
+    }
     fuegeKanteHinzu({
       von: vonId,
       nach: nachId,
@@ -605,25 +617,96 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
       deltaLevel: ebeneLetzter - ebeneErster,
       typ,
       barrierefrei: istBarrierefrei(typ, tags),
+      anlageSchluessel: `w${way.id}`,
     });
   }
 
-  // --- Pass C: Aufzug-Knoten (highway=elevator als Node) ---
-  // verbindet alle Ebenen-Instanzen desselben OSM-Knotens mit Aufzugkanten.
+  /**
+   * Ein Aufzug ist ein Schacht: Jedes Paar seiner Halte ist direkt verbunden,
+   * eine Fahrt ist eine Kante und ein Schritt.
+   *
+   * Bis zum 03.11.2026 war ein Aufzug ueber mehrere Ebenen eine Kette von
+   * Kanten zwischen Nachbarebenen. Berlin Hbf 2 -> 12 fuhr so von -2 nach 0 in
+   * zwei Kanten, und die Anleitung sagte „Aufzug zur Unterführung (-1)“, „Aufzug
+   * zur Ebene 0“ - ein Halt, an dem niemand aussteigt. Die Zeit einer Fahrt
+   * haengt am ganzen Schacht (`zuschlagSekunden`): Die Spanne kommt aus dem
+   * `level`-Tag, auch mit Ebenen, an denen kein Weg anschliesst - die Kabine
+   * faehrt den ganzen Schacht. Nennt der Tag weniger als zwei Ebenen, gelten
+   * die Halte. Verbunden wird nur, wo ein Knoten existiert; ein Aufzug mit nur
+   * einem Halt bekommt keine Kante.
+   */
+  function verbindeSchacht(
+    anlageSchluessel: string,
+    halte: string[],
+    tag: string | undefined,
+    barrierefrei: boolean,
+    laengeM: (a: GraphKnoten, b: GraphKnoten) => number,
+    /** Ein Paar, das auch auf gleicher Ebene verbunden bleibt (Aufzug-Way ohne Ebenen). */
+    paar?: [string, string],
+  ): void {
+    const knotenListe = [...new Set(halte)]
+      .map((id) => knoten.get(id)!)
+      .sort((a, b) => a.level - b.level);
+    if (knotenListe.length < 2) return;
+    const tagEbenen = parseLevels(tag);
+    const ebenen = tagEbenen.length >= 2 ? tagEbenen : knotenListe.map((k) => k.level);
+    const schachtSpanne = Math.max(...ebenen) - Math.min(...ebenen);
+    for (let i = 0; i < knotenListe.length; i++) {
+      for (let j = i + 1; j < knotenListe.length; j++) {
+        const [a, b] = [knotenListe[i], knotenListe[j]];
+        const istPaar = paar !== undefined && paar.includes(a.id) && paar.includes(b.id);
+        if (a.level === b.level && !istPaar) continue;
+        fuegeKanteHinzu({
+          von: a.id,
+          nach: b.id,
+          laengeM: laengeM(a, b),
+          deltaLevel: b.level - a.level,
+          typ: 'aufzug',
+          barrierefrei,
+          schachtSpanne,
+          anlageSchluessel,
+        });
+      }
+    }
+  }
+
+  // --- Pass C: Aufzuege als Schacht ---
+  // Aufzug-Knoten (highway=elevator als Node): Halte sind alle Ebenen-Instanzen
+  // desselben OSM-Knotens.
   for (const [osmId, ebenen] of instanzEbenen) {
     const osmNode = osmKnoten.get(osmId);
-    if (osmNode?.tags?.highway !== 'elevator' || ebenen.size < 2) continue;
-    const sortiert = [...ebenen].sort((a, b) => a - b);
-    for (let i = 0; i < sortiert.length - 1; i++) {
-      fuegeKanteHinzu({
-        von: knotenId(osmId, sortiert[i]),
-        nach: knotenId(osmId, sortiert[i + 1]),
-        laengeM: 0,
-        deltaLevel: sortiert[i + 1] - sortiert[i],
-        typ: 'aufzug',
-        barrierefrei: osmNode.tags?.wheelchair !== 'no',
-      });
-    }
+    if (osmNode?.tags?.highway !== 'elevator') continue;
+    verbindeSchacht(
+      `n${osmId}`,
+      [...ebenen].map((ebene) => knotenId(osmId, ebene)),
+      osmNode.tags.level,
+      osmNode.tags.wheelchair !== 'no',
+      () => 0,
+    );
+  }
+  // Aufzug-Ways: Halte sind alle Instanzen ihres Anfangs- und Endpunkts - wie
+  // bei Treppen zaehlen nur die Enden. Widerspricht der Weg am Fuss dem Tag
+  // (`level=0;1`, der Gang davor `level=-1`), wird auch dieser Knoten ein Halt:
+  // So faehrt man Aufzug, statt ueber die kostenlose Rampe, die
+  // `zieheTreppenenden` dort frueher legte.
+  const osmTeil = (k: GraphKnoten): string => k.id.slice(0, k.id.indexOf('@'));
+  for (const { way, vonId, nachId, laengeM } of aufzugWege) {
+    const tags = way.tags ?? {};
+    const enden = [way.nodes![0], way.nodes![way.nodes!.length - 1]];
+    const halte = enden.flatMap((osmId) =>
+      [...(instanzEbenen.get(osmId) ?? [])].map((ebene) => knotenId(osmId, ebene)),
+    );
+    // Ohne Ebenen im Tag landen beide Enden mitunter auf derselben Ebene. Die
+    // Kante zwischen ihnen gab es schon vorher; sie bleibt, damit der Weg nicht
+    // abreisst.
+    verbindeSchacht(
+      `w${way.id}`,
+      halte,
+      tags.level,
+      istBarrierefrei('aufzug', tags),
+      (a, b) => (osmTeil(a) === osmTeil(b) ? 0 : laengeM),
+      [vonId, nachId],
+    );
   }
 
   // --- Pass D: Bahnsteige (Ways UND Multipolygon-Relationen) ---

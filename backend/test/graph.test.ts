@@ -5,7 +5,8 @@ import { baueGraph, graphZuGeoJSON, haversineM, pfadZuGeoJSON } from '../src/cor
 import { gehzeitSekunden } from '../src/core/gehzeit.js';
 import { erreichbareGleisPaare } from '../src/core/klassifikation.js';
 import { berechneRoute } from '../src/core/routing.js';
-import type { OverpassAntwort, StationGraph } from '../src/core/typen.js';
+import { generiereSchritte } from '../src/core/textgen.js';
+import type { GraphKante, OverpassAntwort, StationGraph } from '../src/core/typen.js';
 
 function ladeFixture(name: string): OverpassAntwort {
   const pfad = fileURLToPath(new URL(`./fixtures/${name}.json`, import.meta.url));
@@ -974,5 +975,115 @@ describe('Luecke am Treppenfuss', () => {
       { type: 'way', id: 21, nodes: [6, 3], tags: { highway: 'steps', level: '-1;0', incline: 'up' } },
     ] });
     expect(erreichbar(graph, 'gleis1:mitte', 'gleis2:mitte')).toBe(false);
+  });
+});
+
+/**
+ * Berlin Hbf 2 -> 12 (Reddit, 03.11.2026): Eine Fahrt von -2 nach +1 war eine
+ * Kette aus drei Kanten und drei Schritten („Aufzug zur -1“, „zur 0“, „zur 1“).
+ * Ein Aufzug ist ein Schacht: Jedes Ebenenpaar ist direkt verbunden.
+ */
+describe('Aufzug als Schacht', () => {
+  const punkt = (id: number, lat: number, lon: number, tags?: Record<string, string>): OverpassAntwort['elements'][number] =>
+    ({ type: 'node', id, lat, lon, ...(tags ? { tags } : {}) });
+  const weg = (id: number, nodes: number[], tags: Record<string, string>): OverpassAntwort['elements'][number] => ({ type: 'way', id, nodes, tags });
+  const aufzugKanten = (graph: StationGraph): GraphKante[] =>
+    [...new Set([...graph.adjazenz.values()].flat())].filter((k) => k.typ === 'aufzug');
+  /** Schacht -2..2, Wege nur auf -2, 0 und 1. */
+  const schacht = (fusswege: OverpassAntwort['elements']): StationGraph => baueGraph({ elements: [
+    punkt(1, 52.0, 12.0), punkt(2, 52.0, 12.001),
+    punkt(3, 52.001, 12.0), punkt(4, 52.001, 12.001),
+    punkt(5, 52.0005, 12.002),
+    punkt(42, 52.0005, 12.0, { highway: 'elevator', level: '-2;-1;0;1;2' }),
+    weg(10, [1, 2], { railway: 'platform', ref: '1', level: '-2' }),
+    weg(11, [3, 4], { railway: 'platform', ref: '2', level: '1' }),
+    ...fusswege,
+  ] });
+  const graph = schacht([
+    weg(20, [1, 42], { highway: 'footway', level: '-2' }),
+    weg(21, [42, 5], { highway: 'footway', level: '0' }),
+    weg(22, [42, 3], { highway: 'footway', level: '1' }),
+  ]);
+  const pfad = berechneRoute(graph, 'gleis1:mitte', 'gleis2:mitte', 'schnellste')!;
+
+  it('Schacht: direkte Kante -2 ↔ 1, Spanne 4', () => {
+    const k = aufzugKanten(graph);
+    expect(k).toHaveLength(3); // -2↔0, -2↔1, 0↔1
+    expect(k.map((x) => `${x.von}>${x.nach}`).sort()).toEqual(['n42@-2>n42@0', 'n42@-2>n42@1', 'n42@0>n42@1']);
+    expect(k.every((x) => x.schachtSpanne === 4 && x.anlageSchluessel === 'n42')).toBe(true);
+  });
+
+  it('Route -2 → 1 nimmt EINE Aufzugkante', () => {
+    const aufzug = pfad.kanten.filter((x) => x.typ === 'aufzug');
+    expect(aufzug).toHaveLength(1);
+    expect(Math.abs(aufzug[0].deltaLevel)).toBe(3);
+  });
+
+  it('ein Schritt: "Aufzug zur Ebene 1"', () => {
+    expect(generiereSchritte(pfad).filter((s) => s.typ === 'aufzug').map((s) => s.text)).toEqual(['Aufzug zur Ebene 1']);
+  });
+
+  it('Aufzug mit nur einer angebundenen Ebene: keine Kante, kein Fehler', () => {
+    const einsam = schacht([weg(21, [42, 5], { highway: 'footway', level: '0' })]);
+    expect(aufzugKanten(einsam)).toEqual([]);
+  });
+
+  it('Aufzug-Weg erzeugt keine kostenlose Rampe zwischen seinen Ebenen', () => {
+    // Der Aufzug sagt `level=0;1`, der Weg an seinem Fuss `level=-1`: Derselbe
+    // OSM-Punkt 6 wird zu zwei Knoten. Bis zum 03.11.2026 verband sie eine
+    // stufenfreie Rampe der Laenge 0 - eine Aufzugfahrt, die nichts kostete.
+    const mitWeg = baueGraph({ elements: [
+      punkt(1, 52.0, 12.0), punkt(2, 52.0, 12.001),
+      punkt(3, 52.001, 12.0), punkt(4, 52.001, 12.001),
+      punkt(6, 52.0004, 12.0), punkt(7, 52.0006, 12.0),
+      weg(10, [1, 2], { railway: 'platform', ref: '1', level: '-1' }),
+      weg(11, [3, 4], { railway: 'platform', ref: '2', level: '1' }),
+      weg(20, [1, 6], { highway: 'footway', level: '-1' }),
+      weg(30, [6, 7], { highway: 'elevator', level: '0;1' }),
+      weg(21, [7, 3], { highway: 'footway', level: '1' }),
+    ] });
+    const kanten = [...new Set([...mitWeg.adjazenz.values()].flat())];
+    expect(kanten.filter((k) => k.typ === 'rampe' && k.laengeM === 0)).toEqual([]);
+    const stufenfrei = berechneRoute(mitWeg, 'gleis1:mitte', 'gleis2:mitte', 'barrierefrei')!;
+    const aufzug = stufenfrei.kanten.filter((k) => k.typ === 'aufzug');
+    expect(aufzug).toHaveLength(1);
+    expect(aufzug[0].anlageSchluessel).toBe('w30');
+    expect(aufzug[0].schachtSpanne).toBe(1);
+  });
+
+  it('Treppe und Rolltreppe tragen ihren Weg als Anlagenschluessel', () => {
+    const stufen = baueGraph({ elements: [
+      punkt(1, 52.0, 12.0), punkt(2, 52.0, 12.001), punkt(3, 52.0004, 12.0), punkt(4, 52.0004, 12.001),
+      weg(10, [1, 2], { railway: 'platform', ref: '1', level: '0' }),
+      weg(20, [1, 3], { highway: 'steps', level: '-1;0', incline: 'up' }),
+      weg(21, [2, 4], { highway: 'footway', conveying: 'yes', level: '-1;0', incline: 'up' }),
+      weg(22, [3, 4], { highway: 'footway', level: '-1' }),
+    ] });
+    const kanten = [...new Set([...stufen.adjazenz.values()].flat())];
+    expect(kanten.find((k) => k.typ === 'treppe')?.anlageSchluessel).toBe('w20');
+    expect(kanten.find((k) => k.typ === 'rolltreppe')?.anlageSchluessel).toBe('w21');
+  });
+
+  describe('Berlin Hbf (Fixture)', () => {
+    const berlin = baueGraph(ladeFixture('overpass/berlin-hbf'));
+    const route = (von: string, nach: string) => berechneRoute(berlin, `gleis${von}:mitte`, `gleis${nach}:mitte`, 'schnellste', 'normal')!;
+
+    it('14 -> 6 faehrt in einem Zug von 2 nach -2, statt viermal umzusteigen', () => {
+      // Der Schacht reicht von -2 bis 2: Warten 55 + Fahrt 55 = 110 s. Die vier
+      // Rolltreppen kosten mit ihren Wegen 280 s.
+      const pfad14 = route('14', '6');
+      const aufzug = pfad14.kanten.filter((k) => k.typ === 'aufzug');
+      expect(aufzug).toHaveLength(1);
+      expect(Math.abs(aufzug[0].deltaLevel)).toBe(4);
+      expect(generiereSchritte(pfad14).filter((s) => s.typ === 'aufzug').map((s) => s.text)).toEqual(['Aufzug zur Ebene -2']);
+      expect(gehzeitSekunden(pfad14, 'normal')).toBeLessThan(280);
+    });
+
+    it('2 -> 12 haelt nicht mehr auf der -1, an der niemand aussteigt', () => {
+      // Zwei Aufzuege, weil es zwei sind: F.A 9 (-2..0) und 35 m weiter F.PA3
+      // bis zur 1. Der Halt von F.PA3 auf -2 liegt jenseits der Gleise.
+      const texte = generiereSchritte(route('2', '12')).map((s) => s.text);
+      expect(texte.filter((t) => t.startsWith('Aufzug'))).toEqual(['Aufzug zur Ebene 0', 'Aufzug zur Ebene 1']);
+    });
   });
 });

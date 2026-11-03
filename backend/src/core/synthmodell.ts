@@ -241,7 +241,8 @@ export function syntheseGraph(info: StationsInfo, anlagen: FastaAnlage[] = []): 
   // Abstieg bleibt geschaetzt. Der Status wird hier NICHT eingetragen - dieser
   // Graph wird gecacht, und ein gerade defekter Aufzug bliebe darin stehen.
   // Den Status legt `wendeFastaAn` pro Anfrage auf einer Kopie nach, ueber
-  // `anlageId`.
+  // `anlageId`. Ein Aufzug hier verbindet genau zwei Ebenen: Sein Schacht ist
+  // die Fahrt selbst, `schachtSpanne` bleibt leer (gilt |deltaLevel|).
   for (const bahnsteig of bahnsteige) {
     for (const anlage of bahnsteig.anlagen) {
       const wegM = Math.round(haversineM(bahnsteig.lat, bahnsteig.lon, anlage.lat, anlage.lon));
@@ -255,6 +256,7 @@ export function syntheseGraph(info: StationsInfo, anlagen: FastaAnlage[] = []): 
           typ: anlage.typ === 'AUFZUG' ? 'aufzug' : 'rolltreppe',
           barrierefrei: anlage.typ === 'AUFZUG',
           anlageId: anlage.id,
+          ...(anlage.typ === 'AUFZUG' ? { anlageSchluessel: anlage.id } : {}),
         });
       }
     }
@@ -286,6 +288,7 @@ export function syntheseGraph(info: StationsInfo, anlagen: FastaAnlage[] = []): 
       typ: anlage.typ === 'AUFZUG' ? 'aufzug' : 'rolltreppe',
       barrierefrei: anlage.typ === 'AUFZUG',
       anlageId: anlage.id,
+      ...(anlage.typ === 'AUFZUG' ? { anlageSchluessel: anlage.id } : {}),
     });
   }
 

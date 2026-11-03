@@ -29,6 +29,10 @@ export const AUFZUG_TUEREN_SEK = 15;
  * `schachtSpanne` ist max - min der Schachtebenen; fehlt sie, gilt
  * |deltaLevel| (Kabine steht schlimmstenfalls auf der Gegenseite der Fahrt).
  * Eine Kante ueber eine Ebene kostet so 50 s.
+ *
+ * Gerundet auf ganze Sekunden: OSM kennt Ebenen wie 0.15 oder 0.3, und ein
+ * Zuschlag von 1,5 s braeche die Invariante „Summe der Schritte = Gehzeit“,
+ * die mit ganzen Sekunden rechnet.
  */
 export function zuschlagSekunden(
   kante: Pick<GraphKante, 'typ' | 'deltaLevel' | 'schachtSpanne'>,
@@ -36,9 +40,9 @@ export function zuschlagSekunden(
   if (kante.typ === 'aufzug') {
     const fahrt = Math.abs(kante.deltaLevel);
     const spanne = kante.schachtSpanne ?? fahrt;
-    return (
+    return Math.round(
       spanne * AUFZUG_SEK_JE_EBENE + AUFZUG_TUEREN_SEK +
-      fahrt * AUFZUG_SEK_JE_EBENE + AUFZUG_TUEREN_SEK
+      fahrt * AUFZUG_SEK_JE_EBENE + AUFZUG_TUEREN_SEK,
     );
   }
   return ZUSCHLAG[kante.typ] ?? 0;

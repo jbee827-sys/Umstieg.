@@ -37,7 +37,7 @@ describe('gehzeitSekunden', () => {
 });
 
 describe('zuschlagSekunden', () => {
-  it('Aufzug zwei Ebenen: 50 s', () => {
+  it('Aufzug über eine Ebene: 50 s', () => {
     expect(zuschlagSekunden({ typ: 'aufzug', deltaLevel: 1 })).toBe(50);
   });
   it('Aufzug -2 → +1 im Schacht -2..2: Warten 55 + Fahrt 45 = 100 s', () => {
@@ -48,6 +48,11 @@ describe('zuschlagSekunden', () => {
   });
   it('halbe Ebene zählt halb', () => {
     expect(zuschlagSekunden({ typ: 'aufzug', deltaLevel: 0.5, schachtSpanne: 0.5 })).toBe(40);
+  });
+  it('krumme OSM-Ebenen ergeben ganze Sekunden (Summe der Schritte = Gehzeit)', () => {
+    // 0,15 Ebenen: 1,5 + 15 + 1,5 + 15 = 33 - ganzzahlig gerundet, nie 33,0000001.
+    expect(zuschlagSekunden({ typ: 'aufzug', deltaLevel: 0.15, schachtSpanne: 0.15 })).toBe(33);
+    expect(Number.isInteger(zuschlagSekunden({ typ: 'aufzug', deltaLevel: 0.15, schachtSpanne: 0.3 }))).toBe(true);
   });
   it('Treppe 20, Rolltreppe 10, Rampe und eben 0 unverändert', () => {
     expect(zuschlagSekunden({ typ: 'treppe', deltaLevel: 1 })).toBe(20);

@@ -106,7 +106,7 @@ describe('GEWICHTE', () => {
 });
 
 describe('berechneRoute – schnellste', () => {
-  it('wählt die Treppe statt des Aufzugs (Aufzug-Malus 60 s)', () => {
+  it('wählt die Treppe statt des Aufzugs (Aufzug eine Ebene 50 s, Treppe 20 s)', () => {
     const graph = treppeVsAufzugGraph();
     const pfad = berechneRoute(graph, 'gleis1:mitte', 'gleis2:mitte', 'schnellste');
     expect(pfad).not.toBeNull();
