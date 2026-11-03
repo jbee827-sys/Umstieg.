@@ -475,5 +475,5 @@ Referenzstand für alle Vergleiche ist Commit `d1be87a` (Seitendaten dort eingec
 - [ ] **Step 2: Messung G2** – Diagnoseskript `osm-ablage/diagnose/aufzug-vergleich.ts` vergleicht `anlagen` und `sek` je Gleispaar zwischen `d1be87a` und jetzt: Zahl der Paare Aufzug→Treppe, Treppe→Aufzug, Mittelwert und Median der Änderung von `sek` und `stufenfreiSek`.
 - [ ] **Step 3: Prüfläufe** – `gleiskreuzung-pruefung.ts` gegen die Basis, `anfragen-pruefung.ts`, `simulation-bild.ts`, `simulation-lauf3.ts`: keine neuen Befunde gegenüber dem Stand im README (02.11.2026).
 - [ ] **Step 4: Suiten** – `cd backend && npx vitest run && npm run lint && npm run build`, danach `cd frontend && npx vitest run && npm run lint && npm run build`. Alles grün.
-- [ ] **Step 5:** README „Hier weitermachen“ um den Stand 03.11.2026 ergänzen: was geändert ist, die Messzahlen aus Step 3/4, die Liste aus Task 15, offene Punkte.
+- [ ] **Step 5:** README „Hier weitermachen“ um den Stand 03.11.2026 ergänzen: was geändert ist, die Messzahlen aus Step 2/3, die Liste aus Task 15, offene Punkte.
 - [ ] **Step 6:** `git commit -m "chore: Bahnhofsseiten und Vorfuehrdaten neu, README Stand 03.11.2026"`. Kein Push, kein Deploy – Freigabe durch Julian.
