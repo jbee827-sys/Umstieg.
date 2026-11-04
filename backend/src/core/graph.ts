@@ -858,6 +858,8 @@ function baueGraphOhneNaht(
     if (route.length > 0) return route.join(' ');
     const linien = (tags.description ?? '').match(/\bU\d+\b/g);
     if (linien) return [...new Set(linien)].join(' ');
+    // Ohne Nummer (Berlin Hbf U5, Frankfurt Hbf): der OSM-Name, sonst nichts Genaueres.
+    if (refs.length === 0) return tags.name ?? 'U-Bahn-Steig';
     return `U-Bahn-Steig ${refs.join('/')}`;
   }
 
@@ -1086,7 +1088,9 @@ function baueGraphOhneNaht(
   type Lagepunkt = OsmElement & { lat: number; lon: number };
   const endenJeBahnsteig = new Map<BahnsteigDaten, [Lagepunkt, Lagepunkt]>();
   for (const bahnsteig of bahnsteige) {
-    if (bahnsteig.refs.length === 0) continue; // ohne Gleisnummer keine synthetischen Punkte
+    // Ohne Gleisnummer keine synthetischen Punkte - ausser fuer einen U-Bahn-Steig:
+    // Er braucht keine Nummer, seine Kennung ist die Bahnsteig-ID.
+    if (bahnsteig.refs.length === 0 && !ubahn.has(bahnsteig)) continue;
     const punkte = bahnsteig.nodeListen
       .flat()
       .map((id) => osmKnoten.get(id))
@@ -1207,7 +1211,7 @@ function baueGraphOhneNaht(
       }
     }
 
-    if (refs.length === 0) continue; // ohne Gleisnummer keine synthetischen Punkte
+    if (refs.length === 0 && !ubahn.has(bahnsteig)) continue; // siehe oben
 
     // Anfang = Nord- bzw. Westende, siehe `endenJeBahnsteig` oben.
     const enden = endenJeBahnsteig.get(bahnsteig);

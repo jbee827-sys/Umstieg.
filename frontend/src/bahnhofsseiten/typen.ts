@@ -21,6 +21,13 @@ export interface Gleispaar {
   stufenfreiSek: number | null
 }
 
+/** Ein U-Bahn-Steig mit den Wegen zu den Gleisen (`von` = Beschriftung des Steigs). */
+export interface UbahnSteigDaten {
+  id: string
+  label: string
+  paare: Gleispaar[]
+}
+
 export interface Bahnhofsdaten {
   name: string
   eva: string
@@ -31,5 +38,9 @@ export interface Bahnhofsdaten {
   /** Wann die OSM-Daten geholt wurden (ISO). */
   geholtAm: string
   gleise: string[]
+  /** Art je Gleis; fehlt in Daten von vor dem 04.11.2026 (dann: alles Zuege). */
+  gleisArt?: Record<string, 'zug' | 'sbahn'>
+  /** U-Bahn-Steige; fehlt in Daten von vor dem 04.11.2026. */
+  ubahn?: UbahnSteigDaten[]
   paare: Gleispaar[]
 }

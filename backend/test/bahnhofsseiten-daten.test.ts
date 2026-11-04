@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
@@ -8,10 +8,13 @@ import {
   graphAus,
   pruefeSlugs,
   slugVon,
+  ubahnNamePasst,
+  ubahnSchluessel,
+  ubahnSteigeDesBahnhofs,
   type Bahnhofsdaten,
 } from '../scripts/bahnhofsseiten-daten.js';
-import type { BestandsEintrag } from '../src/osm/bestand.js';
-import type { OverpassAntwort } from '../src/core/typen.js';
+import { entpackeEintrag, type BestandsEintrag } from '../src/osm/bestand.js';
+import type { OverpassAntwort, StationsInfo } from '../src/core/typen.js';
 
 function eintrag(fixture: string, name = 'Testbahnhof Hbf'): BestandsEintrag {
   const pfad = fileURLToPath(new URL(`./fixtures/${fixture}.json`, import.meta.url));
@@ -220,4 +223,127 @@ describe('alsJson', () => {
     expect(JSON.parse(text)).toEqual(mini);
     expect(text.split('\n').filter((z) => z.includes('"von"'))).toHaveLength(mini.paare.length);
   });
+});
+
+/**
+ * Spec 6.2/6.3: Gleisarten und U-Bahn-Steige in den Seitendaten. Die OSM-Daten
+ * kommen aus dem eingecheckten Bestand, die DB-Gleisliste als kleine Fixture
+ * (Auszug aus der RIS-Antwort vom 02.10.2026, osm-ablage/db-roh/8000261.json:
+ * 8098263 „München Hbf (tief)“ fuehrt „1“/„2“ unter den Kennungen 81/82).
+ */
+describe('Gleisarten und U-Bahn (Spec 6.2/6.3)', () => {
+  const lade = async (schluessel: string): Promise<BestandsEintrag> =>
+    entpackeEintrag(readFileSync(fileURLToPath(new URL(`../osm-bestand/${schluessel}.json.gz`, import.meta.url))));
+  const gleis = (name: string, evas: string[], ifopt?: string) => ({
+    gleis: name,
+    evas,
+    ris: { name, ...(ifopt ? { ifopt: `de:09162:${ifopt}` } : {}) },
+  });
+  const muenchenDb: StationsInfo = {
+    eva: '8000261',
+    name: 'München Hbf',
+    evas: ['8000261', '8098263'],
+    sbahnEvas: ['8098263'],
+    gleise: [
+      gleis('5', ['8000261']),
+      gleis('11', ['8000261'], '100:11:11'),
+      gleis('1', ['8098263'], '6:40:81'),
+      gleis('2', ['8098263'], '6:40:82'),
+    ],
+  };
+
+  let muenchen: BestandsEintrag;
+  let hamburg: BestandsEintrag;
+  beforeAll(async () => {
+    muenchen = await lade('8000261');
+    hamburg = await lade('8002549');
+  });
+
+  it('München Hbf: gleisArt 1/2 sbahn, ubahn mit 3 Steigen', () => {
+    const daten = berechneBahnhof(muenchen, graphAus(muenchen, muenchenDb))!;
+    expect(daten.gleise).toEqual(expect.arrayContaining(['1', '2', '11']));
+    expect(daten.gleise).not.toContain('81');
+    expect(daten.gleisArt['1']).toBe('sbahn');
+    expect(daten.gleisArt['2']).toBe('sbahn');
+    expect(daten.gleisArt['11']).toBe('zug');
+    expect(Object.keys(daten.gleisArt).sort()).toEqual([...daten.gleise].sort());
+    expect(daten.ubahn.map((u) => u.label).sort()).toEqual(['U1 U2 U7 U8', 'U1 U2 U7 U8', 'U4 U5']);
+    // Je Steig ein Paar je Gleis; `von` = Beschriftung, `nach` = Gleis.
+    for (const u of daten.ubahn) {
+      expect(u.paare.map((p) => p.nach)).toEqual(daten.gleise);
+      expect(u.paare.every((p) => p.von === u.label && !p.gleicherBahnsteig)).toBe(true);
+      expect(u.paare.some((p) => p.sek !== null && p.sek > 0)).toBe(true);
+    }
+    // Die U-Bahn-Steige sind keine Gleise: keine Gleispaare mit ihnen.
+    expect(daten.paare).toHaveLength(daten.gleise.length * (daten.gleise.length - 1));
+  }, 60_000);
+
+  it('Hamburg Hbf: Mönckebergstraße fällt heraus, Hauptbahnhof Nord/Süd bleiben', () => {
+    const graph = graphAus(hamburg);
+    const alle = graph.ubahnSteige!.map((s) => s.name);
+    expect(alle).toContain('Mönckebergstraße');
+    const bleiben = ubahnSteigeDesBahnhofs(graph, hamburg.name).map((s) => s.name);
+    expect(bleiben).not.toContain('Mönckebergstraße');
+    expect(bleiben.filter((n) => n?.startsWith('Hauptbahnhof'))).toHaveLength(4);
+    const daten = berechneBahnhof(hamburg, graph)!;
+    expect(daten.ubahn).toHaveLength(bleiben.length);
+  }, 60_000);
+
+  it('ubahnNamePasst: Hbf = Hauptbahnhof, Himmelsrichtung erlaubt, fremder Name nicht', () => {
+    expect(ubahnNamePasst('Hauptbahnhof Nord', 'Hamburg Hbf')).toBe(true);
+    expect(ubahnNamePasst('Hauptbahnhof-Süd', 'Hamburg Hbf')).toBe(true);
+    expect(ubahnNamePasst('Hauptbahnhof (U)', 'Bielefeld Hbf')).toBe(true);
+    expect(ubahnNamePasst('S+U Hauptbahnhof', 'Berlin Hbf')).toBe(true);
+    expect(ubahnNamePasst('Essen Hauptbahnhof', 'Essen Hbf')).toBe(true);
+    expect(ubahnNamePasst('Mönckebergstraße', 'Hamburg Hbf')).toBe(false);
+    expect(ubahnNamePasst('Staatsgalerie', 'Stuttgart Hbf')).toBe(false);
+    expect(ubahnNamePasst('Rotes Rathaus', 'Berlin Alexanderplatz')).toBe(false);
+    expect(ubahnNamePasst('Nord', 'Hamburg Hbf')).toBe(false);
+    // Ohne Namen laesst sich nichts widerlegen.
+    expect(ubahnNamePasst(undefined, 'Hamburg Hbf')).toBe(true);
+  });
+
+  it('ohne DB-Ablage: Daten wie heute, ubahn aus OSM subway=yes', () => {
+    const daten = berechneBahnhof(muenchen, graphAus(muenchen))!;
+    // Ohne Liste bleibt OSMs „81;82“ stehen; die Art kennt nur, was OSM selbst als S-Bahn ausweist.
+    expect(daten.gleise).toEqual(expect.arrayContaining(['81', '82']));
+    expect(Object.keys(daten.gleisArt).sort()).toEqual([...daten.gleise].sort());
+    expect(daten.gleisArt['11']).toBe('zug');
+    expect(daten.ubahn).toHaveLength(3);
+  }, 60_000);
+
+  it('ein Bahnhof ohne U-Bahn und S-Bahn: gleisArt alles Zuege, ubahn leer', () => {
+    const mini = rechne('synthetisch/mini-bahnhof');
+    expect(mini.gleisArt).toEqual({ '1': 'zug', '2': 'zug', '3': 'zug' });
+    expect(mini.ubahn).toEqual([]);
+    expect(alsJson(mini)).toContain('"ubahn": []');
+  });
+
+  it('alsJson: U-Bahn-Steig als Block, Paare je Zeile, gueltiges JSON', () => {
+    const mini = rechne('synthetisch/mini-bahnhof');
+    const mitSteig: Bahnhofsdaten = {
+      ...mini,
+      ubahn: [{ id: 'w7', label: 'U1 U2', paare: mini.paare.slice(0, 2).map((p) => ({ ...p, von: 'U1 U2' })) }],
+    };
+    const text = alsJson(mitSteig);
+    expect(JSON.parse(text)).toEqual(mitSteig);
+    expect(text.split('\n').filter((z) => z.includes('"von":'))).toHaveLength(
+      mini.paare.length + 2,
+    );
+  });
+
+  it('fremdeGleise: U-Bahn-Steige wandern wie Gleise zum Bahnhof mit mehr Gleisen', () => {
+    const punkt = { lat: 48.14, lon: 11.56 };
+    const gross = { schluessel: 'gross', gleise: new Map([['1', punkt], ['2', punkt], [ubahnSchluessel('w7'), { ...punkt, lat: 48.1401 }]]) };
+    const klein = { schluessel: 'klein', gleise: new Map([[ubahnSchluessel('w7'), { ...punkt, lat: 48.1401 }]]) };
+    expect([...(fremdeGleise([gross, klein]).get('klein') ?? [])]).toEqual([ubahnSchluessel('w7')]);
+  });
+
+  it('ohne verweist ein U-Bahn-Steig an den anderen Bahnhof', () => {
+    const graph = graphAus(hamburg);
+    const steige = ubahnSteigeDesBahnhofs(graph, hamburg.name);
+    const daten = berechneBahnhof(hamburg, graph, new Set([ubahnSchluessel(steige[0].id)]))!;
+    expect(daten.ubahn.map((u) => u.id)).not.toContain(steige[0].id);
+    expect(daten.ubahn).toHaveLength(steige.length - 1);
+  }, 60_000);
 });

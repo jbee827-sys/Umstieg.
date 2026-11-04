@@ -670,6 +670,30 @@ describe('Gleisarten: Züge, S-Bahn, U-Bahn', () => {
     expect(graph.ubahnSteige).toEqual([{ id: 'w2', label: 'U-Bahn-Steig 1', name: 'Hauptbahnhof (U)' }]);
   });
 
+  // Berlin Hbf U5 und Frankfurt Hbf „U4 U5“ tragen keine Gleisnummer: Der Steig
+  // ist trotzdem ein Steig - mit Knoten, Beschriftung aus route_ref/description/name.
+  it('U-Bahn-Steig ohne ref wird ein Steig mit Knoten', () => {
+    const elemente: OverpassAntwort = {
+      elements: [
+        ...steig(1, 52.0, { train: 'yes', ref: '1;2', level: '0' }),
+        ...steig(2, 52.001, { subway: 'yes', level: '-2', route_ref: 'U5', name: 'Hauptbahnhof' }),
+        ...steig(3, 52.002, { subway: 'yes', level: '-2', description: 'U4 U5 Bahnsteig' }),
+        ...steig(4, 52.003, { subway: 'yes', level: '-2', name: 'Hauptbahnhof' }),
+      ],
+    };
+    for (const graph of [baueGraph(elemente), baueGraph(elemente, [db('1'), db('2')], { gleislisteVollstaendig: true })]) {
+      expect(graph.gleise).toEqual(['1', '2']);
+      expect(graph.ubahnSteige).toEqual([
+        { id: 'w2', label: 'U5', name: 'Hauptbahnhof' },
+        { id: 'w3', label: 'U4 U5' },
+        { id: 'w4', label: 'Hauptbahnhof', name: 'Hauptbahnhof' },
+      ]);
+      expect(graph.knoten.get('ubahnw2:mitte')).toMatchObject({ ubahnSteig: 'w2', abschnitt: 'mitte', level: -2 });
+      expect(graph.knoten.get('ubahnw2:mitte')?.gleis).toBeUndefined();
+      expect(graph.knoten.has('ubahnw2:anfang') && graph.knoten.has('ubahnw2:ende')).toBe(true);
+    }
+  });
+
   it('unvollständige Liste: light_rail bleibt wie heute', () => {
     for (const kontext of [{ gleislisteVollstaendig: false }, undefined]) {
       const graph = baueGraph(bielefeld, [db('1'), db('2')], kontext);

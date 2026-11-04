@@ -12,6 +12,11 @@
 // (scripts/bestand-fuellen.ts):
 //
 //   cd backend && npm run bahnhofsseiten
+//
+// Seit dem 04.11.2026 (Spec 6.2/6.3) baut das Skript den Graphen wie der Server
+// mit der DB-Gleisliste, soweit sie unter osm-ablage/db-gleise/ liegt
+// (scripts/db-gleise-fuellen.ts): DB-Namen statt OSM-Nummern, Gleisarten,
+// U-Bahn-Steige. Ohne Ablage rechnet es wie zuvor und sagt es im Lauf.
 import { mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,8 +24,12 @@ import { baueGraph, haversineM } from '../src/core/graph.js';
 import { gehzeitSekunden } from '../src/core/gehzeit.js';
 import { klassifiziere } from '../src/core/klassifikation.js';
 import { berechneRoute, findeStartknoten, istGleicherBahnsteig } from '../src/core/routing.js';
-import type { RoutenPfad, StationGraph, Stufe } from '../src/core/typen.js';
+import type { GraphKnoten, RoutenPfad, StationGraph, Stufe } from '../src/core/typen.js';
+import { gleislisteUnvollstaendig } from '../src/clients/stations.js';
+import { namensSchluessel } from '../src/core/orte.js';
+import type { StationsInfo, UbahnSteig } from '../src/core/typen.js';
 import { entpackeEintrag, type BestandsEintrag } from '../src/osm/bestand.js';
+import { ladeAblage } from './db-gleise-fuellen.js';
 
 const BESTAND = fileURLToPath(new URL('../osm-bestand/', import.meta.url));
 export const ZIEL = fileURLToPath(new URL('../../frontend/src/bahnhofsseiten/daten/', import.meta.url));
@@ -53,6 +62,13 @@ export interface Gleispaar {
   stufenfreiSek: number | null;
 }
 
+/** Ein U-Bahn-Steig mit seinen Wegen zu jedem Gleis; `von` = Beschriftung des Steigs. */
+export interface UbahnDaten {
+  id: string;
+  label: string;
+  paare: Gleispaar[];
+}
+
 export interface Bahnhofsdaten {
   name: string;
   eva: string;
@@ -62,6 +78,10 @@ export interface Bahnhofsdaten {
   stufe: Stufe;
   geholtAm: string;
   gleise: string[];
+  /** Art je Gleis (Spec 6.2): S-Bahn nur, wo sie sich sicher erkennen laesst, sonst Zuege. */
+  gleisArt: Record<string, 'zug' | 'sbahn'>;
+  /** U-Bahn-Steige des Bahnhofs, je Steig die Wege zu den Gleisen. */
+  ubahn: UbahnDaten[];
   paare: Gleispaar[];
 }
 
@@ -95,22 +115,86 @@ export function pruefeSlugs(liste: { name: string; slug: string }[]): void {
   }
 }
 
-export function graphAus(eintrag: BestandsEintrag): StationGraph {
-  const graph = baueGraph(eintrag.osm);
+/**
+ * Der Graph eines Bestandseintrags - mit `db` genau so gebaut wie im Server
+ * (`baueGraphEintrag` in routes/api.ts), ohne wie vor dem 04.11.2026.
+ */
+export function graphAus(eintrag: BestandsEintrag, db?: StationsInfo): StationGraph {
+  const graph = db
+    ? baueGraph(eintrag.osm, db.gleise, {
+        gleislisteVollstaendig: !gleislisteUnvollstaendig(db),
+        ...(db.sbahnEvas ? { sbahnEvas: db.sbahnEvas } : {}),
+      })
+    : baueGraph(eintrag.osm);
   graph.stufe = klassifiziere(graph);
   return graph;
 }
 
-function mitteVon(graph: StationGraph, gleis: string): { lat: number; lon: number } | undefined {
+function mitteVon(graph: StationGraph, gleis: string): GraphKnoten | undefined {
   return graph.knoten.get(`gleis${gleis}:mitte`) ?? [...graph.knoten.values()].find((k) => k.gleis === gleis);
 }
 
-/** Bahnsteigmitten je Gleis - Grundlage fuer `fremdeGleise`. */
-export function gleisMitten(graph: StationGraph): Map<string, { lat: number; lon: number }> {
+/** Schluessel eines U-Bahn-Steigs in `fremdeGleise`/`ohne` - kann keinem Gleisnamen gleichen. */
+export const ubahnSchluessel = (id: string): string => `ubahn:${id}`;
+
+/** Zusaetze, die ein U-Bahn-Steig zum Bahnhofsnamen haben darf (Hamburg „Hauptbahnhof Nord“). */
+const HIMMELSRICHTUNGEN: ReadonlySet<string> = new Set(['nord', 'sued', 'ost', 'west']);
+
+/**
+ * Passt der OSM-Name eines U-Bahn-Steigs zum Bahnhof (Spec 6.2)? Der
+ * Overpass-Umkreis bringt Steige fremder Haltestellen mit (Hamburg Hbf:
+ * Moenckebergstrasse; Stuttgart Hbf: Staatsgalerie; Alexanderplatz: Rotes
+ * Rathaus). Die Woerter des Steignamens muessen im Bahnhofsnamen stehen
+ * („Hauptbahnhof“ = „Hbf“ ueber `namensSchluessel`), dazu eine Himmelsrichtung.
+ * Ohne Namen laesst sich nichts widerlegen - der Steig bleibt.
+ */
+export function ubahnNamePasst(steigName: string | undefined, bahnhof: string): boolean {
+  if (!steigName) return true;
+  const woerter = namensSchluessel(steigName)
+    .split(' ')
+    .filter((w) => w && !HIMMELSRICHTUNGEN.has(w));
+  if (woerter.length === 0) return false;
+  const bahnhofsWoerter = new Set(namensSchluessel(bahnhof).split(' '));
+  return woerter.every((w) => bahnhofsWoerter.has(w));
+}
+
+const steigeCache = new WeakMap<StationGraph, UbahnSteig[]>();
+
+/**
+ * Die U-Bahn-Steige, die zu diesem Bahnhof gehoeren: im Graphen von einem
+ * Gleis aus erreichbar UND dem Namen nach (`ubahnNamePasst`). Der Graph gehoert
+ * zu genau einem Bahnhof; das Ergebnis wird je Graph gemerkt.
+ */
+export function ubahnSteigeDesBahnhofs(graph: StationGraph, bahnhofsname: string): UbahnSteig[] {
+  const gemerkt = steigeCache.get(graph);
+  if (gemerkt) return gemerkt;
+  const ergebnis = (graph.ubahnSteige ?? []).filter((steig) => {
+    if (!ubahnNamePasst(steig.name, bahnhofsname)) return false;
+    const start = graph.knoten.get(`ubahn${steig.id}:mitte`);
+    if (!start) return false;
+    return graph.gleise.some((gleis) => {
+      const ziel = mitteVon(graph, gleis);
+      return ziel !== undefined && berechneRoute(graph, start.id, ziel.id, 'schnellste', 'normal') !== null;
+    });
+  });
+  steigeCache.set(graph, ergebnis);
+  return ergebnis;
+}
+
+/**
+ * Bahnsteigmitten je Gleis und je U-Bahn-Steig - Grundlage fuer
+ * `fremdeGleise`. U-Bahn-Steige zaehlen wie Gleise: Auch sie holt der
+ * Overpass-Umkreis unter zwei Bahnhoefen.
+ */
+export function gleisMitten(graph: StationGraph, bahnhofsname: string): Map<string, { lat: number; lon: number }> {
   const mitten = new Map<string, { lat: number; lon: number }>();
   for (const gleis of graph.gleise) {
     const m = mitteVon(graph, gleis);
     if (m) mitten.set(gleis, { lat: m.lat, lon: m.lon });
+  }
+  for (const steig of ubahnSteigeDesBahnhofs(graph, bahnhofsname)) {
+    const m = graph.knoten.get(`ubahn${steig.id}:mitte`);
+    if (m) mitten.set(ubahnSchluessel(steig.id), { lat: m.lat, lon: m.lon });
   }
   return mitten;
 }
@@ -177,10 +261,30 @@ function wegMerkmale(pfad: RoutenPfad): Pick<Gleispaar, 'wechsel' | 'anlagen' | 
   return { wechsel, anlagen, lage };
 }
 
+/** Schnellste und stufenfreie Route von einem Startknoten zu einem Gleis. */
+function paarVon(graph: StationGraph, startId: string, von: string, nach: string, gleicherBahnsteig: boolean): Gleispaar {
+  const ziel = findeStartknoten(graph, nach);
+  const schnell = berechneRoute(graph, startId, ziel.knoten.id, 'schnellste', 'normal');
+  const stufenfrei = berechneRoute(graph, startId, ziel.knoten.id, 'barrierefrei', 'normal');
+  return {
+    von,
+    nach,
+    gleicherBahnsteig,
+    sek: schnell ? gehzeitSekunden(schnell, 'normal') : null,
+    ...(schnell ? wegMerkmale(schnell) : { wechsel: 0, anlagen: [], lage: 'ebenerdig' as const }),
+    stufenfreiSek: stufenfrei ? gehzeitSekunden(stufenfrei, 'normal') : null,
+  };
+}
+
 /**
- * Alle Gleispaare eines Bahnhofs. `null` fuer Stufe 3 (Standardmodell):
+ * Alle Gleispaare eines Bahnhofs, dazu je U-Bahn-Steig die Wege zu den
+ * Gleisen. `null` fuer Stufe 3 (Standardmodell):
  * Dort waeren die Werte nur geschaetzt - dafuer gibt es keine Seite
  * (Konzept 5a.2, Vorgabe aus Abschnitt 7).
+ *
+ * Die DB-Gleisliste steckt im Graphen (`graphAus(eintrag, db)`). `ohne`
+ * nennt Gleise und U-Bahn-Steige (`ubahnSchluessel`), die ein groesserer
+ * Bahnhof behaelt.
  */
 export function berechneBahnhof(
   eintrag: BestandsEintrag,
@@ -197,19 +301,19 @@ export function berechneBahnhof(
     const start = findeStartknoten(graph, von, 'mitte');
     for (const nach of gleise) {
       if (von === nach) continue;
-      const ziel = findeStartknoten(graph, nach);
-      const schnell = berechneRoute(graph, start.knoten.id, ziel.knoten.id, 'schnellste', 'normal');
-      const stufenfrei = berechneRoute(graph, start.knoten.id, ziel.knoten.id, 'barrierefrei', 'normal');
-      paare.push({
-        von,
-        nach,
-        gleicherBahnsteig: istGleicherBahnsteig(graph, von, nach),
-        sek: schnell ? gehzeitSekunden(schnell, 'normal') : null,
-        ...(schnell ? wegMerkmale(schnell) : { wechsel: 0, anlagen: [], lage: 'ebenerdig' as const }),
-        stufenfreiSek: stufenfrei ? gehzeitSekunden(stufenfrei, 'normal') : null,
-      });
+      paare.push(paarVon(graph, start.knoten.id, von, nach, istGleicherBahnsteig(graph, von, nach)));
     }
   }
+  // Route vom Knoten `ubahn<id>:mitte`, `von` = Beschriftung des Steigs.
+  const ubahn: UbahnDaten[] = ubahnSteigeDesBahnhofs(graph, eintrag.name)
+    .filter((steig) => !ohne.has(ubahnSchluessel(steig.id)))
+    .map((steig) => ({
+      id: steig.id,
+      label: steig.label,
+      paare: gleise.map((nach) => paarVon(graph, `ubahn${steig.id}:mitte`, steig.label, nach, false)),
+    }));
+  const gleisArt: Record<string, 'zug' | 'sbahn'> = {};
+  for (const g of gleise) gleisArt[g] = graph.gleisArt?.get(g) ?? 'zug';
   return {
     name: eintrag.name,
     eva: eintrag.schluessel,
@@ -219,16 +323,30 @@ export function berechneBahnhof(
     stufe: graph.stufe,
     geholtAm: eintrag.geholtAm,
     gleise,
+    gleisArt,
+    ubahn,
     paare,
   };
 }
 
 /** Kopfdaten lesbar, je Gleispaar eine Zeile - knapp und im Diff nachvollziehbar. */
 export function alsJson(d: Bahnhofsdaten): string {
-  const { paare, ...kopf } = d;
+  const { paare, ubahn, gleisArt, ...kopf } = d;
   const kopfText = JSON.stringify(kopf, null, 2).replace(/\n}$/, '');
-  const zeilen = paare.map((p) => `    ${JSON.stringify(p)}`).join(',\n');
-  return `${kopfText},\n  "paare": [\n${zeilen}\n  ]\n}\n`;
+  const zeilen = (liste: Gleispaar[], einzug: string) =>
+    liste.map((p) => `${einzug}${JSON.stringify(p)}`).join(',\n');
+  const ubahnText = ubahn
+    .map(
+      (u) =>
+        `    {\n      "id": ${JSON.stringify(u.id)},\n      "label": ${JSON.stringify(u.label)},\n` +
+        `      "paare": [\n${zeilen(u.paare, '        ')}\n      ]\n    }`,
+    )
+    .join(',\n');
+  return (
+    `${kopfText},\n  "gleisArt": ${JSON.stringify(gleisArt)},\n` +
+    `  "ubahn": [${ubahn.length > 0 ? `\n${ubahnText}\n  ` : ''}],\n` +
+    `  "paare": [\n${zeilen(paare, '    ')}\n  ]\n}\n`
+  );
 }
 
 async function main(): Promise<void> {
@@ -236,15 +354,18 @@ async function main(): Promise<void> {
   const dateien = readdirSync(BESTAND).filter((n) => n.endsWith('.json.gz')).sort();
   const geladen: { eintrag: BestandsEintrag; graph: StationGraph }[] = [];
   const stufe3: string[] = [];
+  const ohneAblage: string[] = [];
   for (const datei of dateien) {
     const eintrag = await entpackeEintrag(readFileSync(join(BESTAND, datei)));
-    const graph = graphAus(eintrag);
+    const db = ladeAblage(eintrag.schluessel);
+    if (!db) ohneAblage.push(`${eintrag.name} (${eintrag.schluessel})`);
+    const graph = graphAus(eintrag, db);
     if (graph.stufe === 3) stufe3.push(`${eintrag.name} (${eintrag.schluessel})`);
     else geladen.push({ eintrag, graph });
   }
 
   const fremd = fremdeGleise(
-    geladen.map(({ eintrag, graph }) => ({ schluessel: eintrag.schluessel, gleise: gleisMitten(graph) })),
+    geladen.map(({ eintrag, graph }) => ({ schluessel: eintrag.schluessel, gleise: gleisMitten(graph, eintrag.name) })),
   );
 
   const alle: Bahnhofsdaten[] = [];
@@ -281,6 +402,14 @@ async function main(): Promise<void> {
     console.log(`  Gleise einem groesseren Bahnhof ueberlassen: ${name} - ${[...gleise].join(' ')}`);
   }
   console.log(`Groesste Gleisanzahl: ${groesster.gleise.length} (${groesster.name})`);
+  if (ohneAblage.length > 0) {
+    console.log(
+      `WARNUNG: ${ohneAblage.length} Bahnhoefe ohne DB-Gleisliste (scripts/db-gleise-fuellen.ts), gerechnet wie zuvor: ` +
+        `${ohneAblage.slice(0, 5).join(', ')}${ohneAblage.length > 5 ? ' …' : ''}`,
+    );
+  }
+  console.log(`Bahnhoefe mit U-Bahn-Steigen: ${alle.filter((d) => d.ubahn.length > 0).length}`);
+  console.log(`Bahnhoefe mit S-Bahn-Gleisen: ${alle.filter((d) => Object.values(d.gleisArt).includes('sbahn')).length}`);
   console.log(`Gleispaare: ${alle.reduce((s, d) => s + d.paare.length, 0)}`);
   console.log(`JSON gesamt: ${mb(gesamt)} in ${alle.length} Dateien → ${ZIEL}`);
   console.log(`Laufzeit: ${((Date.now() - beginn) / 1000).toFixed(0)} s`);
