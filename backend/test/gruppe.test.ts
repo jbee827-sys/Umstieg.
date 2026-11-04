@@ -469,16 +469,30 @@ describe('sbahnEvas', () => {
     expect(n).toBe(1);
   });
 
-  it('ohne Gruppe (ein Mitglied) keine Zusatzabrufe und kein sbahnEvas', async () => {
-    const mock = gruppenMock();
-    const einzel = vi.fn(async (eingabe: RequestInfo | URL) => {
+  // Schlussreview 04.11.2026: Bis dahin bekam ein Bahnhof aus EINER
+  // Verkehrsstelle gar kein sbahnEvas - Muenchen Marienplatz bedient nur die
+  // S-Bahn, und seine Gleise galten als Zuege. Die Regel gilt jetzt auch fuer
+  // das fuehrende Mitglied allein; es ist ohnehin schon geladen.
+  const ohneGruppe = (mock: GruppenMock): typeof fetch =>
+    vi.fn(async (eingabe: RequestInfo | URL) => {
       const url = String(eingabe);
       if (url.includes('/stop-places/by-name/')) return new Response('kaputt', { status: 502 });
       return (mock.fetch as typeof fetch)(eingabe);
     }) as unknown as typeof fetch;
-    const info = await holeStationsInfo('8011160', einzel);
+
+  it('ohne Gruppe (ein Mitglied, nicht nur S-Bahn): keine Zusatzabrufe, sbahnEvas leer', async () => {
+    const mock = gruppenMock();
+    const info = await holeStationsInfo('8011160', ohneGruppe(mock));
     expect(info.evas).toEqual(['8011160']);
-    expect(info.sbahnEvas).toBeUndefined();
+    expect(info.sbahnEvas).toEqual([]);
+    expect(mock.urls.filter((u) => u.includes('/stop-places/') && !u.includes('by-name'))).toHaveLength(1);
+  });
+
+  it('ein Mitglied, das nur S-Bahn bedient, steht in sbahnEvas - ohne Zusatzabruf', async () => {
+    const mock = muenchenMock();
+    const info = await holeStationsInfo('8098263', ohneGruppe(mock));
+    expect(info.evas).toEqual(['8098263']);
+    expect(info.sbahnEvas).toEqual(['8098263']);
     expect(mock.urls.filter((u) => u.includes('/stop-places/') && !u.includes('by-name'))).toHaveLength(1);
   });
 });

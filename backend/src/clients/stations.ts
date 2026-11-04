@@ -186,19 +186,22 @@ export async function holeGruppe(eva: string, fetchFn: typeof fetch = fetch): Pr
  * nicht; Berlin: 8089021). Ein Mitglied, das neben der S-Bahn anderes bedient,
  * ist keine reine S-Bahn-Stelle.
  *
- * Kosten: ein zusätzlicher Abruf je weiterem Mitglied, parallel, nur bei
- * Gruppen mit mehr als einem Mitglied und nur hier (`holeGruppe` braucht das
- * nicht). Das Ergebnis geht mit der StationsInfo in den Graph-Cache (24 h).
- * Fällt ein Abruf aus, fehlt nur dieses Mitglied - nichts wird geworfen.
- * Ohne Gruppe bleibt das Feld ganz weg.
+ * Kosten: ein zusätzlicher Abruf je weiterem Mitglied, parallel, und nur hier
+ * (`holeGruppe` braucht das nicht). Das Ergebnis geht mit der StationsInfo in
+ * den Graph-Cache (24 h). Fällt ein Abruf aus, fehlt nur dieses Mitglied -
+ * nichts wird geworfen.
+ *
+ * Auch ein Bahnhof aus einer einzigen Verkehrsstelle bekommt das Feld, ohne
+ * Zusatzabruf: Das führende Mitglied ist schon geladen. Bis zum 04.11.2026
+ * fehlte es dort ganz - München Marienplatz bedient nur die S-Bahn, und seine
+ * Gleise galten als Züge (Schlussreview).
  */
 async function ermittleSbahnEvas(
   eva: string,
   fuehrend: StopPlace,
   evas: string[],
   fetchFn: typeof fetch,
-): Promise<string[] | undefined> {
-  if (evas.length < 2) return undefined;
+): Promise<string[]> {
   const nurSbahn = (sp: StopPlace): boolean =>
     (sp.availableTransports?.length ?? 0) > 0 &&
     sp.availableTransports!.every((t) => t === 'CITY_TRAIN');
@@ -286,7 +289,7 @@ export async function holeStationsInfo(
     ...(stopPlace.stationID ? { stationID: stopPlace.stationID } : {}),
     gleise,
     gleisteileOhneAntwort,
-    ...(sbahnEvas ? { sbahnEvas } : {}),
+    sbahnEvas,
     ...(gruppeUnvollstaendig ? { gruppeUnvollstaendig } : {}),
   };
 }

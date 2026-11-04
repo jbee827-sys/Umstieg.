@@ -13,7 +13,11 @@
 // vollstaendig ist (`gleislisteUnvollstaendig` false) - nach einem Abbruch
 // einfach neu starten; eine unvollstaendige Liste wird erneut geholt.
 //
-// Aufruf (aus backend/):  npx tsx scripts/db-gleise-fuellen.ts
+// `--neu` holt auch die vollstaendigen Listen neu: nach einer Aenderung an
+// `holeStationsInfo` (04.11.2026: sbahnEvas auch fuer Bahnhoefe aus einer
+// einzigen Verkehrsstelle - die alte Ablage traegt es dort nicht).
+//
+// Aufruf (aus backend/):  npx tsx scripts/db-gleise-fuellen.ts [--neu]
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -76,8 +80,14 @@ export function istErledigt(schluessel: string, ordner: string = ABLAGE): boolea
   return info !== undefined && !gleislisteUnvollstaendig(info);
 }
 
+/** Ob der Lauf diesen Bahnhof holt: ohne `--neu` nur, was nicht erledigt ist. */
+export function mussHolen(schluessel: string, argumente: readonly string[], ordner: string = ABLAGE): boolean {
+  return argumente.includes('--neu') || !istErledigt(schluessel, ordner);
+}
+
 async function main(): Promise<void> {
   ladeSecrets();
+  const argumente = process.argv.slice(2);
   mkdirSync(ABLAGE, { recursive: true });
   const schluessel = readdirSync(BESTAND)
     .map(schluesselAusBestandsdatei)
@@ -90,7 +100,7 @@ async function main(): Promise<void> {
   const unvollstaendig: string[] = [];
   for (const [i, s] of schluessel.entries()) {
     const kopf = `[${i + 1}/${schluessel.length}] ${s}`;
-    if (istErledigt(s)) {
+    if (!mussHolen(s, argumente)) {
       uebersprungen++;
       continue;
     }

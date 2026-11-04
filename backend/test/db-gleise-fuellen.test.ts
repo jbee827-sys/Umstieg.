@@ -5,6 +5,7 @@ import {
   ablageDatei,
   istErledigt,
   ladeAblage,
+  mussHolen,
   schluesselAusBestandsdatei,
   serialisiere,
 } from '../scripts/db-gleise-fuellen.js';
@@ -60,5 +61,14 @@ describe('db-gleise-fuellen (ohne Netz)', () => {
     expect(istErledigt('luecke', WURZEL)).toBe(false);
     expect(istErledigt('gruppe', WURZEL)).toBe(false);
     expect(istErledigt('fehlt', WURZEL)).toBe(false);
+  });
+
+  // Schlussreview 04.11.2026: Die Ablage wurde vor der neuen sbahnEvas-Regel
+  // geholt (ein Mitglied bekam keins). `--neu` holt auch vollstaendige Listen.
+  it('mit --neu wird auch eine vollstaendige Liste neu geholt', () => {
+    writeFileSync(ablageDatei('vollstaendig', WURZEL), serialisiere(info));
+    expect(mussHolen('vollstaendig', [], WURZEL)).toBe(false);
+    expect(mussHolen('vollstaendig', ['--neu'], WURZEL)).toBe(true);
+    expect(mussHolen('fehlt', [], WURZEL)).toBe(true);
   });
 });
