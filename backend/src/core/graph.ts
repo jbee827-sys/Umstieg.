@@ -1015,8 +1015,15 @@ function baueGraphOhneNaht(
   // Bahnsteig. Wo OSM die Gleisnummer nicht schreibt (Hamburg-Altonas
   // S-Bahnsteige, Muenchen Hbf tief), verbindet die Kennung beide Quellen –
   // belegt, nicht aus Namen geraten. Exakt vor Bereich: "de:09162:6:40" ist
-  // der Bereich, in dem das Gleis "de:09162:6:40:81" liegt. Treffen zwei
-  // Bahnsteige gleich gut, wird nicht gewaehlt.
+  // der Bereich, in dem das Gleis "de:09162:6:40:81" liegt. Liegen zwei
+  // Bahnsteige nur im selben Bereich, wird nicht gewaehlt.
+  //
+  // Tragen mehrere Bahnsteige EXAKT die Kennung des Gleises, ist es derselbe
+  // DELFI-Steig, in OSM mehrfach gezeichnet: Bahnsteig und Kante, oder je
+  // eine Flaeche links und rechts des Gleises (Spanische Loesung). Das Gleis
+  // gehoert dann allen. Bis zum 04.11.2026 fiel es ganz weg - Marienplatz
+  // Gleis 2 (r4462515 ohne ref, r4462517 ref=82), Ulm Hbf 2/3/4/6/7/8,
+  // Konstanz 1/2/3.
   //
   // Ein Strassenbahnsteig gilt, wenn die DB dort ein Gleis fuehrt: Chemnitz
   // Hbf faehrt seine Citybahn ueber die Bahnsteige des Vorplatzes.
@@ -1038,14 +1045,15 @@ function baueGraphOhneNaht(
       if (!kennung || bekannt.has(normGleis(g.gleis)) || g.ris?.parentPlatform) continue;
       const exakt = alle.filter((b) => (kennungen.get(b) ?? []).includes(kennung));
       const bereich = alle.filter((b) => (kennungen.get(b) ?? []).some((k) => kennung.startsWith(`${k}:`)));
-      const treffer = exakt.length > 0 ? exakt : bereich;
-      if (treffer.length !== 1) continue;
-      const ziel = treffer[0];
-      ziel.refs.push(g.gleis);
-      if (!bahnsteige.includes(ziel)) bahnsteige.push(ziel);
+      const treffer = exakt.length > 0 ? exakt : bereich.length === 1 ? bereich : [];
+      if (treffer.length === 0) continue;
+      for (const ziel of treffer) {
+        ziel.refs.push(g.gleis);
+        if (!bahnsteige.includes(ziel)) bahnsteige.push(ziel);
+        if (!vonDb.has(ziel)) vonDb.set(ziel, new Set());
+        vonDb.get(ziel)!.add(g.gleis);
+      }
       bekannt.add(normGleis(g.gleis));
-      if (!vonDb.has(ziel)) vonDb.set(ziel, new Set());
-      vonDb.get(ziel)!.add(g.gleis);
     }
     if (vollstaendig) {
       for (const [bahnsteig, neu] of vonDb) {

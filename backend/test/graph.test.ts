@@ -515,12 +515,47 @@ describe('Gleise über die IFOPT-Kennung', () => {
     expect(graph.knoten.get('gleis2:mitte')?.bahnsteigId).toBe('w2');
   });
 
-  it('wählt nicht, wenn zwei Bahnsteige dieselbe Kennung tragen', () => {
+  // Schlussreview 04.11.2026: Tragen zwei Bahnsteige EXAKT dieselbe Kennung,
+  // ist es derselbe DELFI-Steig - zweimal gezeichnet (Bahnsteig und Kante,
+  // Spanische Loesung). Bis dahin fiel das Gleis ganz weg: Marienplatz Gleis 2
+  // (r4462515 ohne ref, r4462517 ref=82, beide de:09162:2:42:82), Ulm Hbf
+  // 2/3/4/6/7/8, Konstanz 1/2/3.
+  it('gibt das Gleis allen Bahnsteigen, die exakt dieselbe Kennung tragen (Konstanz)', () => {
     const graph = baueGraph(
       {
         elements: [
           ...steig(1, 52.0, { 'ref:IFOPT': 'de:08335:6554:2:2' }),
           ...steig(2, 52.001, { 'ref:IFOPT': 'de:08335:6554:2:2' }),
+        ],
+      },
+      [db('2', 'de:08335:6554:2:2')],
+    );
+    expect(graph.gleise).toEqual(['2']);
+    // Die Kette `gleis2:…` legt wie bei doppelter OSM-Nummer EINE Quelle (quelleFuerGleis).
+    expect(['w1', 'w2']).toContain(graph.knoten.get('gleis2:mitte')?.bahnsteigId);
+  });
+
+  it('ersetzt dabei die OSM-Nummer, die die DB nicht fuehrt (Marienplatz 82 → 2)', () => {
+    const graph = baueGraph(
+      {
+        elements: [
+          ...steig(1, 52.0, { 'ref:IFOPT': 'de:09162:2:42:82' }),
+          ...steig(2, 52.001, { ref: '82', 'ref:IFOPT': 'de:09162:2:42:82' }),
+          ...steig(3, 52.002, { ref: '1', 'ref:IFOPT': 'de:09162:2:42:81' }),
+        ],
+      },
+      [db('1', 'de:09162:2:42:81'), db('2', 'de:09162:2:42:82')],
+      { gleislisteVollstaendig: true },
+    );
+    expect(graph.gleise).toEqual(['1', '2']);
+  });
+
+  it('wählt nicht, wenn zwei Bahnsteige nur im selben Bereich liegen', () => {
+    const graph = baueGraph(
+      {
+        elements: [
+          ...steig(1, 52.0, { 'ref:IFOPT': 'de:08335:6554:2' }),
+          ...steig(2, 52.001, { 'ref:IFOPT': 'de:08335:6554:2' }),
         ],
       },
       [db('2', 'de:08335:6554:2:2')],
