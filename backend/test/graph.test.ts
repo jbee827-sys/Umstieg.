@@ -1098,6 +1098,28 @@ describe('Bahnsteig-Zugehoerigkeit', () => {
       expect(erreichbar(flaechen(0.000036), 'gleis1:mitte', 'gleis2:mitte')).toBe(false);
     });
 
+    it('erkennt auch eine Relation aus offenen Gliedern als Flaeche, eines davon nur zwei Punkte (Siegen)', () => {
+      // Siegen Hbf 3/4 ist eine Relation, deren aeussere Glieder sich erst zusammen
+      // schliessen; zwei davon haben nur zwei Punkte. Bis zum 04.11.2026 galt sie
+      // deshalb als Linie, und die Regel gegen Wege neben der Flaeche griff nicht.
+      const graph = baueGraph({ elements: [
+        knoten(1, 52.0, 12.0), knoten(2, 52.0, 12.001), knoten(3, 52.0, 12.002),
+        knoten(4, 52.00008, 12.002), knoten(5, 52.00008, 12.0),
+        knoten(21, 51.99975, 12.0), knoten(22, 51.99975, 12.002), knoten(23, 51.99983, 12.002),
+        knoten(24, 51.99983, 12.001), knoten(25, 51.99983, 12.0),
+        knoten(31, 51.999964, 12.001), knoten(32, 51.999964, 12.0015),
+        { type: 'way', id: 101, nodes: [1, 2, 3] },
+        { type: 'way', id: 102, nodes: [3, 4] },
+        { type: 'way', id: 103, nodes: [4, 5, 1] },
+        { type: 'relation', id: 1, members: [
+          { type: 'way', ref: 101, role: 'outer' }, { type: 'way', ref: 102, role: 'outer' }, { type: 'way', ref: 103, role: 'outer' },
+        ], tags: { type: 'multipolygon', railway: 'platform', ref: '1', level: '0' } },
+        { type: 'way', id: 11, nodes: [21, 22, 23, 24, 25, 21], tags: { railway: 'platform', area: 'yes', ref: '2', level: '0' } },
+        { type: 'way', id: 30, nodes: [24, 31, 32], tags: { highway: 'footway', level: '0' } },
+      ] });
+      expect(erreichbar(graph, 'gleis1:mitte', 'gleis2:mitte')).toBe(false);
+    });
+
     it('nimmt einen Weg 2 m neben der Flaeche auf - so ungenau wird gezeichnet', () => {
       expect(erreichbar(flaechen(0.00002), 'gleis1:mitte', 'gleis2:mitte')).toBe(true);
     });
