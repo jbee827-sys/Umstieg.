@@ -1161,6 +1161,30 @@ describe('Bahnsteigmitte im Bogen', () => {
     expect(mitte.lon).toBeCloseTo(12.001, 6);
   });
 
+  it('liegt in der Flaeche, nicht knapp daneben auf dem Gleis (Bremen)', () => {
+    // Bremen Hbf 2/3 (04.11.2026): Der Bahnsteig biegt sich, die Sehnenmitte liegt
+    // 2,7 m neben seiner Flaeche - jenseits der Bahnsteigkante, ueber dem Gleis 2.
+    // Die Kante von dort zum Aufzug in der Flaeche kreuzte es, 14 Routen.
+    // Hier: Suedrand mit Knick bei 52.00006, die Sehnenmitte liegt bei 52.00004.
+    const graph = baueGraph({ elements: [
+      { type: 'node', id: 1, lat: 52.0, lon: 12.0 },
+      { type: 'node', id: 2, lat: 52.00006, lon: 12.001 },
+      { type: 'node', id: 3, lat: 52.0, lon: 12.002 },
+      { type: 'node', id: 4, lat: 52.00008, lon: 12.002 },
+      { type: 'node', id: 5, lat: 52.00014, lon: 12.001 },
+      { type: 'node', id: 6, lat: 52.00008, lon: 12.0 },
+      { type: 'node', id: 7, lat: 52.0001, lon: 12.001, tags: { highway: 'elevator', level: '-1;0' } },
+      { type: 'node', id: 8, lat: 52.0001, lon: 12.0011 },
+      { type: 'way', id: 10, nodes: [1, 2, 3, 4, 5, 6, 1], tags: { railway: 'platform', area: 'yes', ref: '1', level: '0' } },
+      { type: 'way', id: 20, nodes: [7, 8], tags: { highway: 'footway', level: '0' } },
+    ] });
+    const mitte = graph.knoten.get('gleis1:mitte')!;
+    // Suedrand an der Laenge der Mitte; die Mitte darf nicht suedlich davon liegen.
+    const t = Math.abs(mitte.lon - 12.001) / 0.001;
+    const suedrand = 52.00006 * (1 - t) + 52.0 * t;
+    expect(mitte.lat).toBeGreaterThanOrEqual(suedrand - 1e-7);
+  });
+
   it('beginnt der Weg in Berlin auf dem eigenen Bahnsteig', () => {
     const berlin = baueGraph(ladeFixture('overpass/berlin-hbf'));
     const mitte = berlin.knoten.get('gleis14:mitte')!;

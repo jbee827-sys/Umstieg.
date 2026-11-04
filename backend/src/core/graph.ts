@@ -134,13 +134,18 @@ function abstandZumUmriss(
  * Im Bogen liegt die Sehnenmitte neben dem Bahnsteig - an Berlin Hbf fuer Gleis
  * 13/14 23 m neben dem eigenen und 1,6 m neben dem Nachbarbahnsteig. Jeder Weg ab
  * „Bahnsteigmitte“ begann so auf der falschen Seite der Gleise.
+ *
+ * Ist der Bahnsteig eine Flaeche, muss die Mitte in ihr liegen, nicht bloss nahe am
+ * Umriss: An Bremen Hbf 2/3 lag sie 2,7 m daneben, jenseits der Bahnsteigkante ueber
+ * dem Gleis 2, und 14 Routen begannen mit einem Schritt darueber (04.11.2026). Eine
+ * Linie hat kein Innen, fuer sie bleibt `BAHNSTEIG_FLAECHE_M`.
  */
 function mitteAufDemBahnsteig(
   mitte: { lat: number; lon: number },
   nodeListen: number[][],
   osmKnoten: Map<number, OsmElement>,
 ): { lat: number; lon: number } {
-  if (abstandZumUmriss(mitte, nodeListen, osmKnoten) <= BAHNSTEIG_FLAECHE_M) return mitte;
+  if (istFlaeche(nodeListen) ? liegtInnen(mitte, nodeListen, osmKnoten) : abstandZumUmriss(mitte, nodeListen, osmKnoten) <= BAHNSTEIG_FLAECHE_M) return mitte;
   const mLat = 111_320;
   const mLon = mLat * Math.cos((mitte.lat * Math.PI) / 180);
   let beste = mitte;
