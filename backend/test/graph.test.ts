@@ -1431,6 +1431,29 @@ describe('Aufzug als Schacht', () => {
     expect(aufzug[0].schachtSpanne).toBe(2);
   });
 
+  // Schlussreview 04.11.2026: Der Test oben erreicht die Naht gar nicht - sein
+  // Graph ist schon zusammenhaengend, `baueGraph` kehrt vor `zieheNaehte` und
+  // `zieheTreppenenden` zurueck. Hier sind die Gleise ohne Naht getrennt: Der
+  // Aufzug ist ein geschlossener Weg ohne Ebenen (Pass B: Anfang = Ende, kein
+  // Schacht), Punkt 6 liegt am Gang auf -1 und am Umriss von Gleis 2 auf 1.
+  // Ohne die Ausnahme fuer `highway=elevator` legte `zieheTreppenenden` dort
+  // eine Rampe von 0 m - einen Ebenenwechsel ohne Kosten und ohne Aufzug.
+  it('Aufzug-Weg erzeugt auch beim Nahtbau keine kostenlose Rampe', () => {
+    const elemente: OverpassAntwort = { elements: [
+      punkt(1, 52.0, 12.0), punkt(2, 52.0, 12.001),
+      punkt(6, 52.0004, 12.0), punkt(7, 52.00042, 12.0), punkt(8, 52.00042, 12.00003),
+      punkt(9, 52.0004, 12.001),
+      weg(10, [1, 2], { railway: 'platform', ref: '1', level: '-1' }),
+      weg(11, [6, 9], { railway: 'platform', ref: '2', level: '1' }),
+      weg(20, [1, 6], { highway: 'footway', level: '-1' }),
+      weg(30, [6, 7, 8, 6], { highway: 'elevator' }),
+    ] };
+    const graph = baueGraph(elemente);
+    const kanten = [...new Set([...graph.adjazenz.values()].flat())];
+    expect(kanten.filter((k) => k.typ === 'rampe' && [k.von, k.nach].some((id) => id.startsWith('n6@')))).toEqual([]);
+    expect(berechneRoute(graph, 'gleis1:mitte', 'gleis2:mitte', 'schnellste')).toBeNull();
+  });
+
   it('Aufzug mit wheelchair=no ueber drei Ebenen: keine Kante barrierefrei, keine stufenfreie Route', () => {
     const gesperrt = baueGraph({ elements: [
       punkt(1, 52.0, 12.0), punkt(2, 52.0, 12.001),
