@@ -1448,10 +1448,10 @@ describe('Aufzug als Schacht', () => {
       weg(20, [1, 6], { highway: 'footway', level: '-1' }),
       weg(30, [6, 7, 8, 6], { highway: 'elevator' }),
     ] };
-    const graph = baueGraph(elemente);
-    const kanten = [...new Set([...graph.adjazenz.values()].flat())];
+    const ohneSchacht = baueGraph(elemente);
+    const kanten = [...new Set([...ohneSchacht.adjazenz.values()].flat())];
     expect(kanten.filter((k) => k.typ === 'rampe' && [k.von, k.nach].some((id) => id.startsWith('n6@')))).toEqual([]);
-    expect(berechneRoute(graph, 'gleis1:mitte', 'gleis2:mitte', 'schnellste')).toBeNull();
+    expect(berechneRoute(ohneSchacht, 'gleis1:mitte', 'gleis2:mitte', 'schnellste')).toBeNull();
   });
 
   it('Aufzug mit wheelchair=no ueber drei Ebenen: keine Kante barrierefrei, keine stufenfreie Route', () => {
