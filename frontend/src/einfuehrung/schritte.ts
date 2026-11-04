@@ -79,10 +79,12 @@ export const SCHRITTE: TourSchritt[] = [
     bildschirm: 'uebersicht',
     ziel: 'standort',
     titel: 'Wo steigst du aus?',
-    // Zahlen aus der Aufzeichnung (Startbestand 13.10.2026): Westende 500 s,
-    // Mitte 305 s - aufgerundet 9 und 6 Minuten. Nach `npm run
-    // vorfuehrdaten` prüfen (README).
-    text: 'Wähle, wo du am Bahnsteig stehst. Weg und Gehzeit passen sich an – vom Westende sind es hier 9 statt 6 Minuten.',
+    // Zahlen aus der Aufzeichnung (Startbestand 13.10.2026, neu erzeugt am
+    // 04.11.2026 mit dem Aufzug als Schacht): Westende 453 s, Mitte 237 s -
+    // aufgerundet 8 und 4 Minuten. Bis zum 03.11. waren es 500/305 s über
+    // vier Rolltreppen (9 statt 6). schritte.test.ts prüft den Satz gegen die
+    // Aufzeichnung.
+    text: 'Wähle, wo du am Bahnsteig stehst. Weg und Gehzeit passen sich an – vom Westende sind es hier 8 statt 4 Minuten.',
   },
   {
     bildschirm: 'uebersicht',
@@ -101,7 +103,9 @@ export const SCHRITTE: TourSchritt[] = [
     bildschirm: 'weg',
     ziel: 'schema',
     titel: 'Das Ebenenschema',
-    text: 'Alle Ebenen, die du durchquerst, von oben nach unten. Rot markiert ist die Ebene, auf der du gerade bist, mit der nächsten Rolltreppe.',
+    // Seit dem 04.11.2026 fährt die schnellste Route 14→6 mit einem Aufzug
+    // von 2 nach -2 (vorher Rolltreppen); schritte.test.ts prüft die Anlage.
+    text: 'Alle Ebenen, die du durchquerst, von oben nach unten. Rot markiert ist die Ebene, auf der du gerade bist, mit dem nächsten Aufzug.',
   },
   {
     bildschirm: 'weg',
