@@ -73,18 +73,37 @@ sind unverändert, die Freigabe gibt Julian. Verglichen wird immer mit `d1be87a`
   - Hessental wurde immer gefunden. Der Hinweis betraf die Auswahl der
     Bahnhofsseiten, und die erklärt jetzt ein Satz.
 - **Impressum:** Kontakt mail.umstieg@web.de, die Telefonnummer steht wieder da.
+- **Schlussreview (04.11.):**
+  - Ein geteilter Bahnsteig wird an seiner OSM-Kennung erkannt, nicht am Namen:
+    Karlsplatz zeigt Hbf tief 81/82 nicht mehr.
+  - Trägt mehr als ein Bahnsteig exakt dieselbe IFOPT, bekommen alle das Gleis.
+    Marienplatz hat jetzt 1/2, Ulm 2/3/4/6/7/8, Konstanz 1/2/3.
+  - Ein U-Bahn-Steig ohne Namen wird nach `description` geprüft, sonst muss er
+    höchstens 150 m vom Bahnsteig liegen. Taunusanlage zeigt „Alte Oper“ nicht
+    mehr.
+  - Der genutzte Zugang ist immer eine echte Anlage. Geratene Nähte sind kein
+    Zugang (Stuttgart 1/2).
+  - FaSta: Eine gestörte Anlage am Schacht gewinnt gegen eine intakte.
+  - Meldungen nennt keine Restzeit mehr, wenn der Anschluss nicht erreichbar ist.
+  - `sbahnEvas` gilt auch für Bahnhöfe aus einer einzigen Verkehrsstelle.
+  - Gleisprüfung und lauf3 bauen den Graphen mit der DB-Liste wie der Server
+    (`--ohne-db` bzw. `OHNE_DB=1` wie zuvor).
 
 **Neu erzeugt (04.11.):**
 
 - **Bahnhofsseiten.**
-  - Gerechnet mit den DB-Gleislisten aus `backend/osm-ablage/db-gleise/`
-    (382 von 382 vorhanden, keine unvollständig).
-  - 380 Dateien mit 2,84 MB (vorher 379 mit 2,77 MB, Grenze 5 MB), daraus
+  - Gerechnet mit den DB-Gleislisten aus `backend/osm-ablage/db-gleise/`.
+    Am 04.11. mit `db-gleise-fuellen.ts --neu` neu geholt: 382 von 382
+    vorhanden, keine unvollständig, 60 mit `sbahnEvas`.
+  - 380 Dateien mit 2,86 MB (vorher 379 mit 2,77 MB, Grenze 5 MB), daraus
     379 Seiten.
   - Neu sind Hamburg-Eidelstedt und Hamburg-Sternschanze; ihre Gleise 1/2
     kommen erst über IFOPT.
   - München-Giesing hat keine Seite mehr: OSM kennt dort nur die U-Bahn 51/52.
-  - 27 Bahnhöfe haben U-Bahn-Steige (54 Steige), 70 haben S-Bahn-Gleise.
+  - 26 Bahnhöfe haben U-Bahn-Steige (53 Steige), 85 haben S-Bahn-Gleise.
+    Neu als S-Bahn gelten die Gleise von Bahnhöfen mit nur einer
+    Verkehrsstelle, darunter Esslingen, Fellbach, Olympiastadion und
+    Marienplatz.
   - München Hbf: S-Bahn 1/2, U-Bahn „U4 U5“ und zweimal „U1 U2 U7 U8“ (zwei
     OSM-Bahnsteige).
   - Hamburg Berliner Tor 4, Herne 2 und Fürth 1 fehlen zu Recht: Die DB führt
@@ -94,34 +113,43 @@ sind unverändert, die Freigabe gibt Julian. Verglichen wird immer mit `d1be87a`
   nächsten Aufzug“; `einfuehrung/schritte.test.ts` prüft beide Sätze gegen die
   Aufzeichnung. Mit der DB-Liste gerechnet kommen dieselben Zeiten heraus.
 
-| Je Gleispaar der Bahnhofsseiten, gegen `d1be87a` (19.142 gemeinsame Paare) | |
+| Je Gleispaar der Bahnhofsseiten, gegen `d1be87a` (19.058 gemeinsame Paare, nach dem Schlussreview) | |
 |---|---|
 | Schnellste Route Treppe → Aufzug | 456 (Dortmund 52, Berlin Hbf 40, Hanau 36, Südkreuz 32, Braunschweig 32) |
 | Schnellste Route Aufzug → Treppe | 20, alle Dortmund |
-| Gehzeit schnellste Route | Mittel −1,3 s, Median 0 s; 3.456 kürzer, 500 länger |
-| Gehzeit stufenfreie Route | Mittel −10,2 s, Median −20 s; 8.556 kürzer, 890 länger |
-| Stufenfreie Wege neu / weg | 32 (Dortmund 30) / 26 (Siegen 16, Karlsplatz 8, Düsseldorf 2) |
-| Schnellste Route P10/P50/P90 | 32/192/419 s → 32/191/416 s |
+| Gehzeit schnellste Route | Mittel −1,8 s, Median 0 s; 3.430 kürzer, 482 länger |
+| Gehzeit stufenfreie Route | Mittel −10,2 s, Median −20 s; 8.498 kürzer, 888 länger |
+| Stufenfreie Wege neu / weg | 32 (Dortmund 30) / 18 (Siegen 16, Düsseldorf 2) |
+| Schnellste Route P10/P50/P90 | 32/192/421 s → 31/190/416 s |
 
 Messskript: `backend/osm-ablage/diagnose/aufzug-vergleich.ts` (gitignored wie
 alle Diagnoseskripte); die Ausgabe steht in
-`osm-ablage/laeufe/aufzug-vergleich-0411.log`.
+`osm-ablage/laeufe/aufzug-vergleich-final.log` (vor dem Schlussreview:
+`aufzug-vergleich-0411.log`).
 
 **Geprüft:**
 
-- Backend: 1006 von 1006 Tests, Frontend: 1108 von 1108. Lint und Build sauber.
-- Gleisprüfung: 62 Kreuzungen. Gegen die Basis gehen schnell 0 und stufenfrei
-  8 Wege verloren (Siegen).
+- Backend: 1036 von 1036 Tests, Frontend: 1110 von 1110. Lint und Build sauber.
+- Gleisprüfung:
+  - Mit DB-Liste wie der Server: 62 Kreuzungen von 14.489 Routen an 14
+    Bahnhöfen. Ohne Weg: schnell 763, stufenfrei 2.470; unter 60 s: 55.
+  - Alte Rechnung (`--ohne-db`) gegen die Basis 0311: 62 von 14.234. Schnell
+    gehen 0 und stufenfrei 8 Wege verloren (Siegen), neu sind schnell 0 und
+    stufenfrei 14 (Dortmund).
 - `anfragen-pruefung.ts`: 3.446 Anfragen, 0 Befunde.
-- `simulation-bild.ts`: 2.166 Routen, 0 Befunde.
-- `LISTE=ablage simulation-lauf3.ts`: 2.166 Routen, 256 Befunde (am 02.11.:
-  2.172 Routen, 263 Befunde, mit `d1be87a` nachgerechnet). Neu sind:
-  - 18 Routen „Zugang ohne eine einzige Anlage“, alle Stuttgart Hbf
-    1/2 ↔ 101/102. Der genutzte Zugang ist eine Rampe, und ein Zugang kann
-    keine Rampe zählen.
-  - 6 „Anlagen im Text“.
-
-  Die Umwege zu einem Zugang gehen von 314 auf 292 zurück.
+- `LISTE=ablage simulation-lauf3.ts`:
+  - Mit DB-Liste: 2.157 Routen an 117 Bahnhöfen, 259 mit Befund, davon 0
+    „Zugang ohne eine einzige Anlage“. Die Routen mit Befund sind neue
+    Routen unter DB-Gleisnamen, alle „Anlagen im Text“ (München Hbf 1↔36,
+    Konstanz 1↔3b und 1a↔3a).
+  - Alte Rechnung (`OHNE_DB=1`): 2.166 Routen, 256 mit Befund. Die 18
+    Stuttgarter „Zugang ohne eine einzige Anlage“ sind weg, und es kommt
+    nichts hinzu (`osm-ablage/laeufe/lauf10-vergleich-ohne-db.log`).
+  - Am 02.11.: 2.172 Routen, 263 Befunde, mit `d1be87a` nachgerechnet.
+- `simulation-bild.ts` auf dem Lauf mit DB-Liste: 2.157 Routen, 0 Befunde,
+  U-Form 74.
+- Genutzter Zugang, gegen `bbfc923` (6.217 Routen mit Ebenenwechsel): 72
+  Routen verlieren ihn. Alle 72 waren geratene Nähte ohne Anlage.
 
 **OSM-Korrekturen, je Bahnhof** (aus der Gleisprüfung, Einzelheiten in
 `.superpowers/sdd/2026-11-03-reddit-rueckmeldungen/task-15-report.md`):
@@ -144,35 +172,23 @@ Osnabrück 4.
 
 **Offen für Julian:**
 
-1. **München Karlsplatz** zeigt „Gleis 81/82“ mit 648 s. Das ist München Hbf
-   tief im Overpass-Umkreis. Der Abgleich zwischen den Bahnhöfen
-   (`fremdeGleise`) geht über den Gleisnamen, und den hat Hbf jetzt auf 1/2
-   umbenannt. Vorschlag: gleiche Bahnsteigmitte unabhängig vom Namen.
-2. **München Marienplatz** zeigt „1, 82“ statt „1, 2“. Zwei OSM-Bahnsteige
-   (r4462515, r4462517, spanische Lösung) tragen dieselbe IFOPT. Bei zwei
-   gleich guten Treffern wird bewusst nicht gewählt.
-3. **Frankfurt Taunusanlage** hat einen U-Bahn-Reiter mit einem Steig ohne
-   Namen (w337196443, `description=Alte Oper`). Er liegt 266 m von der
-   Bahnsteigmitte entfernt, der Weg dauert 494 s; es ist die Nachbarhaltestelle.
-   Die übrigen 9 Steige ohne Namen gehören zum eigenen Bahnhof (Hauptwache,
-   Frankfurt Hbf, Hamburg Hbf, Marienplatz, Nürnberg). Vorschlag:
-   `description` prüfen, wenn kein `name` da ist. Liste in
-   `osm-ablage/laeufe/ubahn-unbenannt-0411.log`.
-4. **Stuttgart Hbf:** Ist der genutzte Zugang eine Rampe, zeigt das Schema
-   einen Zugang ohne Anlage (siehe Lauf 3).
-5. **Düsseldorf Hbf:** In den Daten sind die Gleise 1/2 jetzt die
+1. **Ulm Hbf: Gleis über zwei Bahnsteighälften.** OSM teilt die Bahnsteige
+   in Nord und Süd. Seit der IFOPT-Regel steht Gleis 2 auf beiden Hälften,
+   die Punkte `gleis2:*` aber nur auf einer (`quelleFuerGleis` nimmt die
+   erste). Deshalb zeigen 2→3, 4→6 und 7→8 162–226 s statt rund 20–30 s
+   („2 Süd → 3 Süd“ waren 31 s). Vorschlag: Die Gleiskette über alle Hälften
+   eines Gleises spannen.
+2. **Düsseldorf Hbf:** In den Daten sind die Gleise 1/2 jetzt die
    Straßenbahnsteige Stresemannplatz, ohne Weg. Die Seite blendet sie aus, und
    die App wählt Gleise aus dem Fahrplan. Wie in 29 weiteren Bahnhöfen stehen
    Gleise in den Daten, die die vollständige DB-Liste nicht führt.
-6. **Freistehende Aufzüge:** 9 Bahnhöfe, 13 Aufzüge, keiner angebunden
+3. **Freistehende Aufzüge:** 9 Bahnhöfe, 13 Aufzüge, keiner angebunden
    (Siegen, Langenhagen Mitte, Saalfeld, Hannover, Konstanz, Lindau-Reutin,
    Zoo, Frankfurt Flughafen).
-7. **Geratene Ebenen:** 63 % der stufenfreien Routen (3.965 von 6.283) laufen
+4. **Geratene Ebenen:** 63 % der stufenfreien Routen (3.965 von 6.283) laufen
    über mindestens einen Knoten, dessen Ebene nicht belegt ist.
-8. **Live-Ebenenschema:** Es zeigt keine U-Bahn-Steige mehr, denn `schema.ts`
+5. **Live-Ebenenschema:** Es zeigt keine U-Bahn-Steige mehr, denn `schema.ts`
    überspringt Knoten ohne Gleis.
-9. **FaSta:** Liegen zwei Anlagen auf demselben Schacht, gilt die spätere.
-   Gewinnen sollte INACTIVE, weil das für den stufenfreien Weg zählt.
 
 **Nächste Schritte, in dieser Reihenfolge:**
 
@@ -180,7 +196,7 @@ Osnabrück 4.
    Dortmund, Karlsplatz), dann Fast-Forward von `main` und Deploy auf Fly.
    Backend und Frontend gehen zusammen hinaus: Ersatzverkehr und
    Auslandshinweis brauchen beide Seiten.
-2. **Punkte 1–3 oben generisch lösen,** danach `npm run bahnhofsseiten` erneut.
+2. **Punkt 1 oben (Ulm) generisch lösen,** danach `npm run bahnhofsseiten` erneut.
 3. **OSM-Korrekturen** eintragen, danach den Bestand erneuern.
 4. **Zu lange Zeiten** von 02.11. stehen noch: Flughafen BER 3→5 885 s,
    Duisburg 10→12 598 s. Dazu kommen 53 Gleispaare unter 60 s und

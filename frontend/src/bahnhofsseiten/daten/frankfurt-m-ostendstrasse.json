@@ -10,7 +10,7 @@
     "1",
     "2"
   ],
-  "gleisArt": {"1":"zug","2":"zug"},
+  "gleisArt": {"1":"sbahn","2":"sbahn"},
   "ubahn": [],
   "paare": [
     {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":8,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":8},

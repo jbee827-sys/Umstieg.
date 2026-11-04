@@ -12,7 +12,7 @@
     "3",
     "4"
   ],
-  "gleisArt": {"1":"zug","2":"zug","3":"zug","4":"zug"},
+  "gleisArt": {"1":"zug","2":"sbahn","3":"sbahn","4":"zug"},
   "ubahn": [
     {
       "id": "r7763193",

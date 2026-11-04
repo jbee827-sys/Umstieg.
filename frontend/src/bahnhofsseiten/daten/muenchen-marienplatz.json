@@ -8,16 +8,16 @@
   "geholtAm": "2026-10-13T19:19:39.713Z",
   "gleise": [
     "1",
-    "82"
+    "2"
   ],
-  "gleisArt": {"1":"sbahn","82":"zug"},
+  "gleisArt": {"1":"sbahn","2":"sbahn"},
   "ubahn": [
     {
       "id": "w251869205",
       "label": "U3 U6",
       "paare": [
         {"von":"U3 U6","nach":"1","gleicherBahnsteig":false,"sek":193,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-oben","stufenfreiSek":278},
-        {"von":"U3 U6","nach":"82","gleicherBahnsteig":false,"sek":212,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-oben","stufenfreiSek":306}
+        {"von":"U3 U6","nach":"2","gleicherBahnsteig":false,"sek":197,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-oben","stufenfreiSek":265}
       ]
     },
     {
@@ -25,12 +25,12 @@
       "label": "U3 U6",
       "paare": [
         {"von":"U3 U6","nach":"1","gleicherBahnsteig":false,"sek":180,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-oben","stufenfreiSek":307},
-        {"von":"U3 U6","nach":"82","gleicherBahnsteig":false,"sek":199,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-oben","stufenfreiSek":335}
+        {"von":"U3 U6","nach":"2","gleicherBahnsteig":false,"sek":184,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-oben","stufenfreiSek":276}
       ]
     }
   ],
   "paare": [
-    {"von":"1","nach":"82","gleicherBahnsteig":false,"sek":166,"wechsel":2,"anlagen":["rolltreppe"],"lage":"nach-unten","stufenfreiSek":309},
-    {"von":"82","nach":"1","gleicherBahnsteig":false,"sek":166,"wechsel":2,"anlagen":["rolltreppe"],"lage":"nach-oben","stufenfreiSek":309}
+    {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":151,"wechsel":2,"anlagen":["rolltreppe"],"lage":"nach-unten","stufenfreiSek":268},
+    {"von":"2","nach":"1","gleicherBahnsteig":false,"sek":151,"wechsel":2,"anlagen":["rolltreppe"],"lage":"nach-oben","stufenfreiSek":268}
   ]
 }
