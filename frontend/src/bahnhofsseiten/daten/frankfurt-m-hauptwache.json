@@ -10,6 +10,41 @@
     "2",
     "3"
   ],
+  "gleisArt": {"2":"sbahn","3":"sbahn"},
+  "ubahn": [
+    {
+      "id": "r6583437",
+      "label": "U6 U7",
+      "paare": [
+        {"von":"U6 U7","nach":"2","gleicherBahnsteig":false,"sek":160,"wechsel":2,"anlagen":["rolltreppe"],"lage":"unterfuehrung","stufenfreiSek":274},
+        {"von":"U6 U7","nach":"3","gleicherBahnsteig":false,"sek":160,"wechsel":2,"anlagen":["rolltreppe"],"lage":"unterfuehrung","stufenfreiSek":274}
+      ]
+    },
+    {
+      "id": "w60699215",
+      "label": "U1 U2 U3 U8",
+      "paare": [
+        {"von":"U1 U2 U3 U8","nach":"2","gleicherBahnsteig":false,"sek":177,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-oben","stufenfreiSek":287},
+        {"von":"U1 U2 U3 U8","nach":"3","gleicherBahnsteig":false,"sek":177,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-oben","stufenfreiSek":287}
+      ]
+    },
+    {
+      "id": "w60699217",
+      "label": "U1 U2 U3 U8",
+      "paare": [
+        {"von":"U1 U2 U3 U8","nach":"2","gleicherBahnsteig":false,"sek":118,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-oben","stufenfreiSek":240},
+        {"von":"U1 U2 U3 U8","nach":"3","gleicherBahnsteig":false,"sek":118,"wechsel":1,"anlagen":["rolltreppe"],"lage":"nach-oben","stufenfreiSek":240}
+      ]
+    },
+    {
+      "id": "w137089248",
+      "label": "U6 U7",
+      "paare": [
+        {"von":"U6 U7","nach":"2","gleicherBahnsteig":false,"sek":140,"wechsel":2,"anlagen":["rolltreppe"],"lage":"unterfuehrung","stufenfreiSek":253},
+        {"von":"U6 U7","nach":"3","gleicherBahnsteig":false,"sek":140,"wechsel":2,"anlagen":["rolltreppe"],"lage":"unterfuehrung","stufenfreiSek":253}
+      ]
+    }
+  ],
   "paare": [
     {"von":"2","nach":"3","gleicherBahnsteig":true,"sek":22,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":22},
     {"von":"3","nach":"2","gleicherBahnsteig":true,"sek":22,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":22}

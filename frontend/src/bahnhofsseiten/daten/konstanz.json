@@ -14,6 +14,8 @@
     "3a",
     "3b"
   ],
+  "gleisArt": {"1a":"zug","1b":"zug","2a":"zug","2b":"zug","3a":"zug","3b":"zug"},
+  "ubahn": [],
   "paare": [
     {"von":"1a","nach":"1b","gleicherBahnsteig":false,"sek":152,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":152},
     {"von":"1a","nach":"2a","gleicherBahnsteig":false,"sek":259,"wechsel":2,"anlagen":["treppe","rampe"],"lage":"unterfuehrung","stufenfreiSek":null},

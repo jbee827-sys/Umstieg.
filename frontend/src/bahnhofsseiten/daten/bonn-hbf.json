@@ -13,6 +13,8 @@
     "4",
     "5"
   ],
+  "gleisArt": {"1":"zug","2":"zug","3":"zug","4":"zug","5":"zug"},
+  "ubahn": [],
   "paare": [
     {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":184,"wechsel":2,"anlagen":["rolltreppe","rampe","treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
     {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":184,"wechsel":2,"anlagen":["rolltreppe","rampe","treppe"],"lage":"unterfuehrung","stufenfreiSek":null},

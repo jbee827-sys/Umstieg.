@@ -13,6 +13,8 @@
     "32",
     "34"
   ],
+  "gleisArt": {"1":"zug","2":"zug","31":"sbahn","32":"sbahn","34":"sbahn"},
+  "ubahn": [],
   "paare": [
     {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
     {"von":"1","nach":"31","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
@@ -25,14 +27,14 @@
     {"von":"31","nach":"1","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
     {"von":"31","nach":"2","gleicherBahnsteig":false,"sek":177,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":177},
     {"von":"31","nach":"32","gleicherBahnsteig":true,"sek":56,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":56},
-    {"von":"31","nach":"34","gleicherBahnsteig":false,"sek":214,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":214},
+    {"von":"31","nach":"34","gleicherBahnsteig":false,"sek":213,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":213},
     {"von":"32","nach":"1","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
     {"von":"32","nach":"2","gleicherBahnsteig":false,"sek":177,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":177},
     {"von":"32","nach":"31","gleicherBahnsteig":true,"sek":56,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":56},
-    {"von":"32","nach":"34","gleicherBahnsteig":false,"sek":214,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":214},
+    {"von":"32","nach":"34","gleicherBahnsteig":false,"sek":213,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":213},
     {"von":"34","nach":"1","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
     {"von":"34","nach":"2","gleicherBahnsteig":false,"sek":169,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":169},
-    {"von":"34","nach":"31","gleicherBahnsteig":false,"sek":214,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":214},
-    {"von":"34","nach":"32","gleicherBahnsteig":false,"sek":214,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":214}
+    {"von":"34","nach":"31","gleicherBahnsteig":false,"sek":213,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":213},
+    {"von":"34","nach":"32","gleicherBahnsteig":false,"sek":213,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":213}
   ]
 }

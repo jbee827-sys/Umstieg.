@@ -10,6 +10,17 @@
     "1",
     "2"
   ],
+  "gleisArt": {"1":"sbahn","2":"sbahn"},
+  "ubahn": [
+    {
+      "id": "w375522059",
+      "label": "U7",
+      "paare": [
+        {"von":"U7","nach":"1","gleicherBahnsteig":false,"sek":260,"wechsel":3,"anlagen":["treppe","rolltreppe"],"lage":"nach-oben","stufenfreiSek":274},
+        {"von":"U7","nach":"2","gleicherBahnsteig":false,"sek":260,"wechsel":3,"anlagen":["treppe","rolltreppe"],"lage":"nach-oben","stufenfreiSek":274}
+      ]
+    }
+  ],
   "paare": [
     {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":101,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":101},
     {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":101,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":101}

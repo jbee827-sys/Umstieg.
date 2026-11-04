@@ -18,6 +18,8 @@
     "37",
     "38"
   ],
+  "gleisArt": {"1":"zug","3":"zug","4":"zug","6":"zug","7":"zug","8":"zug","9":"zug","36":"zug","37":"zug","38":"zug"},
+  "ubahn": [],
   "paare": [
     {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":198,"wechsel":2,"anlagen":["rolltreppe","treppe"],"lage":"unterfuehrung","stufenfreiSek":null},
     {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":198,"wechsel":2,"anlagen":["rolltreppe","treppe"],"lage":"unterfuehrung","stufenfreiSek":null},

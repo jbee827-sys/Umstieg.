@@ -17,6 +17,8 @@
     "96",
     "97"
   ],
+  "gleisArt": {"1":"sbahn","2":"zug","3":"zug","4":"zug","5":"zug","7":"zug","8":"zug","96":"zug","97":"zug"},
+  "ubahn": [],
   "paare": [
     {"von":"1","nach":"2","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
     {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},

@@ -16,6 +16,23 @@
     "21",
     "22"
   ],
+  "gleisArt": {"1":"sbahn","2":"sbahn","15":"zug","16":"zug","17":"zug","20":"zug","21":"zug","22":"zug"},
+  "ubahn": [
+    {
+      "id": "r18138771",
+      "label": "U5",
+      "paare": [
+        {"von":"U5","nach":"1","gleicherBahnsteig":false,"sek":234,"wechsel":2,"anlagen":["treppe","rolltreppe"],"lage":"nach-oben","stufenfreiSek":419},
+        {"von":"U5","nach":"2","gleicherBahnsteig":false,"sek":234,"wechsel":2,"anlagen":["treppe","rolltreppe"],"lage":"nach-oben","stufenfreiSek":419},
+        {"von":"U5","nach":"15","gleicherBahnsteig":false,"sek":352,"wechsel":2,"anlagen":["treppe"],"lage":"nach-oben","stufenfreiSek":null},
+        {"von":"U5","nach":"16","gleicherBahnsteig":false,"sek":352,"wechsel":2,"anlagen":["treppe"],"lage":"nach-oben","stufenfreiSek":null},
+        {"von":"U5","nach":"17","gleicherBahnsteig":false,"sek":413,"wechsel":2,"anlagen":["treppe"],"lage":"nach-oben","stufenfreiSek":null},
+        {"von":"U5","nach":"20","gleicherBahnsteig":false,"sek":413,"wechsel":2,"anlagen":["treppe"],"lage":"nach-oben","stufenfreiSek":null},
+        {"von":"U5","nach":"21","gleicherBahnsteig":false,"sek":394,"wechsel":2,"anlagen":["treppe"],"lage":"nach-oben","stufenfreiSek":null},
+        {"von":"U5","nach":"22","gleicherBahnsteig":false,"sek":394,"wechsel":2,"anlagen":["treppe"],"lage":"nach-oben","stufenfreiSek":null}
+      ]
+    }
+  ],
   "paare": [
     {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":41,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":41},
     {"von":"1","nach":"15","gleicherBahnsteig":false,"sek":398,"wechsel":2,"anlagen":["rolltreppe","treppe"],"lage":"unterfuehrung","stufenfreiSek":null},

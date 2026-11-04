@@ -19,9 +19,181 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 02.11.2026, abends)
+## Hier weitermachen (Stand 04.11.2026)
 
-### Ausgeliefert am 02.11.2026: Stuttgart, Karte, keine Wege mehr über Gleise
+### Stand 04.11.2026: Reddit-Rückmeldungen umgesetzt, Zweig `fix/offene-punkte`, nicht ausgeliefert
+
+Spec `docs/superpowers/specs/2026-11-03-reddit-rueckmeldungen-design.md`,
+Plan `docs/superpowers/plans/2026-11-03-reddit-rueckmeldungen.md` (16 Tasks).
+Alle Commits liegen auf `fix/offene-punkte` ab `2d6a822`. `main` und Fly
+sind unverändert, die Freigabe gibt Julian. Verglichen wird immer mit `d1be87a`
+(Stand 02.11.).
+
+**Was sich ändert:**
+
+- **Wege über Gleise (G1-Rest).** Drei Regeln in `core/graph.ts`:
+  - Ein Knoten mehr als 3 m neben einer Bahnsteigfläche gehört nicht zu ihr,
+    wenn sein ebenes Wegenetz einen anderen Bahnsteig erreicht, diesen aber
+    nicht (Dortmund).
+  - Die Bahnsteigmitte liegt in der Fläche (Bremen).
+  - Die Mitte wird nicht an einen solchen Weg angebunden (Siegen).
+
+  Die Gleisprüfung fällt von 169 auf 62 von 14.234 Routen; Dortmund Hbf geht
+  von 66 auf 0. Ohne Weg: schnell 748 → 742, stufenfrei 2.498 → 2.410. Siegen
+  1/2 → 3/4/54/55 hat keinen stufenfreien Weg mehr: Diese Wege kreuzten die
+  Gleise, und die beiden Aufzüge stehen in OSM frei, an keinem Weg.
+- **Aufzug als Schacht (G2).**
+  - Eine Fahrt ist eine Kante und ein Schritt. Warten kostet Spanne × 10 +
+    15 s, die Fahrt |Δ| × 10 + 15 s; bisher waren es 60 s je Aufzugkante.
+  - Ein gestörter Aufzug sperrt den ganzen Schacht.
+  - Berlin 14→6 fährt jetzt in einem Zug von 2 nach −2: ab der Mitte 237 s
+    statt 305 s, und die stufenfreie Route ist dieselbe.
+- **Mit Stopp (G2):** plant 5 Minuten Aufenthalt ein (WC und Kiosk gleich),
+  als eigenen Schritt.
+- **Gleisnamen und Gleisarten (G4).**
+  - Gleisnamen werden ohne Schreibweise verglichen („7 G–I“ = „7G-I“).
+  - DB-Namen kommen per IFOPT und ersetzen OSM-Nummern: München Hbf tief
+    heißt 1/2 statt 81/82.
+  - Gleise sind nach Art getrennt in Züge und S-Bahn. U-Bahn-Steige sind
+    keine Gleise mehr; man erreicht sie aber weiter über Wege.
+  - Die Bahnhofsseiten zeigen die Reiter Züge/S-Bahn/U-Bahn und einen Satz
+    dazu, wie die Bahnhöfe ausgewählt sind.
+- **Schema in echter Lage (G5).**
+  - Die Bahnsteige sind nach ihrer Mittellinie geordnet: 12 von 386 Ebenen
+    stehen in anderer Reihenfolge (Saarbrücken, München, Ulm, Rostock …).
+  - Zugänge je Bahnsteig: −55 %. Der genutzte Zugang bleibt immer stehen.
+  - Jede Anlage wird einmal gezählt, und die Fußzeile nennt nur die genutzte.
+- **B.1, Fehler außerhalb der Wegführung:**
+  - Die Ampel rechnet ab der Ankunft. Fährt der Anschluss vor der Ankunft,
+    zeigt sie Rot mit „Anschluss nicht erreichbar“.
+  - Busse mit Zuglinie gelten als „Ersatzverkehr“, U-Linien als U-Bahn
+    (Nürnberg). Gemessen: `n=10` schneidet keine Fahrt ab.
+  - Bei einem Bahnhof im Ausland steht „Umstieg. deckt nur Bahnhöfe in
+    Deutschland ab.“
+  - Hessental wurde immer gefunden. Der Hinweis betraf die Auswahl der
+    Bahnhofsseiten, und die erklärt jetzt ein Satz.
+- **Impressum:** Kontakt mail.umstieg@web.de, die Telefonnummer steht wieder da.
+
+**Neu erzeugt (04.11.):**
+
+- **Bahnhofsseiten.**
+  - Gerechnet mit den DB-Gleislisten aus `backend/osm-ablage/db-gleise/`
+    (382 von 382 vorhanden, keine unvollständig).
+  - 380 Dateien mit 2,84 MB (vorher 379 mit 2,77 MB, Grenze 5 MB), daraus
+    379 Seiten.
+  - Neu sind Hamburg-Eidelstedt und Hamburg-Sternschanze; ihre Gleise 1/2
+    kommen erst über IFOPT.
+  - München-Giesing hat keine Seite mehr: OSM kennt dort nur die U-Bahn 51/52.
+  - 27 Bahnhöfe haben U-Bahn-Steige (54 Steige), 70 haben S-Bahn-Gleise.
+  - München Hbf: S-Bahn 1/2, U-Bahn „U4 U5“ und zweimal „U1 U2 U7 U8“ (zwei
+    OSM-Bahnsteige).
+  - Hamburg Berliner Tor 4, Herne 2 und Fürth 1 fehlen zu Recht: Die DB führt
+    diese Gleise nicht.
+- **Vorführdaten Berlin 14→6:** 453/237/309 s ab Anfang/Mitte/Ende (vorher
+  500/305/384 s). Die Tour sagt jetzt „8 statt 4 Minuten“ und „mit dem
+  nächsten Aufzug“; `einfuehrung/schritte.test.ts` prüft beide Sätze gegen die
+  Aufzeichnung. Mit der DB-Liste gerechnet kommen dieselben Zeiten heraus.
+
+| Je Gleispaar der Bahnhofsseiten, gegen `d1be87a` (19.142 gemeinsame Paare) | |
+|---|---|
+| Schnellste Route Treppe → Aufzug | 456 (Dortmund 52, Berlin Hbf 40, Hanau 36, Südkreuz 32, Braunschweig 32) |
+| Schnellste Route Aufzug → Treppe | 20, alle Dortmund |
+| Gehzeit schnellste Route | Mittel −1,3 s, Median 0 s; 3.456 kürzer, 500 länger |
+| Gehzeit stufenfreie Route | Mittel −10,2 s, Median −20 s; 8.556 kürzer, 890 länger |
+| Stufenfreie Wege neu / weg | 32 (Dortmund 30) / 26 (Siegen 16, Karlsplatz 8, Düsseldorf 2) |
+| Schnellste Route P10/P50/P90 | 32/192/419 s → 32/191/416 s |
+
+Messskript: `backend/osm-ablage/diagnose/aufzug-vergleich.ts` (gitignored wie
+alle Diagnoseskripte); die Ausgabe steht in
+`osm-ablage/laeufe/aufzug-vergleich-0411.log`.
+
+**Geprüft:**
+
+- Backend: 1006 von 1006 Tests, Frontend: 1108 von 1108. Lint und Build sauber.
+- Gleisprüfung: 62 Kreuzungen. Gegen die Basis gehen schnell 0 und stufenfrei
+  8 Wege verloren (Siegen).
+- `anfragen-pruefung.ts`: 3.446 Anfragen, 0 Befunde.
+- `simulation-bild.ts`: 2.166 Routen, 0 Befunde.
+- `LISTE=ablage simulation-lauf3.ts`: 2.166 Routen, 256 Befunde (am 02.11.:
+  2.172 Routen, 263 Befunde, mit `d1be87a` nachgerechnet). Neu sind:
+  - 18 Routen „Zugang ohne eine einzige Anlage“, alle Stuttgart Hbf
+    1/2 ↔ 101/102. Der genutzte Zugang ist eine Rampe, und ein Zugang kann
+    keine Rampe zählen.
+  - 6 „Anlagen im Text“.
+
+  Die Umwege zu einem Zugang gehen von 314 auf 292 zurück.
+
+**OSM-Korrekturen, je Bahnhof** (aus der Gleisprüfung, Einzelheiten in
+`.superpowers/sdd/2026-11-03-reddit-rueckmeldungen/task-15-report.md`):
+
+- Northeim(Han) 6: `level` an w408708121 (Zugang zum Tunnel w35582226)
+- Potsdam Park Sanssouci 4: `level` des Tunnelgehwegs w398606399
+- Berlin Ostkreuz 4: Treppenende w548286777 an Bahnsteig F anschließen
+- Bonn-Bad Godesberg 4: `level` der Tunnelzugänge w31246240/w1104653738
+- Esslingen-Zell 4: Ebene des Übergangs w1421979075/w1421802655
+- Eberbach 2: Ebenen an der Brückenrampe w168293782/w785392987
+- Falkenberg(Elster) 2: Lage w664741142 oder Umriss r9236204
+- Hamburg-Blankenese 2: w1212407044/w1343072804 (−1) liegen in Bahnsteig 1 (0)
+- Dresden Hbf 8: Lage w261923641 (`source=extrapolation`)
+- Singen(Hohentwiel) 4: Lage w813402826 oder Umriss w1500742165
+- Siegen Hbf: Aufzüge n6459302089 und n6459302087 an Ebene 0 und 1 anbinden
+
+Nicht trennbar sind Freising 8 und Frankfurt Hbf 2. Vermutlich Fehlalarme der
+Prüfung (Gleis unter einem höheren Bahnsteig): Berlin Westkreuz 8,
+Osnabrück 4.
+
+**Offen für Julian:**
+
+1. **München Karlsplatz** zeigt „Gleis 81/82“ mit 648 s. Das ist München Hbf
+   tief im Overpass-Umkreis. Der Abgleich zwischen den Bahnhöfen
+   (`fremdeGleise`) geht über den Gleisnamen, und den hat Hbf jetzt auf 1/2
+   umbenannt. Vorschlag: gleiche Bahnsteigmitte unabhängig vom Namen.
+2. **München Marienplatz** zeigt „1, 82“ statt „1, 2“. Zwei OSM-Bahnsteige
+   (r4462515, r4462517, spanische Lösung) tragen dieselbe IFOPT. Bei zwei
+   gleich guten Treffern wird bewusst nicht gewählt.
+3. **Frankfurt Taunusanlage** hat einen U-Bahn-Reiter mit einem Steig ohne
+   Namen (w337196443, `description=Alte Oper`). Er liegt 266 m von der
+   Bahnsteigmitte entfernt, der Weg dauert 494 s; es ist die Nachbarhaltestelle.
+   Die übrigen 9 Steige ohne Namen gehören zum eigenen Bahnhof (Hauptwache,
+   Frankfurt Hbf, Hamburg Hbf, Marienplatz, Nürnberg). Vorschlag:
+   `description` prüfen, wenn kein `name` da ist. Liste in
+   `osm-ablage/laeufe/ubahn-unbenannt-0411.log`.
+4. **Stuttgart Hbf:** Ist der genutzte Zugang eine Rampe, zeigt das Schema
+   einen Zugang ohne Anlage (siehe Lauf 3).
+5. **Düsseldorf Hbf:** In den Daten sind die Gleise 1/2 jetzt die
+   Straßenbahnsteige Stresemannplatz, ohne Weg. Die Seite blendet sie aus, und
+   die App wählt Gleise aus dem Fahrplan. Wie in 29 weiteren Bahnhöfen stehen
+   Gleise in den Daten, die die vollständige DB-Liste nicht führt.
+6. **Freistehende Aufzüge:** 9 Bahnhöfe, 13 Aufzüge, keiner angebunden
+   (Siegen, Langenhagen Mitte, Saalfeld, Hannover, Konstanz, Lindau-Reutin,
+   Zoo, Frankfurt Flughafen).
+7. **Geratene Ebenen:** 63 % der stufenfreien Routen (3.965 von 6.283) laufen
+   über mindestens einen Knoten, dessen Ebene nicht belegt ist.
+8. **Live-Ebenenschema:** Es zeigt keine U-Bahn-Steige mehr, denn `schema.ts`
+   überspringt Knoten ohne Gleis.
+9. **FaSta:** Liegen zwei Anlagen auf demselben Schacht, gilt die spätere.
+   Gewinnen sollte INACTIVE, weil das für den stufenfreien Weg zählt.
+
+**Nächste Schritte, in dieser Reihenfolge:**
+
+1. **Freigabe:** Julian sieht die Seiten an (München Hbf, Saarbrücken,
+   Dortmund, Karlsplatz), dann Fast-Forward von `main` und Deploy auf Fly.
+   Backend und Frontend gehen zusammen hinaus: Ersatzverkehr und
+   Auslandshinweis brauchen beide Seiten.
+2. **Punkte 1–3 oben generisch lösen,** danach `npm run bahnhofsseiten` erneut.
+3. **OSM-Korrekturen** eintragen, danach den Bestand erneuern.
+4. **Zu lange Zeiten** von 02.11. stehen noch: Flughafen BER 3→5 885 s,
+   Duisburg 10→12 598 s. Dazu kommen 53 Gleispaare unter 60 s und
+   Ludwigshafen 1→10 / 2→9 (Bildprüfung).
+
+```bash
+cd backend
+npm run bahnhofsseiten                                     # Seitendaten, mit osm-ablage/db-gleise
+npm run vorfuehrdaten                                      # Einführungstour Berlin 14→6
+npx tsx osm-ablage/diagnose/aufzug-vergleich.ts d1be87a    # je Gleispaar gegen einen Commit
+```
+
+### Davor: ausgeliefert am 02.11.2026: Stuttgart, Karte, keine Wege mehr über Gleise
 
 **Live:** Backend auf Fly (eine Maschine, `--ha=false`), Frontend aus `main`.
 Der iOS-Code, das Zugbild und die Einführung stehen inzwischen ebenfalls in

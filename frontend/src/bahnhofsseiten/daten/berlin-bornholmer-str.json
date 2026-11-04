@@ -12,6 +12,8 @@
     "3",
     "4"
   ],
+  "gleisArt": {"1":"sbahn","2":"sbahn","3":"sbahn","4":"sbahn"},
+  "ubahn": [],
   "paare": [
     {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":16,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":16},
     {"von":"1","nach":"3","gleicherBahnsteig":false,"sek":20,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":20},

@@ -12,18 +12,20 @@
     "5",
     "6"
   ],
+  "gleisArt": {"1":"zug","4":"zug","5":"zug","6":"zug"},
+  "ubahn": [],
   "paare": [
-    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":222,"wechsel":2,"anlagen":["rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":336},
-    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":222,"wechsel":2,"anlagen":["rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":336},
-    {"von":"1","nach":"6","gleicherBahnsteig":false,"sek":233,"wechsel":2,"anlagen":["rolltreppe","aufzug"],"lage":"ueberfuehrung","stufenfreiSek":291},
-    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":222,"wechsel":2,"anlagen":["rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":336},
+    {"von":"1","nach":"4","gleicherBahnsteig":false,"sek":222,"wechsel":2,"anlagen":["rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":316},
+    {"von":"1","nach":"5","gleicherBahnsteig":false,"sek":222,"wechsel":2,"anlagen":["rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":316},
+    {"von":"1","nach":"6","gleicherBahnsteig":false,"sek":222,"wechsel":2,"anlagen":["rolltreppe","aufzug"],"lage":"ueberfuehrung","stufenfreiSek":270},
+    {"von":"4","nach":"1","gleicherBahnsteig":false,"sek":222,"wechsel":2,"anlagen":["rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":316},
     {"von":"4","nach":"5","gleicherBahnsteig":true,"sek":63,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":63},
-    {"von":"4","nach":"6","gleicherBahnsteig":false,"sek":205,"wechsel":2,"anlagen":["rolltreppe","aufzug"],"lage":"ueberfuehrung","stufenfreiSek":262},
-    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":222,"wechsel":2,"anlagen":["rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":336},
+    {"von":"4","nach":"6","gleicherBahnsteig":false,"sek":194,"wechsel":2,"anlagen":["rolltreppe","aufzug"],"lage":"ueberfuehrung","stufenfreiSek":241},
+    {"von":"5","nach":"1","gleicherBahnsteig":false,"sek":222,"wechsel":2,"anlagen":["rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":316},
     {"von":"5","nach":"4","gleicherBahnsteig":true,"sek":63,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":63},
-    {"von":"5","nach":"6","gleicherBahnsteig":false,"sek":205,"wechsel":2,"anlagen":["rolltreppe","aufzug"],"lage":"ueberfuehrung","stufenfreiSek":262},
-    {"von":"6","nach":"1","gleicherBahnsteig":false,"sek":233,"wechsel":2,"anlagen":["aufzug","rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":291},
-    {"von":"6","nach":"4","gleicherBahnsteig":false,"sek":205,"wechsel":2,"anlagen":["aufzug","rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":262},
-    {"von":"6","nach":"5","gleicherBahnsteig":false,"sek":205,"wechsel":2,"anlagen":["aufzug","rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":262}
+    {"von":"5","nach":"6","gleicherBahnsteig":false,"sek":194,"wechsel":2,"anlagen":["rolltreppe","aufzug"],"lage":"ueberfuehrung","stufenfreiSek":241},
+    {"von":"6","nach":"1","gleicherBahnsteig":false,"sek":222,"wechsel":2,"anlagen":["aufzug","rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":270},
+    {"von":"6","nach":"4","gleicherBahnsteig":false,"sek":194,"wechsel":2,"anlagen":["aufzug","rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":241},
+    {"von":"6","nach":"5","gleicherBahnsteig":false,"sek":194,"wechsel":2,"anlagen":["aufzug","rolltreppe"],"lage":"ueberfuehrung","stufenfreiSek":241}
   ]
 }

@@ -11,6 +11,8 @@
     "5",
     "6"
   ],
+  "gleisArt": {"2":"zug","5":"zug","6":"zug"},
+  "ubahn": [],
   "paare": [
     {"von":"2","nach":"5","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},
     {"von":"2","nach":"6","gleicherBahnsteig":false,"sek":null,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":null},

@@ -10,6 +10,17 @@
     "1",
     "2"
   ],
+  "gleisArt": {"1":"sbahn","2":"sbahn"},
+  "ubahn": [
+    {
+      "id": "r18138769",
+      "label": "U5",
+      "paare": [
+        {"von":"U5","nach":"1","gleicherBahnsteig":false,"sek":309,"wechsel":3,"anlagen":["treppe","rampe"],"lage":"nach-oben","stufenfreiSek":null},
+        {"von":"U5","nach":"2","gleicherBahnsteig":false,"sek":309,"wechsel":3,"anlagen":["treppe","rampe"],"lage":"nach-oben","stufenfreiSek":null}
+      ]
+    }
+  ],
   "paare": [
     {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":9,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":9},
     {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":9,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":9}

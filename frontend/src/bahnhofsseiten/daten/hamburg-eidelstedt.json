@@ -1,0 +1,19 @@
+{
+  "name": "Hamburg-Eidelstedt",
+  "eva": "8002555",
+  "slug": "hamburg-eidelstedt",
+  "lat": 53.595887,
+  "lon": 9.907097,
+  "stufe": 1,
+  "geholtAm": "2026-10-13T17:39:24.446Z",
+  "gleise": [
+    "1",
+    "2"
+  ],
+  "gleisArt": {"1":"zug","2":"zug"},
+  "ubahn": [],
+  "paare": [
+    {"von":"1","nach":"2","gleicherBahnsteig":true,"sek":136,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":136},
+    {"von":"2","nach":"1","gleicherBahnsteig":true,"sek":136,"wechsel":0,"anlagen":[],"lage":"ebenerdig","stufenfreiSek":136}
+  ]
+}
