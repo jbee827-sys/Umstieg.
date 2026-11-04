@@ -202,4 +202,19 @@ describe('wendeFastaAn: gestoerter Schacht', () => {
     wendeFastaAn(graph, [naheAnlage('ACTIVE')]);
     expect(aufzugKanten(graph).every((k) => k.status === 'ACTIVE')).toBe(true);
   });
+
+  // Schlussreview 04.11.2026: Zwei FaSta-Anlagen treffen denselben Schacht
+  // (eine je Tuer, oder zwei Kabinen an einem OSM-Knoten). Kam die intakte
+  // als zweite, gab sie den ganzen gestoerten Schacht wieder frei.
+  const zweiteAnlage = (status: 'ACTIVE' | 'INACTIVE'): FastaAnlage =>
+    ({ id: 'F2', typ: 'AUFZUG', lat: 52.00047, lon: 12.0, status });
+  it.each([
+    ['INACTIVE zuerst', [naheAnlage('INACTIVE'), zweiteAnlage('ACTIVE')]],
+    ['ACTIVE zuerst', [naheAnlage('ACTIVE'), zweiteAnlage('INACTIVE')]],
+  ])('eine gestoerte Anlage am Schacht gewinnt gegen eine intakte (%s)', (_, anlagen) => {
+    const graph = baue();
+    wendeFastaAn(graph, anlagen);
+    expect(aufzugKanten(graph).every((k) => k.status === 'INACTIVE')).toBe(true);
+    expect(berechneRoute(graph, 'gleis1:mitte', 'gleis2:mitte', 'barrierefrei')).toBeNull();
+  });
 });

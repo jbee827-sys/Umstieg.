@@ -332,6 +332,12 @@ function abstandZuKante(graph: StationGraph, kante: GraphKante, anlage: FastaAnl
  * einer Kopie, sonst stünde der Live-Status im 24-Stunden-Cache.
  */
 export function wendeFastaAn(graph: StationGraph, anlagen: FastaAnlage[]): void {
+  // Nie herabstufen: Treffen zwei Anlagen dieselbe Kante (zwei FaSta-Eintraege
+  // an einem Schacht), gilt die gestoerte. Bis zum 04.11.2026 gewann die
+  // zuletzt gelesene - eine intakte gab den gestoerten Schacht wieder frei.
+  const setze = (kante: GraphKante, status: FastaAnlage['status']): void => {
+    if (kante.status !== 'INACTIVE') kante.status = status;
+  };
   // Kanten stehen in beiden Adjazenzlisten als dieselbe Referenz – ein Set
   // betrachtet jedes Kantenobjekt genau einmal.
   const kanten = new Set<GraphKante>();
@@ -351,7 +357,7 @@ export function wendeFastaAn(graph: StationGraph, anlagen: FastaAnlage[]): void 
     // Eine Kante, deren Anlage in dieser Antwort fehlt, bleibt ohne Status –
     // sie wird NICHT ersatzweise über die Entfernung bedient. Ein geratener
     // Status ist auf der barrierefreien Route schlimmer als keiner.
-    if (anlage) kante.status = anlage.status;
+    if (anlage) setze(kante, anlage.status);
   }
 
   // Weg 2: über die Entfernung, für Kanten ohne Identität (OSM).
@@ -376,12 +382,12 @@ export function wendeFastaAn(graph: StationGraph, anlagen: FastaAnlage[]): void 
     // Dort tragen alle Kanten einer Anlage dieselbe `anlageId` und treffen einzeln.
     const schluessel = beste.anlageSchluessel;
     if (schluessel === undefined) {
-      beste.status = anlage.status;
+      setze(beste, anlage.status);
       continue;
     }
     for (const kante of offen) {
       if (kante.typ === gesucht && kante.anlageSchluessel === schluessel) {
-        kante.status = anlage.status;
+        setze(kante, anlage.status);
       }
     }
   }
