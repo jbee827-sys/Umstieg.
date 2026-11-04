@@ -34,3 +34,37 @@ export function restZeitText(restSek: number): string {
   const sek = Math.floor(restSek % 60)
   return `${min}:${String(sek).padStart(2, '0')}`
 }
+
+/** Ab diesem Abstand (Ankunft nach Abfahrt) liegt die Abfahrt am Folgetag. */
+const FOLGETAG_ABSTAND_MS = 12 * 3600 * 1000
+
+/**
+ * Beide Uhrzeiten kommen als HH:MM und werden auf denselben Tag gelegt. Ankunft
+ * 23:58, Abfahrt 00:10 sähe dann nach 23 h 48 min VOR der Ankunft aus. Liegt
+ * die Ankunft mehr als 12 h nach der Abfahrt, ist die Abfahrt der Folgetag.
+ * Kein Umstieg wartet 12 h; eine Abfahrt bis 12 h vor der Ankunft bleibt
+ * also, was sie ist: ein Zug, der schon weg ist.
+ */
+export function abfahrtNachAnkunft(abfahrt: Date, ankunft: Date): Date {
+  if (ankunft.getTime() - abfahrt.getTime() <= FOLGETAG_ABSTAND_MS) return abfahrt
+  const folgetag = new Date(abfahrt)
+  folgetag.setDate(folgetag.getDate() + 1)
+  return folgetag
+}
+
+/**
+ * Die Zeit, die für den Weg bleibt, zählt ab der Ankunft: Vor der Ankunft ist
+ * es Abfahrt − Ankunft (der Zug steht noch nicht da, die Uhr läuft nicht),
+ * danach Abfahrt − jetzt. Ohne Ankunftszeit wie bisher Abfahrt − jetzt.
+ */
+export function umstiegRestSek(abfahrt: Date, ankunft: Date | undefined, jetztMs: number): number {
+  if (!ankunft) return (abfahrt.getTime() - jetztMs) / 1000
+  const ab = abfahrtNachAnkunft(abfahrt, ankunft)
+  return (ab.getTime() - Math.max(jetztMs, ankunft.getTime())) / 1000
+}
+
+/** Erfurt 16:21 an, 16:20 ab: Der Zug fährt, bevor der andere ankommt. */
+export function anschlussUnerreichbar(abfahrt: Date, ankunft: Date | undefined): boolean {
+  if (!ankunft) return false
+  return abfahrtNachAnkunft(abfahrt, ankunft).getTime() < ankunft.getTime()
+}

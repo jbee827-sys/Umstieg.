@@ -11,6 +11,8 @@ interface AmpelProps {
   startPufferSek?: number
   /** Abfahrtszeit ist verstrichen – die Ampel trifft keine Aussage mehr. */
   abgefahren?: boolean
+  /** Der Anschlusszug fährt vor der Ankunft ab – immer rot, kein Countdown. */
+  unerreichbar?: boolean
 }
 
 const STATUS_TEXT: Record<Ampelfarbe, string> = {
@@ -26,8 +28,17 @@ function gehzeitText(sek: number): string {
 // Ampel nach Screen 2 des Entwurfs: drei Lampen in dunkler Pille, grosse
 // Restzeit in Tabellenziffern, darunter eine Zeitleiste, die den Puffer
 // ablaufen laesst. Die Leiste bewertet nicht - das macht die Farbe.
-export function Ampel({ farbe, gehzeitSek, restSek, startPufferSek, abgefahren }: AmpelProps) {
-  const zeigtLeiste = farbe !== null && restSek !== undefined && !abgefahren
+export function Ampel({
+  farbe: farbeRoh,
+  gehzeitSek,
+  restSek,
+  startPufferSek,
+  abgefahren,
+  unerreichbar,
+}: AmpelProps) {
+  const farbe: Ampelfarbe | null = unerreichbar && !abgefahren ? 'rot' : farbeRoh
+  const zeigtRest = restSek !== undefined && !abgefahren && !unerreichbar
+  const zeigtLeiste = farbe !== null && zeigtRest
   return (
     <div className={`ampel-leiste ampel-${farbe ?? 'grau'}`} role="status" data-tour="ampel">
       <div className="ampel-kopf">
@@ -38,7 +49,7 @@ export function Ampel({ farbe, gehzeitSek, restSek, startPufferSek, abgefahren }
         </div>
         {/* Ohne Abfahrtszeit gar keine Zahl: Ein Platzhalter in 40 px sieht
             aus wie ein Fehler, nicht wie eine fehlende Angabe. */}
-        {restSek !== undefined && !abgefahren && farbe !== null && (
+        {zeigtRest && farbe !== null && (
           <div className="ampel-rest">{restZeitText(restSek)}</div>
         )}
         <div className="ampel-gehzeit">{gehzeitText(gehzeitSek)}</div>
@@ -54,7 +65,9 @@ export function Ampel({ farbe, gehzeitSek, restSek, startPufferSek, abgefahren }
       )}
 
       <div className="ampel-status">
-        {farbe !== null
+        {unerreichbar && !abgefahren
+          ? 'Anschluss nicht erreichbar'
+          : farbe !== null
           ? STATUS_TEXT[farbe]
           : abgefahren
             ? 'Zug abgefahren'

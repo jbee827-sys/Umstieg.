@@ -39,4 +39,19 @@ describe('Ampel', () => {
     expect(screen.getByText(/Zug abgefahren/)).toBeDefined()
     expect(container.querySelector('.ampel-zeitleiste')).toBeNull()
   })
+
+  it('zeigt „Anschluss nicht erreichbar“ in Rot, ohne Countdown', () => {
+    const { container } = render(
+      <Ampel farbe="gruen" gehzeitSek={300} restSek={-60} unerreichbar />,
+    )
+    expect(screen.getByText('Anschluss nicht erreichbar')).toBeDefined()
+    expect(container.querySelector('.ampel-rot')).not.toBeNull()
+    expect(container.querySelector('.ampel-rest')).toBeNull()
+    expect(container.querySelector('.ampel-zeitleiste')).toBeNull()
+  })
+
+  it('„Zug abgefahren“ geht vor „nicht erreichbar“', () => {
+    render(<Ampel farbe={null} gehzeitSek={300} restSek={-600} abgefahren unerreichbar />)
+    expect(screen.getByText('Zug abgefahren')).toBeDefined()
+  })
 })

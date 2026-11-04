@@ -43,6 +43,8 @@ interface DashboardProps {
   /** Puffer beim Öffnen – Bezugspunkt der Zeitleiste. */
   startPufferSek?: number
   abgefahren: boolean
+  /** Der Anschlusszug fährt vor der Ankunft ab (Spec 7.1) – rot, ohne Countdown. */
+  unerreichbar?: boolean
   varianten: VariantenStand
   /** Ungelesene Meldungen liegen vor. */
   hinweis: boolean
@@ -82,8 +84,10 @@ function farbeVon(
   restSek: number | undefined,
   gehzeitSek: number,
   abgefahren: boolean,
+  unerreichbar = false,
 ): Ampelfarbe | null {
   if (restSek === undefined || abgefahren) return null
+  if (unerreichbar) return 'rot'
   return ampelFarbe(restSek, gehzeitSek)
 }
 
@@ -102,6 +106,7 @@ export function Dashboard({
   restSek,
   startPufferSek,
   abgefahren,
+  unerreichbar,
   varianten,
   hinweis,
   laedt,
@@ -113,7 +118,7 @@ export function Dashboard({
   onNavigation,
   onMeldungen,
 }: DashboardProps) {
-  const farbe = farbeVon(restSek, route.gehzeitSek, abgefahren)
+  const farbe = farbeVon(restSek, route.gehzeitSek, abgefahren, unerreichbar)
   // „Zuganfang · Zugmitte · Zugende", wenn die Fahrtrichtung sicher ist; sonst
   // „Nordende · Mitte · Südende" - oder, ohne gemessene Achse, Anfang und Ende.
   const zugspitze = ankunftsZugspitze(route.schema)
@@ -142,6 +147,7 @@ export function Dashboard({
           restSek={restSek}
           startPufferSek={startPufferSek}
           abgefahren={abgefahren}
+          unerreichbar={unerreichbar}
         />
 
         <div className="dashboard-bloecke" data-tour="zuege">

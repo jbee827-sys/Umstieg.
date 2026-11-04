@@ -61,7 +61,7 @@ import {
   vergissErinnerung,
   wirdRot,
 } from './plattform/mitteilungen'
-import { ampelFarbe } from './navigation/ampel'
+import { ampelFarbe, anschlussUnerreichbar, umstiegRestSek } from './navigation/ampel'
 import type { Ampelfarbe } from './api/typen'
 import {
   halteBildschirmWach,
@@ -141,6 +141,41 @@ function heuteUm(hhmm: string): Date {
     zeitpunkt.setDate(zeitpunkt.getDate() + 1)
   }
   return zeitpunkt
+}
+
+/**
+ * 'HH:MM' der Ankunft → der Zeitpunkt, der jetzt am nächsten liegt (gestern,
+ * heute oder morgen). `heuteUm` legte 23:58 um 00:05 auf morgen – dann wäre
+ * die Ankunft 24 h entfernt und die Abfahrt 00:10 „davor“.
+ */
+function ankunftUm(hhmm: string): Date {
+  const [h, m] = hhmm.split(':').map(Number)
+  let beste: Date | null = null
+  for (const tag of [-1, 0, 1]) {
+    const z = new Date()
+    z.setDate(z.getDate() + tag)
+    z.setHours(h, m, 0, 0)
+    if (!beste || Math.abs(z.getTime() - Date.now()) < Math.abs(beste.getTime() - Date.now())) beste = z
+  }
+  return beste!
+}
+
+/**
+ * Restzeit und Erreichbarkeit des Anschlusses (Spec 7.1): Die Ampel rechnet ab
+ * der Ankunft. `abgefahren` bleibt an Abfahrt − jetzt gebunden. Gilt für
+ * Bahnhofs- und Haltestellenpfad gleich – beide tragen HH:MM in `werte`.
+ */
+function umstiegVon(
+  werte: { abfahrtZeit?: string; ankunftZeit?: string },
+  jetztMs: number,
+): { restSek: number; unerreichbar: boolean } | undefined {
+  if (!werte.abfahrtZeit) return undefined
+  const abfahrt = heuteUm(werte.abfahrtZeit)
+  const ankunft = werte.ankunftZeit ? ankunftUm(werte.ankunftZeit) : undefined
+  return {
+    restSek: umstiegRestSek(abfahrt, ankunft, jetztMs),
+    unerreichbar: anschlussUnerreichbar(abfahrt, ankunft),
+  }
 }
 
 function App() {
@@ -403,9 +438,11 @@ function App() {
   // eine Mitteilung. Dieselbe Rechnung wie auf der Uebersicht.
   const anschlussFarbe: Ampelfarbe | null = (() => {
     if (!AUF_REISE.includes(bildschirm) || !route || !werte?.abfahrtZeit) return null
-    const restSek = (heuteUm(werte.abfahrtZeit).getTime() - jetzt) / 1000
-    if (restSek * 1000 < -ABGEFAHREN_KULANZ_MS) return null
-    return ampelFarbe(restSek, route.gehzeitSek)
+    if (heuteUm(werte.abfahrtZeit).getTime() - jetzt < -ABGEFAHREN_KULANZ_MS) return null
+    const umstieg = umstiegVon(werte, jetzt)!
+    // Ein von Anfang an unerreichbarer Anschluss ist beim Start schon rot:
+    // `wirdRot` meldet nur den Wechsel von gruen/gelb, nicht den Start.
+    return umstieg.unerreichbar ? 'rot' : ampelFarbe(umstieg.restSek, route.gehzeitSek)
   })()
   const letzteFarbe = useRef<Ampelfarbe | null>(null)
   useEffect(() => {
@@ -1016,11 +1053,7 @@ function App() {
           // seit jeher `istFernverkehr(zugAbName)`, also den Abfahrtszug.
           wagen={werte.wagenAb || undefined}
           zugAbName={werte.zugAbName}
-          restSek={
-            werte.abfahrtZeit
-              ? (heuteUm(werte.abfahrtZeit).getTime() - jetzt) / 1000
-              : undefined
-          }
+          restSek={umstiegVon(werte, jetzt)?.restSek}
           onNeu={() => {
             ankunft.current = ANKUNFT_START
             setBildschirm('eingabe')
@@ -1041,7 +1074,7 @@ function App() {
     // Die Restzeit bezieht sich auf die NEUE Abfahrt - die ist der Grund,
     // warum die Ampel nach dem Wechsel anders stehen kann.
     const neueZeit = meldungen[0]?.vorschlag?.werte.abfahrtZeit
-    const restSek = neueZeit ? (heuteUm(neueZeit).getTime() - jetzt) / 1000 : undefined
+    const restSek = neueZeit ? umstiegVon({ ...werte, abfahrtZeit: neueZeit }, jetzt)?.restSek : undefined
     return (
       <main className="app">
         {meldung}
@@ -1086,10 +1119,10 @@ function App() {
   }
 
   if (bildschirm === 'dashboard' && route && werte) {
-    const restSek = werte.abfahrtZeit
-      ? (heuteUm(werte.abfahrtZeit).getTime() - jetzt) / 1000
-      : undefined
-    const abgefahren = restSek !== undefined && restSek * 1000 < -ABGEFAHREN_KULANZ_MS
+    const umstieg = umstiegVon(werte, jetzt)
+    const restSek = umstieg?.restSek
+    const abgefahren =
+      !!werte.abfahrtZeit && heuteUm(werte.abfahrtZeit).getTime() - jetzt < -ABGEFAHREN_KULANZ_MS
     return (
       <main className="app app-dashboard">
         {meldung}
@@ -1099,6 +1132,7 @@ function App() {
           route={route}
           restSek={restSek}
           abgefahren={abgefahren}
+          unerreichbar={umstieg?.unerreichbar}
           varianten={varianten}
           standorte={standorte}
           standortLaedt={standortLaden}
