@@ -1,11 +1,12 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
   alsJson,
   berechneBahnhof,
   fremdeGleise,
   graphAus,
+  graphWieServer,
   pruefeSlugs,
   slugVon,
   ubahnNamePasst,
@@ -14,6 +15,7 @@ import {
   type Bahnhofsdaten,
 } from '../scripts/bahnhofsseiten-daten.js';
 import { entpackeEintrag, type BestandsEintrag } from '../src/osm/bestand.js';
+import { ablageDatei, serialisiere } from '../scripts/db-gleise-fuellen.js';
 import type { OverpassAntwort, StationsInfo } from '../src/core/typen.js';
 
 function eintrag(fixture: string, name = 'Testbahnhof Hbf'): BestandsEintrag {
@@ -462,6 +464,29 @@ describe('Gleisarten und U-Bahn (Spec 6.2/6.3)', () => {
     const gross = { schluessel: 'gross', gleise: new Map([['1', punkt], ['2', punkt], [ubahnSchluessel('w7'), { ...punkt, lat: 48.1401 }]]) };
     const klein = { schluessel: 'klein', gleise: new Map([[ubahnSchluessel('w7'), { ...punkt, lat: 48.1401 }]]) };
     expect([...(fremdeGleise([gross, klein]).get('klein') ?? [])]).toEqual([ubahnSchluessel('w7')]);
+  });
+
+  // Schlussreview 04.11.2026: Gleispruefung und lauf3 bauten den Graphen ohne
+  // DB-Gleisliste und prueften so einen anderen Graphen als den des Servers.
+  describe('graphWieServer (Pruefskripte)', () => {
+    const ORDNER = fileURLToPath(new URL('../.test-ablage/db-gleise-wie-server/', import.meta.url));
+    beforeAll(() => {
+      rmSync(ORDNER, { recursive: true, force: true });
+      mkdirSync(ORDNER, { recursive: true });
+      writeFileSync(ablageDatei('8000261', ORDNER), serialisiere(muenchenDb));
+    });
+
+    it('nimmt die abgelegte DB-Liste wie der Server', () => {
+      const graph = graphWieServer(muenchen.osm, '8000261', { ordner: ORDNER });
+      expect(graph.gleise).toEqual(expect.arrayContaining(['1', '2', '11']));
+      expect(graph.gleise).not.toContain('81');
+      expect(graph.gleisArt?.get('1')).toBe('sbahn');
+    }, 60_000);
+
+    it('rechnet ohne Ablage - oder auf Wunsch - wie zuvor', () => {
+      expect(graphWieServer(muenchen.osm, '9999999', { ordner: ORDNER }).gleise).toContain('81');
+      expect(graphWieServer(muenchen.osm, '8000261', { ordner: ORDNER, ohneDb: true }).gleise).toContain('81');
+    }, 60_000);
   });
 
   it('ohne verweist ein U-Bahn-Steig an den anderen Bahnhof', () => {

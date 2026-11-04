@@ -26,18 +26,21 @@
 //
 // Ohne Netz: Namen und OSM kommen aus der Ablage (`osm-ablage-fuellen.ts`).
 //
+// Seit dem 04.11.2026 (Schlussreview) wie der Server mit der DB-Gleisliste aus
+// `osm-ablage/db-gleise/` (`graphWieServer`), ohne Ablage wie zuvor.
+//
 // Aufruf: npx tsx scripts/simulation-lauf3.ts <ausgabe.jsonl>
 //   LISTE=ablage          alle abgelegten Bahnhöfe statt der Liste LAUF_3
 //   VARIANTEN=schnellste  nur die schnellste Route
+//   OHNE_DB=1             Graph ohne DB-Gleisliste, wie vor dem 04.11.2026
 import { existsSync, readdirSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { baueGraph } from '../src/core/graph.js';
 import { gehzeitSekunden } from '../src/core/gehzeit.js';
-import { klassifiziere } from '../src/core/klassifikation.js';
 import { berechneRoute, findeStartknoten, istGleicherBahnsteig } from '../src/core/routing.js';
 import { baueBahnhofSchema } from '../src/core/schema.js';
 import { generiereSchritte } from '../src/core/textgen.js';
 import type { OverpassAntwort, RoutenVariante, StationGraph } from '../src/core/typen.js';
+import { graphWieServer } from './bahnhofsseiten-daten.js';
 import { ABLAGE, LAUF_3, NACHLAUF, ladeNamen } from './osm-ablage-fuellen.js';
 import {
   ebenenfolge,
@@ -168,8 +171,9 @@ function main(): void {
       continue;
     }
     const t0 = Date.now();
-    const graph = baueGraph(JSON.parse(readFileSync(pfadOsm, 'utf8')) as OverpassAntwort);
-    graph.stufe = klassifiziere(graph);
+    const graph = graphWieServer(JSON.parse(readFileSync(pfadOsm, 'utf8')) as OverpassAntwort, eva, {
+      ohneDb: process.env.OHNE_DB === '1',
+    });
     if (graph.gleise.length < 2) {
       console.log(`Stufe ${graph.stufe}, ${graph.gleise.length} Gleis(e)`);
       uebersprungen.push(`${name}: ${graph.gleise.length} Gleise im OSM-Graphen`);

@@ -22,21 +22,30 @@
 // Gegenprobe: Der alte Stuttgarter Weg 1 -> 3 (86 s) kreuzt zwei Gleise. Bleibt
 // eine Schaetzung: „kreuzt kein Gleis“ heisst nicht, dass der Weg offen ist.
 //
+// Seit dem 04.11.2026 (Schlussreview) baut die Pruefung den Graphen wie der
+// Server, mit der DB-Gleisliste aus `osm-ablage/db-gleise/` (`graphWieServer`);
+// ohne Ablage wie zuvor. Die Basis vom 03.11. (gleise-basis-0311.json) traegt
+// OSM-Gleisnamen („81“ statt „1“) - fuer den Vergleich mit ihr `--ohne-db`.
+//
 // Aufruf (aus backend/):
 //   npx tsx scripts/gleiskreuzung-pruefung.ts laden               Gleise holen
-//   npx tsx scripts/gleiskreuzung-pruefung.ts <ausgabe.json> [basis.json]
+//   npx tsx scripts/gleiskreuzung-pruefung.ts <ausgabe.json> [basis.json] [--ohne-db]
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
-import { baueGraph, haversineM } from '../src/core/graph.js';
+import { haversineM } from '../src/core/graph.js';
 import { gehzeitSekunden } from '../src/core/gehzeit.js';
 import { erreichbareGleisPaare } from '../src/core/klassifikation.js';
 import { berechneRoute, istGleicherBahnsteig } from '../src/core/routing.js';
 import type { GraphKnoten, OsmElement } from '../src/core/typen.js';
 import type { BestandsEintrag } from '../src/osm/bestand.js';
+import { graphWieServer } from './bahnhofsseiten-daten.js';
 
 const BESTAND = 'osm-bestand';
 const GLEISE = 'osm-ablage/gleise';
 const FAHRWEGE = ['rail', 'light_rail', 'subway', 'narrow_gauge'];
+const OHNE_DB = process.argv.includes('--ohne-db');
+const ARGUMENTE = process.argv.slice(2).filter((a) => a !== '--ohne-db');
+const graphVon = (eva: string, eintrag: BestandsEintrag) => graphWieServer(eintrag.osm, eva, { ohneDb: OHNE_DB });
 
 interface Punkt {
   lat: number;
@@ -264,7 +273,7 @@ function pruefeBahnhof(eva: string, eintrag: BestandsEintrag, ergebnis: Map<stri
     return treffer;
   };
 
-  const graph = baueGraph(eintrag.osm);
+  const graph = graphVon(eva, eintrag);
   const mitten = graph.gleise.filter((g) => graph.knoten.has(`gleis${g}:mitte`));
   for (let i = 0; i < mitten.length; i++) {
     for (let j = i + 1; j < mitten.length; j++) {
@@ -293,9 +302,9 @@ function zaehle<T>(liste: T[], f: (x: T) => string, anzahl = 12): string {
 }
 
 function main(): void {
-  const ausgabe = process.argv[2];
+  const ausgabe = ARGUMENTE[0];
   if (!ausgabe) {
-    console.error('Aufruf: gleiskreuzung-pruefung.ts laden | <ausgabe.json> [basis.json]');
+    console.error('Aufruf: gleiskreuzung-pruefung.ts laden | <ausgabe.json> [basis.json] [--ohne-db]');
     process.exit(2);
   }
   const ergebnis = new Map<string, Ergebnis>();
@@ -306,7 +315,7 @@ function main(): void {
   for (const { eva, eintrag } of ladeBestand()) {
     if (!existsSync(`${GLEISE}/${eva}.json`)) continue;
     pruefeBahnhof(eva, eintrag, ergebnis);
-    const e = erreichbareGleisPaare(baueGraph(eintrag.osm));
+    const e = erreichbareGleisPaare(graphVon(eva, eintrag));
     erreichbar += e;
     if (e === 1) voll++;
     n++;
@@ -318,6 +327,7 @@ function main(): void {
   const kreuzen = routen.filter((z) => z.klasse);
   const schnell = alle.filter((z) => z.schluessel.endsWith('|schnellste'));
   const frei = alle.filter((z) => z.schluessel.endsWith('|barrierefrei'));
+  console.log(OHNE_DB ? 'Graph ohne DB-Gleisliste (wie vor dem 04.11.2026)' : 'Graph mit DB-Gleisliste, soweit abgelegt (wie der Server)');
   console.log(`Bahnhoefe ${n}, Routen ${routen.length}, kreuzen ein Gleis ${kreuzen.length} (${((100 * kreuzen.length) / routen.length).toFixed(1)} %) an ${new Set(kreuzen.map((z) => z.bahnhof)).size} Bahnhoefen, ${Math.round((Date.now() - beginn) / 1000)} s`);
   console.log(`Klassen: ${zaehle(kreuzen, (z) => z.klasse!)}`);
   console.log(`Meiste: ${zaehle(kreuzen, (z) => z.bahnhof)}`);
@@ -328,7 +338,7 @@ function main(): void {
   const stuttgart = kreuzen.filter((z) => z.schluessel.startsWith('8000096|'));
   console.log(`Stuttgart Hbf kreuzt: ${stuttgart.length}`);
 
-  const basisPfad = process.argv[3];
+  const basisPfad = ARGUMENTE[1];
   if (!basisPfad) return;
   const basis = JSON.parse(readFileSync(basisPfad, 'utf8')) as Record<string, Ergebnis>;
   const verloren: typeof alle = [];
@@ -357,5 +367,5 @@ function main(): void {
   console.log(`Laenger ${laenger.length}: ${laenger.sort((a, b) => b.d - a.d).slice(0, 10).map((x) => x.z).join('; ')}`);
 }
 
-if (process.argv[2] === 'laden') await ladeGleise();
+if (ARGUMENTE[0] === 'laden') await ladeGleise();
 else main();

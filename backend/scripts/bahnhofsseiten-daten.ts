@@ -27,7 +27,7 @@ import { berechneRoute, findeStartknoten, istGleicherBahnsteig } from '../src/co
 import type { GraphKnoten, RoutenPfad, StationGraph, Stufe } from '../src/core/typen.js';
 import { gleislisteUnvollstaendig } from '../src/clients/stations.js';
 import { namensSchluessel } from '../src/core/orte.js';
-import type { StationsInfo, UbahnSteig } from '../src/core/typen.js';
+import type { OverpassAntwort, StationsInfo, UbahnSteig } from '../src/core/typen.js';
 import { entpackeEintrag, type BestandsEintrag } from '../src/osm/bestand.js';
 import { ladeAblage } from './db-gleise-fuellen.js';
 
@@ -120,14 +120,32 @@ export function pruefeSlugs(liste: { name: string; slug: string }[]): void {
  * (`baueGraphEintrag` in routes/api.ts), ohne wie vor dem 04.11.2026.
  */
 export function graphAus(eintrag: BestandsEintrag, db?: StationsInfo): StationGraph {
+  return graphAusOsm(eintrag.osm, db);
+}
+
+function graphAusOsm(osm: OverpassAntwort, db?: StationsInfo): StationGraph {
   const graph = db
-    ? baueGraph(eintrag.osm, db.gleise, {
+    ? baueGraph(osm, db.gleise, {
         gleislisteVollstaendig: !gleislisteUnvollstaendig(db),
         ...(db.sbahnEvas ? { sbahnEvas: db.sbahnEvas } : {}),
       })
-    : baueGraph(eintrag.osm);
+    : baueGraph(osm);
   graph.stufe = klassifiziere(graph);
   return graph;
+}
+
+/**
+ * Der Graph fuer die Pruefskripte (Gleispruefung, lauf3): wie im Server mit der
+ * abgelegten DB-Gleisliste, ohne Ablage wie zuvor. `ohneDb` rechnet wie vor dem
+ * 04.11.2026 - fuer den Vergleich mit Basislaeufen, deren Gleisnamen aus OSM
+ * stammen („81“ statt „1“). Bis zum Schlussreview pruefte beides nur diesen.
+ */
+export function graphWieServer(
+  osm: OverpassAntwort,
+  schluessel: string,
+  { ohneDb = false, ordner }: { ohneDb?: boolean; ordner?: string } = {},
+): StationGraph {
+  return graphAusOsm(osm, ohneDb ? undefined : ladeAblage(schluessel, ordner));
 }
 
 function mitteVon(graph: StationGraph, gleis: string): GraphKnoten | undefined {
