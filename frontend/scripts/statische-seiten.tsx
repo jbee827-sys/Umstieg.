@@ -70,6 +70,7 @@ function bauteile(): Bauteile {
   return {
     css: alsAsset('bahnhofsseiten', 'css', `${basis}\n${eigen}`),
     messung: alsAsset('messung', 'js', readFileSync(join(SRC, 'bahnhofsseiten', 'messung.js'))),
+    reiter: alsAsset('reiter', 'js', readFileSync(join(SRC, 'bahnhofsseiten', 'reiter.js'))),
   }
 }
 
@@ -98,5 +99,5 @@ schreibeSeite('bahnhoefe', uebersichtHtml(alle, teile))
 writeFileSync(join(DIST, 'sitemap.xml'), sitemapXml(alle, new Date().toISOString().slice(0, 10)), 'utf8')
 
 console.log(
-  `statische Seiten: impressum, datenschutz, daten, bahnhoefe, ${alle.length} Bahnhofsseiten, sitemap.xml (${teile.css}, ${teile.messung})`,
+  `statische Seiten: impressum, datenschutz, daten, bahnhoefe, ${alle.length} Bahnhofsseiten, sitemap.xml (${teile.css}, ${teile.messung}, ${teile.reiter})`,
 )

@@ -22,6 +22,8 @@ export interface Bauteile {
   css: string
   /** Reichweitenmessung (messung.js), mit Hash unter /assets/. */
   messung: string
+  /** Umschalter der Reiter (reiter.js), mit Hash unter /assets/. */
+  reiter: string
 }
 
 /** JSON in einem Skriptblock: `<` maskiert, damit kein `</script>` den Block beendet. */
@@ -63,6 +65,7 @@ function dokument(o: {
     `<meta name="twitter:description" content="${b}" />`,
     `<link rel="stylesheet" href="${maskiere(o.bauteile.css)}" />`,
     `<script defer src="${maskiere(o.bauteile.messung)}"></script>`,
+    `<script defer src="${maskiere(o.bauteile.reiter)}"></script>`,
     ...(o.strukturiert ?? []).map((s) => `<script type="application/ld+json">${jsonLd(s)}</script>`),
     '</head>',
     `<body>${o.inhalt}</body>`,

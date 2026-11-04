@@ -26,7 +26,7 @@ const HANNOVER: Bahnhofsdaten = {
   ],
 }
 
-const BAUTEILE: Bauteile = { css: '/assets/bahnhofsseiten-abc12345.css', messung: '/assets/messung-def67890.js' }
+const BAUTEILE: Bauteile = { css: '/assets/bahnhofsseiten-abc12345.css', messung: '/assets/messung-def67890.js', reiter: '/assets/reiter-0a1b2c3d.js' }
 
 const html = bahnhofsseiteHtml(HANNOVER, BAUTEILE)
 const doc = new DOMParser().parseFromString(html, 'text/html')
@@ -77,7 +77,7 @@ describe('bahnhofsseiteHtml: Kopf', () => {
     expect(html).not.toMatch(/<style/)
     expect(doc.querySelector('link[rel="stylesheet"]')?.getAttribute('href')).toBe(BAUTEILE.css)
     const skripte = [...doc.querySelectorAll('script')].filter((s) => s.getAttribute('type') !== 'application/ld+json')
-    expect(skripte.map((s) => s.getAttribute('src'))).toEqual([BAUTEILE.messung])
+    expect(skripte.map((s) => s.getAttribute('src'))).toEqual([BAUTEILE.messung, BAUTEILE.reiter])
     expect(skripte.every((s) => (s.textContent ?? '').trim() === '')).toBe(true)
   })
 })

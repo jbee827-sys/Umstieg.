@@ -89,6 +89,35 @@
   background: var(--color-druckrot);
 }
 
+/* Reiter Zuege / S-Bahn / U-Bahn (Spec 6.2): Unterstrich in Signalrot am aktiven. */
+.bs-reiter {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--color-neutral-300);
+}
+
+.bs-reiter button {
+  min-height: 48px;
+  padding: 0 16px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--color-neutral-700);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bs-reiter button[aria-selected='true'] {
+  color: inherit;
+  border-bottom-color: var(--color-accent);
+}
+
+.bs-reiter button:focus-visible {
+  outline: 2px solid var(--color-accent-700);
+  outline-offset: -2px;
+}
+
 /* Je Ankunftsgleis ein Block zum Aufklappen - ohne JavaScript. */
 .bs-gleis {
   border-top: 1px solid var(--color-neutral-300);
@@ -142,6 +171,7 @@
 }
 
 .bs-stand,
+.bs-abdeckung,
 .bs-gleiszahl {
   font-size: var(--schrift-label);
   color: var(--color-neutral-700);

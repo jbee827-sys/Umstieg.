@@ -1,6 +1,7 @@
 import { Fusszeile } from '../components/Fusszeile'
 import { BAHNHOF_PFAD, eingabeLink } from './adressen'
 import {
+  ABDECKUNG_SATZ,
   gehzeitText,
   gruppiereNachBuchstabe,
   laengsteUmstiege,
@@ -69,6 +70,88 @@ function Zeile({ p }: { p: Gleispaar }) {
   )
 }
 
+/** Ein aufklappbarer Block: Tabelle der Wege von einem Gleis oder Steig zu den Zielgleisen. */
+function Block({ titel, paare }: { titel: string; paare: Gleispaar[] }) {
+  return (
+    <details className="bs-gleis">
+      <summary>{titel}</summary>
+      <table className="bs-tabelle">
+        <thead>
+          <tr>
+            <th scope="col">Abfahrt</th>
+            <th scope="col">Gehzeit</th>
+            <th scope="col">Weg</th>
+            <th scope="col">Stufenfrei</th>
+          </tr>
+        </thead>
+        <tbody>
+          {paare.map((p) => (
+            <Zeile key={p.nach} p={p} />
+          ))}
+        </tbody>
+      </table>
+    </details>
+  )
+}
+
+/**
+ * Gehzeiten je Verkehrsart (Spec 6.2): Reiter Züge / S-Bahn / U-Bahn, jeweils
+ * nur, wenn es die Art gibt; bei nur einer Art keine Leiste. Alle Felder stehen
+ * im HTML, die inaktiven mit `hidden` - ohne JavaScript ist der erste Reiter
+ * sichtbar, reiter.js schaltet um. Daten ohne `gleisArt`/`ubahn` (vor dem
+ * 04.11.2026) ergeben nur „Züge“, die Seite sieht aus wie zuvor.
+ */
+function Gehzeiten({ d }: { d: Bahnhofsdaten }) {
+  const sbahn = (g: string) => d.gleisArt?.[g] === 'sbahn'
+  const ankunft = (gleise: string[]) =>
+    gleise.map((von) => (
+      <Block key={von} titel={`Ankunft Gleis ${von}`} paare={d.paare.filter((p) => p.von === von)} />
+    ))
+  const ubahn = d.ubahn ?? []
+  const arten = [
+    { id: 'zuege', name: 'Züge', da: d.gleise.some((g) => !sbahn(g)), inhalt: ankunft(d.gleise.filter((g) => !sbahn(g))) },
+    { id: 'sbahn', name: 'S-Bahn', da: d.gleise.some(sbahn), inhalt: ankunft(d.gleise.filter(sbahn)) },
+    {
+      id: 'ubahn',
+      name: 'U-Bahn',
+      da: ubahn.length > 0,
+      inhalt: ubahn.map((s) => <Block key={s.id} titel={`U-Bahn ${s.label}`} paare={s.paare} />),
+    },
+  ].filter((a) => a.da)
+
+  if (arten.length < 2) return <>{arten[0]?.inhalt}</>
+  return (
+    <>
+      <div className="bs-reiter" role="tablist" aria-label="Verkehrsart">
+        {arten.map((a, i) => (
+          <button
+            key={a.id}
+            type="button"
+            role="tab"
+            id={`bs-reiter-${a.id}`}
+            aria-selected={i === 0}
+            aria-controls={`bs-feld-${a.id}`}
+            tabIndex={i === 0 ? 0 : -1}
+          >
+            {a.name}
+          </button>
+        ))}
+      </div>
+      {arten.map((a, i) => (
+        <div
+          key={a.id}
+          role="tabpanel"
+          id={`bs-feld-${a.id}`}
+          aria-labelledby={`bs-reiter-${a.id}`}
+          hidden={i !== 0}
+        >
+          {a.inhalt}
+        </div>
+      ))}
+    </>
+  )
+}
+
 /** Interne Verlinkung: jede Seite fuehrt zu ihren Nachbarn (26.10.2026). */
 function InDerNaehe({ nachbarn }: { nachbarn: Nachbar[] }) {
   if (nachbarn.length === 0) return null
@@ -101,33 +184,13 @@ export function Bahnhofsseite({ d, nachbarn }: { d: Bahnhofsdaten; nachbarn: Nac
         <a className="bs-knopf" href={eingabeLink(d)}>
           Weg anzeigen
         </a>
+        <p className="bs-abdeckung">{ABDECKUNG_SATZ}</p>
 
         <h2>Der Bahnhof im Überblick</h2>
         <p className="bs-ueberblick">{ueberblickSaetze(d).join(' ')}</p>
 
         <h2>Gehzeiten nach Ankunftsgleis</h2>
-        {d.gleise.map((von) => (
-          <details key={von} className="bs-gleis">
-            <summary>Ankunft Gleis {von}</summary>
-            <table className="bs-tabelle">
-              <thead>
-                <tr>
-                  <th scope="col">Abfahrt</th>
-                  <th scope="col">Gehzeit</th>
-                  <th scope="col">Weg</th>
-                  <th scope="col">Stufenfrei</th>
-                </tr>
-              </thead>
-              <tbody>
-                {d.paare
-                  .filter((p) => p.von === von)
-                  .map((p) => (
-                    <Zeile key={p.nach} p={p} />
-                  ))}
-              </tbody>
-            </table>
-          </details>
-        ))}
+        <Gehzeiten d={d} />
 
         <LaengsteUmstiege d={d} />
 

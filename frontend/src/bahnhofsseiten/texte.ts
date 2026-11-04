@@ -9,8 +9,18 @@ import type { Anlage, Bahnhofsdaten, Gleispaar, Lage } from './typen'
 export function ohneLuecken(d: Bahnhofsdaten): Bahnhofsdaten | null {
   const paare = d.paare.filter((p) => p.sek !== null)
   const gleise = d.gleise.filter((g) => paare.some((p) => p.von === g || p.nach === g))
-  return gleise.length < 2 ? null : { ...d, gleise, paare }
+  if (gleise.length < 2) return null
+  if (!d.ubahn) return { ...d, gleise, paare }
+  // Ebenso bei U-Bahn-Steigen: ein Steig ohne bekannten Weg faellt weg.
+  const ubahn = d.ubahn
+    .map((s) => ({ ...s, paare: s.paare.filter((p) => p.sek !== null) }))
+    .filter((s) => s.paare.length > 0)
+  return { ...d, gleise, paare, ubahn }
 }
+
+/** Wie die Bahnhoefe der Seiten ausgewaehlt sind (Spec 7.3); fester Wortlaut. */
+export const ABDECKUNG_SATZ =
+  'Vorab berechnet sind die Bahnhöfe der DB-Preisklassen 1 bis 3. Für jeden anderen Bahnhof rechnet die App den Weg live.'
 
 /** Aufgerundet - wer 61 Sekunden braucht, braucht nicht „1 min". */
 export function minuten(sek: number): number {
