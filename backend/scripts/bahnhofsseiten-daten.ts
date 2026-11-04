@@ -181,20 +181,33 @@ export function ubahnSteigeDesBahnhofs(graph: StationGraph, bahnhofsname: string
   return ergebnis;
 }
 
+/** Die Mitte eines Bahnsteigs und, wo der Graph sie kennt, seine OSM-Kennung (`w<id>`/`r<id>`). */
+export interface Bahnsteigmitte {
+  lat: number;
+  lon: number;
+  bahnsteigId?: string;
+}
+
+const mitteMitKennung = (k: GraphKnoten): Bahnsteigmitte => ({
+  lat: k.lat,
+  lon: k.lon,
+  ...(k.bahnsteigId ? { bahnsteigId: k.bahnsteigId } : {}),
+});
+
 /**
  * Bahnsteigmitten je Gleis und je U-Bahn-Steig - Grundlage fuer
  * `fremdeGleise`. U-Bahn-Steige zaehlen wie Gleise: Auch sie holt der
  * Overpass-Umkreis unter zwei Bahnhoefen.
  */
-export function gleisMitten(graph: StationGraph, bahnhofsname: string): Map<string, { lat: number; lon: number }> {
-  const mitten = new Map<string, { lat: number; lon: number }>();
+export function gleisMitten(graph: StationGraph, bahnhofsname: string): Map<string, Bahnsteigmitte> {
+  const mitten = new Map<string, Bahnsteigmitte>();
   for (const gleis of graph.gleise) {
     const m = mitteVon(graph, gleis);
-    if (m) mitten.set(gleis, { lat: m.lat, lon: m.lon });
+    if (m) mitten.set(gleis, mitteMitKennung(m));
   }
   for (const steig of ubahnSteigeDesBahnhofs(graph, bahnhofsname)) {
     const m = graph.knoten.get(`ubahn${steig.id}:mitte`);
-    if (m) mitten.set(ubahnSchluessel(steig.id), { lat: m.lat, lon: m.lon });
+    if (m) mitten.set(ubahnSchluessel(steig.id), mitteMitKennung(m));
   }
   return mitten;
 }
@@ -203,19 +216,36 @@ export function gleisMitten(graph: StationGraph, bahnhofsname: string): Map<stri
 const GLEICHE_MITTE_M = 10;
 
 /**
+ * Derselbe physische Bahnsteig unter zwei Bahnhoefen - am Namen nicht zu
+ * erkennen: Seit die DB-Namen gelten (Spec 6.3), heisst München Hbf (tief)
+ * r5370442 unter Hbf „1“, unter Karlsplatz aber „81“/„82“ (Karlsplatz' eigener
+ * Bahnsteig wurde per IFOPT „1“/„2“). Beide Graphen stammen aus OSM; tragen
+ * beide eine Kennung, entscheidet sie. Sonst die Mitte.
+ */
+function derselbeBahnsteig(a: Bahnsteigmitte, b: Bahnsteigmitte): boolean {
+  if (a.bahnsteigId && b.bahnsteigId) return a.bahnsteigId === b.bahnsteigId;
+  return haversineM(a.lat, a.lon, b.lat, b.lon) < GLEICHE_MITTE_M;
+}
+
+/** Wie viele Gleise ein Bahnhof hat - U-Bahn-Steige zaehlen dafuer nicht. */
+const anzahlGleise = (gleise: Map<string, Bahnsteigmitte>): number =>
+  [...gleise.keys()].filter((k) => !k.startsWith(ubahnSchluessel(''))).length;
+
+/**
  * Gleise, die ein Bahnhof einem anderen ueberlassen muss.
  *
  * OSM fuehrt im Startbestand (Stand 13.10.2026) die Gleise 5-34 von München
  * Hbf auch unter München Hackerbrücke und 51-56 unter Karlsplatz - die
  * Overpass-Abfrage holt alles im Umkreis. In der App faellt das nicht auf:
  * Dort waehlt man Gleise aus dem Fahrplan. Auf einer Seite „Umsteigen in
- * München Hackerbrücke" stuende Gleis 34. Deshalb: Liegt dieselbe
- * Bahnsteigmitte unter zwei Bahnhoefen, gehoert sie dem mit mehr Gleisen;
- * bei Gleichstand beiden (Frankfurt Flughafen Fern- und Regionalbahnhof sind
+ * München Hackerbrücke" stuende Gleis 34. Deshalb: Liegt derselbe
+ * Bahnsteig (`derselbeBahnsteig`, gleich unter welchem Namen) unter zwei
+ * Bahnhoefen, gehoert er dem mit mehr Gleisen - U-Bahn-Steige zaehlen dabei
+ * nicht mit; bei Gleichstand beiden (Frankfurt Flughafen Fern- und Regionalbahnhof sind
  * ein Gebaeude).
  */
 export function fremdeGleise(
-  bahnhoefe: { schluessel: string; gleise: Map<string, { lat: number; lon: number }> }[],
+  bahnhoefe: { schluessel: string; gleise: Map<string, Bahnsteigmitte> }[],
 ): Map<string, Set<string>> {
   const fremd = new Map<string, Set<string>>();
   const merke = (schluessel: string, gleis: string) => {
@@ -226,14 +256,13 @@ export function fremdeGleise(
     for (let j = i + 1; j < bahnhoefe.length; j++) {
       const a = bahnhoefe[i];
       const b = bahnhoefe[j];
-      if (a.gleise.size === b.gleise.size) continue;
-      const kleiner = a.gleise.size < b.gleise.size ? a : b;
+      const [nA, nB] = [anzahlGleise(a.gleise), anzahlGleise(b.gleise)];
+      if (nA === nB) continue;
+      const kleiner = nA < nB ? a : b;
       const groesser = kleiner === a ? b : a;
+      const dort = [...groesser.gleise.values()];
       for (const [gleis, m] of kleiner.gleise) {
-        const dort = groesser.gleise.get(gleis);
-        if (dort && haversineM(m.lat, m.lon, dort.lat, dort.lon) < GLEICHE_MITTE_M) {
-          merke(kleiner.schluessel, gleis);
-        }
+        if (dort.some((d) => derselbeBahnsteig(m, d))) merke(kleiner.schluessel, gleis);
       }
     }
   }

@@ -214,6 +214,72 @@ describe('fremdeGleise', () => {
     const anderer = { schluessel: 'anderer', gleise: new Map([['5', punkt(52.5, 13.4)]]) };
     expect(fremdeGleise([hbf, anderer]).get('anderer')?.size ?? 0).toBe(0);
   });
+
+  // Schlussreview 04.11.2026: Seit die DB-Namen gelten, heisst derselbe
+  // Bahnsteig unter zwei Bahnhoefen verschieden. München Hbf (tief) r5370442
+  // ist dort Gleis „1“, unter Karlsplatz (dessen eigener Bahnsteig per IFOPT
+  // „1“/„2“ wurde) blieb er „81“/„82“ - und stand auf der Karlsplatz-Seite.
+  it('erkennt denselben Bahnsteig an seiner Kennung, auch unter anderem Namen', () => {
+    const mitte = { ...punkt(48.1405, 11.558), bahnsteigId: 'r5370442' };
+    const gross = {
+      schluessel: 'hbf',
+      gleise: new Map([
+        ['1', mitte],
+        ['2', { ...punkt(48.14059, 11.558), bahnsteigId: 'r5370441' }],
+        ['11', { ...punkt(48.141, 11.559), bahnsteigId: 'w11' }],
+        ['12', { ...punkt(48.1411, 11.559), bahnsteigId: 'w12' }],
+      ]),
+    };
+    const klein = {
+      schluessel: 'karlsplatz',
+      gleise: new Map([
+        ['1', { ...punkt(48.139, 11.566), bahnsteigId: 'r3230775' }],
+        ['81', mitte],
+        ['82', mitte],
+      ]),
+    };
+    expect([...(fremdeGleise([gross, klein]).get('karlsplatz') ?? [])].sort()).toEqual(['81', '82']);
+  });
+
+  it('zwei verschiedene Bahnsteige mit Kennung bleiben getrennt, auch dicht beieinander', () => {
+    const gross = {
+      schluessel: 'gross',
+      gleise: new Map([
+        ['1', { ...punkt(48.14, 11.55), bahnsteigId: 'r1' }],
+        ['2', { ...punkt(48.15, 11.55), bahnsteigId: 'r2' }],
+      ]),
+    };
+    const klein = { schluessel: 'klein', gleise: new Map([['7', { ...punkt(48.14005, 11.55), bahnsteigId: 'r7' }]]) };
+    expect(fremdeGleise([gross, klein]).get('klein')?.size ?? 0).toBe(0);
+  });
+
+  it('zaehlt fuer „mehr Gleise“ nur Gleise, keine U-Bahn-Steige', () => {
+    // Karlsplatz: 2 Gleise und 3 U-Bahn-Steige, Hbf: 4 Gleise. Mit den Steigen
+    // gerechnet waere Karlsplatz der groessere Bahnhof.
+    const geteilt = { ...punkt(48.1405, 11.558), bahnsteigId: 'r5370442' };
+    const gross = {
+      schluessel: 'hbf',
+      gleise: new Map([
+        ['1', geteilt],
+        ['2', { ...punkt(48.1406, 11.558), bahnsteigId: 'r2' }],
+        ['3', { ...punkt(48.1407, 11.558), bahnsteigId: 'r3' }],
+        ['4', { ...punkt(48.1408, 11.558), bahnsteigId: 'r4' }],
+      ]),
+    };
+    const klein = {
+      schluessel: 'karlsplatz',
+      gleise: new Map([
+        ['81', geteilt],
+        ['5', { ...punkt(48.139, 11.566), bahnsteigId: 'r5' }],
+        [ubahnSchluessel('w1'), { ...punkt(48.1391, 11.566), bahnsteigId: 'w1' }],
+        [ubahnSchluessel('w2'), { ...punkt(48.1392, 11.566), bahnsteigId: 'w2' }],
+        [ubahnSchluessel('w3'), { ...punkt(48.1393, 11.566), bahnsteigId: 'w3' }],
+      ]),
+    };
+    const fremd = fremdeGleise([gross, klein]);
+    expect([...(fremd.get('karlsplatz') ?? [])]).toEqual(['81']);
+    expect(fremd.get('hbf')?.size ?? 0).toBe(0);
+  });
 });
 
 describe('alsJson', () => {
