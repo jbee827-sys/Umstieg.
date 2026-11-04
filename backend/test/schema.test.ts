@@ -533,6 +533,18 @@ describe('baueBahnhofSchema – der genutzte Zugang ist eine echte Anlage', () =
   }
 });
 
+// Entscheidung des Controllers (04.11.2026): Eine ECHTE Anlage, ueber die die
+// Route ihren Bahnsteig verlaesst, bleibt der genutzte Zugang, auch weit hinter
+// dem Ende - Karlsruhe Hbf 21 (86 m), die Treppe liegt am Kopf dahinter.
+it('Karlsruhe 11 -> 21: die Treppe hinter dem Ende bleibt der genutzte Zugang, bei 86 m', async () => {
+  const datei = fileURLToPath(new URL('../osm-bestand/8000191.json.gz', import.meta.url));
+  const graph = baueGraph((await entpackeEintrag(readFileSync(datei))).osm);
+  const pfad = berechneRoute(graph, 'gleis11:mitte', 'gleis21:mitte', 'schnellste', 'normal')!;
+  const ziel = baueBahnhofSchema(graph, pfad).ebenen.flatMap((e) => e.bahnsteige).find((b) => b.rolle === 'ziel')!;
+  const genutzt = ziel.zugaenge!.find((z) => z.aufRoute);
+  expect(genutzt).toMatchObject({ treppe: 1, beiM: ziel.laengeM });
+});
+
 describe('mittellinie', () => {
   // 100 m x 10 m, Ost-West, auf Breite 50°: Umriss mit nur vier Ecken - die
   // langen Seiten tragen keinen einzigen Punkt dazwischen.

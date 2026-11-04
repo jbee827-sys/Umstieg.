@@ -383,18 +383,15 @@ function lageAmBahnsteig(
 ): { laengsM: number; querM: number; laengeM: number } | null {
   const lage = aufAchse(bahnsteig, knoten);
   // Die Anlage, ueber die die Route diesen Bahnsteig verlaesst oder erreicht,
-  // gehoert ihm - mit weiter Grenze. Ueber 6.265 Routen mit Ebenenwechsel
-  // verloren sonst 61 ihren genutzten Zugang (04.11.2026): die Treppe einer
+  // gehoert ihm - ohne Grenze. Ueber 6.265 Routen mit Ebenenwechsel verloren
+  // sonst 61 ihren genutzten Zugang (04.11.2026): die Treppe einer
   // Inselhaelfte mehr als 5 m naeher an der anderen Haelfte, ein Abgang
   // ueber 30 m neben der Linie, einer knapp hinter dem Ende. Der Weg geht
-  // dort trotzdem hin. Ganz ohne Grenze kam eine Anlage 640 m weit her und
-  // wurde aufs Bahnsteigende geklemmt (Stuttgart Hbf 1/2, Schlussreview
-  // 04.11.2026) - die liegt nicht an diesem Bahnsteig, also kein Zugang.
-  if (eigen) {
-    if (!lage || lage.querM > ANLAGE_MAX_M) return null;
-    if (lage.laengsM < -ANLAGE_MAX_M || lage.laengsM > lage.laengeM + ANLAGE_MAX_M) return null;
-    return lage;
-  }
+  // dort trotzdem hin. Am Kopfbahnsteig liegt die Treppe oft 60 bis 150 m
+  // hinter dem Ende, und „bei <Bahnsteiglaenge> m“ stimmt dann. Das gilt nur
+  // fuer echte Anlagen (`eigeneKantenDerRoute`): Eine geratene Naht 640 m
+  // weiter wurde so zum Zugang ohne Anlage (Stuttgart Hbf 1/2, Schlussreview).
+  if (eigen) return lage;
   if (!lage || lage.querM > zugangQuerGrenze(bahnsteig)) return null;
   if (lage.laengsM < -5 || lage.laengsM > lage.laengeM + 5) return null;
   if (!bahnsteig.linie) return lage;
