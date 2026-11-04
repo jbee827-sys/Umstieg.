@@ -39,6 +39,29 @@ describe('tafelAusStoptimes', () => {
     expect(ausfaelle.every((e) => e.linie === 'S3' || e.linie === 'S5')).toBe(true);
   });
 
+  it('Ersatzverkehr und U-Linien als TRAM (Nürnberg Hbf, Spec 7.2)', () => {
+    const roh = lade<MotisStoptimesAntwort>('stoptimes-dep-kassel-rathaus');
+    const vorlage = roh.stopTimes[0];
+    const mit = (id: string, mode: string, linie: string) => ({
+      ...vorlage,
+      tripId: id,
+      mode,
+      displayName: linie,
+      routeShortName: linie,
+    });
+    const t = tafelAusStoptimes(
+      { ...roh, stopTimes: [mit('a', 'BUS', 'RB30'), mit('b', 'TRAM', 'U2'), mit('c', 'BUS', '36'), mit('d', 'RAIL', 'RB31')] },
+      'dep',
+    );
+    const je = (id: string) => t.find((e) => e.fahrtId === id)!;
+    expect(je('a')).toMatchObject({ verkehrsmittel: 'bus', ersatzverkehr: true });
+    expect(je('b')).toMatchObject({ verkehrsmittel: 'ubahn' });
+    expect(je('b').ersatzverkehr).toBeUndefined();
+    expect(je('c').ersatzverkehr).toBeUndefined();
+    expect(je('d')).toMatchObject({ verkehrsmittel: 'bahn' });
+    expect(je('d').ersatzverkehr).toBeUndefined();
+  });
+
   it('jeder Eintrag nennt seinen Halt - Name und ID (Bus am Bahnhof, 21.10.2026)', () => {
     const roh = lade<MotisStoptimesAntwort>('stoptimes-dep-berlin-hbf-bus');
     const [e] = tafelAusStoptimes(roh, 'dep');

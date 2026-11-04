@@ -59,6 +59,11 @@ function Kennzeichen({ e }: { e: HaltestellenTafelEintrag }) {
   return null
 }
 
+/** Spec 7.2: Ein Bus mit Zuglinie ist Ersatz für den Zug - das steht neben der Linie. */
+function Ersatz() {
+  return <span className="kennzeichen-ersatz">Ersatzverkehr</span>
+}
+
 interface BloeckeProps {
   bloecke: HaltestellenBlock[]
   typ: 'arr' | 'dep'
@@ -100,6 +105,7 @@ export function FahrtBloecke({ bloecke, typ, auswahl, markiere, onTipp, bahnhofN
                   <Zeit e={e} />
                   <span className="tafel-zug">
                     <VerkehrsmittelSymbole liste={[e.verkehrsmittel]} /> <strong>{e.linie}</strong>{' '}
+                    {e.ersatzverkehr && <Ersatz />}
                     {typ === 'arr' ? 'aus' : 'nach'} {e.ziel}
                     {bahnhofName && anderHalt(e, bahnhofName) && (
                       <span className="tafel-halt">
@@ -137,6 +143,7 @@ export function GewaehlteFahrt({
         <strong>
           <VerkehrsmittelSymbole liste={[auswahl.verkehrsmittel]} /> {auswahl.linie}
         </strong>
+        {auswahl.ersatzverkehr && <Ersatz />}
         <span>
           {typ === 'arr' ? 'aus' : 'nach'} {auswahl.ziel} · {uhrzeit(auswahl.zeitIst ?? auswahl.zeitSoll)} ·{' '}
           {steigText(auswahl)} <Kennzeichen e={auswahl} />

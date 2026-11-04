@@ -551,6 +551,8 @@ export interface HaltestellenTafelEintrag {
   /** F5: Ohne Echtzeit zeigt die Oberfläche „laut Fahrplan“. */
   echtzeit: boolean;
   ausfall: boolean;
+  /** Bus mit Zuglinie (RB30, RE1 …): Schienenersatzverkehr – die Oberfläche sagt es. Fehlt sonst. */
+  ersatzverkehr?: boolean;
   /**
    * Der Halt dieser Fahrt. Im Bahnhofsumkreis steht der Bus oft an einem Halt
    * mit eigenem Namen („Göttingen Bahnhof/ZOB“) – die Oberfläche nennt ihn,

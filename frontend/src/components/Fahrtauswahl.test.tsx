@@ -30,6 +30,18 @@ describe('Fahrtauswahl', () => {
     expect(onAuswahl).toHaveBeenCalledWith(expect.objectContaining({ fahrtId: 'f2' }))
   })
 
+  it('nennt Ersatzverkehr neben der Linie (Spec 7.2)', async () => {
+    vi.mocked(holeHaltestellenTafel).mockResolvedValue({ ok: true, stand: new Date().toISOString(), eintraege: [
+      { ...basis, fahrtId: 'e1', linie: 'RB30', verkehrsmittel: 'bus', ersatzverkehr: true },
+      { ...basis, fahrtId: 'e2', linie: '36', verkehrsmittel: 'bus' },
+    ] })
+    render(<Fahrtauswahl ort={ORT} typ="dep" label="Anschluss wählen" auswahl={null} onAuswahl={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Anschluss wählen' }))
+    const rb = await screen.findByRole('button', { name: /RB30/ })
+    expect(within(rb).getByText('Ersatzverkehr')).toBeDefined()
+    expect(within(screen.getByRole('button', { name: /36/ })).queryByText('Ersatzverkehr')).toBeNull()
+  })
+
   it('meldet den Ausfall von MOTIS verstaendlich', async () => {
     vi.mocked(holeHaltestellenTafel).mockResolvedValue({ ok: false, fehler: 'nicht-verfuegbar' })
     render(<Fahrtauswahl ort={ORT} typ="dep" label="Anschluss wählen" auswahl={null} onAuswahl={vi.fn()} />)

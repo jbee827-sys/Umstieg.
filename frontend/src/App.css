@@ -382,6 +382,14 @@
   white-space: nowrap;
 }
 
+.kennzeichen-ersatz {
+  margin-left: 6px;
+  font-size: var(--schrift-label);
+  font-weight: 600;
+  color: var(--color-neutral-700);
+  white-space: nowrap;
+}
+
 .kennzeichen-ausfall {
   flex-shrink: 0;
   margin-left: 6px;

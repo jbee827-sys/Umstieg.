@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { istOevModus, verkehrsmittelAus } from '../src/clients/motis-abbildung.js';
+import { istErsatzverkehr, istOevModus, verkehrsmittelAus } from '../src/clients/motis-abbildung.js';
 
 describe('verkehrsmittelAus', () => {
   it.each([
@@ -31,6 +31,39 @@ describe('verkehrsmittelAus', () => {
     // Ein Wert, der zufaellig ein Eigenschaftsname jedes Objekts ist, darf
     // nicht in die Zuordnung durchschlagen.
     expect(verkehrsmittelAus('constructor')).toBe('sonstiges');
+  });
+});
+
+describe('verkehrsmittelAus mit Linie (Spec 7.2)', () => {
+  it('U-Linien, die als TRAM oder BUS gemeldet werden, sind U-Bahn (DELFI-Datenfehler)', () => {
+    expect(verkehrsmittelAus('TRAM', 'U2')).toBe('ubahn');
+    expect(verkehrsmittelAus('TRAM', 'U 3')).toBe('ubahn');
+    expect(verkehrsmittelAus('BUS', 'U12')).toBe('ubahn');
+  });
+
+  it('echte Tram- und Buslinien bleiben, was sie sind', () => {
+    expect(verkehrsmittelAus('TRAM', '11')).toBe('tram');
+    expect(verkehrsmittelAus('TRAM')).toBe('tram');
+    expect(verkehrsmittelAus('BUS', '36')).toBe('bus');
+    expect(verkehrsmittelAus('BUS', 'U2 Express')).toBe('bus');
+    expect(verkehrsmittelAus('RAIL', 'U2')).toBe('bahn');
+  });
+});
+
+describe('istErsatzverkehr (Spec 7.2)', () => {
+  it('Bus mit Zuglinie ist Schienenersatzverkehr', () => {
+    for (const l of ['RB30', 'RE 1', 'RE32', 'IC 2012', 'ICE 1206', 'IRE6', 'S5']) {
+      expect(istErsatzverkehr('BUS', l)).toBe(true);
+      expect(istErsatzverkehr('COACH', l)).toBe(true);
+    }
+  });
+
+  it('normale Buslinien und echte Züge nicht', () => {
+    expect(istErsatzverkehr('BUS', '36')).toBe(false);
+    expect(istErsatzverkehr('BUS', 'X36')).toBe(false);
+    expect(istErsatzverkehr('BUS', '')).toBe(false);
+    expect(istErsatzverkehr('RAIL', 'RB30')).toBe(false);
+    expect(istErsatzverkehr('REGIONAL_RAIL', 'RE1')).toBe(false);
   });
 });
 

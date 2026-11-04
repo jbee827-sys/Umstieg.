@@ -34,8 +34,31 @@ const ZUORDNUNG = new Map<string, Verkehrsmittel>([
   ['FERRY', 'faehre'],
 ]);
 
-export function verkehrsmittelAus(mode: string): Verkehrsmittel {
-  return ZUORDNUNG.get(mode) ?? 'sonstiges';
+/**
+ * U-Bahn-Linien („U2“, „U 3“). Die DELFI-Daten melden sie in Nürnberg
+ * zeitweise als TRAM (Spec 7.2); am Namen ist die U-Bahn eindeutig, eine echte
+ * Tramlinie heißt nie „U<Zahl>“.
+ */
+const U_LINIE = /^U\s?\d+$/;
+/**
+ * Zuglinie im Namen eines Busses: Schienenersatzverkehr. Transitous meldet
+ * RB30/RE30/RE1/RE32 am Nürnberger Hbf (Nelson-Mandela-Platz) als Mode BUS.
+ */
+const ZUG_LINIE = /^(ICE|IC|IRE|RE|RB|S)\s?\d+/;
+
+/**
+ * `linie` ist optional: Wo nur der Modus bekannt ist (Orte, `verkehrsmittelListe`),
+ * bleibt es bei der reinen Modus-Zuordnung.
+ */
+export function verkehrsmittelAus(mode: string, linie?: string): Verkehrsmittel {
+  const vm = ZUORDNUNG.get(mode) ?? 'sonstiges';
+  if ((vm === 'tram' || vm === 'bus') && linie && U_LINIE.test(linie.trim())) return 'ubahn';
+  return vm;
+}
+
+/** Bus oder Reisebus mit dem Namen einer Zuglinie: Ersatz für einen Zug. */
+export function istErsatzverkehr(mode: string, linie: string): boolean {
+  return (mode === 'BUS' || mode === 'COACH') && ZUG_LINIE.test((linie ?? '').trim());
 }
 
 /**
@@ -67,7 +90,7 @@ export function abstandM(a: { lat: number; lon: number }, b: { lat: number; lon:
 
 /** Verkehrsmittel eines Halts: nur Linienverkehr, jedes einmal, feste Reihenfolge. */
 export function verkehrsmittelListe(modes: readonly string[] | undefined): Verkehrsmittel[] {
-  const da = new Set((Array.isArray(modes) ? modes : []).filter(istOevModus).map(verkehrsmittelAus));
+  const da = new Set((Array.isArray(modes) ? modes : []).filter(istOevModus).map((m) => verkehrsmittelAus(m)));
   return REIHENFOLGE.filter((v) => da.has(v));
 }
 
@@ -128,10 +151,12 @@ function eintragAus(s: MotisStopTime, typ: 'arr' | 'dep'): HaltestellenTafelEint
   const steigSoll = p.scheduledTrack || p.track || dhid;
   const steigIst = s.realTime && p.track && p.track !== steigSoll ? p.track : undefined;
   const ziel = typ === 'dep' ? s.headsign || s.tripTo?.name : s.tripFrom?.name;
+  const linie = s.displayName || s.routeShortName || s.tripShortName || '';
   return {
     fahrtId: s.tripId,
-    linie: s.displayName || s.routeShortName || s.tripShortName || '',
-    verkehrsmittel: verkehrsmittelAus(s.mode),
+    linie,
+    verkehrsmittel: verkehrsmittelAus(s.mode, linie),
+    ...(istErsatzverkehr(s.mode, linie) ? { ersatzverkehr: true } : {}),
     ziel: ziel ?? '',
     zeitSoll,
     ...(zeitIst ? { zeitIst } : {}),
