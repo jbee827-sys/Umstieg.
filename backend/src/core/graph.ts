@@ -910,8 +910,9 @@ function baueGraphOhneNaht(
     if (route.length > 0) return route.join(' ');
     const linien = (tags.description ?? '').match(/\bU\d+\b/g);
     if (linien) return [...new Set(linien)].join(' ');
-    // Ohne Nummer (Berlin Hbf U5, Frankfurt Hbf): der OSM-Name, sonst nichts Genaueres.
-    if (refs.length === 0) return tags.name ?? 'U-Bahn-Steig';
+    // Ohne Nummer (Berlin Hbf U5, Frankfurt Hbf): der OSM-Name, sonst die
+    // Beschreibung (Taunusanlage w337196443: „Alte Oper“), sonst nichts Genaueres.
+    if (refs.length === 0) return tags.name ?? tags.description ?? 'U-Bahn-Steig';
     return `U-Bahn-Steig ${refs.join('/')}`;
   }
 
@@ -1337,7 +1338,7 @@ function baueGraphOhneNaht(
       ubahnSteige.push({
         id: bahnsteigId,
         label: ubahnLabel(tags, refs),
-        ...(tags.name ? { name: tags.name } : {}),
+        ...(tags.name ? { name: tags.name } : tags.description ? { beschreibung: tags.description } : {}),
       });
     } else {
       for (const gleis of refs) {

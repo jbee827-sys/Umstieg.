@@ -720,7 +720,7 @@ describe('Gleisarten: Züge, S-Bahn, U-Bahn', () => {
       expect(graph.gleise).toEqual(['1', '2']);
       expect(graph.ubahnSteige).toEqual([
         { id: 'w2', label: 'U5', name: 'Hauptbahnhof' },
-        { id: 'w3', label: 'U4 U5' },
+        { id: 'w3', label: 'U4 U5', beschreibung: 'U4 U5 Bahnsteig' },
         { id: 'w4', label: 'Hauptbahnhof', name: 'Hauptbahnhof' },
       ]);
       expect(graph.knoten.get('ubahnw2:mitte')).toMatchObject({ ubahnSteig: 'w2', abschnitt: 'mitte', level: -2 });

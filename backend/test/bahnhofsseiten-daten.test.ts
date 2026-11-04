@@ -369,6 +369,65 @@ describe('Gleisarten und U-Bahn (Spec 6.2/6.3)', () => {
     expect(ubahnNamePasst(undefined, 'Hamburg Hbf')).toBe(true);
   });
 
+  // Schlussreview 04.11.2026: Ohne `name` steht der Ort oft in `description`
+  // („Marienplatz U3 U6 Bahnsteig“). Linien und „Bahnsteig“ sagen nichts ueber
+  // den Ort - wohl aber „Alte Oper“ an Taunusanlage.
+  it('ubahnNamePasst: Linienkuerzel und „Bahnsteig“ zaehlen nicht, der Ort schon', () => {
+    expect(ubahnNamePasst('Hauptbahnhof U4 U5 Bahnsteig', 'Frankfurt(Main)Hbf')).toBe(true);
+    expect(ubahnNamePasst('Marienplatz U3 U6 Bahnsteig', 'München Marienplatz')).toBe(true);
+    expect(ubahnNamePasst('Hauptwache U6 U7 Bahnsteig', 'Frankfurt(M)Hauptwache')).toBe(true);
+    expect(ubahnNamePasst('Alte Oper', 'Frankfurt(M)Taunusanlage')).toBe(false);
+    expect(ubahnNamePasst('Ostbahnhof U5 Bahnsteig', 'München Hbf')).toBe(false);
+  });
+
+  it('Taunusanlage: der Steig „Alte Oper“ (nur description) gehoert nicht dazu', async () => {
+    const taunus = await lade('8006691');
+    const graph = graphAus(taunus);
+    const steig = graph.ubahnSteige?.find((s) => s.id === 'w337196443');
+    expect(steig).toMatchObject({ label: 'Alte Oper', beschreibung: 'Alte Oper' });
+    expect(ubahnSteigeDesBahnhofs(graph, taunus.name).map((s) => s.id)).not.toContain('w337196443');
+  }, 60_000);
+
+  it('Nürnberg Hbf: unbenannte Steige nah am Bahnsteig bleiben', async () => {
+    const nuernberg = await lade('8000284');
+    const graph = graphAus(nuernberg);
+    const ids = ubahnSteigeDesBahnhofs(graph, nuernberg.name).map((s) => s.id);
+    expect(ids).toEqual(expect.arrayContaining(['r6438186', 'r6438339']));
+  }, 60_000);
+
+  // Ganz ohne Namen und Beschreibung laesst sich nichts widerlegen - dann
+  // entscheidet die Lage. Die 9 echten unbenannten Steige des Bestands liegen
+  // hoechstens 141 m (Marienplatz) von einer Gleismitte entfernt.
+  describe('ein Steig ohne Namen und Beschreibung', () => {
+    const steigIn = (abstandGrad: number): BestandsEintrag => ({
+      ...eintrag('synthetisch/mini-bahnhof'),
+      osm: {
+        elements: [
+          { type: 'node', id: 1, lat: 52.0, lon: 13.0 },
+          { type: 'node', id: 2, lat: 52.0, lon: 13.003 },
+          { type: 'node', id: 5, lat: 52.0003, lon: 13.0 },
+          { type: 'node', id: 6, lat: 52.0003, lon: 13.003 },
+          { type: 'node', id: 3, lat: 52.0 + abstandGrad, lon: 13.0 },
+          { type: 'node', id: 4, lat: 52.0 + abstandGrad, lon: 13.003 },
+          { type: 'way', id: 10, nodes: [1, 2], tags: { railway: 'platform', ref: '1' } },
+          { type: 'way', id: 11, nodes: [5, 6], tags: { railway: 'platform', ref: '2' } },
+          { type: 'way', id: 12, nodes: [3, 4], tags: { railway: 'platform', subway: 'yes' } },
+          { type: 'way', id: 20, nodes: [1, 5, 3], tags: { highway: 'footway' } },
+        ],
+      },
+    });
+    it('bleibt bis 150 m von einer Gleismitte', () => {
+      const e = steigIn(0.0009); // ~100 m
+      expect(ubahnSteigeDesBahnhofs(graphAus(e), e.name).map((s) => s.id)).toEqual(['w12']);
+    });
+    it('faellt weiter weg heraus', () => {
+      const e = steigIn(0.0018); // ~200 m
+      const graph = graphAus(e);
+      expect(graph.ubahnSteige?.map((s) => s.id)).toEqual(['w12']);
+      expect(ubahnSteigeDesBahnhofs(graph, e.name)).toEqual([]);
+    });
+  });
+
   it('ohne DB-Ablage: Daten wie heute, ubahn aus OSM subway=yes', () => {
     const daten = berechneBahnhof(muenchen, graphAus(muenchen))!;
     // Ohne Liste bleibt OSMs „81;82“ stehen; die Art kennt nur, was OSM selbst als S-Bahn ausweist.

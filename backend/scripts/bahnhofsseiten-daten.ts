@@ -140,19 +140,24 @@ export const ubahnSchluessel = (id: string): string => `ubahn:${id}`;
 /** Zusaetze, die ein U-Bahn-Steig zum Bahnhofsnamen haben darf (Hamburg „Hauptbahnhof Nord“). */
 const HIMMELSRICHTUNGEN: ReadonlySet<string> = new Set(['nord', 'sued', 'ost', 'west']);
 
+/** Woerter einer Steigbeschreibung, die nichts ueber den Ort sagen: Linien („u3“) und „Bahnsteig“. */
+const OHNE_ORT = (w: string): boolean => /^[a-z]{1,3}\d+$/.test(w) || w === 'bahnsteig';
+
 /**
  * Passt der OSM-Name eines U-Bahn-Steigs zum Bahnhof (Spec 6.2)? Der
  * Overpass-Umkreis bringt Steige fremder Haltestellen mit (Hamburg Hbf:
  * Moenckebergstrasse; Stuttgart Hbf: Staatsgalerie; Alexanderplatz: Rotes
  * Rathaus). Die Woerter des Steignamens muessen im Bahnhofsnamen stehen
  * („Hauptbahnhof“ = „Hbf“ ueber `namensSchluessel`), dazu eine Himmelsrichtung.
+ * Linienkuerzel und „Bahnsteig“ zaehlen nicht: Ohne `name` kommt hier die
+ * Beschreibung an („Marienplatz U3 U6 Bahnsteig“).
  * Ohne Namen laesst sich nichts widerlegen - der Steig bleibt.
  */
 export function ubahnNamePasst(steigName: string | undefined, bahnhof: string): boolean {
   if (!steigName) return true;
   const woerter = namensSchluessel(steigName)
     .split(' ')
-    .filter((w) => w && !HIMMELSRICHTUNGEN.has(w));
+    .filter((w) => w && !HIMMELSRICHTUNGEN.has(w) && !OHNE_ORT(w));
   if (woerter.length === 0) return false;
   const bahnhofsWoerter = new Set(namensSchluessel(bahnhof).split(' '));
   return woerter.every((w) => bahnhofsWoerter.has(w));
@@ -161,17 +166,31 @@ export function ubahnNamePasst(steigName: string | undefined, bahnhof: string): 
 const steigeCache = new WeakMap<StationGraph, UbahnSteig[]>();
 
 /**
+ * So weit darf ein Steig ohne Namen und ohne Beschreibung von der naechsten
+ * Gleismitte liegen. Gemessen am 04.11.2026 ueber den Bestand: Die 9
+ * unbenannten Steige, die dazugehoeren, liegen hoechstens 141 m entfernt
+ * (Marienplatz); Taunusanlages „Alte Oper“ 266 m.
+ */
+const UNBENANNT_MAX_M = 150;
+
+/**
  * Die U-Bahn-Steige, die zu diesem Bahnhof gehoeren: im Graphen von einem
- * Gleis aus erreichbar UND dem Namen nach (`ubahnNamePasst`). Der Graph gehoert
- * zu genau einem Bahnhof; das Ergebnis wird je Graph gemerkt.
+ * Gleis aus erreichbar UND dem Namen nach (`ubahnNamePasst`, ohne `name` die
+ * Beschreibung). Ohne beides entscheidet die Lage (`UNBENANNT_MAX_M`). Der
+ * Graph gehoert zu genau einem Bahnhof; das Ergebnis wird je Graph gemerkt.
  */
 export function ubahnSteigeDesBahnhofs(graph: StationGraph, bahnhofsname: string): UbahnSteig[] {
   const gemerkt = steigeCache.get(graph);
   if (gemerkt) return gemerkt;
+  const mitten = graph.gleise.map((g) => mitteVon(graph, g)).filter((k): k is GraphKnoten => k !== undefined);
   const ergebnis = (graph.ubahnSteige ?? []).filter((steig) => {
-    if (!ubahnNamePasst(steig.name, bahnhofsname)) return false;
+    const kennzeichen = steig.name ?? steig.beschreibung;
+    if (!ubahnNamePasst(kennzeichen, bahnhofsname)) return false;
     const start = graph.knoten.get(`ubahn${steig.id}:mitte`);
     if (!start) return false;
+    if (!kennzeichen && !mitten.some((m) => haversineM(m.lat, m.lon, start.lat, start.lon) <= UNBENANNT_MAX_M)) {
+      return false;
+    }
     return graph.gleise.some((gleis) => {
       const ziel = mitteVon(graph, gleis);
       return ziel !== undefined && berechneRoute(graph, start.id, ziel.id, 'schnellste', 'normal') !== null;

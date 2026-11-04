@@ -52,6 +52,11 @@ export interface UbahnSteig {
   label: string;
   /** OSM-`name`, falls getaggt – damit sich fremde Haltestellen erkennen lassen. */
   name?: string;
+  /**
+   * OSM-`description`, nur wenn `name` fehlt: Dort steht der Ort oft
+   * („Marienplatz U3 U6 Bahnsteig“, Taunusanlage: „Alte Oper“).
+   */
+  beschreibung?: string;
 }
 
 /** Was der Graphbau ueber die DB-Gleisliste wissen muss, ausser den Gleisen selbst. */
