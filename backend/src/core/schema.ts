@@ -3,6 +3,7 @@ import { lageZurLinie, querLagen, type Punkt } from './mittellinie.js';
 import { bestimmeZugspitze, himmelsrichtungen, mittlereAchse, peilungGrad, type Zuglauf } from './richtung.js';
 import type {
   BahnhofSchema,
+  GraphKante,
   GraphKnoten,
   KantenTyp,
   RoutenPfad,
@@ -327,10 +328,19 @@ function besucheDerRoute(
 }
 
 
+/**
+ * Eine Kante aus einer echten Anlage: Treppe, Rolltreppe, Aufzug - oder eine
+ * Rampe aus einem OSM-Weg (`anlageSchluessel`) bzw. aus FaSta (`anlageId`).
+ * Die geratenen Naehte und Treppenenden des Graphbaus (`zieheNaehte`,
+ * `zieheTreppenenden`) sind Rampen ohne Schluessel - sie sind kein Zugang.
+ */
+const istEchteAnlage = (k: GraphKante): boolean =>
+  k.typ !== 'rampe' || k.anlageSchluessel !== undefined || k.anlageId !== undefined;
+
 /** Die Ebenenwechsel-Kanten des Graphen, jede genau einmal. */
 function* ebenenwechselKanten(
   graph: StationGraph,
-): Generator<{ typ: KantenTyp; von: GraphKnoten; nach: GraphKnoten; schluessel: string; anlage: string }> {
+): Generator<{ typ: KantenTyp; von: GraphKnoten; nach: GraphKnoten; schluessel: string; anlage: string; echt: boolean }> {
   const gesehen = new Set<string>();
   for (const liste of graph.adjazenz.values()) {
     for (const kante of liste) {
@@ -343,7 +353,7 @@ function* ebenenwechselKanten(
       // Die Anlage hinter der Kante: ein Schacht ist eine Clique aus Kanten,
       // eine Treppe kann aus mehreren bestehen. Gezaehlt wird die Anlage.
       const anlage = kante.anlageSchluessel ?? kante.anlageId ?? schluessel;
-      if (von && nach) yield { typ: kante.typ, von, nach, schluessel, anlage };
+      if (von && nach) yield { typ: kante.typ, von, nach, schluessel, anlage, echt: istEchteAnlage(kante) };
     }
   }
 }
@@ -373,12 +383,18 @@ function lageAmBahnsteig(
 ): { laengsM: number; querM: number; laengeM: number } | null {
   const lage = aufAchse(bahnsteig, knoten);
   // Die Anlage, ueber die die Route diesen Bahnsteig verlaesst oder erreicht,
-  // gehoert ihm - ohne Grenze. Ueber 6.265 Routen mit Ebenenwechsel verloren
-  // sonst 61 ihren genutzten Zugang (04.11.2026): die Treppe einer
+  // gehoert ihm - mit weiter Grenze. Ueber 6.265 Routen mit Ebenenwechsel
+  // verloren sonst 61 ihren genutzten Zugang (04.11.2026): die Treppe einer
   // Inselhaelfte mehr als 5 m naeher an der anderen Haelfte, ein Abgang
   // ueber 30 m neben der Linie, einer knapp hinter dem Ende. Der Weg geht
-  // dort trotzdem hin.
-  if (eigen) return lage;
+  // dort trotzdem hin. Ganz ohne Grenze kam eine Anlage 640 m weit her und
+  // wurde aufs Bahnsteigende geklemmt (Stuttgart Hbf 1/2, Schlussreview
+  // 04.11.2026) - die liegt nicht an diesem Bahnsteig, also kein Zugang.
+  if (eigen) {
+    if (!lage || lage.querM > ANLAGE_MAX_M) return null;
+    if (lage.laengsM < -ANLAGE_MAX_M || lage.laengsM > lage.laengeM + ANLAGE_MAX_M) return null;
+    return lage;
+  }
   if (!lage || lage.querM > zugangQuerGrenze(bahnsteig)) return null;
   if (lage.laengsM < -5 || lage.laengsM > lage.laengeM + 5) return null;
   if (!bahnsteig.linie) return lage;
@@ -434,6 +450,7 @@ function zugaengeFuer(
     laengsM: number;
     knoten: GraphKnoten;
     aufRoute: boolean;
+    echt: boolean;
   }
   const treffer: Treffer[] = [];
 
@@ -448,6 +465,7 @@ function zugaengeFuer(
         laengsM: lage.laengsM,
         knoten: ende,
         aufRoute: aufRoute.has(kante.schluessel) || aufRoute.has(`${kante.nach.id}|${kante.von.id}`),
+        echt: kante.echt,
       });
       break;
     }
@@ -459,6 +477,11 @@ function zugaengeFuer(
   const zugaenge: SchemaZugang[] = [];
   let gruppe: Treffer[] = [treffer[0]];
   const schliesse = (): void => {
+    // Nur geratene Naehte: kein Abgang. Als Zugang stuende er ohne eine
+    // einzige Anlage da (Stuttgart Hbf 1/2 bei 432 m, Schlussreview
+    // 04.11.2026). Liegt eine Naht der Route bei echten Anlagen, bleibt sie
+    // in der Gruppe - die Route geht dort hin.
+    if (!gruppe.some((t) => t.echt)) return;
     const zahl = { aufzug: 0, rolltreppe: 0, treppe: 0 };
     // Je Anlage einmal: Ein Schacht ueber fuenf Ebenen liefert vier Kanten
     // am selben Bahnsteig und ist doch ein Aufzug.
@@ -501,8 +524,9 @@ function aufDemBahnsteig(laengsM: number, bahnsteig: Bahnsteigrohbau): number {
 }
 
 /**
- * Ueber welche Ebenenwechsel-Kante die Route ihren Start- bzw. Zielbahnsteig
- * verlaesst oder erreicht - je Bahnsteig, in beiden Schreibrichtungen.
+ * Ueber welche Anlage die Route ihren Start- bzw. Zielbahnsteig verlaesst
+ * oder erreicht - je Bahnsteig, in beiden Schreibrichtungen. Gezaehlt wird der
+ * erste bzw. letzte Ebenenwechsel, der eine echte Anlage ist.
  */
 function eigeneKantenDerRoute(pfad: RoutenPfad): Map<string, Set<string>> {
   const ergebnis = new Map<string, Set<string>>();
@@ -513,7 +537,9 @@ function eigeneKantenDerRoute(pfad: RoutenPfad): Map<string, Set<string>> {
     menge.add(`${k.von}|${k.nach}`).add(`${k.nach}|${k.von}`);
     ergebnis.set(bahnsteigId, menge);
   };
-  const wechsel = pfad.kanten.map((k, i) => (k.deltaLevel !== 0 ? i : -1)).filter((i) => i >= 0);
+  const wechsel = pfad.kanten
+    .map((k, i) => (k.deltaLevel !== 0 && istEchteAnlage(k) ? i : -1))
+    .filter((i) => i >= 0);
   const start = pfad.knoten[0];
   const ziel = pfad.knoten[pfad.knoten.length - 1];
   if (wechsel.length > 0 && start && pfad.knoten[wechsel[0]]?.level === start.level) {

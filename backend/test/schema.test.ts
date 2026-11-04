@@ -504,6 +504,35 @@ describe('baueBahnhofSchema – der genutzte Zugang bleibt', () => {
   }
 });
 
+// Schlussreview 04.11.2026: Stuttgart Hbf 1/2 <-> 101/102. Die Route verliess
+// Gleis 1/2 zuerst ueber eine geratene Naht (`zieheNaehte`: rampe, 0 m, keine
+// Anlage) bis zu 640 m vom Bahnsteig. `eigeneKantenDerRoute` nahm sie als
+// genutzten Zugang, ohne Grenze, auf das Bahnsteigende geklemmt: „Zugang ohne
+// eine einzige Anlage", Fusszeile „… bei 432 m". Auch ungenutzt ist eine Naht
+// kein Zugang.
+describe('baueBahnhofSchema – der genutzte Zugang ist eine echte Anlage', () => {
+  let graph: StationGraph;
+  beforeAll(async () => {
+    const datei = fileURLToPath(new URL('../osm-bestand/8000096.json.gz', import.meta.url));
+    graph = baueGraph((await entpackeEintrag(readFileSync(datei))).osm);
+  });
+  const paare = [['1', '101'], ['101', '1'], ['2', '102'], ['102', '2'], ['1', '102'], ['102', '1']];
+  for (const [von, nach] of paare) {
+    for (const variante of ['schnellste', 'barrierefrei'] as const) {
+      it(`Stuttgart ${von} -> ${nach} (${variante}): kein Zugang ohne Anlage`, () => {
+        const pfad = berechneRoute(graph, `gleis${von}:mitte`, `gleis${nach}:mitte`, variante, 'normal');
+        if (!pfad) return;
+        const schema = baueBahnhofSchema(graph, pfad);
+        for (const b of schema.ebenen.flatMap((e) => e.bahnsteige)) {
+          for (const z of b.zugaenge ?? []) {
+            expect(z.aufzug + z.rolltreppe + z.treppe, `${b.gleise.join('/')} bei ${z.beiM} m`).toBeGreaterThan(0);
+          }
+        }
+      });
+    }
+  }
+});
+
 describe('mittellinie', () => {
   // 100 m x 10 m, Ost-West, auf Breite 50°: Umriss mit nur vier Ecken - die
   // langen Seiten tragen keinen einzigen Punkt dazwischen.
