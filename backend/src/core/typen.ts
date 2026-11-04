@@ -36,6 +36,30 @@ export interface GraphKnoten {
   bahnsteigId?: string; // gleicher Wert = gleicher physischer Bahnsteig
   /** Zwischenziel der Variante `mit-stopp` (Konzept: WC & Kiosk). */
   poi?: 'wc' | 'kiosk';
+  /**
+   * An den Punkten `ubahn<id>:anfang|mitte|ende` eines U-Bahn-Steigs: dessen
+   * `UbahnSteig.id`. Diese Punkte tragen KEIN `gleis` – ein U-Bahn-Steig ist
+   * kein Gleis, bleibt aber routbar.
+   */
+  ubahnSteig?: string;
+}
+
+/** Ein U-Bahn-Steig im Bahnhofsgraphen (Spec 6.2): kein Gleis, aber ein Ziel. */
+export interface UbahnSteig {
+  /** Die `bahnsteigId` (OSM `w<id>`/`r<id>`). */
+  id: string;
+  /** Linien („U1 U2 U7 U8“), sonst „U-Bahn-Steig 51/53“. */
+  label: string;
+  /** OSM-`name`, falls getaggt – damit sich fremde Haltestellen erkennen lassen. */
+  name?: string;
+}
+
+/** Was der Graphbau ueber die DB-Gleisliste wissen muss, ausser den Gleisen selbst. */
+export interface GraphKontext {
+  /** `!gleislisteUnvollstaendig(info)`: Nur dann darf aus Fehlendem geschlossen werden. */
+  gleislisteVollstaendig: boolean;
+  /** `StationsInfo.sbahnEvas` – Verkehrsstellen, die nur S-Bahn anbieten. */
+  sbahnEvas?: string[];
 }
 
 export interface GraphKante {
@@ -79,6 +103,13 @@ export interface StationGraph {
    * (Synthesemodell) bleibt es bei der Sehne von Ende zu Ende.
    */
   bahnsteigLinien?: Map<string, { lat: number; lon: number }[]>;
+  /**
+   * Verkehrsart je Gleis aus `gleise` (Spec 6.2). Fehlt ein Gleis oder die
+   * ganze Karte (Synthesemodell), gilt `'zug'` – im Zweifel Züge.
+   */
+  gleisArt?: Map<string, 'zug' | 'sbahn'>;
+  /** U-Bahn-Steige: keine Gleise, nicht in `gleise`, aber routbar. */
+  ubahnSteige?: UbahnSteig[];
 }
 
 // --- Route und Ausgabe ---

@@ -1,15 +1,18 @@
 import { erreichbareGleisPaare } from './klassifikation.js';
+import { gleichesGleis, normGleis } from './gleisname.js';
 import { mittlereAchse, nachNordwesten, peilungGrad, richteEndenAus } from './richtung.js';
 import { mittellinie } from './mittellinie.js';
 import type {
   GraphKante,
   GraphKnoten,
+  GraphKontext,
   KantenTyp,
   OsmElement,
   OverpassAntwort,
   RoutenPfad,
   StationGraph,
   StationsInfo,
+  UbahnSteig,
 } from './typen.js';
 
 const ERDRADIUS_M = 6_371_000;
@@ -250,13 +253,25 @@ function istGesperrterWeg(el: OsmElement): boolean {
   return tags.foot !== 'yes' && tags.foot !== 'designated' && tags.foot !== 'permissive';
 }
 
-export function baueGraph(osmRoh: OverpassAntwort, dbGleise?: StationsInfo['gleise']): StationGraph {
+/**
+ * Der Bahnhofsgraph aus OSM, auf Wunsch mit der DB-Gleisliste als zweiter Quelle.
+ *
+ * `kontext` sagt, ob diese Liste vollstaendig ist (`gleislisteUnvollstaendig`)
+ * und welche Verkehrsstellen nur S-Bahn anbieten. Fehlt er, gilt die Liste als
+ * unvollstaendig: Aus ihr wird dann nichts geschlossen, was ein fehlender
+ * Eintrag belegen muesste (Spec 6.2, 6.3).
+ */
+export function baueGraph(
+  osmRoh: OverpassAntwort,
+  dbGleise?: StationsInfo['gleise'],
+  kontext?: GraphKontext,
+): StationGraph {
   const osm = { ...osmRoh, elements: osmRoh.elements.filter((el) => !istGesperrterWeg(el)) };
-  const graph = baueGraphOhneNaht(osm, dbGleise);
+  const graph = baueGraphOhneNaht(osm, dbGleise, kontext);
   const vorher = erreichbareGleisPaare(graph);
   if (vorher === 1) return graph;
   const elements = vererbeEbenen(osm.elements);
-  const mitNaht = baueGraphOhneNaht({ ...osm, elements }, dbGleise);
+  const mitNaht = baueGraphOhneNaht({ ...osm, elements }, dbGleise, kontext);
   zieheNaehte(mitNaht, elements);
   zieheTreppenenden(mitNaht, elements);
   schliesseLueckenAmTreppenfuss(mitNaht, elements);
@@ -466,8 +481,10 @@ function schliesseLueckenAmTreppenfuss(graph: StationGraph, elemente: OsmElement
   }
   const osmIdVon = (id: string): number => Number(id.slice(1, id.indexOf('@')));
   const frei = [...graph.knoten.values()].filter((k) => k.id.startsWith('n') && !aufBahnsteig.has(osmIdVon(k.id)));
+  // Ein U-Bahn-Steig zaehlt hier wie ein Gleis: Er ist ein Bahnsteig, zu dem
+  // die Bahnhofsseite Wege rechnet (Spec 6.2).
   const mitGleis = new Set<string>();
-  for (const k of graph.knoten.values()) if (k.gleis) mitGleis.add(wurzel(k.id));
+  for (const k of graph.knoten.values()) if (k.gleis || k.ubahnSteig) mitGleis.add(wurzel(k.id));
   for (const el of elemente) {
     if (el.type !== 'way' || !el.nodes || !istEbenenwechselWeg(el.tags ?? {})) continue;
     for (const id of [el.nodes[0], el.nodes[el.nodes.length - 1]]) {
@@ -504,7 +521,11 @@ function schliesseLueckenAmTreppenfuss(graph: StationGraph, elemente: OsmElement
   }
 }
 
-function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise']): StationGraph {
+function baueGraphOhneNaht(
+  osm: OverpassAntwort,
+  dbGleise?: StationsInfo['gleise'],
+  kontext?: GraphKontext,
+): StationGraph {
   const osmKnoten = new Map<number, OsmElement>();
   const ways: OsmElement[] = [];
   const waysNachId = new Map<number, OsmElement>();
@@ -799,6 +820,51 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
     return tags.tram !== 'yes' && tags.bus !== 'yes';
   }
 
+  /**
+   * Ein U-Bahn-Steig, der sich selbst so ausweist (Spec 6.2): `subway=yes` ohne
+   * `train=yes`. Muenchen Hbf 51–56, Hamburg Hbf „Hauptbahnhof Süd“ 1;2 – im
+   * DB-Fahrplan gibt es sie nicht, ihre Nummern stossen aber mit DB-Gleisen
+   * zusammen. Mit `train=yes` haelt dort auch die S-Bahn (Konstablerwache).
+   */
+  function istUbahnsteig(tags: Record<string, string>): boolean {
+    return tags.subway === 'yes' && tags.train !== 'yes';
+  }
+
+  /**
+   * Stadtbahn unter der Erde: `light_rail=yes` ohne `train=yes`, und `level` < 0,
+   * `tunnel=yes` oder `location=underground`. Bielefeld „Hauptbahnhof (U)“ 1–4,
+   * Duesseldorf 1;3 / 2;4. U-Bahn ist sie erst, wenn die DB dort kein Gleis
+   * fuehrt – die Berliner S-Bahn im Tunnel traegt dieselben Tags.
+   */
+  function istStadtbahnUnterDerErde(tags: Record<string, string>): boolean {
+    if (tags.light_rail !== 'yes' || tags.train === 'yes') return false;
+    const unten = parseLevels(tags.level).some((l) => l < 0);
+    return unten || tags.tunnel === 'yes' || tags.location === 'underground';
+  }
+
+  /**
+   * Die Linien eines Bahnsteigs: `route_ref` („S3;S5“) und die Linienkuerzel der
+   * `description` („Hauptbahnhof (Tief) S1 S2 S3 S4 S6 S7 S8 Bahnsteig“).
+   */
+  function linienVon(tags: Record<string, string>): string[] {
+    const route = (tags.route_ref ?? '').split(/[;,]/).map((l) => l.replace(/\s+/g, '')).filter(Boolean);
+    const beschreibung = (tags.description ?? '').split(/[\s,;/+()]+/).filter((t) => /^[A-Z]{1,3}\d+$/.test(t));
+    return [...route, ...beschreibung];
+  }
+
+  /** „U1 U2 U7 U8“ aus `route_ref` oder `description`, sonst „U-Bahn-Steig 51/53“. */
+  function ubahnLabel(tags: Record<string, string>, refs: string[]): string {
+    const route = (tags.route_ref ?? '').split(/[;,]/).map((l) => l.trim()).filter(Boolean);
+    if (route.length > 0) return route.join(' ');
+    const linien = (tags.description ?? '').match(/\bU\d+\b/g);
+    if (linien) return [...new Set(linien)].join(' ');
+    return `U-Bahn-Steig ${refs.join('/')}`;
+  }
+
+  /** Faellt die DB-Kennung `kennung` auf einen Bahnsteig mit diesen Kennungen – exakt oder als Bereich? */
+  const passtKennung = (eigene: string[], kennung: string): boolean =>
+    eigene.some((k) => k === kennung || kennung.startsWith(`${k}:`));
+
   const bahnsteige: BahnsteigDaten[] = [];
   const relationsMitgliedWays = new Set<number>();
   /** Strassenbahnsteige – draussen, ausser die DB fuehrt dort per IFOPT ein Gleis. */
@@ -900,12 +966,22 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
   //
   // Ein Strassenbahnsteig gilt, wenn die DB dort ein Gleis fuehrt: Chemnitz
   // Hbf faehrt seine Citybahn ueber die Bahnsteige des Vorplatzes.
+  //
+  // Seit dem 04.11.2026 (Spec 6.3) ersetzen die DB-Namen die OSM-Nummern, die
+  // die DB an diesem Bahnhof nicht fuehrt: OSM nennt die Muenchner S-Bahn tief
+  // „81;82“, die DB „1“ und „2“ – bis dahin standen alle vier in der Liste.
+  // Nur mit vollstaendiger Liste: Was ein ausgefallenes Mitglied fuehrt, weiss
+  // sonst niemand. U-Bahn-Steige nehmen kein DB-Gleis auf.
+  const vollstaendig = kontext?.gleislisteVollstaendig === true && (dbGleise?.length ?? 0) > 0;
+  const dbNamen = new Set((dbGleise ?? []).map((g) => normGleis(g.gleis)));
+  const ubahn = new Set(bahnsteige.filter((b) => istUbahnsteig(b.tags)));
   if (dbGleise) {
-    const bekannt = new Set(bahnsteige.flatMap((b) => b.refs));
-    const alle = [...bahnsteige, ...strassenbahnsteige];
+    const bekannt = new Set(bahnsteige.filter((b) => !ubahn.has(b)).flatMap((b) => b.refs.map(normGleis)));
+    const alle = [...bahnsteige, ...strassenbahnsteige].filter((b) => !ubahn.has(b));
+    const vonDb = new Map<BahnsteigDaten, Set<string>>();
     for (const g of dbGleise) {
       const kennung = g.ris?.ifopt;
-      if (!kennung || bekannt.has(g.gleis) || g.ris?.parentPlatform) continue;
+      if (!kennung || bekannt.has(normGleis(g.gleis)) || g.ris?.parentPlatform) continue;
       const exakt = alle.filter((b) => (kennungen.get(b) ?? []).includes(kennung));
       const bereich = alle.filter((b) => (kennungen.get(b) ?? []).some((k) => kennung.startsWith(`${k}:`)));
       const treffer = exakt.length > 0 ? exakt : bereich;
@@ -913,9 +989,57 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
       const ziel = treffer[0];
       ziel.refs.push(g.gleis);
       if (!bahnsteige.includes(ziel)) bahnsteige.push(ziel);
-      bekannt.add(g.gleis);
+      bekannt.add(normGleis(g.gleis));
+      if (!vonDb.has(ziel)) vonDb.set(ziel, new Set());
+      vonDb.get(ziel)!.add(g.gleis);
+    }
+    if (vollstaendig) {
+      for (const [bahnsteig, neu] of vonDb) {
+        bahnsteig.refs = bahnsteig.refs.filter((r) => neu.has(r) || dbNamen.has(normGleis(r)));
+      }
     }
   }
+
+  // --- U-Bahn: unterirdische Stadtbahn ohne DB-Gleis (Spec 6.2) ---
+  //
+  // Faellt per Kennung oder Namen ein DB-Gleis auf den Bahnsteig, bleibt er
+  // Gleis (Berliner S-Bahn im Tunnel). Per Namen nur, wenn kein anderer
+  // Bahnsteig dieselbe Nummer traegt: In Bielefeld liegt DB-Gleis 1 oben, die
+  // Stadtbahn darunter heisst nur zufaellig auch 1. Ohne vollstaendige Liste
+  // bleibt die Stadtbahn, wie sie war – aus Fehlendem wird nichts geschlossen.
+  if (vollstaendig) {
+    const kandidaten = bahnsteige.filter((b) => !ubahn.has(b) && istStadtbahnUnterDerErde(b.tags));
+    const andereNummern = new Set(
+      bahnsteige.filter((b) => !ubahn.has(b) && !kandidaten.includes(b)).flatMap((b) => b.refs.map(normGleis)),
+    );
+    for (const b of kandidaten) {
+      const perKennung = dbGleise!.some((g) => g.ris?.ifopt && passtKennung(kennungen.get(b) ?? [], g.ris.ifopt));
+      const perName = b.refs.some((r) => dbNamen.has(normGleis(r)) && !andereNummern.has(normGleis(r)));
+      if (!perKennung && !perName) ubahn.add(b);
+    }
+  }
+
+  /**
+   * S-Bahn, eng erkannt (Spec 6.2): Der OSM-Bahnsteig weist sich nur als S-Bahn
+   * aus – Linien ausschliesslich „S…“, oder `light_rail=yes` ohne `train=yes`
+   * an einem Gleis, das die DB fuehrt (Berliner S-Bahn). Im Zweifel: Zuege.
+   */
+  const istSbahnsteig = (b: BahnsteigDaten): boolean => {
+    const linien = linienVon(b.tags);
+    if (linien.length > 0 && linien.every((l) => /^S\d+$/.test(l))) return true;
+    if (b.tags.light_rail !== 'yes' || b.tags.train === 'yes' || !dbGleise) return false;
+    return (
+      b.refs.some((r) => dbNamen.has(normGleis(r))) ||
+      dbGleise.some((g) => g.ris?.ifopt && passtKennung(kennungen.get(b) ?? [], g.ris.ifopt))
+    );
+  };
+  /** Die DB fuehrt das Gleis nur unter Verkehrsstellen, die nur S-Bahn anbieten (Muenchen Hbf (tief)). */
+  const sbahnEvas = new Set(kontext?.sbahnEvas ?? []);
+  const nurSbahnVerkehrsstelle = (gleis: string): boolean => {
+    if (!vollstaendig || sbahnEvas.size === 0) return false;
+    const evas = dbGleise!.find((g) => gleichesGleis(g.gleis, gleis))?.evas ?? [];
+    return evas.length > 0 && evas.every((e) => sbahnEvas.has(e));
+  };
 
   /**
    * Welcher Bahnsteig stellt die Punkte fuer eine Gleisnummer?
@@ -934,6 +1058,7 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
    */
   const quelleFuerGleis = new Map<string, BahnsteigDaten>();
   for (const bahnsteig of bahnsteige) {
+    if (ubahn.has(bahnsteig)) continue; // kein Gleis, siehe oben
     for (const gleis of bahnsteig.refs) {
       const bisher = quelleFuerGleis.get(gleis);
       if (!bisher || (!bisher.ebeneBelegt && bahnsteig.ebeneBelegt)) {
@@ -1057,6 +1182,7 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
   };
 
   const gleisSet = new Set<string>();
+  const ubahnSteige: UbahnSteig[] = [];
   for (const bahnsteig of bahnsteige) {
     const { bahnsteigId, refs, ebene, tags, nodeListen } = bahnsteig;
 
@@ -1093,11 +1219,26 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
       osmKnoten,
     );
 
-    for (const gleis of refs) {
-      gleisSet.add(gleis);
-      // Ein anderer Bahnsteig ist die bessere Quelle fuer diese Nummer. Der
-      // Umriss oben bleibt trotzdem begehbar – er ist echte Geometrie.
-      if (quelleFuerGleis.get(gleis) !== bahnsteig) continue;
+    // Je Gleis eine Kette `gleisN:anfang|mitte|ende`; ein U-Bahn-Steig bekommt
+    // eine einzige, `ubahn<id>:…`, ohne Gleis - routbar, aber nicht waehlbar.
+    const ketten: { praefix: string; merkmal: Pick<GraphKnoten, 'gleis' | 'ubahnSteig'> }[] = [];
+    if (ubahn.has(bahnsteig)) {
+      ketten.push({ praefix: `ubahn${bahnsteigId}`, merkmal: { ubahnSteig: bahnsteigId } });
+      ubahnSteige.push({
+        id: bahnsteigId,
+        label: ubahnLabel(tags, refs),
+        ...(tags.name ? { name: tags.name } : {}),
+      });
+    } else {
+      for (const gleis of refs) {
+        gleisSet.add(gleis);
+        // Ein anderer Bahnsteig ist die bessere Quelle fuer diese Nummer. Der
+        // Umriss oben bleibt trotzdem begehbar – er ist echte Geometrie.
+        if (quelleFuerGleis.get(gleis) === bahnsteig) ketten.push({ praefix: `gleis${gleis}`, merkmal: { gleis } });
+      }
+    }
+
+    for (const { praefix, merkmal } of ketten) {
       const lagen: [string, number, number][] = [
         ['anfang', endeA.lat, endeA.lon],
         ['mitte', mitteLat, mitteLon],
@@ -1105,9 +1246,9 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
       ];
       let vorherigeId: string | null = null;
       for (const [abschnitt, lat, lon] of lagen) {
-        const id = `gleis${gleis}:${abschnitt}`;
+        const id = `${praefix}:${abschnitt}`;
         if (!knoten.has(id)) {
-          knoten.set(id, { id, lat, lon, level: ebene, gleis, abschnitt, bahnsteigId });
+          knoten.set(id, { id, lat, lon, level: ebene, ...merkmal, abschnitt, bahnsteigId });
         }
         if (vorherigeId) {
           const a = knoten.get(vorherigeId)!;
@@ -1126,7 +1267,7 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
 
       // Anbindung ans Wegenetz: nächster physischer Knoten gleicher Ebene ≤ 30 m
       for (const [abschnitt, lat, lon] of lagen) {
-        const syntId = `gleis${gleis}:${abschnitt}`;
+        const syntId = `${praefix}:${abschnitt}`;
         // Die Ebene des KNOTENS, nicht die des gerade verarbeiteten
         // Bahnsteigs. Beide sind hier identisch, seit nur die gewaehlte
         // Quelle Punkte anlegt – aber eine ebene Kante ueber Stockwerke darf
@@ -1230,12 +1371,19 @@ function baueGraphOhneNaht(osm: OverpassAntwort, dbGleise?: StationsInfo['gleise
   const gleise = [...gleisSet].sort((a, b) =>
     a.localeCompare(b, 'de', { numeric: true, sensitivity: 'base' }),
   );
+  // Die Art haengt am Bahnsteig, der das Gleis stellt (`quelleFuerGleis`).
+  const gleisArt = new Map<string, 'zug' | 'sbahn'>();
+  for (const gleis of gleise) {
+    const quelle = quelleFuerGleis.get(gleis);
+    const sbahn = nurSbahnVerkehrsstelle(gleis) || (quelle !== undefined && istSbahnsteig(quelle));
+    gleisArt.set(gleis, sbahn ? 'sbahn' : 'zug');
+  }
 
   // --- Pass F: verwaiste Aufzugausstiege an ihren Bahnsteig anschliessen ---
   verbindeVerwaisteAufzuege(knoten, adjazenz, fuegeKanteHinzu);
 
   // Stufe wird erst durch die Klassifikation (Task 5) gesetzt – Start: 3.
-  return { knoten, adjazenz, stufe: 3, gleise, bahnsteigLinien };
+  return { knoten, adjazenz, stufe: 3, gleise, bahnsteigLinien, gleisArt, ubahnSteige };
 }
 
 /**
@@ -1390,6 +1538,11 @@ function verdichteBahnsteigketten(
   }
 }
 
+/** Ein synthetischer Bahnsteigpunkt: Gleis (`gleisN:…`) oder U-Bahn-Steig (`ubahn<id>:…`). */
+function istSteigpunkt(id: string): boolean {
+  return id.startsWith('gleis') || id.startsWith('ubahn');
+}
+
 function verbindeVerwaisteAufzuege(
   knoten: Map<string, GraphKnoten>,
   adjazenz: Map<string, GraphKante[]>,
@@ -1426,7 +1579,7 @@ function verbindeVerwaisteAufzuege(
   const hatAufzug = new Set<number>();
   const hatBahnsteig = new Set<number>();
   for (const [id, nummer] of insel) {
-    if (id.startsWith('gleis')) hatBahnsteig.add(nummer);
+    if (istSteigpunkt(id)) hatBahnsteig.add(nummer);
     if ((adjazenz.get(id) ?? []).some((k) => k.typ === 'aufzug')) hatAufzug.add(nummer);
   }
 
@@ -1443,7 +1596,7 @@ function verbindeVerwaisteAufzuege(
     let naechsteDist = Number.POSITIVE_INFINITY;
     const inseln = new Set<number>();
     for (const kandidat of knoten.values()) {
-      if (!kandidat.id.startsWith('gleis')) continue;
+      if (!istSteigpunkt(kandidat.id)) continue;
       if (kandidat.level !== ausstieg.level) continue;
       const d = haversineM(ausstieg.lat, ausstieg.lon, kandidat.lat, kandidat.lon);
       if (d > VERWAIST_MAX_M) continue;
@@ -1511,6 +1664,8 @@ export function kopiereGraph(graph: StationGraph): StationGraph {
     stufe: graph.stufe,
     gleise: graph.gleise,
     ...(graph.bahnsteigLinien ? { bahnsteigLinien: graph.bahnsteigLinien } : {}),
+    ...(graph.gleisArt ? { gleisArt: graph.gleisArt } : {}),
+    ...(graph.ubahnSteige ? { ubahnSteige: graph.ubahnSteige } : {}),
   };
 }
 

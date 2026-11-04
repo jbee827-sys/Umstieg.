@@ -254,7 +254,7 @@ function pruefeBahnhof(eva: string, eintrag: BestandsEintrag, ergebnis: Map<stri
           if (g.tags.bridge && (ebene === null || ebene <= 0 || naehe > 12)) continue;
           if ((ebene ?? 0) !== u.level) continue;
           if (uebergaenge.some((q) => haversineM(q.lat, q.lon, x.lat, x.lon) <= 4)) continue;
-          const synth = u.id.startsWith('gleis') || w.id.startsWith('gleis');
+          const synth = [u.id, w.id].some((id) => id.startsWith('gleis') || id.startsWith('ubahn'));
           treffer = { klasse: weg ? 'WEG' : synth ? 'ANKER' : 'KETTE', beleg: `${u.id} > ${w.id}${weg ? ` w${weg.id}` : ''}` };
           break suche;
         }

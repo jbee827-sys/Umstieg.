@@ -152,3 +152,23 @@ describe('Gleisliste: Strassenbahn- und Bussteige sind keine Gleise', () => {
     expect(gleiseAus({ ref: '1', highway: 'platform' })).toEqual(['1']);
   });
 });
+
+describe('Gleisliste: U-Bahn-Steige sind keine Gleise (Spec 6.2)', () => {
+  /**
+   * Muenchen Hbf 51–56 und Marienplatz 51/52 tragen `subway=yes`. Im
+   * DB-Fahrplan gibt es sie nicht; in der Liste stiessen ihre Nummern mit
+   * DB-Gleisen zusammen (Hamburg Hbf: „Hauptbahnhof Süd“ 1;2).
+   */
+  it('laesst subway=yes draussen', () => {
+    expect(gleiseAus({ ref: '51;53', subway: 'yes' }, { ref: '11', train: 'yes' })).toEqual(['11']);
+  });
+
+  it('behaelt subway=yes mit train=yes – S-Bahn im U-Bahnhof (Konstablerwache)', () => {
+    expect(gleiseAus({ ref: '1;2', subway: 'yes', train: 'yes' })).toEqual(['1', '2']);
+  });
+
+  /** Ohne DB-Liste weiss niemand, ob die DB dort ein Gleis fuehrt: wie bisher. */
+  it('behaelt light_rail unter der Erde ohne DB-Liste', () => {
+    expect(gleiseAus({ ref: '1', light_rail: 'yes', level: '-2', tunnel: 'yes' })).toEqual(['1']);
+  });
+});

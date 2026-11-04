@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { beforeAll, describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { baueGraph, graphZuGeoJSON, haversineM, pfadZuGeoJSON } from '../src/core/graph.js';
@@ -6,7 +6,8 @@ import { gehzeitSekunden } from '../src/core/gehzeit.js';
 import { erreichbareGleisPaare } from '../src/core/klassifikation.js';
 import { berechneRoute } from '../src/core/routing.js';
 import { generiereSchritte } from '../src/core/textgen.js';
-import type { GraphKante, OverpassAntwort, StationGraph } from '../src/core/typen.js';
+import { entpackeEintrag } from '../src/osm/bestand.js';
+import type { GraphKante, OverpassAntwort, StationGraph, StationsInfo } from '../src/core/typen.js';
 
 function ladeFixture(name: string): OverpassAntwort {
   const pfad = fileURLToPath(new URL(`./fixtures/${name}.json`, import.meta.url));
@@ -538,6 +539,210 @@ describe('Gleise über die IFOPT-Kennung', () => {
   it('lässt Straßenbahnsteige ohne DB-Beleg draussen', () => {
     const graph = baueGraph({ elements: steig(1, 52.0, { tram: 'yes', local_ref: '4' }) }, [
       db('4', 'de:14511:30062:3:4'),
+    ]);
+    expect(graph.gleise).toEqual([]);
+  });
+});
+
+/**
+ * Gleisarten (Spec 6.2/6.3): Züge, S-Bahn, U-Bahn.
+ *
+ * U-Bahn-Steige sind keine Gleise: Ihre Nummern stossen mit den DB-Gleisen
+ * zusammen (Hamburg Hbf „1;2“ Hauptbahnhof Süd, Bielefeld „Hauptbahnhof (U)“
+ * 1–4). Sie bleiben routbar, als `ubahn<id>:anfang|mitte|ende`.
+ */
+describe('Gleisarten: Züge, S-Bahn, U-Bahn', () => {
+  /**
+   * RIS::Stations `platforms` je Verkehrsstelle von München Hbf, abgerufen am
+   * 02.10.2026 (osm-ablage/db-roh/8000261.json), Kennungen ohne „de:09162:“.
+   * 8098263 ist „München Hbf (tief)“ und bietet nur CITY_TRAIN an.
+   */
+  const MUENCHEN_RIS: Record<string, string> = {
+    '8000261':
+      '5 6 7=100:5:7 8=100:5:8 10=100:5:10 11=100:11:11 12=100:11:12 13=100:11:13 14=100:11:14 15=100:11:15 ' +
+      '16=100:16:16 17=100:16:17 18=100:16:18 19=100:16:19 20=100:16:20 21=100:16:21 22=100:22:22 23=100:22:23 ' +
+      '24=100:22:24 25=100:22:25 26=100:22:26 27=100:27:27 28=100:27:28 29=100:27:29 30=100:27:30 31=100:27:31 ' +
+      '32=100:27:32 35=100:27:35',
+    '8098261':
+      '18=100:16:18 19=100:16:19 21=100:16:21 24=100:22:24 25=100:22:25 26=100:22:26 27=100:27:27 28=100:27:28 ' +
+      '29=100:27:29 30=100:27:30 31=100:27:31 32=100:27:32 33=100:27:33 34=100:27:34 35=100:27:35 36=100:27:36',
+    '8098262': '5=100:5:5 6=100:5:6 7=100:5:7 8=100:5:8 9=100:5:9 10=100:5:10 11 12 13 14 15',
+    '8098263': '1=6:40:81 2=6:40:82',
+  };
+  /** Wie `holeStationsInfo`: nach Namen vereinigt, `evas` je Mitglied. */
+  const muenchenGleise = (): StationsInfo['gleise'] => {
+    const nachName = new Map<string, StationsInfo['gleise'][number]>();
+    for (const [eva, liste] of Object.entries(MUENCHEN_RIS)) {
+      for (const eintrag of liste.split(' ')) {
+        const [gleis, kennung] = eintrag.split('=');
+        const da = nachName.get(gleis);
+        if (da) {
+          da.evas!.push(eva);
+          continue;
+        }
+        nachName.set(gleis, {
+          gleis,
+          evas: [eva],
+          ris: { name: gleis, ...(kennung ? { ifopt: `de:09162:${kennung}` } : {}) },
+        });
+      }
+    }
+    return [...nachName.values()];
+  };
+  let muenchen: OverpassAntwort;
+  beforeAll(async () => {
+    const pfad = fileURLToPath(new URL('../osm-bestand/8000261.json.gz', import.meta.url));
+    muenchen = (await entpackeEintrag(readFileSync(pfad))).osm;
+  });
+  const vollstaendig = { gleislisteVollstaendig: true, sbahnEvas: ['8098263'] };
+
+  it('München Hbf: 51–56 keine Gleise, drei U-Bahn-Steige', () => {
+    const graph = baueGraph(muenchen, muenchenGleise(), vollstaendig);
+    expect(graph.gleise.some((g) => Number(g) >= 51 && Number(g) <= 56)).toBe(false);
+    expect(graph.ubahnSteige!.map((s) => s.label).sort()).toEqual(['U1 U2 U7 U8', 'U1 U2 U7 U8', 'U4 U5']);
+    expect(graph.ubahnSteige!.find((s) => s.id === 'w43338408')).toEqual({
+      id: 'w43338408',
+      label: 'U4 U5',
+      name: 'Hauptbahnhof',
+    });
+  });
+
+  it('München Hbf: U-Bahn-Steige bleiben routbar, ohne Gleis', () => {
+    const graph = baueGraph(muenchen, muenchenGleise(), vollstaendig);
+    const mitte = graph.knoten.get('ubahnw43338408:mitte');
+    expect(mitte).toMatchObject({ ubahnSteig: 'w43338408', bahnsteigId: 'w43338408', abschnitt: 'mitte', level: -2 });
+    expect(mitte?.gleis).toBeUndefined();
+    expect(graph.knoten.has('ubahnw43338408:anfang') && graph.knoten.has('ubahnw43338408:ende')).toBe(true);
+    expect([...graph.knoten.values()].some((k) => k.gleis === '55')).toBe(false);
+    expect(berechneRoute(graph, 'ubahnw43338408:mitte', 'gleis1:mitte', 'schnellste', 'normal')).not.toBeNull();
+  });
+
+  it('München Hbf: auch ohne DB-Liste ist subway=yes kein Gleis', () => {
+    const graph = baueGraph(muenchen);
+    expect(graph.gleise.some((g) => Number(g) >= 51 && Number(g) <= 56)).toBe(false);
+    expect(graph.ubahnSteige).toHaveLength(3);
+  });
+
+  it('München Hbf tief: DB-Namen 1/2 statt 81/82, Art S-Bahn', () => {
+    const graph = baueGraph(muenchen, muenchenGleise(), vollstaendig);
+    expect(graph.gleise).toContain('1');
+    expect(graph.gleise).toContain('2');
+    expect(graph.gleise).not.toContain('81');
+    expect(graph.gleise).not.toContain('82');
+    expect(graph.gleisArt!.get('1')).toBe('sbahn');
+    expect(graph.gleisArt!.get('2')).toBe('sbahn');
+    expect(graph.gleisArt!.get('11')).toBe('zug');
+    expect(graph.gleisArt!.size).toBe(graph.gleise.length);
+  });
+
+  it('München Hbf tief: mit unvollständiger Liste bleiben 81/82 stehen', () => {
+    // Was die DB „nicht führt“, weiss nur, wer alle Mitglieder gefragt hat.
+    const graph = baueGraph(muenchen, muenchenGleise(), { gleislisteVollstaendig: false, sbahnEvas: ['8098263'] });
+    expect(graph.gleise).toEqual(expect.arrayContaining(['1', '2', '81', '82']));
+  });
+
+  // Ein Bahnsteig, ~205 m lang, ~11 m breit, bei `lat`.
+  const steig = (id: number, lat: number, tags: Record<string, string>): OverpassAntwort['elements'] => [
+    { type: 'node', id: id * 10 + 1, lat, lon: 13.0 },
+    { type: 'node', id: id * 10 + 2, lat, lon: 13.003 },
+    { type: 'node', id: id * 10 + 3, lat: lat + 0.0001, lon: 13.003 },
+    { type: 'node', id: id * 10 + 4, lat: lat + 0.0001, lon: 13.0 },
+    { type: 'way', id, nodes: [id * 10 + 1, id * 10 + 2, id * 10 + 3, id * 10 + 4, id * 10 + 1], tags: { railway: 'platform', ...tags } },
+  ];
+  const db = (gleis: string, ifopt?: string, evas?: string[]) => ({
+    gleis,
+    ...(evas ? { evas } : {}),
+    ris: { name: gleis, ...(ifopt ? { ifopt } : {}) },
+  });
+  // Bielefeld Hbf: Die Stadtbahn „Hauptbahnhof (U)“ traegt 1, die DB-Gleise
+  // 1 und 2 liegen oben. Die DB-Liste nennt nur 1 und 2.
+  const bielefeld: OverpassAntwort = {
+    elements: [
+      ...steig(1, 52.0, { train: 'yes', ref: '1;2', level: '0' }),
+      ...steig(2, 52.001, { light_rail: 'yes', ref: '1', level: '-2', tunnel: 'yes', name: 'Hauptbahnhof (U)' }),
+    ],
+  };
+
+  it('unterirdische Stadtbahn ohne DB-Gleis ist U-Bahn (Bielefeld)', () => {
+    const graph = baueGraph(bielefeld, [db('1'), db('2')], { gleislisteVollstaendig: true });
+    expect(graph.gleise).toEqual(['1', '2']);
+    expect(graph.knoten.get('gleis1:mitte')?.bahnsteigId).toBe('w1');
+    expect(graph.ubahnSteige).toEqual([{ id: 'w2', label: 'U-Bahn-Steig 1', name: 'Hauptbahnhof (U)' }]);
+  });
+
+  it('unvollständige Liste: light_rail bleibt wie heute', () => {
+    for (const kontext of [{ gleislisteVollstaendig: false }, undefined]) {
+      const graph = baueGraph(bielefeld, [db('1'), db('2')], kontext);
+      expect(graph.ubahnSteige ?? []).toEqual([]);
+      expect(graph.gleise).toEqual(['1', '2']);
+    }
+    expect(baueGraph(bielefeld).ubahnSteige ?? []).toEqual([]);
+  });
+
+  it('oberirdische Stadtbahn ohne DB-Gleis wird nicht zur U-Bahn', () => {
+    const graph = baueGraph(
+      { elements: steig(1, 52.0, { light_rail: 'yes', ref: '7', level: '0' }) },
+      [db('1')],
+      { gleislisteVollstaendig: true },
+    );
+    expect(graph.ubahnSteige ?? []).toEqual([]);
+  });
+
+  it('Berlin-S-Bahn (light_rail mit DB-Gleis) bleibt Gleis, Art S-Bahn', () => {
+    // Potsdamer Platz: S-Bahn im Tunnel, nur als light_rail getaggt. Die DB
+    // fuehrt 11 und 12 unter dem Bereich der Kennung.
+    const potsdamer: OverpassAntwort = {
+      elements: [
+        ...steig(1, 52.0, { light_rail: 'yes', ref: '11;12', level: '-2', tunnel: 'yes', 'ref:IFOPT': 'de:11000:900100020:3' }),
+        ...steig(2, 52.001, { train: 'yes', ref: '1;2', level: '-3', tunnel: 'yes' }),
+      ],
+    };
+    const gleise = [db('11', 'de:11000:900100020:3:11'), db('12', 'de:11000:900100020:3:12'), db('1'), db('2')];
+    const graph = baueGraph(potsdamer, gleise, { gleislisteVollstaendig: true });
+    expect(graph.gleise).toEqual(['1', '2', '11', '12']);
+    expect(graph.ubahnSteige ?? []).toEqual([]);
+    expect(graph.gleisArt!.get('11')).toBe('sbahn');
+    expect(graph.gleisArt!.get('1')).toBe('zug');
+  });
+
+  it('S-Bahn nach Linien: nur S… in route_ref oder description', () => {
+    const graph = baueGraph({
+      elements: [
+        ...steig(1, 52.0, { train: 'yes', ref: '11;12', route_ref: 'S3;S5' }),
+        ...steig(2, 52.001, { train: 'yes', ref: '3', description: 'Bahnhof X (tief) S1 S2 S8 Bahnsteig' }),
+        ...steig(3, 52.002, { train: 'yes', ref: '4', route_ref: 'S1;RE7' }),
+        ...steig(4, 52.003, { train: 'yes', ref: '5', description: 'Bahnhof X, Bahnsteig 5' }),
+      ],
+    });
+    expect(Object.fromEntries(graph.gleisArt!)).toEqual({ '3': 'sbahn', '4': 'zug', '5': 'zug', '11': 'sbahn', '12': 'sbahn' });
+  });
+
+  it('S-Bahn nach Verkehrsstelle nur mit vollständiger Liste', () => {
+    const osm = { elements: steig(1, 52.0, { train: 'yes', ref: '1;7' }) };
+    const gleise = [db('1', undefined, ['8098263']), db('7', undefined, ['8000261', '8098263'])];
+    const voll = baueGraph(osm, gleise, { gleislisteVollstaendig: true, sbahnEvas: ['8098263'] });
+    expect(voll.gleisArt!.get('1')).toBe('sbahn');
+    expect(voll.gleisArt!.get('7')).toBe('zug');
+    const halb = baueGraph(osm, gleise, { gleislisteVollstaendig: false, sbahnEvas: ['8098263'] });
+    expect(halb.gleisArt!.get('1')).toBe('zug');
+  });
+
+  it('subway=yes mit train=yes bleibt Gleis (Konstablerwache)', () => {
+    const graph = baueGraph({ elements: steig(1, 52.0, { subway: 'yes', train: 'yes', ref: '1;2', level: '-3' }) });
+    expect(graph.gleise).toEqual(['1', '2']);
+    expect(graph.ubahnSteige ?? []).toEqual([]);
+  });
+
+  it('beschriftet U-Bahn-Steige aus route_ref, sonst mit der Nummer', () => {
+    const graph = baueGraph({
+      elements: [
+        ...steig(1, 52.0, { subway: 'yes', ref: '1;2', route_ref: 'U2;U3;U4', name: 'Berliner Tor' }),
+        ...steig(2, 52.001, { subway: 'yes', ref: '51;53' }),
+      ],
+    });
+    expect(graph.ubahnSteige).toEqual([
+      { id: 'w1', label: 'U2 U3 U4', name: 'Berliner Tor' },
+      { id: 'w2', label: 'U-Bahn-Steig 51/53' },
     ]);
     expect(graph.gleise).toEqual([]);
   });

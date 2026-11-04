@@ -704,8 +704,13 @@ async function baueGraphEintrag(
     try {
       const osm = await osmQuelle.hole(info);
       // Die DB-Gleisliste als zweite Quelle: Ueber ihre IFOPT-Kennungen findet der
-      // Graph Bahnsteige, an denen OSM keine Gleisnummer schreibt.
-      const graph = baueGraph(osm, info.gleise);
+      // Graph Bahnsteige, an denen OSM keine Gleisnummer schreibt. Ob die Liste
+      // vollstaendig ist, entscheidet, was aus ihr geschlossen werden darf:
+      // DB-Namen statt OSM-Nummern, unterirdische Stadtbahn als U-Bahn (Spec 6.2/6.3).
+      const graph = baueGraph(osm, info.gleise, {
+        gleislisteVollstaendig: !gleislisteUnvollstaendig(info),
+        ...(info.sbahnEvas ? { sbahnEvas: info.sbahnEvas } : {}),
+      });
       graph.stufe = klassifiziere(graph);
       if (graph.stufe !== 3) {
         return { graph, info, hinweise: [] };
