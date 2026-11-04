@@ -57,6 +57,48 @@ const BAHNSTEIG_FLAECHE_M = 6;
  */
 const KANTE_AM_BAHNSTEIG_M = 3;
 
+/**
+ * Bis hierhin ist ein Knoten ausserhalb einer Bahnsteigflaeche bloss ungenau
+ * gezeichnet, dieselbe Toleranz wie bei einer Bahnsteigkante. Was weiter draussen
+ * liegt, siehe `gehoertZuAnderemBahnsteig` in `baueGraphOhneNaht`.
+ */
+const NEBEN_DER_FLAECHE_M = KANTE_AM_BAHNSTEIG_M;
+
+/**
+ * Ist der Umriss eine Flaeche? Jeder Weg geschlossen, oder die offenen Glieder
+ * einer Relation schliessen sich zu Ringen: Jedes ihrer Enden kommt gerade oft vor.
+ * Ein Bahnsteig als Linie hat kein Innen - fuer ihn gilt die Breite beiderseits.
+ */
+function istFlaeche(nodeListen: number[][]): boolean {
+  const enden = new Map<number, number>();
+  for (const liste of nodeListen) {
+    if (liste.length < 3) return false;
+    if (liste[0] === liste[liste.length - 1]) continue;
+    for (const id of [liste[0], liste[liste.length - 1]]) enden.set(id, (enden.get(id) ?? 0) + 1);
+  }
+  return [...enden.values()].every((n) => n % 2 === 0);
+}
+
+/** Liegt der Punkt in der Flaeche? Strahl nach Osten ueber alle Segmente (gerade-ungerade). */
+function liegtInnen(
+  p: { lat: number; lon: number },
+  nodeListen: number[][],
+  osmKnoten: Map<number, OsmElement>,
+): boolean {
+  let innen = false;
+  for (const liste of nodeListen) {
+    for (let i = 0; i < liste.length - 1; i++) {
+      const a = osmKnoten.get(liste[i]);
+      const b = osmKnoten.get(liste[i + 1]);
+      if (a?.lat === undefined || b?.lat === undefined) continue;
+      if (a.lat > p.lat === b.lat > p.lat) continue;
+      const lonSchnitt = a.lon! + ((p.lat - a.lat) / (b.lat - a.lat)) * (b.lon! - a.lon!);
+      if (p.lon < lonSchnitt) innen = !innen;
+    }
+  }
+  return innen;
+}
+
 /** Kleinster Abstand eines Punktes zum Umriss (allen Segmenten) eines Bahnsteigs, in Metern. */
 function abstandZumUmriss(
   p: { lat: number; lon: number },
@@ -1155,9 +1197,56 @@ function baueGraphOhneNaht(
   }
 
   /**
+   * Welche Bahnsteige ein Fussweg auf seiner Ebene erreicht, ohne Treppe und ohne
+   * geratene Kante: je zusammenhaengendem Netz ebener OSM-Wege die Bahnsteige, auf
+   * deren Umriss es einen Punkt hat.
+   */
+  const netzVon = new Map<string, string>();
+  const netzWurzel = (id: string): string => {
+    let w = id;
+    while (netzVon.has(w)) w = netzVon.get(w)!;
+    return w;
+  };
+  for (const way of ways) {
+    const tags = way.tags ?? {};
+    if (!istEbenerWeg(tags) || istEbenenwechselWeg(tags)) continue;
+    const ebene = wayEbene(tags);
+    for (let i = 0; i < way.nodes!.length - 1; i++) {
+      const [a, b] = [netzWurzel(knotenId(way.nodes![i], ebene)), netzWurzel(knotenId(way.nodes![i + 1], ebene))];
+      if (a !== b) netzVon.set(a, b);
+    }
+  }
+  const bahnsteigeImNetz = new Map<string, Set<BahnsteigDaten>>();
+  for (const [id, liste] of umrissVon) {
+    const w = netzWurzel(id);
+    if (!bahnsteigeImNetz.has(w)) bahnsteigeImNetz.set(w, new Set());
+    for (const b of liste) bahnsteigeImNetz.get(w)!.add(b);
+  }
+
+  /**
+   * Gehoert ein Knoten neben der Flaeche `b` zu einem anderen Bahnsteig?
+   *
+   * Dortmund Hbf (04.11.2026): Ein Fussweg laeuft 4 m neben dem Umriss von Gleis
+   * 6/7, jenseits des Gleises 6. Er ist der Kopf von Bahnsteig 4/5, dessen Flaeche
+   * in OSM vorher endet, und fuehrt dorthin. Die 6 m nahmen ihn in die Kette von
+   * 6/7: 76 Routen ueber das Gleis. Allein am Abstand ist das nicht zu erkennen -
+   * ueber alle 382 Bahnhoefe liegen 1274 Knoten 3 bis 6 m neben einer Flaeche, und
+   * nur 25 davon jenseits eines Gleises: Meist ist es der Gang am Empfangsgebaeude
+   * oder die Passage am Bahnsteigkopf (Fulda Gleis 1). Erkennbar ist er am Netz:
+   * Er fuehrt eben zu einem anderen Bahnsteig, zu diesem aber nicht.
+   */
+  const flaechen = new Set(bahnsteige.filter((b) => istFlaeche(b.nodeListen)));
+  const gehoertZuAnderemBahnsteig = (k: GraphKnoten, b: BahnsteigDaten, d: number): boolean => {
+    if (d <= NEBEN_DER_FLAECHE_M || !flaechen.has(b) || liegtInnen(k, b.nodeListen, osmKnoten)) return false;
+    const erreicht = bahnsteigeImNetz.get(netzWurzel(k.id));
+    return erreicht !== undefined && !erreicht.has(b);
+  };
+
+  /**
    * Zu welchem Bahnsteig ein Knoten gehoert: Wer auf einem Umriss liegt, zu
-   * diesem, sonst zum naechsten der Ebene innerhalb `BAHNSTEIG_FLAECHE_M`. Das ist
-   * die eine Regel gegen Wege ueber Gleise: Geratene Kanten gibt es nur innerhalb
+   * diesem, sonst zum naechsten der Ebene innerhalb `BAHNSTEIG_FLAECHE_M`, es sei
+   * denn, er gehoert neben der Flaeche erkennbar zu einem anderen. Das ist die
+   * eine Regel gegen Wege ueber Gleise: Geratene Kanten gibt es nur innerhalb
    * eines Bahnsteigs, verlassen wird er nur ueber echte OSM-Wege.
    */
   const zugehoerigkeit = new Map<string, ReadonlySet<string>>();
@@ -1174,10 +1263,9 @@ function baueGraphOhneNaht(
       for (const b of bahnsteige) {
         if (b.ebene !== k.level) continue;
         const d = abstandZumUmriss(k, b.nodeListen, osmKnoten);
-        if (d <= abstand) {
-          abstand = d;
-          naechster = b;
-        }
+        if (d > abstand || gehoertZuAnderemBahnsteig(k, b, d)) continue;
+        abstand = d;
+        naechster = b;
       }
       if (naechster) ids.add(naechster.bahnsteigId);
     }

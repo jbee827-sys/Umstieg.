@@ -1072,6 +1072,57 @@ describe('Bahnsteig-Zugehoerigkeit', () => {
     expect(erreichbar(graph, 'gleis1:mitte', 'gleis2:mitte')).toBe(true);
   });
 
+  /**
+   * Dortmund Hbf (04.11.2026): Ein Fussweg laeuft 4 m neben dem Umriss von Gleis
+   * 6/7 entlang, jenseits des Gleises 6 - er gehoert zum Kopf von Bahnsteig 4/5. Die
+   * 6 m um den Umriss nahmen ihn trotzdem in die Kette von 6/7, und 76 Routen fuehrten
+   * ueber das Gleis. Innerhalb einer Flaeche ist eine halbe Bahnsteigbreite das Mass,
+   * ausserhalb nur die Zeichenungenauigkeit.
+   */
+  describe('neben einer Bahnsteigflaeche', () => {
+    // Gleis 1 als Flaeche 8,9 m breit; Gleis 2 als Flaeche 15 m suedlich. Von Gleis 2
+    // fuehrt ein Fussweg nach Norden und laeuft dann parallel zu Gleis 1, `abstandLat`
+    // suedlich von dessen Umriss.
+    const flaechen = (abstandLat: number): StationGraph => baueGraph({ elements: [
+      knoten(1, 52.0, 12.0), knoten(2, 52.0, 12.001), knoten(3, 52.0, 12.002),
+      knoten(4, 52.00008, 12.002), knoten(5, 52.00008, 12.0),
+      knoten(21, 51.99975, 12.0), knoten(22, 51.99975, 12.002), knoten(23, 51.99983, 12.002),
+      knoten(24, 51.99983, 12.001), knoten(25, 51.99983, 12.0),
+      knoten(31, 52.0 - abstandLat, 12.001), knoten(32, 52.0 - abstandLat, 12.0015),
+      { type: 'way', id: 10, nodes: [1, 2, 3, 4, 5, 1], tags: { railway: 'platform', area: 'yes', ref: '1', level: '0' } },
+      { type: 'way', id: 11, nodes: [21, 22, 23, 24, 25, 21], tags: { railway: 'platform', area: 'yes', ref: '2', level: '0' } },
+      { type: 'way', id: 30, nodes: [24, 31, 32], tags: { highway: 'footway', level: '0' } },
+    ] });
+
+    it('nimmt keinen Weg 4 m neben der Flaeche in die Kette - dazwischen liegt das Gleis', () => {
+      expect(erreichbar(flaechen(0.000036), 'gleis1:mitte', 'gleis2:mitte')).toBe(false);
+    });
+
+    it('nimmt einen Weg 2 m neben der Flaeche auf - so ungenau wird gezeichnet', () => {
+      expect(erreichbar(flaechen(0.00002), 'gleis1:mitte', 'gleis2:mitte')).toBe(true);
+    });
+
+    it('nimmt einen Weg 4 m neben der Flaeche auf, der zu keinem anderen Bahnsteig fuehrt (Fulda)', () => {
+      // Der Gang am Bahnsteigkopf, von dem die Treppe in die Unterfuehrung geht:
+      // Kein Gleis dazwischen, und eben erreicht er keinen anderen Bahnsteig.
+      const graph = baueGraph({ elements: [
+        knoten(1, 52.0, 12.0), knoten(2, 52.0, 12.001), knoten(3, 52.0, 12.002),
+        knoten(4, 52.00008, 12.002), knoten(5, 52.00008, 12.0),
+        knoten(21, 51.99975, 12.0), knoten(22, 51.99975, 12.002), knoten(23, 51.99983, 12.002),
+        knoten(24, 51.99983, 12.001), knoten(25, 51.99983, 12.0),
+        knoten(31, 51.999964, 12.001), knoten(32, 51.999964, 12.0015),
+        knoten(40, 51.9999, 12.0015), knoten(41, 51.9999, 12.001),
+        { type: 'way', id: 10, nodes: [1, 2, 3, 4, 5, 1], tags: { railway: 'platform', area: 'yes', ref: '1', level: '0' } },
+        { type: 'way', id: 11, nodes: [21, 22, 23, 24, 25, 21], tags: { railway: 'platform', area: 'yes', ref: '2', level: '0' } },
+        { type: 'way', id: 30, nodes: [31, 32], tags: { highway: 'footway', level: '0' } },
+        { type: 'way', id: 31, nodes: [40, 32], tags: { highway: 'steps', level: '-1;0', incline: 'up' } },
+        { type: 'way', id: 32, nodes: [40, 41], tags: { highway: 'footway', level: '-1' } },
+        { type: 'way', id: 33, nodes: [41, 24], tags: { highway: 'steps', level: '-1;0', incline: 'up' } },
+      ] });
+      expect(erreichbar(graph, 'gleis1:mitte', 'gleis2:mitte')).toBe(true);
+    });
+  });
+
   it('Koeln Hbf 8 -> 10 laeuft ueber die Passage, nicht quer ueber die Gleise', () => {
     const koeln = baueGraph(ladeFixture('overpass/koeln-hbf'));
     const pfad = berechneRoute(koeln, 'gleis8:mitte', 'gleis10:mitte', 'schnellste');
