@@ -100,13 +100,31 @@ export function verkehrsmittelListe(modes: readonly string[] | undefined): Verke
  * Parkplätze ohne Linienverkehr, derselbe Halt aus zwei Quellen (DELFI und
  * VBB). Die Reihenfolge bleibt die von MOTIS – sie ist nach Relevanz.
  */
+/**
+ * Liegt der Treffer im Ausland? Fehlt das Land, gilt er als deutsch: lieber
+ * ein Treffer zu viel als ein deutscher Halt, dessen Quelle das Feld nicht füllt.
+ */
+function liegtImAusland(t: MotisMatch): boolean {
+  return t.country !== undefined && t.country !== 'DE';
+}
+
+/**
+ * Hat die Suche nur Linienhalte im Ausland gefunden (Bologna Centrale) und
+ * keinen einzigen in Deutschland? Dann sagt die Oberfläche, dass Umstieg. nur
+ * Deutschland abdeckt, statt ohne Grund nichts zu zeigen (Spec 7.3).
+ */
+export function nurAuslandTreffer(treffer: MotisMatch[]): boolean {
+  const halte = (Array.isArray(treffer) ? treffer : []).filter(
+    (t) => t?.type === 'STOP' && verkehrsmittelListe(t.modes).length > 0,
+  );
+  return halte.length > 0 && halte.every(liegtImAusland);
+}
+
 export function orteAusTreffern(treffer: MotisMatch[]): Ort[] {
   const orte: Ort[] = [];
   for (const t of Array.isArray(treffer) ? treffer : []) {
     if (t?.type !== 'STOP') continue;
-    // Fehlt das Land, bleibt der Treffer: lieber ein Treffer zu viel als ein
-    // deutscher Halt, dessen Quelle das Feld nicht füllt.
-    if (t.country !== undefined && t.country !== 'DE') continue;
+    if (liegtImAusland(t)) continue;
     const verkehrsmittel = verkehrsmittelListe(t.modes);
     if (verkehrsmittel.length === 0) continue;
     const schluessel = namensSchluessel(t.name);

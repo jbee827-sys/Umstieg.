@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { abstandM, orteAusTreffern, verkehrsmittelListe } from '../src/clients/motis-abbildung.js';
+import { abstandM, nurAuslandTreffer, orteAusTreffern, verkehrsmittelListe } from '../src/clients/motis-abbildung.js';
 import type { MotisMatch } from '../src/clients/motis-typen.js';
 import { namensSchluessel } from '../src/core/orte.js';
 
@@ -112,4 +112,23 @@ describe('namensSchluessel', () => {
     ['Wiesenburg, Bahnhof', 'wiesenburg'],
     ['Straße der Einheit', 'strasse der einheit'],
   ])('%s -> %s', (roh, schluessel) => expect(namensSchluessel(roh)).toBe(schluessel));
+});
+
+describe('nurAuslandTreffer (Spec 7.3)', () => {
+  it('Bologna Centrale: nur Halte im Ausland - kein Ort, aber der Hinweis', () => {
+    const t = treffer('geocode-bologna-centrale');
+    expect(orteAusTreffern(t)).toEqual([]);
+    expect(nurAuslandTreffer(t)).toBe(true);
+  });
+
+  it('ein deutscher Treffer daneben: kein Auslandshinweis', () => {
+    const t = [...treffer('geocode-bologna-centrale'), ...treffer('geocode-berlin-hbf')];
+    expect(nurAuslandTreffer(t)).toBe(false);
+  });
+
+  it('deutsche Treffer und leere Suche: kein Auslandshinweis', () => {
+    expect(nurAuslandTreffer(treffer('geocode-berlin-hbf'))).toBe(false);
+    expect(nurAuslandTreffer([])).toBe(false);
+    expect(nurAuslandTreffer(undefined as unknown as MotisMatch[])).toBe(false);
+  });
 });

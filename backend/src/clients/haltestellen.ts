@@ -6,7 +6,7 @@ import type {
   RoutenPfad,
   Steigpunkt,
 } from '../core/typen.js';
-import { fahrtverlaufAusTrip, orteAusTreffern, tafelAusStoptimes } from './motis-abbildung.js';
+import { fahrtverlaufAusTrip, nurAuslandTreffer, orteAusTreffern, tafelAusStoptimes } from './motis-abbildung.js';
 import type { MotisKern } from './motis.js';
 import { pfadAusPlan } from './motis-weg.js';
 
@@ -51,6 +51,8 @@ export const BAHNHOF_UMKREIS_M = 250;
  */
 export interface HaltestellenClient {
   sucheOrte(text: string): Promise<Ort[]>;
+  /** Wie `sucheOrte`, plus: fand die Suche nur Halte im Ausland (Spec 7.3)? */
+  sucheOrteMitHinweis(text: string): Promise<{ orte: Ort[]; nurAusland: boolean }>;
   orteNahebei(lat: number, lon: number): Promise<Ort[]>;
   /** Für die HTTP-Route – 30 s zwischengespeichert. */
   tafel(h: HaltestelleAnfrage, typ: 'arr' | 'dep'): Promise<HaltestellenTafelEintrag[]>;
@@ -84,13 +86,19 @@ export function erzeugeHaltestellenClient(kern: MotisKern, o: { jetzt?: () => Da
       typ,
     );
 
+  const sucheMitHinweis = mitCache(
+    async (text: string) => {
+      const treffer = await kern.geocode(text);
+      return { orte: orteAusTreffern(treffer), nurAusland: nurAuslandTreffer(treffer) };
+    },
+    (text: string) => text.trim().toLowerCase(),
+    HALTESTELLEN_SUCHE_TTL_MS,
+    500,
+  );
+
   return {
-    sucheOrte: mitCache(
-      async (text: string) => orteAusTreffern(await kern.geocode(text)),
-      (text) => text.trim().toLowerCase(),
-      HALTESTELLEN_SUCHE_TTL_MS,
-      500,
-    ),
+    sucheOrte: async (text: string) => (await sucheMitHinweis(text)).orte,
+    sucheOrteMitHinweis: sucheMitHinweis,
     /*
      * BEWUSST OHNE Zwischenspeicher: Der Schlüssel wäre die Koordinate des
      * Nutzers – gleiche Begründung wie `sucheBahnhoefeNahebei` in `app.ts`.

@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { buildApp } from '../src/app.js';
-import { orteAusTreffern } from '../src/clients/motis-abbildung.js';
+import { nurAuslandTreffer, orteAusTreffern } from '../src/clients/motis-abbildung.js';
 import { HaltestellenNichtVerfuegbarError } from '../src/clients/motis-pausen.js';
 import { FehlendeZugangsdatenError } from '../src/clients/stations.js';
 import type { HaltestellenClient } from '../src/clients/haltestellen.js';
@@ -27,12 +27,20 @@ function stations(o: { wirft?: unknown } = {}) {
   };
 }
 
-function haltestellen(o: { wirft?: boolean } = {}) {
+const bologna = JSON.parse(
+  readFileSync(fileURLToPath(new URL('./fixtures/motis/geocode-bologna-centrale.json', import.meta.url)), 'utf8'),
+);
+
+function haltestellen(o: { wirft?: boolean; treffer?: unknown[] } = {}) {
+  const suche = vi.fn(async () => {
+    if (o.wirft) throw new HaltestellenNichtVerfuegbarError('Test');
+    return o.treffer
+      ? { orte: orteAusTreffern(o.treffer as never), nurAusland: nurAuslandTreffer(o.treffer as never) }
+      : { orte: berlin, nurAusland: false };
+  });
   const h = {
-    sucheOrte: vi.fn(async () => {
-      if (o.wirft) throw new HaltestellenNichtVerfuegbarError('Test');
-      return berlin;
-    }),
+    sucheOrte: vi.fn(async () => (await suche()).orte),
+    sucheOrteMitHinweis: suche,
     orteNahebei: vi.fn(async () => berlin.slice(0, 2)),
     tafel: vi.fn(),
     tafelFrisch: vi.fn(),
@@ -43,6 +51,21 @@ function haltestellen(o: { wirft?: boolean } = {}) {
 }
 
 describe('GET /api/orte', () => {
+  it('Bologna Centrale: nur Ausland gefunden - nurAusland statt stiller Leere (Spec 7.3)', async () => {
+    const s = stations();
+    s.sucheBahnhoefe.mockResolvedValue([]);
+    const app = buildApp({ stations: s, haltestellen: haltestellen({ treffer: bologna }) });
+    const body = (await app.inject('/api/orte?q=Bologna%20Centrale')).json();
+    expect(body.orte).toEqual([]);
+    expect(body.nurAusland).toBe(true);
+  });
+
+  it('deutsche Treffer: kein nurAusland', async () => {
+    const app = buildApp({ stations: stations(), haltestellen: haltestellen() });
+    const body = (await app.inject('/api/orte?q=Berlin%20Hbf')).json();
+    expect(body).not.toHaveProperty('nurAusland');
+  });
+
   it('fuehrt beide Quellen zusammen', async () => {
     const app = buildApp({ stations: stations(), haltestellen: haltestellen() });
     const res = await app.inject('/api/orte?q=Berlin%20Hbf');

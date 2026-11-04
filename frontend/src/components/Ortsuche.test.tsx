@@ -38,6 +38,24 @@ function Huelle({ onWahl, onQuellen }: { onWahl: (o: Ort | null) => void; onQuel
 }
 
 describe('Ortsuche', () => {
+  it('nur Halte im Ausland: zeigt den festen Satz zur Abdeckung (Spec 7.3)', async () => {
+    suche.mockResolvedValue({
+      ok: true,
+      antwort: { orte: [], quellen: { bahnhoefe: 'ok', haltestellen: 'ok' }, nurAusland: true },
+    })
+    render(<Huelle onWahl={vi.fn()} />)
+    await userEvent.type(screen.getByLabelText('Anschluss: Bahnhof oder Haltestelle'), 'Bologna Centrale')
+    expect(await screen.findByText('Umstieg. deckt nur Bahnhöfe in Deutschland ab.', {}, { timeout: 3000 })).toBeDefined()
+  })
+
+  it('ohne Auslandshinweis kein Satz', async () => {
+    suche.mockResolvedValue({ ok: true, antwort: { orte: [], quellen: { bahnhoefe: 'ok', haltestellen: 'ok' } } })
+    render(<Huelle onWahl={vi.fn()} />)
+    await userEvent.type(screen.getByLabelText('Anschluss: Bahnhof oder Haltestelle'), 'Nirgendwo')
+    await waitFor(() => expect(suche).toHaveBeenCalled(), { timeout: 3000 })
+    expect(screen.queryByText(/deckt nur Bahnhöfe/)).toBeNull()
+  })
+
   it('zeigt Haltestellen mit Verkehrsmittel und meldet die Wahl', async () => {
     suche.mockResolvedValue({ ok: true, antwort: { orte: [HBF, ZOB], quellen: { bahnhoefe: 'ok', haltestellen: 'ok' } } })
     const onWahl = vi.fn()

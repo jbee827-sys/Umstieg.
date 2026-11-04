@@ -1,0 +1,22 @@
+[
+ {
+  "type": "STOP",
+  "name": "Bologna Centrale",
+  "id": "it-trenitalia_S05043",
+  "lat": 44.505883,
+  "lon": 11.343185,
+  "country": "IT",
+  "modes": ["HIGHSPEED_RAIL", "REGIONAL_RAIL", "BUS"],
+  "areas": [{ "name": "Italia", "adminLevel": 2, "matched": false, "unique": false, "default": false }]
+ },
+ {
+  "type": "STOP",
+  "name": "Bologna Autostazione",
+  "id": "it-trenitalia_S05100",
+  "lat": 44.5063,
+  "lon": 11.3452,
+  "country": "IT",
+  "modes": ["COACH"],
+  "areas": [{ "name": "Italia", "adminLevel": 2, "matched": false, "unique": false, "default": false }]
+ }
+]

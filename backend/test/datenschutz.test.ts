@@ -214,6 +214,7 @@ describe('Ortssuche (Umstieg 2.0): Fehler der Quellen tragen keine Nutzerdaten i
       },
       haltestellen: {
         sucheOrte: vi.fn(async () => { throw new HaltestellenAnfrageFehler(400, `kein Treffer fuer ${geheim}`); }),
+        sucheOrteMitHinweis: vi.fn(async () => { throw new HaltestellenAnfrageFehler(400, `kein Treffer fuer ${geheim}`); }),
         orteNahebei: vi.fn(async () => { throw new HaltestellenNichtVerfuegbarError(`fetch ${geheim} failed`); }),
         tafel: vi.fn(), tafelFrisch: vi.fn(), fussweg: vi.fn(), fahrt: vi.fn(),
       },

@@ -42,6 +42,8 @@ export function Ortsuche({
   zusatz,
 }: OrtsucheProps) {
   const [vorschlaege, setVorschlaege] = useState<Ort[]>([])
+  // Die Suche fand nur Halte im Ausland (Bologna) - Spec 7.3.
+  const [nurAusland, setNurAusland] = useState(false)
   const suchTimer = useRef<number | undefined>(undefined)
   // Der Rückruf darf sich bei jedem Rendern ändern, ohne die Suche neu zu starten.
   const meldeQuellen = useRef(onQuellen)
@@ -60,11 +62,13 @@ export function Ortsuche({
       if (!gueltig) return
       if (ergebnis.ok) {
         setVorschlaege(ergebnis.antwort.orte.slice(0, 6))
+        setNurAusland(ergebnis.antwort.nurAusland === true)
         meldeQuellen.current?.(ergebnis.antwort.quellen)
       } else {
         // Frueher fiel ein Netzfehler durch: keine Vorschlaege, keine
         // Meldung - die App sah aus, als tue sie gar nichts.
         setVorschlaege([])
+        setNurAusland(false)
         meldeQuellen.current?.(ergebnis.fehler)
       }
     }, 300)
@@ -114,6 +118,11 @@ export function Ortsuche({
             </li>
           ))}
         </ul>
+      )}
+      {sichtbar.length === 0 && nurAusland && !gewaehlt && text.trim().length >= 2 && (
+        <p className="feld-hinweis" role="status">
+          Umstieg. deckt nur Bahnhöfe in Deutschland ab.
+        </p>
       )}
       {gewaehlt && (
         <span className="bahnhof-gewaehlt">

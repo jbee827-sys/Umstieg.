@@ -26,6 +26,11 @@ export type QuellenStand = 'ok' | 'zugang-fehlt' | 'ausfall' | 'nicht-eingericht
 export interface OrteAntwort {
   orte: Ort[];
   quellen: { bahnhoefe: QuellenStand; haltestellen: QuellenStand };
+  /**
+   * Die Textsuche fand Halte, aber nur im Ausland (Bologna) - und sonst nichts.
+   * Nur gesetzt, wenn wahr (Spec 7.3).
+   */
+  nurAusland?: true;
 }
 
 export interface HaltestellenRoutenOptionen {
@@ -108,9 +113,12 @@ export function registriereHaltestellenRouten(app: FastifyInstance, o: Haltestel
             // Haltestellen mehrere Kilometer weit als „in deiner Naehe“.
             o.haltestellen
               .orteNahebei(punkt.lat, punkt.lon)
-              .then((orte) => orte.filter((h) => haversineM(punkt.lat, punkt.lon, h.lat, h.lon) <= ERKENNUNG_RADIUS_M))
-          : o.haltestellen.sucheOrte(q!)
-        : Promise.resolve([]),
+              .then((orte) => ({
+                orte: orte.filter((h) => haversineM(punkt.lat, punkt.lon, h.lat, h.lon) <= ERKENNUNG_RADIUS_M),
+                nurAusland: false,
+              }))
+          : o.haltestellen.sucheOrteMitHinweis(q!)
+        : Promise.resolve({ orte: [] as Ort[], nurAusland: false }),
     ]);
 
     const quellen: OrteAntwort['quellen'] = {
@@ -145,8 +153,10 @@ export function registriereHaltestellenRouten(app: FastifyInstance, o: Haltestel
     }
 
     const bahnhoefe: BahnhofTreffer[] = db.status === 'fulfilled' ? db.value : [];
-    const haltestellen: Ort[] = motis.status === 'fulfilled' ? motis.value : [];
-    return { orte: fuehreOrteZusammen(bahnhoefe, haltestellen), quellen } satisfies OrteAntwort;
+    const haltestellen: Ort[] = motis.status === 'fulfilled' ? motis.value.orte : [];
+    const orte = fuehreOrteZusammen(bahnhoefe, haltestellen);
+    const nurAusland = orte.length === 0 && motis.status === 'fulfilled' && motis.value.nurAusland;
+    return { orte, quellen, ...(nurAusland ? { nurAusland: true as const } : {}) } satisfies OrteAntwort;
   });
 
   app.get<{ Querystring: { id?: string; lat?: string; lon?: string; typ?: string; umkreis?: string } }>(

@@ -295,4 +295,6 @@ export type QuellenStand = 'ok' | 'zugang-fehlt' | 'ausfall' | 'nicht-eingericht
 export interface OrteAntwort {
   orte: Ort[];
   quellen: { bahnhoefe: QuellenStand; haltestellen: QuellenStand };
+  /** Nur Halte im Ausland gefunden (Bologna) - Spiegel von routes/haltestellen.ts. */
+  nurAusland?: true;
 }
