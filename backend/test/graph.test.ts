@@ -1102,6 +1102,22 @@ describe('Bahnsteig-Zugehoerigkeit', () => {
       expect(erreichbar(flaechen(0.00002), 'gleis1:mitte', 'gleis2:mitte')).toBe(true);
     });
 
+    it('bindet die Mitte nicht an einen Weg an, der neben der Flaeche zu einem anderen Bahnsteig fuehrt (Siegen)', () => {
+      // Siegen Hbf 3/4 (04.11.2026): Der naechste Knoten zur Mitte liegt 10,5 m neben
+      // der Flaeche, jenseits zweier Gleise, an der Passage zum Hausbahnsteig.
+      // Er gehoert zu keinem Bahnsteig - und die Anbindung nahm ihn: 16 Routen.
+      const graph = baueGraph({ elements: [
+        knoten(1, 52.0, 12.0), knoten(3, 52.0, 12.002), knoten(4, 52.00008, 12.002), knoten(5, 52.00008, 12.0),
+        knoten(21, 51.99975, 12.0), knoten(22, 51.99975, 12.002), knoten(23, 51.99983, 12.002),
+        knoten(24, 51.99983, 12.001), knoten(25, 51.99983, 12.0),
+        knoten(31, 51.99991, 12.001),
+        { type: 'way', id: 10, nodes: [1, 3, 4, 5, 1], tags: { railway: 'platform', area: 'yes', ref: '1', level: '0' } },
+        { type: 'way', id: 11, nodes: [21, 22, 23, 24, 25, 21], tags: { railway: 'platform', area: 'yes', ref: '2', level: '0' } },
+        { type: 'way', id: 30, nodes: [24, 31], tags: { highway: 'footway', level: '0' } },
+      ] });
+      expect(erreichbar(graph, 'gleis1:mitte', 'gleis2:mitte')).toBe(false);
+    });
+
     it('nimmt einen Weg 4 m neben der Flaeche auf, der zu keinem anderen Bahnsteig fuehrt (Fulda)', () => {
       // Der Gang am Bahnsteigkopf, von dem die Treppe in die Unterfuehrung geht:
       // Kein Gleis dazwischen, und eben erreicht er keinen anderen Bahnsteig.

@@ -71,9 +71,14 @@ const NEBEN_DER_FLAECHE_M = KANTE_AM_BAHNSTEIG_M;
  */
 function istFlaeche(nodeListen: number[][]): boolean {
   const enden = new Map<number, number>();
+  // Ein Glied darf ein Stueck aus zwei Punkten sein (Siegen Hbf 3/4), ein Ring nicht.
+  if (new Set(nodeListen.flat()).size < 3) return false;
   for (const liste of nodeListen) {
-    if (liste.length < 3) return false;
-    if (liste[0] === liste[liste.length - 1]) continue;
+    if (liste.length < 2) return false;
+    if (liste[0] === liste[liste.length - 1]) {
+      if (liste.length < 4) return false;
+      continue;
+    }
     for (const id of [liste[0], liste[liste.length - 1]]) enden.set(id, (enden.get(id) ?? 0) + 1);
   }
   return [...enden.values()].every((n) => n % 2 === 0);
@@ -1387,12 +1392,15 @@ function baueGraphOhneNaht(
         // 379 s ueber den Querbahnsteig. Auch dann nicht, wenn es die einzige
         // Verbindung waere: Die Kette haelt den Punkt ohnehin am eigenen Bahnsteig,
         // und fehlt der Weg im Kartenmaterial, sagt die Antwort das ehrlich.
+        // Auch nicht auf einen Weg neben der Flaeche, der eben zu einem anderen
+        // Bahnsteig fuehrt (Siegen Hbf 3/4: 10,5 m daneben, jenseits zweier
+        // Gleise, 16 Routen) - dieselbe Regel wie bei der Zugehoerigkeit.
         if (nahester && nahesteDist <= ANBINDUNG_MAX_M) {
           const andere = bahnsteigVon(nahester);
+          const amUmriss = abstandZumUmriss(nahester, nodeListen, osmKnoten);
           const jenseitsDesGleises =
-            andere.size > 0 &&
-            !andere.has(bahnsteigId) &&
-            abstandZumUmriss(nahester, nodeListen, osmKnoten) > KANTE_AM_BAHNSTEIG_M;
+            (andere.size > 0 && !andere.has(bahnsteigId) && amUmriss > KANTE_AM_BAHNSTEIG_M) ||
+            (!andere.has(bahnsteigId) && gehoertZuAnderemBahnsteig(nahester, bahnsteig, amUmriss));
           if (!jenseitsDesGleises) {
             fuegeKanteHinzu({
               von: syntId,
