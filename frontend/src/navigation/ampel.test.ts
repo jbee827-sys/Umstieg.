@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import {
-  abfahrtNachAnkunft,
+  ankunftUm,
   ampelFarbe,
   anschlussUnerreichbar,
   balkenProzent,
   restZeitText,
   umstiegRestSek,
+  umstiegVon,
 } from './ampel'
 
 function um(hhmm: string): Date {
@@ -77,14 +78,44 @@ describe('Ampel rechnet ab Ankunft (Spec 7.1)', () => {
   it('nach der Ankunft zählt jetzt', () => {
     expect(umstiegRestSek(um('16:30'), um('16:21'), um('16:25').getTime())).toBe(300)
   })
-  it('Mitternacht: an 23:58, ab 00:10 → erreichbar, 720 s', () => {
-    // heuteUm legt beide auf denselben Tag; die Abfahrt liegt 23 h 48 min VOR der Ankunft.
-    expect(anschlussUnerreichbar(um('00:10'), um('23:58'))).toBe(false)
-    expect(umstiegRestSek(um('00:10'), um('23:58'), um('23:00').getTime())).toBe(720)
+  it('Mitternacht: an 23:58, ab 00:10 (Tage aufgelöst) → erreichbar, 720 s', () => {
+    const ab = new Date(2026, 10, 5, 0, 10)
+    const an = new Date(2026, 10, 4, 23, 58)
+    expect(anschlussUnerreichbar(ab, an)).toBe(false)
+    expect(umstiegRestSek(ab, an, um('23:00').getTime())).toBe(720)
   })
-  it('Mitternacht: abfahrtNachAnkunft verschiebt nur bei mehr als 12 h Abstand', () => {
-    expect(abfahrtNachAnkunft(um('00:10'), um('23:58')).getDate()).toBe(5)
-    expect(abfahrtNachAnkunft(um('16:20'), um('16:21')).getDate()).toBe(4)
-    expect(abfahrtNachAnkunft(um('12:00'), um('23:59')).getDate()).toBe(4)
+})
+
+describe('umstiegVon / ankunftUm (Ankunft an der Abfahrt verankert)', () => {
+  const jetzt = (hhmm: string, tag = 4) => {
+    const [h, m] = hhmm.split(':').map(Number)
+    return new Date(2026, 10, tag, h, m).getTime()
+  }
+  it('23:50, an 23:58, ab 00:10 → erreichbar, 720 s', () => {
+    const r = umstiegVon({ ankunftZeit: '23:58', abfahrtZeit: '00:10' }, jetzt('23:50'))
+    expect(r).toEqual({ restSek: 720, unerreichbar: false })
+  })
+  it('00:05 am Folgetag, an 23:58, ab 00:10 → 300 s, erreichbar', () => {
+    const r = umstiegVon({ ankunftZeit: '23:58', abfahrtZeit: '00:10' }, jetzt('00:05', 5))
+    expect(r).toEqual({ restSek: 300, unerreichbar: false })
+  })
+  it('15:00, an 16:21, ab 16:20 → unerreichbar', () => {
+    const r = umstiegVon({ ankunftZeit: '16:21', abfahrtZeit: '16:20' }, jetzt('15:00'))
+    expect(r?.unerreichbar).toBe(true)
+  })
+  it('06:00, an 18:21, ab 18:20 → unerreichbar (Ankunft mehr als 12 h voraus)', () => {
+    const r = umstiegVon({ ankunftZeit: '18:21', abfahrtZeit: '18:20' }, jetzt('06:00'))
+    expect(r?.unerreichbar).toBe(true)
+  })
+  it('04:00, an 16:21, ab 16:30 → 540 s', () => {
+    const r = umstiegVon({ ankunftZeit: '16:21', abfahrtZeit: '16:30' }, jetzt('04:00'))
+    expect(r).toEqual({ restSek: 540, unerreichbar: false })
+  })
+  it('ohne Ankunft (bestätigt, Angekommen) zählt Abfahrt − jetzt', () => {
+    const r = umstiegVon({ ankunftZeit: '16:21', abfahrtZeit: '16:30' }, jetzt('16:25'), false)
+    expect(r).toEqual({ restSek: 300, unerreichbar: false })
+  })
+  it('ankunftUm bleibt am Tag der Abfahrt', () => {
+    expect(ankunftUm('16:21', new Date(2026, 10, 4, 16, 30)).getDate()).toBe(4)
   })
 })

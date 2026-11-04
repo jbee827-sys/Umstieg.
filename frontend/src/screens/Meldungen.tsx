@@ -12,6 +12,8 @@ interface MeldungenProps {
   stand: string | null
   /** Sekunden bis zur NEUEN Abfahrt; undefiniert, wenn keine Zeit bekannt ist. */
   restSek?: number
+  /** Die neue Abfahrt liegt vor der (neuen) Ankunft. */
+  unerreichbar?: boolean
   onUebernehmen: (meldung: Meldung) => void
 }
 
@@ -36,7 +38,12 @@ function verschiebung(alt?: string, neu?: string): string | null {
 }
 
 /** Dieselbe Formel wie überall: relativ zur Gehzeit, nicht absolut. */
-function ampelAussage(restSek: number | undefined, gehzeitSek: number): string {
+function ampelAussage(
+  restSek: number | undefined,
+  gehzeitSek: number,
+  unerreichbar = false,
+): string {
+  if (unerreichbar) return 'Anschluss nicht erreichbar: Der Zug fährt ab, bevor deiner ankommt.'
   if (restSek === undefined) {
     return 'Ohne Abfahrtszeit trifft die Ampel keine Aussage – wähle deinen Anschlusszug.'
   }
@@ -71,6 +78,7 @@ export function Meldungen({
   alteWerte,
   stand,
   restSek,
+  unerreichbar,
   onUebernehmen,
 }: MeldungenProps) {
   const neueste = meldungen[0]
@@ -166,7 +174,7 @@ export function Meldungen({
             )}
           </dl>
 
-          <p className="stoerung-ampel">{ampelAussage(restSek, vorschlag.route.gehzeitSek)}</p>
+          <p className="stoerung-ampel">{ampelAussage(restSek, vorschlag.route.gehzeitSek, unerreichbar)}</p>
 
           {neueste.uebernommen ? (
             <p className="meldung-uebernommen">Diese Route ist übernommen.</p>

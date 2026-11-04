@@ -61,7 +61,7 @@ import {
   vergissErinnerung,
   wirdRot,
 } from './plattform/mitteilungen'
-import { ampelFarbe, anschlussUnerreichbar, umstiegRestSek } from './navigation/ampel'
+import { abfahrtUm, ampelFarbe, umstiegVon } from './navigation/ampel'
 import type { Ampelfarbe } from './api/typen'
 import {
   halteBildschirmWach,
@@ -134,48 +134,7 @@ const AUF_REISE: Bildschirm[] = ['dashboard', 'navigation', 'meldungen']
 
 /** 'HH:MM' → heutiger Zeitpunkt; kurz nach Mitternacht zählt eine frühe Abfahrt als morgen. */
 function heuteUm(hhmm: string): Date {
-  const [h, m] = hhmm.split(':').map(Number)
-  const zeitpunkt = new Date()
-  zeitpunkt.setHours(h, m, 0, 0)
-  if (zeitpunkt.getTime() < Date.now() - 6 * 3600 * 1000) {
-    zeitpunkt.setDate(zeitpunkt.getDate() + 1)
-  }
-  return zeitpunkt
-}
-
-/**
- * 'HH:MM' der Ankunft → der Zeitpunkt, der jetzt am nächsten liegt (gestern,
- * heute oder morgen). `heuteUm` legte 23:58 um 00:05 auf morgen – dann wäre
- * die Ankunft 24 h entfernt und die Abfahrt 00:10 „davor“.
- */
-function ankunftUm(hhmm: string): Date {
-  const [h, m] = hhmm.split(':').map(Number)
-  let beste: Date | null = null
-  for (const tag of [-1, 0, 1]) {
-    const z = new Date()
-    z.setDate(z.getDate() + tag)
-    z.setHours(h, m, 0, 0)
-    if (!beste || Math.abs(z.getTime() - Date.now()) < Math.abs(beste.getTime() - Date.now())) beste = z
-  }
-  return beste!
-}
-
-/**
- * Restzeit und Erreichbarkeit des Anschlusses (Spec 7.1): Die Ampel rechnet ab
- * der Ankunft. `abgefahren` bleibt an Abfahrt − jetzt gebunden. Gilt für
- * Bahnhofs- und Haltestellenpfad gleich – beide tragen HH:MM in `werte`.
- */
-function umstiegVon(
-  werte: { abfahrtZeit?: string; ankunftZeit?: string },
-  jetztMs: number,
-): { restSek: number; unerreichbar: boolean } | undefined {
-  if (!werte.abfahrtZeit) return undefined
-  const abfahrt = heuteUm(werte.abfahrtZeit)
-  const ankunft = werte.ankunftZeit ? ankunftUm(werte.ankunftZeit) : undefined
-  return {
-    restSek: umstiegRestSek(abfahrt, ankunft, jetztMs),
-    unerreichbar: anschlussUnerreichbar(abfahrt, ankunft),
-  }
+  return abfahrtUm(hhmm, Date.now())
 }
 
 function App() {
@@ -1053,7 +1012,7 @@ function App() {
           // seit jeher `istFernverkehr(zugAbName)`, also den Abfahrtszug.
           wagen={werte.wagenAb || undefined}
           zugAbName={werte.zugAbName}
-          restSek={umstiegVon(werte, jetzt)?.restSek}
+          restSek={umstiegVon(werte, jetzt, false)?.restSek}
           onNeu={() => {
             ankunft.current = ANKUNFT_START
             setBildschirm('eingabe')
@@ -1073,8 +1032,11 @@ function App() {
   if (bildschirm === 'meldungen' && route && werte) {
     // Die Restzeit bezieht sich auf die NEUE Abfahrt - die ist der Grund,
     // warum die Ampel nach dem Wechsel anders stehen kann.
-    const neueZeit = meldungen[0]?.vorschlag?.werte.abfahrtZeit
-    const restSek = neueZeit ? umstiegVon({ ...werte, abfahrtZeit: neueZeit }, jetzt)?.restSek : undefined
+    // Beide Zeiten des Vorschlags: eine Ankunftsverspätung steckt nur dort.
+    const vorschau = meldungen[0]?.vorschlag
+      ? umstiegVon(meldungen[0].vorschlag.werte, jetzt)
+      : undefined
+    const restSek = vorschau?.restSek
     return (
       <main className="app">
         {meldung}
@@ -1084,6 +1046,7 @@ function App() {
           alteWerte={werte}
           stand={stand}
           restSek={restSek}
+          unerreichbar={vorschau?.unerreichbar}
           onUebernehmen={(angenommen) => {
             if (!angenommen.vorschlag) return
             const uebernommen = angenommen.vorschlag

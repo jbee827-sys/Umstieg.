@@ -35,21 +35,36 @@ export function restZeitText(restSek: number): string {
   return `${min}:${String(sek).padStart(2, '0')}`
 }
 
-/** Ab diesem Abstand (Ankunft nach Abfahrt) liegt die Abfahrt am Folgetag. */
-const FOLGETAG_ABSTAND_MS = 12 * 3600 * 1000
+const HALBER_TAG_MS = 12 * 3600 * 1000
+
+/** 'HH:MM' → heutiger Zeitpunkt; kurz nach Mitternacht zählt eine frühe Abfahrt als morgen. */
+export function abfahrtUm(hhmm: string, jetztMs: number): Date {
+  const [h, m] = hhmm.split(':').map(Number)
+  const zeitpunkt = new Date(jetztMs)
+  zeitpunkt.setHours(h, m, 0, 0)
+  if (zeitpunkt.getTime() < jetztMs - 6 * 3600 * 1000) {
+    zeitpunkt.setDate(zeitpunkt.getDate() + 1)
+  }
+  return zeitpunkt
+}
 
 /**
- * Beide Uhrzeiten kommen als HH:MM und werden auf denselben Tag gelegt. Ankunft
- * 23:58, Abfahrt 00:10 sähe dann nach 23 h 48 min VOR der Ankunft aus. Liegt
- * die Ankunft mehr als 12 h nach der Abfahrt, ist die Abfahrt der Folgetag.
- * Kein Umstieg wartet 12 h; eine Abfahrt bis 12 h vor der Ankunft bleibt
- * also, was sie ist: ein Zug, der schon weg ist.
+ * Die Ankunft wird an der ABFAHRT verankert, nicht an der Uhr: Der Tag der
+ * Abfahrt bleibt, wie `abfahrtUm` ihn setzt (davon hängt „abgefahren“ ab). Die
+ * Ankunft liegt am selben Tag; weicht sie um mehr als 12 h ab, gehört sie zum
+ * Nachbartag. Ankunft 23:58, Abfahrt 00:10 → Ankunft am Vortag der Abfahrt.
+ * An der Uhr verankert (nächster Tag zu „jetzt“) kippte eine Ankunft, die
+ * mehr als 12 h voraus liegt, auf gestern – und der Anschluss um 18:20 nach
+ * Ankunft 18:21 sah um 06:00 entspannt aus.
  */
-export function abfahrtNachAnkunft(abfahrt: Date, ankunft: Date): Date {
-  if (ankunft.getTime() - abfahrt.getTime() <= FOLGETAG_ABSTAND_MS) return abfahrt
-  const folgetag = new Date(abfahrt)
-  folgetag.setDate(folgetag.getDate() + 1)
-  return folgetag
+export function ankunftUm(hhmm: string, abfahrt: Date): Date {
+  const [h, m] = hhmm.split(':').map(Number)
+  const ankunft = new Date(abfahrt)
+  ankunft.setHours(h, m, 0, 0)
+  const abstand = ankunft.getTime() - abfahrt.getTime()
+  if (abstand > HALBER_TAG_MS) ankunft.setDate(ankunft.getDate() - 1)
+  else if (abstand < -HALBER_TAG_MS) ankunft.setDate(ankunft.getDate() + 1)
+  return ankunft
 }
 
 /**
@@ -58,13 +73,28 @@ export function abfahrtNachAnkunft(abfahrt: Date, ankunft: Date): Date {
  * danach Abfahrt − jetzt. Ohne Ankunftszeit wie bisher Abfahrt − jetzt.
  */
 export function umstiegRestSek(abfahrt: Date, ankunft: Date | undefined, jetztMs: number): number {
-  if (!ankunft) return (abfahrt.getTime() - jetztMs) / 1000
-  const ab = abfahrtNachAnkunft(abfahrt, ankunft)
-  return (ab.getTime() - Math.max(jetztMs, ankunft.getTime())) / 1000
+  const start = ankunft ? Math.max(jetztMs, ankunft.getTime()) : jetztMs
+  return (abfahrt.getTime() - start) / 1000
 }
 
 /** Erfurt 16:21 an, 16:20 ab: Der Zug fährt, bevor der andere ankommt. */
 export function anschlussUnerreichbar(abfahrt: Date, ankunft: Date | undefined): boolean {
-  if (!ankunft) return false
-  return abfahrtNachAnkunft(abfahrt, ankunft).getTime() < ankunft.getTime()
+  return !!ankunft && abfahrt.getTime() < ankunft.getTime()
+}
+
+/** Restzeit und Erreichbarkeit aus den HH:MM der Reise; für beide Pfade gleich. */
+export function umstiegVon(
+  zeiten: { abfahrtZeit?: string; ankunftZeit?: string },
+  jetztMs: number,
+  /** false = Ankunft ist bestätigt (Angekommen-Bildschirm): Abfahrt − jetzt. */
+  mitAnkunft = true,
+): { restSek: number; unerreichbar: boolean } | undefined {
+  if (!zeiten.abfahrtZeit) return undefined
+  const abfahrt = abfahrtUm(zeiten.abfahrtZeit, jetztMs)
+  const ankunft =
+    mitAnkunft && zeiten.ankunftZeit ? ankunftUm(zeiten.ankunftZeit, abfahrt) : undefined
+  return {
+    restSek: umstiegRestSek(abfahrt, ankunft, jetztMs),
+    unerreichbar: anschlussUnerreichbar(abfahrt, ankunft),
+  }
 }

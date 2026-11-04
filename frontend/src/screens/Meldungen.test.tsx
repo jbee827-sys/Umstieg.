@@ -35,7 +35,12 @@ function mitVorschlag(ereignis: LiveEreignis, v: Vorschlag, liste: Meldung[] = [
   return setzeVorschlag(ergaenzt, ergaenzt[0].nr, v)
 }
 
-function zeige(meldungen: Meldung[], stand: string | null = STAND, restSek: number | undefined = 240) {
+function zeige(
+  meldungen: Meldung[],
+  stand: string | null = STAND,
+  restSek: number | undefined = 240,
+  unerreichbar = false,
+) {
   const onUebernehmen = vi.fn()
   render(
     <Meldungen
@@ -44,6 +49,7 @@ function zeige(meldungen: Meldung[], stand: string | null = STAND, restSek: numb
       alteWerte={alteWerte}
       stand={stand}
       restSek={restSek}
+      unerreichbar={unerreichbar}
       onUebernehmen={onUebernehmen}
     />,
   )
@@ -90,6 +96,11 @@ describe('Meldungen: die neueste Aenderung', () => {
     )
     const durchgestrichen = container.querySelector('s')
     expect(durchgestrichen?.textContent).toContain('14')
+  })
+
+  it('sagt „Anschluss nicht erreichbar“, wenn die neue Ankunft nach der Abfahrt liegt', () => {
+    zeige(mitVorschlag(gleiswechsel, vorschlag), STAND, -60, true)
+    expect(screen.getByText(/Anschluss nicht erreichbar/)).toBeDefined()
   })
 
   it('nennt die neue Gehzeit', () => {
