@@ -1,0 +1,43 @@
+{
+  "_hinweis": "AUFGEZEICHNET von der echten RIS::Stations-API am 03.11.2026 (nicht handgebaut). Endpunkt: GET /stop-places/8098262",
+  "stopPlaces": [
+    {
+      "evaNumber": "8098262",
+      "names": {
+        "DE": {
+          "nameLong": "München Hbf Gl.5-10",
+          "speechLong": "München Hbf",
+          "speechShort": "München Hbf",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "HIGH_SPEED_TRAIN",
+        "INTERCITY_TRAIN",
+        "INTER_REGIONAL_TRAIN",
+        "REGIONAL_TRAIN"
+      ],
+      "availablePhysicalTransports": [
+        "HIGH_SPEED_TRAIN",
+        "INTERCITY_TRAIN",
+        "INTER_REGIONAL_TRAIN",
+        "REGIONAL_TRAIN"
+      ],
+      "countryCode": "DE",
+      "timeZone": "Europe/Berlin",
+      "metropolis": {},
+      "municipalityKey": "09162000",
+      "position": {
+        "longitude": 11.554814,
+        "latitude": 48.13993
+      },
+      "postalCode": "80335",
+      "replacementTransportsAvailable": false,
+      "state": "BY",
+      "stationID": "4234",
+      "transportAssociations": [
+        "MVV"
+      ]
+    }
+  ]
+}

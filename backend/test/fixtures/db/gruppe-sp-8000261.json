@@ -1,0 +1,48 @@
+{
+  "_hinweis": "AUFGEZEICHNET von der echten RIS::Stations-API am 03.11.2026 (nicht handgebaut). Endpunkt: GET /stop-places/8000261",
+  "stopPlaces": [
+    {
+      "evaNumber": "8000261",
+      "names": {
+        "DE": {
+          "nameLong": "München Hbf",
+          "speechLong": "München Hauptbahnhof",
+          "speechShort": "München Hauptbahnhof",
+          "synonyms": [
+            "Munich Central (München Hbf)",
+            "Monaco di Baviera Centrale"
+          ]
+        }
+      },
+      "availableTransports": [
+        "HIGH_SPEED_TRAIN",
+        "INTERCITY_TRAIN",
+        "INTER_REGIONAL_TRAIN",
+        "REGIONAL_TRAIN"
+      ],
+      "availablePhysicalTransports": [
+        "HIGH_SPEED_TRAIN",
+        "INTERCITY_TRAIN",
+        "INTER_REGIONAL_TRAIN",
+        "REGIONAL_TRAIN"
+      ],
+      "countryCode": "DE",
+      "timeZone": "Europe/Berlin",
+      "metropolis": {
+        "DE": "München"
+      },
+      "municipalityKey": "09162000",
+      "position": {
+        "longitude": 11.558335,
+        "latitude": 48.140232
+      },
+      "postalCode": "80335",
+      "replacementTransportsAvailable": false,
+      "state": "BY",
+      "stationID": "4234",
+      "transportAssociations": [
+        "MVV"
+      ]
+    }
+  ]
+}

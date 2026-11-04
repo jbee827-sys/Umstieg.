@@ -356,6 +356,13 @@ export interface StationsInfo {
   /** StaDa-Bahnhofsnummer – die Adressierung, die FaSta erwartet. */
   stationID?: string;
   /**
+   * Mitglieder von `evas`, deren `availableTransports` ausschliesslich
+   * `CITY_TRAIN` enthält (reine S-Bahn-Verkehrsstellen, z. B. München Hbf
+   * (tief) 8098263). Fehlt bei Bahnhöfen ohne Gruppe; ein Mitglied, dessen
+   * Abruf ausfiel, steht nicht darin.
+   */
+  sbahnEvas?: string[];
+  /**
    * Wie viele Verkehrsstellen ihre Gleisliste schuldig blieben.
    *
    * Ohne diese Zahl war eine unvollständige Liste von einer vollständigen

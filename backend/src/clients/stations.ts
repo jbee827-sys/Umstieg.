@@ -51,6 +51,12 @@ interface StopPlace {
   groupMembers?: string[];
   /** StaDa-Bahnhofsnummer; steht auf jedem Mitglied der Gruppe. */
   stationID?: string;
+  /**
+   * Verkehrsarten, die diese Verkehrsstelle bedient (z. B. `CITY_TRAIN` =
+   * S-Bahn). Steht auf `stop-places/{eva}` je Mitglied, in der Namenssuche
+   * dagegen nur beim führenden Eintrag (gemessen 03.11.2026: München Hbf).
+   */
+  availableTransports?: string[];
 }
 
 /**
@@ -170,6 +176,45 @@ export async function holeGruppe(eva: string, fetchFn: typeof fetch = fetch): Pr
   );
 }
 
+/**
+ * Die Mitglieder der Gruppe, die ausschliesslich S-Bahn (`CITY_TRAIN`) bedienen.
+ *
+ * Die Namenssuche liefert nur den führenden Eintrag, nicht die übrigen
+ * Mitglieder; `availableTransports` je Mitglied steht erst auf
+ * `stop-places/{eva}` (03.11.2026: München Hbf (tief) 8098263 = [CITY_TRAIN],
+ * die Halle 8098261 = [HIGH_SPEED_TRAIN, REGIONAL_TRAIN, CITY_TRAIN] gilt
+ * nicht; Berlin: 8089021). Ein Mitglied, das neben der S-Bahn anderes bedient,
+ * ist keine reine S-Bahn-Stelle.
+ *
+ * Kosten: ein zusätzlicher Abruf je weiterem Mitglied, parallel, nur bei
+ * Gruppen mit mehr als einem Mitglied und nur hier (`holeGruppe` braucht das
+ * nicht). Das Ergebnis geht mit der StationsInfo in den Graph-Cache (24 h).
+ * Fällt ein Abruf aus, fehlt nur dieses Mitglied - nichts wird geworfen.
+ * Ohne Gruppe bleibt das Feld ganz weg.
+ */
+async function ermittleSbahnEvas(
+  eva: string,
+  fuehrend: StopPlace,
+  evas: string[],
+  fetchFn: typeof fetch,
+): Promise<string[] | undefined> {
+  if (evas.length < 2) return undefined;
+  const nurSbahn = (sp: StopPlace): boolean =>
+    (sp.availableTransports?.length ?? 0) > 0 &&
+    sp.availableTransports!.every((t) => t === 'CITY_TRAIN');
+  const reine = await Promise.all(
+    evas.map(async (mitglied) => {
+      try {
+        const sp = mitglied === eva ? fuehrend : await ladeStopPlace(mitglied, fetchFn);
+        return nurSbahn(sp) ? mitglied : null;
+      } catch {
+        return null;
+      }
+    }),
+  );
+  return reine.filter((m): m is string => m !== null);
+}
+
 export async function holeStationsInfo(
   eva: string,
   fetchFn: typeof fetch = fetch,
@@ -230,6 +275,8 @@ export async function holeStationsInfo(
   }
   const gleise = [...nachGleis.values()];
 
+  const sbahnEvas = await ermittleSbahnEvas(eva, stopPlace, evas, fetchFn);
+
   return {
     eva,
     name,
@@ -239,6 +286,7 @@ export async function holeStationsInfo(
     ...(stopPlace.stationID ? { stationID: stopPlace.stationID } : {}),
     gleise,
     gleisteileOhneAntwort,
+    ...(sbahnEvas ? { sbahnEvas } : {}),
     ...(gruppeUnvollstaendig ? { gruppeUnvollstaendig } : {}),
   };
 }

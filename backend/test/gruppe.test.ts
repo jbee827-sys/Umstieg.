@@ -404,3 +404,81 @@ describe('FaSta wird mit der Bahnhofsnummer adressiert', () => {
     ).toBe(true);
   });
 });
+
+/**
+ * S-Bahn-Verkehrsstellen (sbahnEvas).
+ *
+ * Die Namenssuche liefert nur den fuehrenden Eintrag der Gruppe, nicht die
+ * uebrigen Mitglieder; `availableTransports` je Mitglied steht erst in
+ * `stop-places/{eva}` (aufgezeichnet 03.11.2026). Muenchen Hbf (tief) 8098263
+ * fuehrt ausschliesslich CITY_TRAIN, die Halle 8098261 ebenfalls CITY_TRAIN,
+ * aber daneben Fernverkehr - sie ist keine reine S-Bahn-Stelle.
+ */
+describe('sbahnEvas', () => {
+  beforeEach(() => {
+    vi.stubEnv('DB_CLIENT_ID', 'test-id');
+    vi.stubEnv('DB_CLIENT_SECRET', 'test-secret');
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  /** Gruppen-Mock fuer Muenchen; `kaputteStopPlaces` lassen `stop-places/{eva}` mit 502 ausfallen. */
+  function muenchenMock(kaputteStopPlaces: string[] = []): GruppenMock {
+    const urls: string[] = [];
+    const fetchFn = vi.fn(async (eingabe: RequestInfo | URL) => {
+      const url = String(eingabe);
+      urls.push(url);
+      const ok = (body: unknown) =>
+        new Response(JSON.stringify(body), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      if (url.includes('/stop-places/by-name/')) return ok(ladeFixture('gruppe-suche-muenchen'));
+      if (url.includes('/platforms/')) return ok({ platforms: [] });
+      const eva = /\/stop-places\/(\d+)/.exec(url)?.[1];
+      if (!eva) throw new Error(`unerwartete URL im Test: ${url}`);
+      if (kaputteStopPlaces.includes(eva)) return new Response('kaputt', { status: 502 });
+      return ok(ladeFixture(`gruppe-sp-${eva}`));
+    }) as unknown as typeof fetch;
+    return { fetch: fetchFn, urls };
+  }
+
+  it('Muenchen: nur die reine S-Bahn-Stelle (tief)', async () => {
+    const info = await holeStationsInfo('8000261', muenchenMock().fetch);
+    expect(info.sbahnEvas).toEqual(['8098263']);
+  });
+
+  it('Berlin: nur 8089021', async () => {
+    const info = await holeStationsInfo('8011160', gruppenMock().fetch);
+    expect(info.sbahnEvas).toEqual(['8089021']);
+  });
+
+  it('ein ausgefallenes Mitglied fehlt in sbahnEvas, der Rest bleibt', async () => {
+    const mock = muenchenMock(['8098263']);
+    const info = await holeStationsInfo('8000261', mock.fetch);
+    expect(info.sbahnEvas).toEqual([]);
+    expect(info.evas).toHaveLength(4);
+    expect(info.name).toBe('München Hbf');
+  });
+
+  it('holt das fuehrende Mitglied nicht zweimal', async () => {
+    const mock = muenchenMock();
+    await holeStationsInfo('8000261', mock.fetch);
+    const n = mock.urls.filter((u) => u.includes('/stop-places/8000261')).length;
+    expect(n).toBe(1);
+  });
+
+  it('ohne Gruppe (ein Mitglied) keine Zusatzabrufe und kein sbahnEvas', async () => {
+    const mock = gruppenMock();
+    const einzel = vi.fn(async (eingabe: RequestInfo | URL) => {
+      const url = String(eingabe);
+      if (url.includes('/stop-places/by-name/')) return new Response('kaputt', { status: 502 });
+      return (mock.fetch as typeof fetch)(eingabe);
+    }) as unknown as typeof fetch;
+    const info = await holeStationsInfo('8011160', einzel);
+    expect(info.evas).toEqual(['8011160']);
+    expect(info.sbahnEvas).toBeUndefined();
+    expect(mock.urls.filter((u) => u.includes('/stop-places/') && !u.includes('by-name'))).toHaveLength(1);
+  });
+});
