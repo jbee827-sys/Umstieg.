@@ -166,7 +166,9 @@ export function Meldungen({
                 </dd>
               </>
             )}
-            {restSek !== undefined && (
+            {/* Nicht erreichbar heisst: keine Restzeit. Auf 0 gehoben stuende
+                hier „1 Minute“ neben „nicht erreichbar“ (Schlussreview 04.11.2026). */}
+            {restSek !== undefined && !unerreichbar && (
               <>
                 <dt>Restzeit danach</dt>
                 <dd>{minutenText(Math.max(0, restSek))}</dd>

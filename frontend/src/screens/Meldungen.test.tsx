@@ -103,6 +103,18 @@ describe('Meldungen: die neueste Aenderung', () => {
     expect(screen.getByText(/Anschluss nicht erreichbar/)).toBeDefined()
   })
 
+  // Schlussreview 04.11.2026: Neben „nicht erreichbar“ stand „Restzeit danach
+  // 1 Minute“ – die negative Restzeit wurde auf 0 gehoben und als Minute gezeigt.
+  it('nennt keine Restzeit, wenn der Anschluss nicht erreichbar ist', () => {
+    zeige(mitVorschlag(gleiswechsel, vorschlag), STAND, -60, true)
+    expect(screen.queryByText(/Restzeit danach/)).toBeNull()
+  })
+
+  it('nennt die Restzeit, wenn der Anschluss erreichbar ist', () => {
+    zeige(mitVorschlag(gleiswechsel, vorschlag))
+    expect(screen.getByText(/Restzeit danach/)).toBeDefined()
+  })
+
   it('nennt die neue Gehzeit', () => {
     zeige(mitVorschlag(gleiswechsel, vorschlag))
     expect(screen.getByText(/8 Minuten/)).toBeDefined()
