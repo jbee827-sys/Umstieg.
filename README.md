@@ -21,10 +21,23 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 
 ## Hier weitermachen (Stand 06.11.2026)
 
-### Stand 06.11.2026: Textnavigation nach Bezugspunkten, Zweig `feat/textnavigation`, nicht ausgeliefert
+### Ausgeliefert am 06.11.2026: Textnavigation nach Bezugspunkten (`feat/textnavigation`)
 
 Konzept `Umstieg_Konzepte/09-konzept-textnavigation.md`. Abgezweigt von
-`68a28fe` (= `origin/main`). `main` und Fly sind unverändert.
+`68a28fe`. Ausgeliefert ist `08f6410`: Backend per `flyctl deploy backend
+--ha=false` (eine Maschine), Frontend per Fast-Forward auf `main`.
+
+Live geprüft auf Fly:
+- Bonn 1 → 5 ab Anfang: „Vom Zug aus nach rechts bis zur nächsten Rolltreppe“,
+  mit Kurzfassung, `ausstiegLinks` und `knotenAb`.
+- Stuttgart 2 → 10: „Vom Zug aus in Fahrtrichtung bis zum Bahnsteigende, links,
+  dann links zu Gleis 10“. Die Spitze steht am Prellbock.
+
+**Links und rechts statt Himmelsrichtung (06.11.2026, Julian):** Die
+Standortknöpfe heißen „Links · Mitte · Rechts“, mit dem Zug im Rücken
+(`SchemaBahnsteig.ausstiegLinks`). Knöpfe, Zugbild und Schema stehen in dieser
+Reihenfolge. Die Fahrtrichtung („Zuganfang …“) geht vor, die Himmelsrichtung
+gilt nur noch als letzter Ausweg.
 
 **Was sich ändert:**
 
@@ -80,18 +93,18 @@ Konzept `Umstieg_Konzepte/09-konzept-textnavigation.md`. Abgezweigt von
 - Nicht geprüft: Sichtprüfung im Browser. Die Chrome-Erweiterung fand ihre
   Tab-Gruppe nicht.
 
-**Offen für Julian:**
+**Offen:**
 
-1. **Freigabe** des Wortlauts. Die Stichprobe liegt in
-   `osm-ablage/laeufe/textpruefung-2026-11-06-stichprobe.txt`.
-2. **Vorgabe des Schalters:** sofort `bezug` für alle, oder zuerst nur zum
-   Vergleich?
-3. **Paket 2 einschalten:** `ABFRAGE_MIT_BEZUGSPUNKTEN = true` setzen, an zehn
+1. **Schalter:** `bezug` gilt für alle. Zurück geht es mit `TEXT_STIL=klassisch`
+   als Fly-Secret.
+2. **Paket 2 einschalten** (Julian: „die OSM-Abfragen kommen später dazu“): `ABFRAGE_MIT_BEZUGSPUNKTEN = true` setzen, an zehn
    großen Bahnhöfen die Größe messen (Rückfrage bei mehr als 30 %), dann
    `scripts/bestand-fuellen.ts`, `npm run bahnhofsseiten` und
    `npm run vorfuehrdaten` laufen lassen.
-4. G1-Restfälle: Der Text sagt nichts Falsches über Ebenen, behebt aber die
+3. G1-Restfälle: Der Text sagt nichts Falsches über Ebenen, behebt aber die
    Ursache im Graphen nicht.
+4. Draußen das Hauptgebäude als Bezugspunkt: Die Abfrage holt keine Gebäude,
+   und der Haltestellenpfad hat keinen eigenen Graphen.
 
 ```bash
 cd backend
