@@ -45,9 +45,19 @@ describe('App.css: Fahrtauswahl an Haltestellen', () => {
 
 describe('App.css: Karte im Haltestellenpfad (Browserpruefung 18.10.2026)', () => {
   it('die Karte fuellt den festen Bildbereich statt fest 380 px hoch zu sein', () => {
-    expect(deklarationenVon(css, '.app-navigation .haltestellen-bild .karte-flaeche')).toContain('flex: 1 1 auto')
-    expect(deklarationenVon(css, '.app-navigation .haltestellen-bild .karte-rahmen')).toContain('display: flex')
+    // Seit dem 06.11.2026 fuellt die Flaeche den Rahmen ganz (absolut), und
+    // der Rahmen den Bildbereich - Ebenenwahl und Hinweise liegen darin.
+    expect(deklarationenVon(css, '.app-navigation .haltestellen-bild .karte-flaeche')).toEqual(
+      expect.arrayContaining(['position: absolute', 'inset: 0']),
+    )
+    expect(deklarationenVon(css, '.app-navigation .haltestellen-bild .karte-rahmen')).toContain('flex: 1 1 auto')
     expect(deklarationenVon(css, '.app-navigation .haltestellen-bild .karte-bereich')).toContain('min-height: 0')
+  })
+
+  it('Ebenenwahl und Hinweise liegen IN der Karte und nehmen ihr keinen Platz (06.11.2026)', () => {
+    expect(deklarationenVon(css, '.karte-rahmen')).toContain('position: relative')
+    expect(deklarationenVon(css, '.karte-ebenen')).toContain('position: absolute')
+    expect(deklarationenVon(css, '.karte-schild')).toContain('position: absolute')
   })
 
   it('das Kennzeichen schrumpft nicht', () => {

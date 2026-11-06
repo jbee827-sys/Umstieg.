@@ -45,11 +45,17 @@ const LEER: FeatureCollection = { type: 'FeatureCollection', features: [] }
 /** Naeher geht die Karte nicht heran - Begruendung beim Erzeugen der Karte. */
 const MAX_ZOOM = 18
 
-function ebenenLabel(ebene: string): string {
+/**
+ * Kurz auf dem Knopf: „+1“, „0“, „−1“, „−0,3“ - wie im Aufzug. Die Leiste
+ * liegt IN der Karte (06.11.2026); lange Namen wie „Unterführung (−1)“
+ * brachen dort in Zeilen um und nahmen der Karte bis auf 160 px den Platz.
+ */
+function ebenenKurz(ebene: string): string {
   const n = Number(ebene)
-  if (n === -1) return 'Unterführung (−1)'
-  if (n === 0) return 'Ebene 0'
-  return n > 0 ? `Ebene +${n}` : `Ebene ${n}`
+  if (n === 0) return '0'
+  const betrag = Math.abs(n)
+  const zahl = Number.isInteger(betrag) ? String(betrag) : betrag.toFixed(1).replace('.', ',')
+  return n > 0 ? `+${zahl}` : `−${zahl}`
 }
 
 /** Alle [lon, lat]-Koordinaten einer FeatureCollection. */
@@ -71,8 +77,9 @@ function alleKoordinaten(sammlung: FeatureCollection): [number, number][] {
 // mit ODbL-Attribution, Routenlinie + Start-/Zielmarker je Ebene, Umschalter.
 export function Karte({ karte, standort, aktiverSchritt, anfangsOffen = false }: KarteProps) {
   const [offen, setOffen] = useState(anfangsOffen)
+  // Oben die hoechste Ebene - wie die Ebenen uebereinander liegen.
   const ebenen = useMemo(
-    () => Object.keys(karte).sort((a, b) => Number(a) - Number(b)),
+    () => Object.keys(karte).sort((a, b) => Number(b) - Number(a)),
     [karte],
   )
   const [ebene, setEbene] = useState(() => (ebenen.includes('0') ? '0' : (ebenen[0] ?? '0')))
@@ -293,32 +300,35 @@ export function Karte({ karte, standort, aktiverSchritt, anfangsOffen = false }:
         {offen ? 'Karte ausblenden' : 'Karte anzeigen'}
       </button>
       {offen && (
+        // Alles, was zur Karte gehoert, liegt IN ihr: Die Flaeche hat immer
+        // dieselbe Groesse, egal wie viele Ebenen oder Hinweise es gibt
+        // (06.11.2026 - im Haltestellenpfad blieben vorher bis zu 160 px).
         <div className="karte-rahmen">
-          {standort && !brauchbar && (
-            <div className="hinweis-box">
-              Standort zu ungenau (± {Math.round(standort.genauigkeitM)} m) – Punkt ausgeblendet.
+          <div ref={behaelter} className="karte-flaeche" aria-label="Karte des Umstiegswegs" />
+          {ebenen.length > 1 && (
+            <div className="karte-ebenen" role="group" aria-label="Ebene wählen">
+              {ebenen.map((e) => (
+                <button
+                  key={e}
+                  type="button"
+                  className="karte-ebene-knopf"
+                  aria-pressed={ebene === e}
+                  aria-label={`Ebene ${ebenenKurz(e)}`}
+                  onClick={() => {
+                    manuellGewaehlt.current = true
+                    setEbene(e)
+                  }}
+                >
+                  {ebenenKurz(e)}
+                </button>
+              ))}
             </div>
           )}
-          {brauchbar && (
-            <div className="hinweis-box">Blauer Punkt: dein Standort · Ebene unbekannt</div>
+          {standort && !brauchbar && (
+            <div className="karte-schild" role="status">
+              Standort zu ungenau (± {Math.round(standort.genauigkeitM)} m)
+            </div>
           )}
-          <div className="karte-ebenen" role="group" aria-label="Ebene wählen">
-            {ebenen.map((e) => (
-              <button
-                key={e}
-                type="button"
-                className="karte-ebene-knopf"
-                aria-pressed={ebene === e}
-                onClick={() => {
-                  manuellGewaehlt.current = true
-                  setEbene(e)
-                }}
-              >
-                {ebenenLabel(e)}
-              </button>
-            ))}
-          </div>
-          <div ref={behaelter} className="karte-flaeche" aria-label="Karte des Umstiegswegs" />
         </div>
       )}
     </section>

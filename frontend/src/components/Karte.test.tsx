@@ -208,3 +208,24 @@ describe('Karte: Stil von OpenFreeMap (24.10.2026)', () => {
     expect(JSON.stringify(zeige())).not.toContain('tile.openstreetmap.org')
   })
 })
+
+describe('Karte: Ebenenwahl in der Karte, kein „Blauer Punkt“ (06.11.2026)', () => {
+  const standort = { lat: 52.5, lon: 13.37, genauigkeitM: 10, zeitstempel: 0 } as never
+
+  it('kurze Ebenenknoepfe, oben die hoechste Ebene, ohne Hinweistext zum Standort', () => {
+    const { container, queryByText } = render(
+      <Karte karte={{ '0': linie(13.37), '-1': linie(13.369), '1': linie(13.371) }} standort={standort} anfangsOffen />,
+    )
+    const knoepfe = [...container.querySelectorAll('.karte-ebenen button')].map((b) => b.textContent)
+    expect(knoepfe).toEqual(['+1', '0', '−1'])
+    expect(queryByText(/Blauer Punkt/)).toBeNull()
+    // Alles liegt im Rahmen, nach der Kartenflaeche - nichts steht darueber.
+    const rahmen = container.querySelector('.karte-rahmen')!
+    expect(rahmen.firstElementChild!.className).toBe('karte-flaeche')
+  })
+
+  it('mit nur einer Ebene gibt es keine Ebenenwahl', () => {
+    const { container } = render(<Karte karte={{ '0': linie(13.37) }} anfangsOffen />)
+    expect(container.querySelector('.karte-ebenen')).toBeNull()
+  })
+})
