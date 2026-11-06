@@ -71,7 +71,7 @@ const MUSTER: Muster[] = [
     ab: '6',
     abschnitt: 'mitte',
     kurz: 'Aufzug runter zu Gleis 6.',
-    schritte: ['Vom Zug aus Richtung Ostende bis zum Aufzug', 'Aufzug runter zu Gleis 6'],
+    schritte: ['Vom Zug aus nach links bis zum nächsten Aufzug', 'Aufzug runter zu Gleis 6'],
   },
   {
     bahnhof: 'Berlin Hbf (Gang mit Abzweigen)',
@@ -79,9 +79,9 @@ const MUSTER: Muster[] = [
     an: '1',
     ab: '5',
     abschnitt: 'anfang',
-    kurz: 'Am Bahnsteig Richtung Südende, Rolltreppe hoch, dann Rolltreppe runter zu Gleis 5.',
+    kurz: 'Nach rechts am Bahnsteig entlang, Rolltreppe hoch, dann Rolltreppe runter zu Gleis 5.',
     schritte: [
-      'Vom Zug aus Richtung Südende bis zur Rolltreppe',
+      'Vom Zug aus nach rechts bis zur nächsten Rolltreppe',
       'Rolltreppe hoch',
       'Durch den Gang, rechts, dann links, dann Rolltreppe runter zu Gleis 5',
     ],
@@ -92,12 +92,8 @@ const MUSTER: Muster[] = [
     an: '14',
     ab: '6',
     abschnitt: 'mitte',
-    kurz: 'Am Bahnsteig Richtung Ostende, dann rechts auf den Bahnsteig zu Gleis 6.',
-    schritte: [
-      'Vom Zug aus Richtung Ostende bis zum Bahnsteigende',
-      'Durch den Gang',
-      'Rechts auf den Bahnsteig, Richtung Westende zu Gleis 6',
-    ],
+    kurz: 'Nach rechts am Bahnsteig entlang, dann rechts auf den Bahnsteig zu Gleis 6.',
+    schritte: ['Vom Zug aus nach rechts bis zum Bahnsteigende', 'Durch den Gang', 'Rechts auf den Bahnsteig zu Gleis 6'],
   },
   {
     bahnhof: 'München Hbf (zum Tiefbahnhof)',
@@ -105,9 +101,9 @@ const MUSTER: Muster[] = [
     an: '5',
     ab: '82',
     abschnitt: 'anfang',
-    kurz: 'Am Bahnsteig Richtung Ostende, Rolltreppe runter in die Unterführung, dann Rolltreppe runter zu Gleis 82.',
+    kurz: 'Nach rechts am Bahnsteig entlang, Rolltreppe runter in die Unterführung, dann Rolltreppe runter zu Gleis 82.',
     schritte: [
-      'Vom Zug aus Richtung Ostende bis zum Bahnsteigende',
+      'Vom Zug aus nach rechts bis zum Bahnsteigende',
       'Durch den Gang, rechts, dann Rolltreppe runter in die Unterführung',
       'Durch die Unterführung, rechts, dann rechts, dann Rolltreppe runter zu Gleis 82',
     ],
@@ -118,9 +114,9 @@ const MUSTER: Muster[] = [
     an: '1',
     ab: '5',
     abschnitt: 'anfang',
-    kurz: 'Am Bahnsteig Richtung Südende, Treppe runter in die Unterführung, durch die B-Passage, dann Aufzug hoch zu Gleis 5.',
+    kurz: 'Nach links am Bahnsteig entlang, Treppe runter in die Unterführung, durch die B-Passage, dann Aufzug hoch zu Gleis 5.',
     schritte: [
-      'Vom Zug aus Richtung Südende bis zur Treppe',
+      'Vom Zug aus nach links bis zur nächsten Treppe',
       'Treppe runter in die Unterführung',
       'Durch die B-Passage, dann Aufzug hoch zu Gleis 5',
     ],
@@ -131,9 +127,9 @@ const MUSTER: Muster[] = [
     an: '1',
     ab: '5',
     abschnitt: 'anfang',
-    kurz: 'Am Bahnsteig Richtung Ostende, Rolltreppe runter in die Unterführung, dann dritter Aufgang links hoch zu Gleis 5.',
+    kurz: 'Nach rechts am Bahnsteig entlang, Rolltreppe runter in die Unterführung, dann dritter Aufgang links hoch zu Gleis 5.',
     schritte: [
-      'Vom Zug aus Richtung Ostende bis zur Rolltreppe',
+      'Vom Zug aus nach rechts bis zur nächsten Rolltreppe',
       'Rolltreppe runter in die Unterführung, unten rechts',
       'Dritter Aufgang links, Rolltreppe hoch zu Gleis 5',
     ],
@@ -146,10 +142,10 @@ const MUSTER: Muster[] = [
     abschnitt: 'anfang',
     kurz: 'Treppe runter in die Unterführung, dann Treppe hoch zu Gleis 16.',
     schritte: [
-      'Vom Zug aus Richtung Südende bis zur Treppe',
+      'Vom Zug aus nach rechts bis zur nächsten Treppe',
       'Treppe runter in die Unterführung',
       'Durch die Unterführung, dann Treppe hoch auf den Bahnsteig',
-      'Am Bahnsteig Richtung Südende zu Gleis 16',
+      'Am Bahnsteig entlang zu Gleis 16',
     ],
   },
   {
@@ -160,11 +156,11 @@ const MUSTER: Muster[] = [
     abschnitt: 'mitte',
     kurz: 'Rolltreppe hoch, dann links auf den Bahnsteig zu Gleis 10.',
     schritte: [
-      'Vom Zug aus Richtung Nordende bis zur Rolltreppe',
+      'Vom Zug aus nach rechts bis zur nächsten Rolltreppe',
       'Rolltreppe hoch',
       'Rolltreppe hoch',
       'Durch den Gang, links',
-      'Links auf den Bahnsteig, Richtung Nordende zu Gleis 10',
+      'Links auf den Bahnsteig zu Gleis 10',
     ],
   },
   {
@@ -182,8 +178,8 @@ const MUSTER: Muster[] = [
     an: '2',
     ab: '10',
     abschnitt: 'mitte',
-    kurz: 'Am Bahnsteig Richtung Südende bis zum Ende, links, dann links zu Gleis 10.',
-    schritte: ['Vom Zug aus Richtung Südende bis zum Bahnsteigende, links, dann links zu Gleis 10'],
+    kurz: 'Nach links bis zum Bahnsteigende, links, dann links zu Gleis 10.',
+    schritte: ['Vom Zug aus nach links bis zum Bahnsteigende, links, dann links zu Gleis 10'],
   },
   {
     bahnhof: 'Günzburg (kleiner Bahnhof)',
@@ -191,9 +187,9 @@ const MUSTER: Muster[] = [
     an: '1',
     ab: '5',
     abschnitt: 'anfang',
-    kurz: 'Am Bahnsteig Richtung Ostende, Treppe runter in die Unterführung, dann Treppe hoch zu Gleis 5.',
+    kurz: 'Nach links am Bahnsteig entlang, Treppe runter in die Unterführung, dann Treppe hoch zu Gleis 5.',
     schritte: [
-      'Vom Zug aus Richtung Ostende bis zur Treppe',
+      'Vom Zug aus nach links bis zur nächsten Treppe',
       'Treppe runter in die Unterführung',
       'Durch die Unterführung, dann Treppe hoch zu Gleis 5',
     ],
@@ -213,6 +209,7 @@ describe('Musterwege (Konzept 09, 7)', () => {
         profil: 'normal',
         graph,
         bahnsteigEnden: bahnsteigEndenAusSchema(schema),
+      schema,
       });
       expect(text.schritte.map((s) => s.text)).toEqual(m.schritte);
       expect(text.kurzfassung).toBe(m.kurz);

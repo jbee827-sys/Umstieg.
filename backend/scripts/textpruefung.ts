@@ -5,7 +5,7 @@
 //   - kein „Ebene“ und keine Ziffer mit Minuszeichen im Text,
 //   - Kurzfassung hoechstens 20 Woerter,
 //   - hoechstens 6 Schritte (Auffaelligkeit, kein Fehler),
-//   - kein „ebenerdig/stufenlos“,
+//   - kein „ebenerdig/stufenlos“, keine Himmelsrichtung,
 //   - kein Laden, dessen Name im Bahnhof nicht eindeutig ist,
 //   - Summe der Sekunden = gehzeitSek,
 //   - jede besuchte Ebene hat einen Schritt (Laeufe = Baender des Schemas).
@@ -96,6 +96,7 @@ for (const datei of auswahl) {
       stil: 'bezug',
       graph,
       bahnsteigEnden: bahnsteigEndenAusSchema(schema),
+      schema,
     });
     schritteAlt.push(alt.schritte.length);
     schritteNeu.push(neu.schritte.length);
@@ -113,6 +114,8 @@ for (const datei of auswahl) {
       if (/Ebene/.test(s.text)) melde('Ebene im Text', s.text);
       if (/[-−]\d/.test(s.text)) melde('Ziffer mit Minus', s.text);
       if (/ebenerdig|stufenlos/i.test(s.text)) melde('ebenerdig/stufenlos', s.text);
+      // Julian, 06.11.2026: Wo Norden ist, weiss in einer Halle niemand.
+      if (/(Nord|Süd|Ost|West)ende|Richtung (Nord|Süd|Ost|West)/.test(s.text)) melde('Himmelsrichtung', s.text);
       const laden = s.text.match(/an (.+?) vorbei/);
       if (laden && !laeden.has(laden[1])) melde('Laden nicht eindeutig', s.text);
     }

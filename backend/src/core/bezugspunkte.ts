@@ -1,4 +1,5 @@
 import type { Etappe } from './etappen.js';
+import { aussteigeSeite, gleisSchluessel } from './gleisseite.js';
 import { haversineM } from './graph.js';
 import { peilungGrad, winkelDelta, type Segment } from './segmente.js';
 import type { GraphKante, GraphKnoten, RoutenPfad, StationGraph } from './typen.js';
@@ -310,22 +311,28 @@ export function ausgangAmWeg(pfad: RoutenPfad, graph: StationGraph | undefined, 
 }
 
 export interface BahnsteigRichtung {
-  /** „Richtung Zugende“, „zum Bahnsteigende“, „zur Bahnsteigmitte“. */
+  /** „in Fahrtrichtung“, „entgegen der Fahrtrichtung“, „nach rechts“, „nach links“. */
   wort: string;
   /** Der Weg erreicht dabei ein Ende des Bahnsteigs (Kopfbahnhof, Querbahnsteig). */
   amEnde: boolean;
 }
 
 /**
- * Wohin es am Bahnsteig geht - in denselben Woertern, die das Schema und die
- * Standortknoepfe zeigen („Zugende“, „Nordende“). Abschnittsbuchstaben (A-G)
- * kennt keine Quelle (Schema-Vorbehalt), deshalb nicht „Richtung Abschnitt C“.
+ * Wohin es am Ankunftsbahnsteig geht (Julian, 06.11.2026): Himmelsrichtungen
+ * kennt niemand. Zuerst die Fahrtrichtung des Zugs - die hat man eben noch
+ * gespuert (`enden`, aus der Zugspitze des Schemas). Sonst rechts oder links,
+ * mit dem Zug im Ruecken (`gleisseite.ts`). Sonst nichts: Dann nennt der Satz
+ * grobe Meter, aber keine Richtung, die er nicht kennt.
+ *
+ * Nur fuer den Ausstieg (`ausstieg`): Auf einem anderen Bahnsteig hat niemand
+ * einen Zug im Ruecken.
  */
 export function richtungAmBahnsteig(
   pfad: RoutenPfad,
   graph: StationGraph | undefined,
   etappe: Etappe,
   enden: Map<string, { anfang: string; ende: string }> | undefined,
+  ausstieg = true,
 ): BahnsteigRichtung | undefined {
   if (!graph) return undefined;
   let bahnsteigId: string | undefined;
@@ -357,10 +364,12 @@ export function richtungAmBahnsteig(
   }
   if (Math.abs(bis - von) < RICHTUNG_MIN_M) return undefined;
   const amEnde = bis < laenge * 0.12 || bis > laenge * 0.88;
-  const namen = enden?.get(bahnsteigId);
+  if (!ausstieg) return undefined;
   const zumEnde = bis > von;
-  if (namen) return { wort: `Richtung ${zumEnde ? namen.ende : namen.anfang}`, amEnde };
-  if (Math.abs(bis - laenge / 2) < laenge * 0.15) return { wort: 'zur Bahnsteigmitte', amEnde: false };
-  if (bis < laenge * 0.2 || bis > laenge * 0.8) return { wort: 'zum Bahnsteigende', amEnde: false };
+  const namen = enden?.get(bahnsteigId);
+  if (namen) return { wort: zumEnde ? namen.ende : namen.anfang, amEnde };
+  const start = pfad.knoten[etappe.knotenVon];
+  const seite = start?.gleis ? graph.gleisSeiten?.get(gleisSchluessel(bahnsteigId, start.gleis)) : undefined;
+  if (seite) return { wort: `nach ${aussteigeSeite(seite.seite, zumEnde)}`, amEnde };
   return undefined;
 }

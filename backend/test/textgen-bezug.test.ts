@@ -7,6 +7,7 @@ import type {
   GraphKnoten,
   KantenLage,
   KantenTyp,
+  BahnhofSchema,
   RoutenPfad,
   StationGraph,
 } from '../src/core/typen.js';
@@ -119,10 +120,8 @@ function pfad(bahnhof: Bahnhof, ids: string[]): RoutenPfad {
   return { knoten, kanten, laengeM: kanten.reduce((s, x) => s + x.laengeM, 0) };
 }
 
-const ENDEN = new Map([
-  ['wA', { anfang: 'Westende', ende: 'Ostende' }],
-  ['wC', { anfang: 'Westende', ende: 'Ostende' }],
-]);
+/** Zugspitze am Ostende von wA: nach Osten geht es „in Fahrtrichtung“. */
+const ENDEN = new Map([['wA', { anfang: 'entgegen der Fahrtrichtung', ende: 'in Fahrtrichtung' }]]);
 
 const NACH_GLEIS_5 = ['gleis1:mitte', 'gleis2:mitte', 'p1', 'u0', 'u40', 'u80', 'gleis5:mitte'];
 
@@ -136,7 +135,7 @@ describe('Textstil bezug (Konzept 09)', () => {
     const p = pfad(bahnhof, NACH_GLEIS_5);
     const text = generiereText(p, { stil: 'bezug', profil: 'normal', graph: bahnhof.graph, bahnsteigEnden: ENDEN });
     expect(text.schritte.map((s) => s.text)).toEqual([
-      'Vom Zug aus Richtung Ostende bis zur Treppe',
+      'Vom Zug aus in Fahrtrichtung, etwa 50 m bis zur Treppe',
       'Treppe runter in die Unterführung',
       'Zweiter Aufgang rechts, Treppe hoch zu Gleis 5',
     ]);
@@ -171,10 +170,88 @@ describe('Textstil bezug (Konzept 09)', () => {
     }
   });
 
-  it('ohne Bahnsteignamen aus dem Schema: grobe Meter statt Himmelsrichtung', () => {
+  it('ohne Fahrtrichtung und ohne Gleisseite: grobe Meter, keine geratene Richtung', () => {
     const bahnhof = baueBahnhof({ unterfuehrungLage: 'unterfuehrung' });
     const { schritte } = generiereText(pfad(bahnhof, NACH_GLEIS_5), { stil: 'bezug', graph: bahnhof.graph });
     expect(schritte[0].text).toBe('Vom Zug aus etwa 50 m bis zur Treppe');
+  });
+
+  it('nie eine Himmelsrichtung (Julian, 06.11.2026: wo Norden ist, weiss niemand)', () => {
+    const bahnhof = baueBahnhof({ unterfuehrungLage: 'unterfuehrung' });
+    bahnhof.graph.gleisSeiten = new Map([['wA|1', { seite: 'rechts', quelle: 'kante' }]]);
+    const text = generiereText(pfad(bahnhof, NACH_GLEIS_5), { stil: 'bezug', graph: bahnhof.graph });
+    expect([...text.schritte.map((s) => s.text), text.kurzfassung].join(' ')).not.toMatch(/Nord|Süd|Ost|West/);
+  });
+
+  it('ohne Fahrtrichtung: rechts oder links mit dem Zug im Ruecken', () => {
+    // Gleis 1 liegt suedlich der Achse (rechts, Blick West → Ost). Wer
+    // aussteigt, schaut nach Norden - Osten, wo die Treppe ist, liegt rechts.
+    const bahnhof = baueBahnhof({ unterfuehrungLage: 'unterfuehrung' });
+    bahnhof.graph.gleisSeiten = new Map([['wA|1', { seite: 'rechts', quelle: 'kante' }]]);
+    const { schritte, kurzfassung } = generiereText(pfad(bahnhof, NACH_GLEIS_5), { stil: 'bezug', graph: bahnhof.graph });
+    expect(schritte[0].text).toBe('Vom Zug aus nach rechts, etwa 50 m bis zur Treppe');
+    expect(kurzfassung).not.toMatch(/rechts am Bahnsteig/); // 50 m: zu kurz fuer die Kurzfassung
+
+    bahnhof.graph.gleisSeiten = new Map([['wA|1', { seite: 'links', quelle: 'nachbarn' }]]);
+    expect(generiereText(pfad(bahnhof, NACH_GLEIS_5), { stil: 'bezug', graph: bahnhof.graph }).schritte[0].text).toBe(
+      'Vom Zug aus nach links, etwa 50 m bis zur Treppe',
+    );
+  });
+
+  it('die Fahrtrichtung geht vor rechts/links', () => {
+    const bahnhof = baueBahnhof({ unterfuehrungLage: 'unterfuehrung' });
+    bahnhof.graph.gleisSeiten = new Map([['wA|1', { seite: 'rechts', quelle: 'kante' }]]);
+    const { schritte } = generiereText(pfad(bahnhof, NACH_GLEIS_5), {
+      stil: 'bezug',
+      graph: bahnhof.graph,
+      bahnsteigEnden: ENDEN,
+    });
+    expect(schritte[0].text).toBe('Vom Zug aus in Fahrtrichtung, etwa 50 m bis zur Treppe');
+  });
+
+  it('zaehlt die Treppen am Bahnsteig wie das Schema: „bis zur zweiten Treppe“', () => {
+    const bahnhof = baueBahnhof({ unterfuehrungLage: 'unterfuehrung' });
+    // Der Ausstieg (gleis1:mitte, x = 100) ist der Ursprung des Schemas; der
+    // Bahnsteig reicht von x = 0 bis 200. Eine Treppe bei 125 m liegt auf dem
+    // Weg, die genutzte bei 150 m.
+    const zugang = (beiM: number, aufRoute: boolean) => ({
+      beiM,
+      pos: { x: beiM - 100, y: 0 },
+      aufzug: 0,
+      rolltreppe: 0,
+      treppe: 1,
+      aufRoute,
+    });
+    const schema: BahnhofSchema = {
+      ebenen: [
+        {
+          level: 0,
+          art: 'gleise',
+          bahnsteige: [
+            {
+              bahnsteigId: 'wA',
+              gleise: ['1', '2'],
+              rolle: 'start',
+              von: { x: -100, y: 0 },
+              bis: { x: 100, y: 0 },
+              zugaenge: [zugang(40, false), zugang(125, false), zugang(150, true)],
+            },
+          ],
+        },
+      ],
+      anlagen: [],
+      pois: [],
+      wechsel: [],
+      vorbehalte: [],
+    };
+    const { schritte } = generiereText(pfad(bahnhof, NACH_GLEIS_5), {
+      stil: 'bezug',
+      graph: bahnhof.graph,
+      bahnsteigEnden: ENDEN,
+      schema,
+    });
+    // Die Treppe bei 40 m liegt in der anderen Richtung und zaehlt nicht.
+    expect(schritte[0].text).toBe('Vom Zug aus in Fahrtrichtung bis zur zweiten Treppe');
   });
 
   it('am selben Bahnsteig: „gegenüber“, nur bei gleicher bahnsteigId', () => {

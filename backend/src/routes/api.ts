@@ -681,6 +681,7 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
       profil,
       graph,
       bahnsteigEnden: bahnsteigEndenAusSchema(schema),
+      schema,
     });
     return {
       stufe: graph.stufe,

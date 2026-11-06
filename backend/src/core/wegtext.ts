@@ -46,27 +46,25 @@ export interface WegText {
 }
 
 /**
- * Wie die Enden der Bahnsteige heissen - dieselben Woerter, die Schema und
- * Standortknoepfe zeigen (`standortNamen` im Frontend): am Ankunftsbahnsteig
- * nach der Zugspitze („Zuganfang“/„Zugende“), sonst nach der Himmelsrichtung
- * („Nordende“). Ohne gemessene Achse kein Eintrag.
+ * Wie es am Ankunftsbahnsteig in die eine oder andere Richtung heisst, wenn
+ * die Zugspitze bekannt ist: „in Fahrtrichtung“ zum Zuganfang, „entgegen der
+ * Fahrtrichtung“ zum Zugende (Julian, 06.11.2026: „Zugrichtung ist am Anfang
+ * die beste Orientierung“). Himmelsrichtungen stehen nicht mehr darin - wo
+ * Norden ist, weiss in einer Halle niemand.
  */
 export function bahnsteigEndenAusSchema(
   schema: BahnhofSchema | undefined,
 ): Map<string, { anfang: string; ende: string }> {
   const namen = new Map<string, { anfang: string; ende: string }>();
-  const richtung = { N: 'Nordende', O: 'Ostende', S: 'Südende', W: 'Westende' } as const;
   for (const ebene of schema?.ebenen ?? []) {
     for (const b of ebene.bahnsteige) {
-      if (namen.has(b.bahnsteigId)) continue;
-      if (b.zugspitze) {
-        namen.set(b.bahnsteigId, {
-          anfang: b.zugspitze === 'anfang' ? 'Zuganfang' : 'Zugende',
-          ende: b.zugspitze === 'ende' ? 'Zuganfang' : 'Zugende',
-        });
-      } else if (b.himmelsrichtung) {
-        namen.set(b.bahnsteigId, { anfang: richtung[b.himmelsrichtung.von], ende: richtung[b.himmelsrichtung.bis] });
-      }
+      if (namen.has(b.bahnsteigId) || !b.zugspitze) continue;
+      const vorn = 'in Fahrtrichtung';
+      const hinten = 'entgegen der Fahrtrichtung';
+      namen.set(b.bahnsteigId, {
+        anfang: b.zugspitze === 'anfang' ? vorn : hinten,
+        ende: b.zugspitze === 'ende' ? vorn : hinten,
+      });
     }
   }
   return namen;
@@ -335,7 +333,7 @@ class Satzkontext {
       davor &&
       letzter.text === this.ziel &&
       !davor.text.startsWith('Stopp') &&
-      !davor.text.startsWith('am Bahnsteig')
+      !davor.text.includes('am Bahnsteig entlang')
     ) {
       davor.text = `${davor.text.replace(/ auf den Bahnsteig$/, '')} ${this.ziel}`;
       liste.pop();
@@ -443,6 +441,34 @@ class Satzkontext {
     };
   }
 
+  /**
+   * Die wievielte Anlage dieser Art ist der genutzte Zugang, vom Ausstieg aus
+   * in Gehrichtung gezaehlt? Aus den Zugaengen des Schemas am
+   * Ankunftsbahnsteig - dieselben, die das Bild zeigt. Hoechstens vier.
+   */
+  private ordnungDesZugangs(typ: KantenTyp): number | undefined {
+    if (typ !== 'treppe' && typ !== 'rolltreppe' && typ !== 'aufzug') return undefined;
+    const ebene = this.optionen.schema?.ebenen[0];
+    const steig = ebene?.bahnsteige.find((b) => b.rolle === 'start');
+    if (!steig?.von || !steig.bis || !steig.zugaenge) return undefined;
+    const dx = steig.bis.x - steig.von.x;
+    const dy = steig.bis.y - steig.von.y;
+    const laenge = Math.hypot(dx, dy);
+    if (laenge < 1) return undefined;
+    // Der Ausstieg ist der Ursprung des Bezugsrahmens.
+    const start = (-steig.von.x * dx - steig.von.y * dy) / laenge;
+    const ziel = steig.zugaenge.find((z) => z.aufRoute && z[typ] > 0);
+    if (!ziel) return undefined;
+    const vorher = steig.zugaenge.filter(
+      (z) =>
+        z !== ziel &&
+        z[typ] > 0 &&
+        (z.beiM - start) * (ziel.beiM - start) > 0 &&
+        Math.abs(z.beiM - start) < Math.abs(ziel.beiM - start),
+    ).length;
+    return vorher + 1 <= 4 ? vorher + 1 : undefined;
+  }
+
   /** Abbiegen an Abzweigen: „, links, dann rechts“ */
   private abbiegen(e: Etappe): string {
     const woerter = abbiegungen(this.pfad, this.graph, this.segmente, e);
@@ -457,7 +483,7 @@ class Satzkontext {
     const amBahnsteig = richtungAmBahnsteig(this.pfad, this.graph, e, this.optionen.bahnsteigEnden);
     const richtung = amBahnsteig?.wort;
     const kurz: KurzTeil[] =
-      richtung && e.laengeM > KURZ_BAHNSTEIG_M ? [{ text: `am Bahnsteig ${richtung}`, wichtig: false }] : [];
+      richtung && e.laengeM > KURZ_BAHNSTEIG_M ? [{ text: `${richtung} am Bahnsteig entlang`, wichtig: false }] : [];
     const zielText = this.ziel ? ` ${this.ziel}` : '';
 
     if (this.istLetzteGruppe(gi)) {
@@ -478,12 +504,12 @@ class Satzkontext {
           const weiter = abbiegen || ', dann';
           return {
             text: `${fuelle(v(BAUSTEINE.start.richtungBisEnde), { richtung })}${weiter}${zielText}`,
-            kurz: [{ text: `am Bahnsteig ${richtung} bis zum Ende${weiter}${zielText}`, wichtig: true }],
+            kurz: [{ text: `${richtung} bis zum Bahnsteigende${weiter}${zielText}`, wichtig: true }],
           };
         }
         return {
           text: `${fuelle(v(BAUSTEINE.start.richtungZiel), { richtung, ziel: '' })}${abbiegen}${zielText}`,
-          kurz: [{ text: `am Bahnsteig ${richtung}${zielText}`, wichtig: true }],
+          kurz: [{ text: `${richtung} am Bahnsteig entlang${zielText}`, wichtig: true }],
         };
       }
       const weg = this.wegPhrase(e);
@@ -498,8 +524,25 @@ class Satzkontext {
     }
 
     if (nach?.art === 'wechsel' && !istNaht(nach)) {
+      if (richtung) {
+        // Gezaehlt nur mit Richtung: „die naechste Treppe“ ohne Richtung kann
+        // auf beiden Seiten liegen.
+        const ordnung = this.ordnungDesZugangs(nach.typ);
+        const laden = ladenAmWeg(this.pfad, this.graph, e);
+        const meter =
+          ordnung === undefined && e.laengeM >= MIT_METER_M
+            ? `, ${this.ungefaehr ? 'ca.' : 'etwa'} ${grobeMeter(e.laengeM)} m`
+            : '';
+        return {
+          text: fuelle(v(BAUSTEINE.start.richtungBis), {
+            richtung,
+            vorbei: laden ? `, an ${laden} vorbei,` : meter,
+            zurAnlage: zurAnlage(nach.typ, ordnung),
+          }),
+          kurz,
+        };
+      }
       const anlage = zurAnlage(nach.typ);
-      if (richtung) return { text: fuelle(v(BAUSTEINE.start.richtungBis), { richtung, zurAnlage: anlage }), kurz };
       // Ohne Richtung am Bahnsteig grobe Meter (Konzept 09, 5.2, Stufe 6) - im
       // Standardmodell mit „ca.“, weil die Lage dort geschaetzt ist.
       if ((this.ungefaehr && e.laengeM >= 10) || e.laengeM >= MIT_METER_M) {
@@ -526,7 +569,7 @@ class Satzkontext {
   private wegSatz(gi: number, e: Etappe, letzte: boolean): Satz {
     const ziel = letzte && this.ziel ? ` ${this.ziel}` : '';
     if (e.art === 'bahnsteig') {
-      const richtung = richtungAmBahnsteig(this.pfad, this.graph, e, this.optionen.bahnsteigEnden)?.wort;
+      const richtung = richtungAmBahnsteig(this.pfad, this.graph, e, this.optionen.bahnsteigEnden, false)?.wort;
       const vorher = this.etappeVor(gi);
       const seite = vorher ? abbiegenAnGrenze(this.pfad, this.graph, this.segmente, vorher, e) : undefined;
       const text = seite

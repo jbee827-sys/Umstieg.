@@ -85,6 +85,7 @@ export function zeichneAuf(osm: OverpassAntwort, gleisAn: string, gleisAb: strin
         profil: 'normal',
         graph,
         bahnsteigEnden: bahnsteigEndenAusSchema(schema),
+      schema,
       });
       daten[`${variante}|${abschnitt}`] = {
         status: 200,

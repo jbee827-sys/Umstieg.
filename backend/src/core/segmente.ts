@@ -1,5 +1,5 @@
 import { zuschlagSekunden } from './gehzeit.js';
-import type { Gehprofil, GraphKnoten, KantenTyp, RoutenPfad, StationGraph } from './typen.js';
+import type { BahnhofSchema, Gehprofil, GraphKnoten, KantenTyp, RoutenPfad, StationGraph } from './typen.js';
 
 /** Peilung a→b in Grad (0 = Nord, 90 = Ost), äquirektangulare Näherung – Bahnhofsmaßstab. */
 export function peilungGrad(a: GraphKnoten, b: GraphKnoten): number {
@@ -326,6 +326,11 @@ export interface TextOptionen {
    * `bahnsteigId`. Ohne Eintrag sagt der Text „Bahnsteigende“.
    */
   bahnsteigEnden?: Map<string, { anfang: string; ende: string }>;
+  /**
+   * Das Schema der Route: Seine Zugaenge am Ankunftsbahnsteig zaehlt der erste
+   * Schritt („bis zur zweiten Treppe“) - dieselben, die das Bild zeigt.
+   */
+  schema?: BahnhofSchema;
   /**
    * Womit der erste Schritt beginnt. Vorgabe „Vom Zug aus“ (Julian,
    * 06.11.2026). Der Haltestellenpfad weiss nicht, ob man aus Bus oder Zug

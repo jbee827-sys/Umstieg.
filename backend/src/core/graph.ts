@@ -1,3 +1,4 @@
+import { gleisSeiten, type GleisSeite } from './gleisseite.js';
 import { erreichbareGleisPaare } from './klassifikation.js';
 import { gleichesGleis, normGleis } from './gleisname.js';
 import { mittlereAchse, nachNordwesten, peilungGrad, richteEndenAus } from './richtung.js';
@@ -1090,6 +1091,9 @@ function baueGraphOhneNaht(
   }
 
   // --- Bahnsteigkanten (`railway=platform_edge`) ---
+  // Je Bahnsteig die Kanten mit Gleisnummer: Ihre Lage sagt, an welcher Seite
+  // das Gleis liegt (`gleisseite.ts`, Konzept 09).
+  const kantenJeBahnsteig = new Map<BahnsteigDaten, Map<string, { lat: number; lon: number }[]>>();
   //
   // Stuttgart, Karlsruhe und Mannheim Hbf tragen die Gleisnummer nicht am
   // Bahnsteig, sondern an seinen Kanten - je Gleis eine Linie entlang des
@@ -1124,6 +1128,8 @@ function baueGraphOhneNaht(
     }
     if (bester && besterAbstand <= KANTE_AM_BAHNSTEIG_M) {
       for (const r of refs) if (!bester.refs.includes(r)) bester.refs.push(r);
+      if (!kantenJeBahnsteig.has(bester)) kantenJeBahnsteig.set(bester, new Map());
+      for (const r of refs) kantenJeBahnsteig.get(bester)!.set(r, punkte.map((q) => ({ lat: q.lat, lon: q.lon })));
       if (!bester.ebeneBelegt && kante.ebeneBelegt) Object.assign(bester, kante);
       merkeKennungen(bester, tags);
     } else {
@@ -1326,6 +1332,22 @@ function baueGraphOhneNaht(
     const linie = mittellinie(bahnsteig.bahnsteigId.startsWith('r') ? teile : teile[0]);
     if (linie.length > 0) bahnsteigLinien.set(bahnsteig.bahnsteigId, linie);
   }
+
+  // An welcher Seite der Achse jedes Gleis liegt - fuer „rechts/links“ beim
+  // Aussteigen (Konzept 09, Julian 06.11.2026: mit dem Zug im Ruecken).
+  const seitenJeGleis: Map<string, GleisSeite> = gleisSeiten(
+    [...endenJeBahnsteig]
+      .filter(([b]) => !ubahn.has(b))
+      .map(([b, [a, e]]) => ({
+        id: b.bahnsteigId,
+        ebene: b.ebene,
+        gleise: [...b.refs],
+        anfang: { lat: a.lat, lon: a.lon },
+        ende: { lat: e.lat, lon: e.lon },
+        ...(kantenJeBahnsteig.has(b) ? { kanten: kantenJeBahnsteig.get(b)! } : {}),
+        ...(bahnsteigLinien.has(b.bahnsteigId) ? { linie: bahnsteigLinien.get(b.bahnsteigId)! } : {}),
+      })),
+  );
 
   // Wessen Umriss ein Knoten ist. Ein Punkt kann mehreren Bahnsteigen gehoeren,
   // wenn sie sich beruehren; dann gilt er auch fuer jeden von ihnen als eigener.
@@ -1627,7 +1649,17 @@ function baueGraphOhneNaht(
   const bezugspunkte = sammleBezugspunkte(osm.elements, osmKnoten, knoten);
 
   // Stufe wird erst durch die Klassifikation (Task 5) gesetzt – Start: 3.
-  return { knoten, adjazenz, stufe: 3, gleise, bahnsteigLinien, gleisArt, ubahnSteige, bezugspunkte };
+  return {
+    knoten,
+    adjazenz,
+    stufe: 3,
+    gleise,
+    bahnsteigLinien,
+    gleisArt,
+    ubahnSteige,
+    bezugspunkte,
+    gleisSeiten: seitenJeGleis,
+  };
 }
 
 /**
@@ -1912,6 +1944,7 @@ export function kopiereGraph(graph: StationGraph): StationGraph {
     ...(graph.gleisArt ? { gleisArt: graph.gleisArt } : {}),
     ...(graph.ubahnSteige ? { ubahnSteige: graph.ubahnSteige } : {}),
     ...(graph.bezugspunkte ? { bezugspunkte: graph.bezugspunkte } : {}),
+    ...(graph.gleisSeiten ? { gleisSeiten: graph.gleisSeiten } : {}),
   };
 }
 

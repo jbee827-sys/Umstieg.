@@ -35,8 +35,17 @@ Konzept `Umstieg_Konzepte/09-konzept-textnavigation.md`. Abgezweigt von
     Treppe hoch zu Gleis 5“.
   - Erster Schritt „Vom Zug aus …“, im Haltestellenpfad „Vom Ausstieg aus …“
     (Julian, 06.11.).
-  - Bahnsteigrichtung mit den Wörtern des Schemas („Zugende“, „Nordende“).
-    Abschnittsbuchstaben A–G kennt keine Quelle, deshalb nicht „Abschnitt C“.
+  - Richtung am Ankunftsbahnsteig ohne Himmelsrichtungen (Julian, 06.11.):
+    zuerst die Fahrtrichtung („in Fahrtrichtung“, „entgegen der
+    Fahrtrichtung“), sonst rechts/links mit dem Zug im Rücken, sonst nur grobe
+    Meter. Dazu zählt der erste Schritt die Anlagen wie das Schema („bis zur
+    zweiten Treppe“) und nennt eindeutige Läden.
+  - Die Gleisseite steht in `core/gleisseite.ts`. Sie kommt aus der
+    Bahnsteigkante (`platform_edge`), gemessen gegen die Mittellinie, sonst
+    aus den Nachbarbahnsteigen. Über 2.462 Gleise: 61 % aus der Kante, 29 %
+    aus den Nachbarn, 10 % offen. Wo beides vorliegt, stimmen sie in 98,2 %
+    überein (1.132 von 1.153).
+  - Abschnittsbuchstaben A–G kennt keine Quelle, deshalb nicht „Abschnitt C“.
   - „Unterführung“ nur bei `tunnel=yes`. Kein „Ebene“, keine Ebenenzahl,
     kein „ebenerdig“. Links/rechts nur an Abzweigen. Läden nur mit
     eindeutigem Namen und höchstens 10 m vom Weg.
@@ -58,7 +67,10 @@ Konzept `Umstieg_Konzepte/09-konzept-textnavigation.md`. Abgezweigt von
 
 **Geprüft:**
 
-- Backend: 1071 von 1071 Tests. Frontend: 1117 von 1117. Lint und Build sauber.
+- Backend: 1083 von 1083 Tests. Frontend: 1117 von 1117. Lint und Build sauber.
+- Erste Schritte über die 1.527 Wege (offline, also ohne Fahrtrichtung):
+  1.190 mit rechts/links. 337 ohne Richtung, darunter 117 kurze Wege direkt
+  zur Treppe und 43 „gegenüber“. Keine Himmelsrichtung.
 - `scripts/textpruefung.ts` über 1527 Wege an 382 Bahnhöfen:
   - Schritte je Weg im Mittel 4,6 → 3,1, höchstens 18 → 9.
   - 0 Regelverstöße.

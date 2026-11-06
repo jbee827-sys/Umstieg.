@@ -144,6 +144,11 @@ export interface StationGraph {
   ubahnSteige?: UbahnSteig[];
   /** Ausgaenge und benannte Laeden - Bezugspunkte fuer den Wegtext. */
   bezugspunkte?: Bezugspunkt[];
+  /**
+   * An welcher Seite der Bahnsteigachse jedes Gleis liegt (`gleisseite.ts`),
+   * Schluessel `bahnsteigId|gleis`. Fuer „rechts/links“ beim Aussteigen.
+   */
+  gleisSeiten?: Map<string, { seite: 'links' | 'rechts'; quelle: 'kante' | 'nachbarn'; nachbarn?: 'links' | 'rechts' }>;
 }
 
 // --- Route und Ausgabe ---

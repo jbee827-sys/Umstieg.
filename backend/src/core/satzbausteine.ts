@@ -13,7 +13,7 @@ import type { KantenLage, KantenTyp } from './typen.js';
 export const BAUSTEINE = {
   /** Der erste Schritt (Julian, 06.11.2026: „Vom Zug aus …“). */
   start: {
-    richtungBis: 'Vom Zug aus {richtung} bis {zurAnlage}',
+    richtungBis: 'Vom Zug aus {richtung}{vorbei} bis {zurAnlage}',
     bis: 'Vom Zug aus {zurAnlage}',
     /** Standardmodell: Die Lage ist geschaetzt, deshalb „ca.“. */
     meterBis: 'Vom Zug aus {meter} bis {zurAnlage}',
@@ -84,9 +84,16 @@ export function anlageName(typ: KantenTyp): string {
   return ANLAGE[typ];
 }
 
-/** „zur Treppe“, „zum Aufzug“. */
-export function zurAnlage(typ: KantenTyp): string {
-  return typ === 'aufzug' ? 'zum Aufzug' : `zur ${ANLAGE[typ]}`;
+const ORDNUNG_KLEIN = ['nächsten', 'zweiten', 'dritten', 'vierten'];
+
+/**
+ * „zur Treppe“, „zum Aufzug“ - mit `ordnung` gezaehlt: „zur nächsten Treppe“,
+ * „zum zweiten Aufzug“ (die Anlagen, an denen man vorbeigeht, zaehlen mit).
+ */
+export function zurAnlage(typ: KantenTyp, ordnung?: number): string {
+  const wort = ordnung !== undefined ? ORDNUNG_KLEIN[ordnung - 1] : undefined;
+  if (typ === 'aufzug') return wort ? `zum ${wort} Aufzug` : 'zum Aufzug';
+  return wort ? `zur ${wort} ${ANLAGE[typ]}` : `zur ${ANLAGE[typ]}`;
 }
 
 /** Wohin ein Wechsel fuehrt, aus der Lage der Etappe danach - nur, wenn sie belegt ist. */
