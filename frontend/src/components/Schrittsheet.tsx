@@ -13,6 +13,13 @@ interface SchrittsheetProps {
   onAngekommen: () => void
   /** Nebeninhalte, die unter der vollen Liste im Aufklapper stehen. */
   zusatz?: ReactNode
+  /**
+   * Der ganze Weg in einem Satz (Konzept 09). Steht ueber dem Schritt, damit
+   * der Einzelschritt einen Rahmen hat: wer weiss, dass es „runter in die
+   * Unterführung, dann hoch zu Gleis 3“ geht, versteht „Zweiter Aufgang
+   * rechts“ sofort (Julian, 06.11.2026: nur hier, nicht in der Übersicht).
+   */
+  kurzfassung?: string
 }
 
 function detail(schritt: Schritt): string | null {
@@ -37,6 +44,7 @@ export function Schrittsheet({
   onWeiter,
   onAngekommen,
   zusatz,
+  kurzfassung,
 }: SchrittsheetProps) {
   const aktuell = schritte[position]
   if (!aktuell) return null
@@ -44,6 +52,11 @@ export function Schrittsheet({
   const amZiel = position >= schritte.length - 1
   return (
     <section className="schrittsheet" aria-live="polite" data-tour="schritt">
+      {kurzfassung && (
+        <p className="schrittsheet-kurz">
+          <span className="schrittsheet-kurz-marke">Weg:</span> {kurzfassung}
+        </p>
+      )}
       <div className="schrittsheet-zaehler">
         Schritt {position + 1} von {schritte.length}
       </div>

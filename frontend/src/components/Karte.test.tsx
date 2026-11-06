@@ -40,6 +40,10 @@ vi.mock('maplibre-gl', () => {
     getSource() {
       return undefined
     }
+    getLayer() {
+      return {}
+    }
+    setPaintProperty() {}
     fitBounds(b: unknown, o: unknown) {
       this.grenzen.push(b)
       this.einpassungen.push(o)
@@ -57,6 +61,40 @@ vi.mock('maplibre-gl', () => {
 const linie = (lon: number) => ({
   type: 'FeatureCollection',
   features: [{ type: 'Feature', geometry: { type: 'LineString', coordinates: [[lon, 52.5], [lon + 0.001, 52.5]] }, properties: { route: true } }],
+})
+
+describe('Karte zum Text (Konzept 09)', () => {
+  const mitIndex = (ab: number, lons: number[]) => ({
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: lons.map((lon) => [lon, 52.5]) },
+        properties: { route: true, knotenAb: ab },
+      },
+    ],
+  })
+
+  it('hebt das Stueck des aktiven Schritts hervor - auch auf der zweiten Ebene', () => {
+    karten.length = 0
+    render(
+      <Karte
+        karte={{ '0': mitIndex(0, [13.1, 13.2, 13.3]), '-1': mitIndex(3, [13.4, 13.5, 13.6]) }}
+        aktiverSchritt={{ text: 'Durch die Unterführung', typ: 'eben', level: -1, knotenVon: 3, knotenBis: 4 }}
+        anfangsOffen
+      />,
+    )
+    const map = karten[0] as unknown as { laden: () => void; quellen: Record<string, unknown> }
+    map.laden()
+    // Bis zum 06.11.2026 schnitt die Karte hier [3, 4] aus den drei Punkten
+    // der Ebene -1 heraus - einen einzigen Punkt, und den falschen.
+    expect(map.quellen.schritt).toEqual({
+      type: 'FeatureCollection',
+      features: [
+        { type: 'Feature', geometry: { type: 'LineString', coordinates: [[13.4, 52.5], [13.5, 52.5]] }, properties: {} },
+      ],
+    })
+  })
 })
 
 describe('Karte (Browserpruefung 18.10.2026)', () => {

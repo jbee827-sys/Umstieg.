@@ -22,7 +22,7 @@ import { gehzeitSekunden } from '../src/core/gehzeit.js';
 import { klassifiziere } from '../src/core/klassifikation.js';
 import { berechneRoute, findeStartknoten } from '../src/core/routing.js';
 import { baueBahnhofSchema } from '../src/core/schema.js';
-import { generiereSchritte } from '../src/core/textgen.js';
+import { bahnsteigEndenAusSchema, generiereText } from '../src/core/textgen.js';
 import type { OverpassAntwort, RoutenVariante } from '../src/core/typen.js';
 import { entpackeEintrag } from '../src/osm/bestand.js';
 
@@ -51,6 +51,7 @@ export type Aufzeichnung =
       antwort: {
         stufe: number;
         schritte: unknown[];
+        kurzfassung?: string;
         gehzeitSek: number;
         karte: unknown;
         schema: unknown;
@@ -70,19 +71,33 @@ export function zeichneAuf(osm: OverpassAntwort, gleisAn: string, gleisAb: strin
       const start = findeStartknoten(graph, gleisAn, abschnitt);
       const hinweise = start.hinweis ? [start.hinweis] : [];
       const pfad = berechneRoute(graph, start.knoten.id, ziel.knoten.id, variante, 'normal');
-      daten[`${variante}|${abschnitt}`] = pfad
-        ? {
-            status: 200,
-            antwort: {
-              stufe: graph.stufe,
-              schritte: generiereSchritte(pfad, { ungefaehr: graph.stufe === 3, profil: 'normal' }),
-              gehzeitSek: gehzeitSekunden(pfad, 'normal'),
-              karte: graphZuGeoJSON(graph, pfad),
-              schema: baueBahnhofSchema(graph, pfad),
-              hinweise,
-            },
-          }
-        : { status: 404, antwort: { fehler: 'keine-route', detail: keineRouteText(variante), hinweise } };
+      if (!pfad) {
+        daten[`${variante}|${abschnitt}`] = {
+          status: 404,
+          antwort: { fehler: 'keine-route', detail: keineRouteText(variante), hinweise },
+        };
+        continue;
+      }
+      // Wie routes/api.ts: erst das Schema, dann der Text mit dessen Bahnsteignamen.
+      const schema = baueBahnhofSchema(graph, pfad);
+      const text = generiereText(pfad, {
+        ungefaehr: graph.stufe === 3,
+        profil: 'normal',
+        graph,
+        bahnsteigEnden: bahnsteigEndenAusSchema(schema),
+      });
+      daten[`${variante}|${abschnitt}`] = {
+        status: 200,
+        antwort: {
+          stufe: graph.stufe,
+          schritte: text.schritte,
+          ...(text.kurzfassung ? { kurzfassung: text.kurzfassung } : {}),
+          gehzeitSek: gehzeitSekunden(pfad, 'normal'),
+          karte: graphZuGeoJSON(graph, pfad),
+          schema,
+          hinweise,
+        },
+      };
     }
   }
   return daten;

@@ -65,9 +65,15 @@ export function wechselName(typ: KantenTyp): string {
   return WECHSEL_NAME[typ] ?? typ
 }
 
-/** "Treppe hinunter", "Aufzug hinauf" — die Anweisung, nicht nur das Ding. */
+/**
+ * "Treppe runter", "Aufzug hoch" — die Anweisung, nicht nur das Ding.
+ *
+ * Dieselben Worte wie die Schritttexte (Konzept 09: „runter/hoch“ statt
+ * „hinunter zur Ebene −1“). Bis zum 06.11.2026 sagte das Bild „hinunter“, der
+ * Text darunter „runter“ - zwei Sprachen fuer denselben Weg.
+ */
 export function wechselAnweisung(w: SchemaWechsel): string {
-  return `${wechselName(w.typ)} ${w.nachLevel < w.vonLevel ? 'hinunter' : 'hinauf'}`
+  return `${wechselName(w.typ)} ${w.nachLevel < w.vonLevel ? 'runter' : 'hoch'}`
 }
 
 /**

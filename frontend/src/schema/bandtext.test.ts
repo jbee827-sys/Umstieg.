@@ -45,6 +45,6 @@ function bandMitZugaengen(): Band {
 
 describe('fusstext', () => {
   it('nennt nur die genutzte Anlage, nicht die Zahl der Anlagen am Zugang', () => {
-    expect(fusstext(bandMitZugaengen())).toBe('Treppe hinunter bei 195 m')
+    expect(fusstext(bandMitZugaengen())).toBe('Treppe runter bei 195 m')
   })
 })

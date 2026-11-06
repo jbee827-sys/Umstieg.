@@ -171,6 +171,12 @@ export interface RouteErgebnis {
   karte?: Record<string, unknown>;
   schema?: BahnhofSchema;
   hinweise: string[];
+  /**
+   * Der ganze Weg in einem Satz (Konzept 09): „Treppe runter in die
+   * Unterführung, dann Treppe hoch zu Gleis 3.“ Fehlt bei älteren Antworten
+   * und im klassischen Textstil.
+   */
+  kurzfassung?: string;
 }
 
 export interface BahnhofTreffer {

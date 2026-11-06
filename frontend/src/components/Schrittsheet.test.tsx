@@ -39,6 +39,27 @@ describe('Schrittsheet', () => {
     expect(details?.hasAttribute('open')).toBe(false)
   })
 
+  it('zeigt die Kurzfassung des Wegs ueber dem Schritt (Konzept 09)', () => {
+    render(
+      <Schrittsheet
+        schritte={schritte}
+        position={0}
+        onZurueck={() => {}}
+        onWeiter={() => {}}
+        onAngekommen={() => {}}
+        kurzfassung="Treppe runter in die Unterführung, dann Treppe hoch zu Gleis 3."
+      />,
+    )
+    expect(screen.getByText('Treppe runter in die Unterführung, dann Treppe hoch zu Gleis 3.', { exact: false })).toBeTruthy()
+  })
+
+  it('ohne Kurzfassung (aeltere Antwort) bleibt das Sheet wie bisher', () => {
+    const { container } = render(
+      <Schrittsheet schritte={schritte} position={0} onZurueck={() => {}} onWeiter={() => {}} onAngekommen={() => {}} />,
+    )
+    expect(container.querySelector('.schrittsheet-kurz')).toBeNull()
+  })
+
   it('nennt Position und Gesamtzahl', () => {
     zeige(1)
     expect(screen.getByText(/Schritt 2 von 3/)).toBeDefined()

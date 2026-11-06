@@ -93,6 +93,7 @@ export function Navigation({
 
       <Schrittsheet
         schritte={route.schritte}
+        {...(route.kurzfassung ? { kurzfassung: route.kurzfassung } : {})}
         position={position}
         onZurueck={onZurueck}
         onWeiter={onWeiter}

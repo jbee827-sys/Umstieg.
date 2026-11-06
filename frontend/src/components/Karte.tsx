@@ -13,6 +13,7 @@ setWorkerUrl(maplibreWorkerUrl)
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { Schritt } from '../api/typen'
 import { KARTENSTIL } from './kartenstil'
+import { schrittStueck } from './kartenstueck'
 import { genauigkeitsPolygon } from '../standort/distanz'
 import { GENAUIGKEIT_MAX_M } from '../standort/schwellen'
 import type { Standort } from '../standort/typen'
@@ -88,6 +89,22 @@ export function Karte({ karte, standort, aktiverSchritt, anfangsOffen = false }:
 
   const daten = (e: string): FeatureCollection => (karte[e] as FeatureCollection) ?? LEER
 
+  // Das Stueck des aktiven Schritts, je Ebene. Auf der gezeigten Ebene wird
+  // es hervorgehoben, der Rest der Route tritt zurueck - damit die Karte
+  // dasselbe zeigt wie der Satz darunter (Konzept 09).
+  const stueck = schrittStueck(karte, aktiverSchritt?.knotenVon, aktiverSchritt?.knotenBis)
+  const stueckDaten = (e: string): FeatureCollection => ({
+    type: 'FeatureCollection',
+    features: (stueck ?? [])
+      .filter((t) => t.ebene === e && t.koordinaten.length >= 2)
+      .map((t) => ({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: t.koordinaten },
+        properties: {},
+      })),
+  })
+  const routenDeckkraft = (e: string): number => (stueckDaten(e).features.length > 0 ? 0.35 : 0.9)
+
   // GPS kennt kein Stockwerk – der Punkt wird deshalb KEINER Ebene zugeordnet
   // und ist auf allen Ebenen sichtbar. Zu ungenaue Fixes werden verworfen:
   // ein Punkt 200 m daneben ist in einem 400-m-Bahnhof aktiv schaedlich.
@@ -149,7 +166,15 @@ export function Karte({ karte, standort, aktiverSchritt, anfangsOffen = false }:
         source: 'route',
         filter: ['==', ['geometry-type'], 'LineString'],
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#ec3013', 'line-width': 6, 'line-opacity': 0.9 },
+        paint: { 'line-color': '#ec3013', 'line-width': 6, 'line-opacity': routenDeckkraft(ebeneRef.current) },
+      })
+      map.addSource('schritt', { type: 'geojson', data: stueckDaten(ebeneRef.current) })
+      map.addLayer({
+        id: 'schritt-linie',
+        type: 'line',
+        source: 'schritt',
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': '#ec3013', 'line-width': 8, 'line-opacity': 1 },
       })
       map.addLayer({
         id: 'route-punkte',
@@ -211,6 +236,14 @@ export function Karte({ karte, standort, aktiverSchritt, anfangsOffen = false }:
   }, [ebene])
 
   useEffect(() => {
+    const map = mapRef.current
+    if (!map || !geladen.current) return
+    ;(map.getSource('schritt') as GeoJSONSource | undefined)?.setData(stueckDaten(ebene))
+    if (map.getLayer('route-linie')) map.setPaintProperty('route-linie', 'line-opacity', routenDeckkraft(ebene))
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- nur auf Schritt- und Ebenenwechsel reagieren
+  }, [aktiverSchritt, ebene])
+
+  useEffect(() => {
     const quelle = mapRef.current?.getSource('position') as GeoJSONSource | undefined
     quelle?.setData(positionsDaten())
     // eslint-disable-next-line react-hooks/exhaustive-deps -- nur auf Standortwechsel reagieren
@@ -236,10 +269,13 @@ export function Karte({ karte, standort, aktiverSchritt, anfangsOffen = false }:
     const von = aktiverSchritt?.knotenVon
     const bis = aktiverSchritt?.knotenBis
     if (!map || !geladen.current || von === undefined || bis === undefined) return
-    const linie = alleKoordinaten(daten(ebene))
-    const stueck = linie.slice(von, bis + 1)
-    if (stueck.length === 0) return
-    const grenzen = stueck.reduce((b, p) => b.extend(p), new LngLatBounds(stueck[0], stueck[0]))
+    // Mit Pfadindizes: das Stueck des Schritts ueber alle Ebenen, die er
+    // beruehrt. Ohne (aeltere Antwort): wie bisher aus der gezeigten Ebene.
+    const punkte = stueck
+      ? stueck.flatMap((t) => t.koordinaten)
+      : alleKoordinaten(daten(ebene)).slice(von, bis + 1)
+    if (punkte.length === 0) return
+    const grenzen = punkte.reduce((b, p) => b.extend(p), new LngLatBounds(punkte[0], punkte[0]))
     map.fitBounds(grenzen, { padding: 64, maxZoom: MAX_ZOOM })
     // eslint-disable-next-line react-hooks/exhaustive-deps -- nur auf Schrittwechsel reagieren
   }, [aktiverSchritt, ebene])

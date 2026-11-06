@@ -28,15 +28,15 @@ describe('Ebenenschema mit echter Geometrie', () => {
     zeige(MITTE, 0)
     const bild = screen.getByRole('img')
     expect(bild.getAttribute('aria-label')).toBe(
-      'Weg durch Leipzig Hbf: EBENE +1 · Ankunft (hier), Treppe hinunter, ' +
-        'EBENE 0 · Übergang, Treppe hinauf, EBENE +1 · Abfahrt',
+      'Weg durch Leipzig Hbf: EBENE +1 · Ankunft (hier), Treppe runter, ' +
+        'EBENE 0 · Übergang, Treppe hoch, EBENE +1 · Abfahrt',
     )
   })
 
   it('nennt am Ankunftsbahnsteig nur den genutzten Abgang', () => {
     const { container } = zeige(MITTE, 0)
     expect(container.querySelector('.schema-bandfuss')?.textContent).toBe(
-      'Treppe hinunter bei 32 m',
+      'Treppe runter bei 32 m',
     )
   })
 

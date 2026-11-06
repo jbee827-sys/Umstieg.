@@ -1567,3 +1567,28 @@ describe('Merkmale fuer den Wegtext (Konzept 09, 4.2)', () => {
     );
   });
 });
+
+describe('pfadZuGeoJSON: Pfadindex je Routenlinie (Konzept 09, Karte zum Text)', () => {
+  it('jede Linie traegt den Pfadindex ihres ersten Punkts, auch auf der zweiten Ebene', () => {
+    const k = (id: string, lat: number, level: number) => ({ id, lat, lon: 13, level });
+    const knoten = [k('a', 52, 0), k('b', 52.0001, 0), k('c', 52.0001, -1), k('d', 52.0002, -1), k('e', 52.0003, -1), k('f', 52.0003, 0), k('g', 52.0004, 0)];
+    const kanten = knoten.slice(1).map((n, i) => ({
+      von: knoten[i].id,
+      nach: n.id,
+      laengeM: 10,
+      deltaLevel: n.level - knoten[i].level,
+      typ: (n.level === knoten[i].level ? 'eben' : 'treppe') as GraphKante['typ'],
+      barrierefrei: true,
+    }));
+    const karte = pfadZuGeoJSON({ knoten, kanten, laengeM: 60 });
+    const linien = Object.values(karte)
+      .flatMap((s) => s.features)
+      .filter((f) => f.geometry.type === 'LineString')
+      .map((f) => [f.properties.knotenAb, (f.geometry.coordinates as unknown[]).length]);
+    expect(linien.sort()).toEqual([
+      [0, 2],
+      [2, 3],
+      [5, 2],
+    ]);
+  });
+});

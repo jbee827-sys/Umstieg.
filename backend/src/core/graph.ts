@@ -1941,8 +1941,13 @@ export function pfadZuGeoJSON(
     return proEbene.get(level)!;
   };
 
-  // Routenlinie in Segmente gleicher Ebene zerlegen
+  // Routenlinie in Segmente gleicher Ebene zerlegen. `knotenAb` ist der
+  // Pfadindex des ersten Punkts: Daraus schneidet die Karte das Stueck eines
+  // Schritts (`knotenVon`..`knotenBis`) heraus, auch auf der zweiten Ebene -
+  // bis zum 06.11.2026 zaehlte sie dort ab dem Anfang der Ebene und zeigte ein
+  // anderes Stueck als der Text.
   let segment: GraphKnoten[] = [pfad.knoten[0]];
+  let segmentAb = 0;
   const schliesseSegment = (): void => {
     if (segment.length >= 2) {
       featuresFuer(segment[0].level).push({
@@ -1951,7 +1956,7 @@ export function pfadZuGeoJSON(
           type: 'LineString',
           coordinates: segment.map((k) => [k.lon, k.lat]),
         },
-        properties: { route: true, level: segment[0].level },
+        properties: { route: true, level: segment[0].level, knotenAb: segmentAb },
       });
     }
   };
@@ -1962,6 +1967,7 @@ export function pfadZuGeoJSON(
     } else {
       schliesseSegment();
       segment = [knoten];
+      segmentAb = i;
     }
   }
   schliesseSegment();
