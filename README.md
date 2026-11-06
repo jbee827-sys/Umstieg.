@@ -19,7 +19,73 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 04.11.2026)
+## Hier weitermachen (Stand 06.11.2026)
+
+### Stand 06.11.2026: Textnavigation nach Bezugspunkten, Zweig `feat/textnavigation`, nicht ausgeliefert
+
+Konzept `Umstieg_Konzepte/09-konzept-textnavigation.md`. Abgezweigt von
+`68a28fe` (= `origin/main`). `main` und Fly sind unverändert.
+
+**Was sich ändert:**
+
+- **Text** (`core/wegtext.ts`, `etappen.ts`, `bezugspunkte.ts`,
+  `satzbausteine.ts`; Segmentierung jetzt in `segmente.ts`):
+  - Etappen statt Meter und Winkel: „Vom Zug aus Richtung Ostende bis zur
+    Treppe“ · „Treppe runter in die Unterführung“ · „Zweiter Aufgang rechts,
+    Treppe hoch zu Gleis 5“.
+  - Erster Schritt „Vom Zug aus …“, im Haltestellenpfad „Vom Ausstieg aus …“
+    (Julian, 06.11.).
+  - Bahnsteigrichtung mit den Wörtern des Schemas („Zugende“, „Nordende“).
+    Abschnittsbuchstaben A–G kennt keine Quelle, deshalb nicht „Abschnitt C“.
+  - „Unterführung“ nur bei `tunnel=yes`. Kein „Ebene“, keine Ebenenzahl,
+    kein „ebenerdig“. Links/rechts nur an Abzweigen. Läden nur mit
+    eindeutigem Namen und höchstens 10 m vom Weg.
+  - Geratene Nähte (Rampe 0 m) heißen „weiter nach unten/oben“.
+  - Stufe 3 behält „ca.“ und sagt nie „gegenüber“.
+- **Kurzfassung** (`RouteErgebnis.kurzfassung`), nur im Schrittsheet
+  (Julian, 06.11.): „Treppe runter in die Unterführung, dann zweiter Aufgang
+  rechts hoch zu Gleis 5.“
+- **Schalter** `TEXT_STIL=bezug|klassisch`, Vorgabe `bezug`. Der alte Text
+  bleibt abrufbar.
+- **Karte zum Text:** Die Routenlinien tragen ihren Pfadindex (`knotenAb`).
+  Bisher schnitt die Karte das Stück eines Schritts ab dem Anfang der
+  gezeigten Ebene aus. Ab der zweiten Ebene zeigte sie dadurch ein anderes
+  Stück als der Text. Jetzt ist das Stück des Schritts hervorgehoben.
+- **Schema** sagt „runter/hoch“ wie der Text.
+- **Overpass:** Ausgänge und benannte Läden (auch Apotheke, Reisezentrum,
+  Lounge) sind gebaut, aber über `ABFRAGE_MIT_BEZUGSPUNKTEN = false`
+  abgeschaltet. Eine neue Abfrage macht den ganzen Startbestand veraltet.
+
+**Geprüft:**
+
+- Backend: 1071 von 1071 Tests. Frontend: 1117 von 1117. Lint und Build sauber.
+- `scripts/textpruefung.ts` über 1527 Wege an 382 Bahnhöfen:
+  - Schritte je Weg im Mittel 4,6 → 3,1, höchstens 18 → 9.
+  - 0 Regelverstöße.
+  - 3 Wege mit mehr als 6 Schritten (Wiesloch-Walldorf 2, Chemnitz 1).
+    Ursache sind Zwischenebenen, die das Schema als eigene Bänder zeigt.
+- Musterwege mit Soll-Text: `test/textgen-muster.test.ts`.
+- Nicht geprüft: Sichtprüfung im Browser. Die Chrome-Erweiterung fand ihre
+  Tab-Gruppe nicht.
+
+**Offen für Julian:**
+
+1. **Freigabe** des Wortlauts. Die Stichprobe liegt in
+   `osm-ablage/laeufe/textpruefung-2026-11-06-stichprobe.txt`.
+2. **Vorgabe des Schalters:** sofort `bezug` für alle, oder zuerst nur zum
+   Vergleich?
+3. **Paket 2 einschalten:** `ABFRAGE_MIT_BEZUGSPUNKTEN = true` setzen, an zehn
+   großen Bahnhöfen die Größe messen (Rückfrage bei mehr als 30 %), dann
+   `scripts/bestand-fuellen.ts`, `npm run bahnhofsseiten` und
+   `npm run vorfuehrdaten` laufen lassen.
+4. G1-Restfälle: Der Text sagt nichts Falsches über Ebenen, behebt aber die
+   Ursache im Graphen nicht.
+
+```bash
+cd backend
+npx tsx scripts/textpruefung.ts [bahnhoefe=382] [paare=6] [stichprobe=50]   # Regeln + Vorher/Nachher
+TEXT_STIL=klassisch npm run dev                                             # alter Text zum Vergleich
+```
 
 ### Stand 04.11.2026: Reddit-Rückmeldungen umgesetzt, Zweig `fix/offene-punkte`, nicht ausgeliefert
 
