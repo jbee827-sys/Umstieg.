@@ -112,8 +112,7 @@ export const SCHRITTE: TourSchritt[] = [
     bildschirm: 'weg',
     ziel: 'schritt',
     titel: 'Schritt für Schritt',
-    // Seit dem 06.11.2026 (Konzept 09) steht ueber dem Schritt der ganze Weg in einem Satz.
-    text: 'Oben der ganze Weg in einem Satz, darunter, was als Nächstes zu tun ist. Mit <strong>Weiter</strong> gehst du zum nächsten Schritt, unter „Alle Schritte“ siehst du jeden einzeln.',
+    text: 'Hier steht, was als Nächstes zu tun ist. Mit <strong>Weiter</strong> gehst du zum nächsten Schritt, unter „Alle Schritte“ siehst du den ganzen Weg.',
   },
   {
     bildschirm: 'weg',

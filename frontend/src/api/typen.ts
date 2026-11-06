@@ -177,9 +177,9 @@ export interface RouteErgebnis {
   schema?: BahnhofSchema;
   hinweise: string[];
   /**
-   * Der ganze Weg in einem Satz (Konzept 09): „Treppe runter in die
-   * Unterführung, dann Treppe hoch zu Gleis 3.“ Fehlt bei älteren Antworten
-   * und im klassischen Textstil.
+   * Der ganze Weg in einem Satz (Konzept 09). Wird NICHT angezeigt (Julian,
+   * 06.11.2026): Die Zeile über dem Schritt nahm dem Ebenenschema die halbe
+   * Höhe, und die Schritte reichen.
    */
   kurzfassung?: string;
 }

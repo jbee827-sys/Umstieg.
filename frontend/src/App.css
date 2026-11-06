@@ -1757,15 +1757,6 @@
   flex: none;
   margin-top: 0;
 }
-.schrittsheet-kurz {
-  font-size: var(--schrift-label);
-  color: var(--color-neutral-700);
-  margin: 0 0 8px;
-}
-.schrittsheet-kurz-marke {
-  font-weight: 700;
-  color: var(--color-text);
-}
 .schrittsheet-zaehler {
   font-size: var(--schrift-label);
   /* Rotschrift - Signalrot ist als Schrift unter 22 px zu schwach (4,2:1). */
