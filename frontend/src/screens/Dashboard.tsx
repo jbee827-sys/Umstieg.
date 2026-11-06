@@ -3,7 +3,13 @@ import { Zugbild } from '../components/Zugbild'
 import type { EingabeWerte } from '../components/Eingabe'
 import type { Ampelfarbe, Bahnsteigabschnitt, RouteErgebnis, RoutenVariante } from '../api/typen'
 import { ampelFarbe } from '../navigation/ampel'
-import { ABSCHNITTE, ankunftsRichtung, ankunftsZugspitze, standortNamen } from '../api/standorte'
+import {
+  ankunftsAusstiegLinks,
+  ankunftsRichtung,
+  ankunftsZugspitze,
+  reihenfolgeVon,
+  standortNamen,
+} from '../api/standorte'
 import { ebenenZahl, gleisEbenen } from '../schema/bandmodell'
 import { linienName, ortsangabe } from '../ort/anzeige'
 
@@ -121,8 +127,12 @@ export function Dashboard({
   const farbe = farbeVon(restSek, route.gehzeitSek, abgefahren, unerreichbar)
   // „Zuganfang · Zugmitte · Zugende", wenn die Fahrtrichtung sicher ist; sonst
   // „Nordende · Mitte · Südende" - oder, ohne gemessene Achse, Anfang und Ende.
+  // Seit dem 06.11.2026 ohne Himmelsrichtung, wo es geht: „Links · Mitte ·
+  // Rechts" mit dem Zug im Ruecken, und die Knoepfe stehen dann auch so.
   const zugspitze = ankunftsZugspitze(route.schema)
-  const standortNamenJetzt = standortNamen(ankunftsRichtung(route.schema), zugspitze)
+  const ausstiegLinks = ankunftsAusstiegLinks(route.schema)
+  const reihenfolge = reihenfolgeVon(ausstiegLinks)
+  const standortNamenJetzt = standortNamen(ankunftsRichtung(route.schema), zugspitze, ausstiegLinks)
   // Im Standardmodell `undefined` - dort waeren die Ebenen geraten.
   const ebenen = gleisEbenen(route)
   const halt = pfad === 'haltestelle' ? werte.haltestellen : undefined
@@ -206,13 +216,13 @@ export function Dashboard({
               * Bild: Gewaehlt wird am Streifen, der Zug hebt den passenden
               * Zugteil hervor und blendet die anderen ab.
               */}
-            <Zugbild gewaehlt={standorte.gewaehlt} zugspitze={zugspitze} />
+            <Zugbild gewaehlt={standorte.gewaehlt} zugspitze={zugspitze} reihenfolge={reihenfolge} />
             <div
               className="standortwahl bahnsteigstreifen"
               role="group"
               aria-labelledby="standortwahl-label"
             >
-              {ABSCHNITTE.map((a) => {
+              {reihenfolge.map((a) => {
                 const gewaehlt = standorte.gewaehlt === a
                 const laedtDieser = standortLaedt === a
                 return (
@@ -246,7 +256,12 @@ export function Dashboard({
                 * verschwinden und an der neuen aufzutauchen (DESIGN.md 6,
                 * „Auswahl").
                 */}
-              <span className="standortpunkt" data-stelle={standorte.gewaehlt} aria-hidden="true" />
+              <span
+                className="standortpunkt"
+                data-stelle={standorte.gewaehlt}
+                data-platz={reihenfolge.indexOf(standorte.gewaehlt)}
+                aria-hidden="true"
+              />
             </div>
             {/*
               * Nach dem Zugteil fragen kann nur, wer die Fahrtrichtung kennt -
@@ -255,7 +270,9 @@ export function Dashboard({
             <p className="standortwahl-hinweis">
               {zugspitze
                 ? 'Wähle den Zugteil, in dem du sitzt. Ohne Wagenreihung weiß die App sonst nicht, wo du aussteigst.'
-                : 'Der Punkt am Bahnsteig entscheidet den Weg – ohne Wagenreihung weiß die App sonst nicht, wo du aussteigst.'}
+                : ausstiegLinks
+                  ? 'Links und rechts gelten mit dem Zug im Rücken. Der Punkt am Bahnsteig entscheidet den Weg.'
+                  : 'Der Punkt am Bahnsteig entscheidet den Weg – ohne Wagenreihung weiß die App sonst nicht, wo du aussteigst.'}
             </p>
           </fieldset>
         )}

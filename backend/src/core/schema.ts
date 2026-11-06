@@ -1,5 +1,6 @@
 import { haversineM } from './graph.js';
 import { lageZurLinie, querLagen, type Punkt } from './mittellinie.js';
+import { aussteigeSeite, gleisSchluessel } from './gleisseite.js';
 import { bestimmeZugspitze, himmelsrichtungen, mittlereAchse, peilungGrad, type Zuglauf } from './richtung.js';
 import type {
   BahnhofSchema,
@@ -892,6 +893,16 @@ export function baueBahnhofSchema(
         rolle === 'start' && hatAchse && graph.stufe !== 3
           ? bestimmeZugspitze(b.anfang!, b.ende!, optionen)
           : undefined;
+      // Welches Ende beim Aussteigen links liegt - nur mit belegter Gleisseite.
+      const gleisSeite =
+        rolle === 'start' && hatAchse && graph.stufe !== 3 && start?.gleis
+          ? graph.gleisSeiten?.get(gleisSchluessel(b.bahnsteigId, start.gleis))
+          : undefined;
+      const ausstiegLinks = gleisSeite
+        ? aussteigeSeite(gleisSeite.seite, true) === 'links'
+          ? ('ende' as const)
+          : ('anfang' as const)
+        : undefined;
       return {
         bahnsteigId: b.bahnsteigId,
         gleise: b.gleise,
@@ -906,6 +917,7 @@ export function baueBahnhofSchema(
           ? { himmelsrichtung: himmelsrichtungen(b.anfang!, b.ende!) }
           : {}),
         ...(zugspitze ? { zugspitze } : {}),
+        ...(ausstiegLinks ? { ausstiegLinks } : {}),
         ...(zugaenge ? { zugaenge } : {}),
       };
     });

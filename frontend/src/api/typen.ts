@@ -66,6 +66,11 @@ export interface SchemaBahnsteig {
   himmelsrichtung?: { von: Himmelsrichtung; bis: Himmelsrichtung };
   /** Nur am Ankunftsbahnsteig: an welchem Ende die Zugspitze steht (fehlt = unsicher). */
   zugspitze?: 'anfang' | 'ende';
+  /**
+   * Welches Ende links liegt, wenn man mit dem Zug im Rücken aussteigt.
+   * Nur am Ankunftsbahnsteig und nur, wenn die Gleisseite bekannt ist.
+   */
+  ausstiegLinks?: 'anfang' | 'ende';
   von?: SchemaPunkt;
   bis?: SchemaPunkt;
   /** Nur am Ankunfts- und Abfahrtsbahnsteig. */

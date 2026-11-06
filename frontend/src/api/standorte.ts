@@ -50,6 +50,7 @@ const ENDE_NACH_RICHTUNG: Record<Himmelsrichtung, string> = {
 export function standortNamen(
   richtung?: SchemaBahnsteig['himmelsrichtung'],
   zugspitze?: SchemaBahnsteig['zugspitze'],
+  ausstiegLinks?: SchemaBahnsteig['ausstiegLinks'],
 ): Record<Bahnsteigabschnitt, string> {
   if (zugspitze) {
     return {
@@ -58,6 +59,17 @@ export function standortNamen(
       ende: zugspitze === 'ende' ? 'Zuganfang' : 'Zugende',
     }
   }
+  // Seit dem 06.11.2026 vor der Himmelsrichtung: Wo Norden ist, weiss in der
+  // Halle niemand (Julian). Links und rechts gelten mit dem Zug im Ruecken -
+  // dieselben Woerter wie der erste Schritt („Vom Zug aus nach rechts …“).
+  if (ausstiegLinks) {
+    return {
+      anfang: ausstiegLinks === 'anfang' ? 'Links' : 'Rechts',
+      mitte: ABSCHNITT_NAMEN.mitte,
+      ende: ausstiegLinks === 'ende' ? 'Links' : 'Rechts',
+    }
+  }
+  // Letzter Ausweg, wenn weder Fahrtrichtung noch Gleisseite bekannt sind.
   if (!richtung) return ABSCHNITT_NAMEN
   return {
     anfang: ENDE_NACH_RICHTUNG[richtung.von],
@@ -79,6 +91,24 @@ export function ankunftsRichtung(
   schema: BahnhofSchema | undefined,
 ): SchemaBahnsteig['himmelsrichtung'] {
   return ankunftsBahnsteig(schema)?.himmelsrichtung
+}
+
+/** Welches Ende beim Aussteigen links liegt, wenn die Gleisseite bekannt ist. */
+export function ankunftsAusstiegLinks(
+  schema: BahnhofSchema | undefined,
+): SchemaBahnsteig['ausstiegLinks'] {
+  return ankunftsBahnsteig(schema)?.ausstiegLinks
+}
+
+/**
+ * Die drei Stellen von links nach rechts, wie man sie beim Aussteigen sieht.
+ *
+ * Ohne bekannte Gleisseite bleibt es beim Bahnsteiganfang links. Mit ihr
+ * steht das Ende links, das beim Aussteigen links liegt - Knoepfe, Zugbild
+ * und Schema folgen derselben Reihenfolge, damit „Links“ auch links steht.
+ */
+export function reihenfolgeVon(ausstiegLinks: SchemaBahnsteig['ausstiegLinks']): Bahnsteigabschnitt[] {
+  return ausstiegLinks === 'ende' ? ['ende', 'mitte', 'anfang'] : ABSCHNITTE
 }
 
 /** An welchem Ende des Ankunftsbahnsteigs die Zugspitze steht, wenn es sicher ist. */

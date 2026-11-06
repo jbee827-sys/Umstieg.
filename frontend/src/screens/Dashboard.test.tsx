@@ -294,7 +294,7 @@ describe('Dashboard: Standortwahl am Ankunftsgleis', () => {
    * des Bahnsteigs - nur die Namen und die Spitze im Bild folgen der
    * Fahrtrichtung.
    */
-  function mitZugspitze(zugspitze?: 'anfang' | 'ende'): RouteErgebnis {
+  function mitZugspitze(zugspitze?: 'anfang' | 'ende', ausstiegLinks?: 'anfang' | 'ende'): RouteErgebnis {
     return {
       ...route,
       schema: {
@@ -309,6 +309,7 @@ describe('Dashboard: Standortwahl am Ankunftsgleis', () => {
                 rolle: 'start',
                 himmelsrichtung: { von: 'W', bis: 'O' },
                 ...(zugspitze ? { zugspitze } : {}),
+                ...(ausstiegLinks ? { ausstiegLinks } : {}),
               },
             ],
           },
@@ -320,6 +321,24 @@ describe('Dashboard: Standortwahl am Ankunftsgleis', () => {
       },
     } as unknown as RouteErgebnis
   }
+
+  it('ohne Fahrtrichtung, mit Gleisseite: „Links · Mitte · Rechts“, und Links steht links (06.11.2026)', () => {
+    // Beim Aussteigen liegt das Ende links - also steht es auch links.
+    zeige({ route: mitZugspitze(undefined, 'ende'), standorte: LEIPZIG })
+    const gruppe = screen.getByRole('group', { name: /Wo befindest du dich/ })
+    const knoepfe = within(gruppe).getAllByRole('button')
+    expect(knoepfe.map((b) => b.querySelector('.standortwahl-name')!.textContent)).toEqual(['Links', 'Mitte', 'Rechts'])
+    // Der Knopf „Links“ waehlt das Bahnsteigende, der Punkt steht beim gewaehlten Platz.
+    expect(screen.getByText(/mit dem Zug im Rücken/)).toBeDefined()
+    expect(document.querySelectorAll('.zugbild-wagen')[0].getAttribute('data-stelle')).toBe('ende')
+    const punkt = document.querySelector('.standortpunkt')!
+    expect(punkt.getAttribute('data-platz')).toBe(String(['ende', 'mitte', 'anfang'].indexOf(punkt.getAttribute('data-stelle')!)))
+  })
+
+  it('keine Himmelsrichtung, wenn die Gleisseite bekannt ist', () => {
+    zeige({ route: mitZugspitze(undefined, 'anfang'), standorte: LEIPZIG })
+    expect(screen.queryByText(/Westende|Ostende/)).toBeNull()
+  })
 
   it('nennt Zuganfang, Zugmitte und Zugende, wenn die Fahrtrichtung bekannt ist', () => {
     zeige({ route: mitZugspitze('ende'), standorte: LEIPZIG })

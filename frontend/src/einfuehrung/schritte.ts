@@ -83,8 +83,9 @@ export const SCHRITTE: TourSchritt[] = [
     // 04.11.2026 mit dem Aufzug als Schacht): Westende 453 s, Mitte 237 s -
     // aufgerundet 8 und 4 Minuten. Bis zum 03.11. waren es 500/305 s über
     // vier Rolltreppen (9 statt 6). schritte.test.ts prüft den Satz gegen die
-    // Aufzeichnung.
-    text: 'Wähle, wo du am Bahnsteig stehst. Weg und Gehzeit passen sich an – vom Westende sind es hier 8 statt 4 Minuten.',
+    // Aufzeichnung. Seit dem 06.11.2026 heißt das Westende dort „Rechts“ -
+    // links und rechts mit dem Zug im Rücken, statt Himmelsrichtungen.
+    text: 'Wähle, wo du am Bahnsteig stehst. Weg und Gehzeit passen sich an – ganz rechts sind es hier 8 statt 4 Minuten.',
   },
   {
     bildschirm: 'uebersicht',

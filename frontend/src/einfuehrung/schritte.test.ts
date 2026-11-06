@@ -25,10 +25,15 @@ function text(titel: string): string {
  * lassen.
  */
 describe('Tourtexte passen zur Aufzeichnung', () => {
-  it('Standort: Minuten vom Anfang (Westende) und von der Mitte, aufgerundet wie die App', () => {
+  it('Standort: Minuten vom Anfang („Rechts“) und von der Mitte, aufgerundet wie die App', () => {
     const vomAnfang = Math.ceil((antwort('schnellste|anfang').gehzeitSek as number) / 60)
     const vonDerMitte = Math.ceil((antwort('schnellste|mitte').gehzeitSek as number) / 60)
-    expect(text('Wo steigst du aus?')).toContain(`vom Westende sind es hier ${vomAnfang} statt ${vonDerMitte} Minuten`)
+    // Der Knopf des Anfangs heisst „Rechts“, wenn das Ende beim Aussteigen links liegt.
+    const start = (
+      antwort('schnellste|mitte').schema as { ebenen: { bahnsteige: { rolle?: string; ausstiegLinks?: string }[] }[] }
+    ).ebenen[0].bahnsteige.find((b) => b.rolle === 'start')
+    expect(start?.ausstiegLinks).toBe('ende')
+    expect(text('Wo steigst du aus?')).toContain(`ganz rechts sind es hier ${vomAnfang} statt ${vonDerMitte} Minuten`)
   })
 
   it('Ebenenschema: nennt die Anlage, die die schnellste Route ab der Mitte zuerst nimmt', () => {

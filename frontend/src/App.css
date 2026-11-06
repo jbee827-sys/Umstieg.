@@ -2366,10 +2366,10 @@
     0 0 0 4px var(--color-bg),
     0 0 0 7px var(--color-text);
 }
-.standortpunkt[data-stelle='mitte'] {
+.standortpunkt[data-platz='1'] {
   transform: translateX(100%);
 }
-.standortpunkt[data-stelle='ende'] {
+.standortpunkt[data-platz='2'] {
   transform: translateX(200%);
 }
 .standortwahl-name {

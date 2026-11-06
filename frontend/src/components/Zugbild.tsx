@@ -7,6 +7,8 @@ interface ZugbildProps {
   gewaehlt: Bahnsteigabschnitt
   /** An welchem Bahnsteigende die Zugspitze steht - fehlt, wenn es nicht sicher ist. */
   zugspitze?: SchemaBahnsteig['zugspitze']
+  /** Die Stellen von links nach rechts (`reihenfolgeVon`), wie die Knoepfe. */
+  reihenfolge?: Bahnsteigabschnitt[]
 }
 
 /** Was ein Endwagen ist: vorn mit Spitzenlicht, hinten mit Schlusslicht. */
@@ -43,14 +45,14 @@ const LICHT_Y = 29
  * blass. Ohne Fahrtrichtung bleiben beide Enden bei der kleinen weissen
  * Lampe des Entwurfs: Ein Zug ohne Richtung behauptet keine.
  */
-export function Zugbild({ gewaehlt, zugspitze }: ZugbildProps) {
+export function Zugbild({ gewaehlt, zugspitze, reihenfolge = ABSCHNITTE }: ZugbildProps) {
   const rolleVon = (a: Bahnsteigabschnitt): Endrolle | undefined => {
     if (!zugspitze || a === 'mitte') return undefined
     return a === zugspitze ? 'spitze' : 'schluss'
   }
   return (
     <div className="zugbild" aria-hidden="true">
-      {ABSCHNITTE.map((a, i) => {
+      {reihenfolge.map((a, i) => {
         const rolle = rolleVon(a)
         return (
           <div
@@ -62,7 +64,7 @@ export function Zugbild({ gewaehlt, zugspitze }: ZugbildProps) {
             {a === 'mitte' ? (
               <Mittelwagen />
             ) : (
-              <Endwagen gespiegelt={i === ABSCHNITTE.length - 1} rolle={rolle} />
+              <Endwagen gespiegelt={i === reihenfolge.length - 1} rolle={rolle} />
             )}
           </div>
         )

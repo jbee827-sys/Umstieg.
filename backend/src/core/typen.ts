@@ -280,6 +280,13 @@ export interface SchemaBahnsteig {
    * Himmelsrichtung.
    */
   zugspitze?: 'anfang' | 'ende';
+  /**
+   * Welches Ende links liegt, wenn man mit dem Zug im Ruecken aussteigt
+   * (06.11.2026). Nur am Ankunftsbahnsteig und nur, wenn bekannt ist, an
+   * welcher Kante das Gleis liegt (`gleisseite.ts`). Danach heissen die Knoepfe
+   * „Links · Mitte · Rechts“ - Himmelsrichtungen kennt in der Halle niemand.
+   */
+  ausstiegLinks?: 'anfang' | 'ende';
   /** Bahnsteigenden im Bezugsrahmen - fehlen ohne Achse (Stufe 3). */
   von?: SchemaPunkt;
   bis?: SchemaPunkt;

@@ -490,3 +490,29 @@ describe('Gleisebene folgt der Lage aus dem Backend', () => {
     expect(balkenVon(bild, '12').symbole.length).toBe(0)
   })
 })
+
+describe('Bildlage: links ist links beim Aussteigen (06.11.2026)', () => {
+  const ebene = (ausstiegLinks?: 'anfang' | 'ende'): SchemaEbene => ({
+    level: 0,
+    art: 'gleise',
+    bahnsteige: [
+      {
+        bahnsteigId: 'w1',
+        gleise: ['1'],
+        rolle: 'start',
+        von: { x: -100, y: 0 },
+        bis: { x: 100, y: 0 },
+        ...(ausstiegLinks ? { ausstiegLinks } : {}),
+      },
+    ],
+  })
+
+  it('ohne Gleisseite steht der Anfang links', () => {
+    expect(bildlageFuer([ebene()])).toEqual({ gedreht180: false })
+  })
+
+  it('liegt beim Aussteigen das Ende links, wird das Bild gedreht', () => {
+    expect(bildlageFuer([ebene('ende')])).toEqual({ gedreht180: true })
+    expect(bildlageFuer([ebene('anfang')])).toEqual({ gedreht180: false })
+  })
+})

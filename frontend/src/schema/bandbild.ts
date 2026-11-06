@@ -204,7 +204,12 @@ const BOGEN = Math.PI / 180
 export function bildlageFuer(ebenen: SchemaEbene[]): Bildlage {
   for (const ebene of ebenen) {
     const start = ebene.bahnsteige.find((b) => b.rolle === 'start')
-    if (start?.von && start.bis) return { gedreht180: start.von.x > start.bis.x }
+    if (!start?.von || !start.bis) continue
+    // Ist bekannt, welches Ende beim Aussteigen links liegt, steht dieses
+    // links - wie der Knopf „Links“ (06.11.2026). Sonst der Anfang.
+    const links = start.ausstiegLinks === 'ende' ? start.bis : start.von
+    const rechts = start.ausstiegLinks === 'ende' ? start.von : start.bis
+    return { gedreht180: links.x > rechts.x }
   }
   return { gedreht180: false }
 }
@@ -743,7 +748,7 @@ export function zeichneGleisebene(
     )
     const namen: Standortmarke['name'][] = ['Anfang', 'Mitte', 'Ende']
     // Dieselben Wörter wie auf den Knöpfen: `a` ist `von`, der Anfang.
-    const texte = standortNamen(startBs.b.himmelsrichtung, startBs.b.zugspitze)
+    const texte = standortNamen(startBs.b.himmelsrichtung, startBs.b.zugspitze, startBs.b.ausstiegLinks)
     const naechster = Math.round(t * 2)
     standorte = {
       y: kante(nutzH + STANDORT_ZEILE / 2),

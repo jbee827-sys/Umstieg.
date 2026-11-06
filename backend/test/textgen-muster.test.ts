@@ -217,6 +217,22 @@ describe('Musterwege (Konzept 09, 7)', () => {
     });
   }
 
+  it('Schema und Text meinen dieselbe Seite: Bonn 1 ab Anfang „nach rechts“, also liegt der Anfang links', async () => {
+    const graph = await graphVon('8000044');
+    const pfad = berechneRoute(
+      graph,
+      findeStartknoten(graph, '1', 'anfang').knoten.id,
+      findeStartknoten(graph, '5').knoten.id,
+      'schnellste',
+      'normal',
+    )!;
+    const schema = baueBahnhofSchema(graph, pfad);
+    const start = schema.ebenen[0].bahnsteige.find((b) => b.rolle === 'start')!;
+    const text = generiereText(pfad, { stil: 'bezug', graph, schema, bahnsteigEnden: bahnsteigEndenAusSchema(schema) });
+    expect(text.schritte[0].text).toMatch(/^Vom Zug aus nach rechts/);
+    expect(start.ausstiegLinks).toBe('anfang');
+  });
+
   it('Standardmodell (Stufe 3): „ca.“ zeigt die Schätzung, nie „gegenüber“', () => {
     const graph = syntheseGraph({
       eva: '8000001',

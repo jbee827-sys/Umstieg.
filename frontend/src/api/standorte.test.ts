@@ -6,6 +6,7 @@ import {
   gehzeitSchluessel,
   ladeStandorte,
   STANDORT_VOREINSTELLUNG,
+  reihenfolgeVon,
   standortNamen,
 } from './standorte'
 import type { BahnhofSchema, RouteErgebnis, RouteParameter } from './typen'
@@ -50,6 +51,31 @@ describe('Standorte am Ankunftsgleis', () => {
  * Was „Anfang" heisst (ToDo 31, 15.09.2026): das Nord- bzw. Westende. Der
  * Knopf nennt es, statt ein Wort zu zeigen, das im Bahnhof nichts bedeutet.
  */
+describe('links und rechts mit dem Zug im Ruecken (06.11.2026)', () => {
+  it('benennt die Enden nach der Seite beim Aussteigen, vor der Himmelsrichtung', () => {
+    expect(standortNamen({ von: 'N', bis: 'S' }, undefined, 'anfang')).toEqual({
+      anfang: 'Links',
+      mitte: 'Mitte',
+      ende: 'Rechts',
+    })
+    expect(standortNamen({ von: 'N', bis: 'S' }, undefined, 'ende')).toEqual({
+      anfang: 'Rechts',
+      mitte: 'Mitte',
+      ende: 'Links',
+    })
+  })
+
+  it('die Fahrtrichtung geht vor', () => {
+    expect(standortNamen(undefined, 'ende', 'anfang').ende).toBe('Zuganfang')
+  })
+
+  it('ordnet die Stellen von links nach rechts', () => {
+    expect(reihenfolgeVon('ende')).toEqual(['ende', 'mitte', 'anfang'])
+    expect(reihenfolgeVon('anfang')).toEqual(ABSCHNITTE)
+    expect(reihenfolgeVon(undefined)).toEqual(ABSCHNITTE)
+  })
+})
+
 describe('standortNamen', () => {
   it('nennt die Enden nach der Himmelsrichtung', () => {
     expect(standortNamen({ von: 'N', bis: 'S' })).toEqual({
