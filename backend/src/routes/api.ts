@@ -23,7 +23,7 @@ import {
   prellbockEnde,
 } from '../core/routing.js';
 import { gleicherBahnsteigErgebnis, syntheseGraph, wendeFastaAn } from '../core/synthmodell.js';
-import { generiereSchritte } from '../core/textgen.js';
+import { bahnsteigEndenAusSchema, generiereText } from '../core/textgen.js';
 import { erzeugeBestand } from '../osm/bestand.js';
 import { erzeugeOsmQuelle, type OsmQuelle } from '../osm/quelle.js';
 import type {
@@ -673,12 +673,22 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
       hinweise.push('Für einen Aufzug auf diesem Weg meldet die Bahn keinen Betriebsstatus – er kann gestört sein.');
     }
 
+    // Erst das Schema, dann der Text: Der Text nennt die Bahnsteigenden mit
+    // denselben Woertern, die das Schema zeigt (Konzept 09).
+    const schema = baueBahnhofSchema(graph, pfad, zuglauf);
+    const text = generiereText(pfad, {
+      ungefaehr: graph.stufe === 3,
+      profil,
+      graph,
+      bahnsteigEnden: bahnsteigEndenAusSchema(schema),
+    });
     return {
       stufe: graph.stufe,
-      schritte: generiereSchritte(pfad, { ungefaehr: graph.stufe === 3, profil }),
+      schritte: text.schritte,
+      ...(text.kurzfassung ? { kurzfassung: text.kurzfassung } : {}),
       gehzeitSek: gehzeitSekunden(pfad, profil),
       karte: graphZuGeoJSON(graph, pfad),
-      schema: baueBahnhofSchema(graph, pfad, zuglauf),
+      schema,
       hinweise,
     };
   });

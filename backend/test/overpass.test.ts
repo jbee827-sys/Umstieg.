@@ -36,6 +36,19 @@ describe('baueOverpassQL', () => {
     expect(ql).toContain('around:400,52.5,13.4');
     expect(ql).toContain('[out:json]');
   });
+
+  it('fragt Ausgaenge und benannte Laeden nur mit Bezugspunkten ab (Konzept 09, Paket 2)', () => {
+    const ohne = baueOverpassQL(52.5, 13.4, 400, false);
+    expect(ohne).not.toContain('train_station_entrance');
+    const mit = baueOverpassQL(52.5, 13.4, 400, true);
+    expect(mit).toContain('node["railway"="train_station_entrance"]');
+    expect(mit).toContain('node["entrance"]');
+    expect(mit).toContain('node["shop"]["name"]');
+    expect(mit).toContain('way["shop"]["name"]');
+    expect(mit).toContain('cafe|fast_food|restaurant|pharmacy|lounge');
+    // Vorgabe bis zum Neufuellen des Startbestands: aus
+    expect(baueOverpassQL(52.5, 13.4, 400)).toBe(ohne);
+  });
 });
 
 describe('overpassQuery', () => {

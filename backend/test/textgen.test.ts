@@ -1,5 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { afterAll, beforeAll, describe, it, expect, vi } from 'vitest';
 import { generiereSchritte, peilungGrad } from '../src/core/textgen.js';
+
+// Diese Datei prueft den klassischen Text (`TEXT_STIL=klassisch`, abrufbar
+// seit Konzept 09) und die Segmentierung, auf der beide Stile aufbauen. Den
+// Stil `bezug` pruefen `textgen-bezug.test.ts` und `textgen-muster.test.ts`.
+beforeAll(() => {
+  vi.stubEnv('TEXT_STIL', 'klassisch');
+});
+afterAll(() => {
+  vi.unstubAllEnvs();
+});
 import { gehzeitSekunden } from '../src/core/gehzeit.js';
 import type { GraphKante, GraphKnoten, KantenTyp, RoutenPfad } from '../src/core/typen.js';
 

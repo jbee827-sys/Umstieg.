@@ -3,9 +3,11 @@ import { gleichesGleis, normGleis } from './gleisname.js';
 import { mittlereAchse, nachNordwesten, peilungGrad, richteEndenAus } from './richtung.js';
 import { mittellinie } from './mittellinie.js';
 import type {
+  Bezugspunkt,
   GraphKante,
   GraphKnoten,
   GraphKontext,
+  KantenLage,
   KantenTyp,
   OsmElement,
   OverpassAntwort,
@@ -213,6 +215,46 @@ function wayEbeneMitBeleg(tags: Record<string, string>): { ebene: number; ebeneB
   return { ebene: 0, ebeneBelegt: false };
 }
 
+/**
+ * Woran ein Name als Gang zu erkennen ist (Konzept 09, 4.2). Die meisten
+ * Namen an Fusswegen sind Strassen und Plaetze („Bahnhofplatz“); „Hieber
+ * Passage“ oder „Sobek-Steg“ sagen dagegen, wo man geht.
+ */
+const GANG_WORT = /passage|tunnel|steg|unterf(ü|ue)hrung|(ü|ue)berf(ü|ue)hrung|halle|querbahnsteig|br(ü|ue)cke/i;
+
+/**
+ * Lage, Gangname und Ebenenbeleg einer ebenen Kante - fuer den Wegtext.
+ *
+ * Nur aus dem, was OSM sagt. Ein Fussweg ohne `indoor`, `tunnel` oder `bridge`
+ * kann in einer Halle liegen oder draussen; dann bleibt die Lage offen, und
+ * der Text nennt keine.
+ */
+function kantenMerkmale(
+  tags: Record<string, string>,
+  ebene: number,
+  ebeneBelegt: boolean,
+): Pick<GraphKante, 'lage' | 'name' | 'ebeneBelegt'> {
+  const innen = (tags.indoor !== undefined && tags.indoor !== 'no') || tags.highway === 'corridor';
+  const tunnel = tags.tunnel === 'yes';
+  const durchgang = tags.tunnel === 'building_passage';
+  const bruecke = tags.bridge !== undefined && tags.bridge !== 'no';
+  let lage: KantenLage | undefined;
+  // Nur `tunnel=yes` ist eine Unterfuehrung. Ein Innengang unter der Erde
+  // kann ebenso ein Untergeschoss sein (Berlin Hbf, Ebene -1) - dann „Gang“.
+  if (tunnel) lage = 'unterfuehrung';
+  else if (bruecke) lage = 'ueberfuehrung';
+  else if (durchgang) lage = 'gang';
+  else if (innen) lage = tags.indoor === 'area' || tags.indoor === 'room' ? 'halle' : 'gang';
+  else if (tags.highway === 'pedestrian' || tags.footway === 'sidewalk' || tags.footway === 'crossing') lage = 'draussen';
+  const name = tags.name?.trim();
+  const nameZaehlt = name && (tunnel || durchgang || bruecke || innen || GANG_WORT.test(name));
+  return {
+    ...(lage ? { lage } : {}),
+    ...(nameZaehlt ? { name } : {}),
+    ebeneBelegt,
+  };
+}
+
 /** Ebene eines "flachen" Ways: level-Tag, sonst Tunnel/Brücke-Heuristik, sonst 0. */
 function wayEbene(tags: Record<string, string>): number {
   return wayEbeneMitBeleg(tags).ebene;
@@ -278,6 +320,84 @@ function poiPunkt(
     lat: punkte.reduce((s, n) => s + n.lat!, 0) / punkte.length,
     lon: punkte.reduce((s, n) => s + n.lon!, 0) / punkte.length,
   };
+}
+
+/**
+ * Laeden und Gastronomie, die der Wegtext nennen darf (Konzept 09, 4.1; Julian,
+ * 06.11.2026: auch Apotheke, Reisezentrum, Lounge). Nur mit Namen - „am Laden
+ * vorbei“ hilft niemandem.
+ */
+const LADEN_AMENITY = new Set(['cafe', 'fast_food', 'restaurant', 'pharmacy', 'lounge']);
+
+function istAusgang(tags: Record<string, string>): boolean {
+  return tags.railway === 'train_station_entrance' || (tags.entrance !== undefined && tags.entrance !== 'no');
+}
+
+function istLaden(tags: Record<string, string>): boolean {
+  if (!tags.name) return false;
+  return tags.shop !== undefined || LADEN_AMENITY.has(tags.amenity ?? '');
+}
+
+/** Wie weit ein Bezugspunkt ohne `level` vom Wegenetz liegen darf, um dessen Ebene zu erben. */
+const BEZUG_EBENE_MAX_M = 10;
+
+/**
+ * Ausgaenge und benannte Laeden als Bezugspunkte (Konzept 09, 4.2).
+ *
+ * Die Ebene kommt aus `level`, sonst vom Wegenetz: Liegt der Punkt darauf,
+ * gilt die Ebene des Knotens, sonst die des naechsten Knotens bis 10 m. Ohne
+ * beides bleibt er weg - ein Laden auf geratener Ebene waere schlimmer als
+ * keiner.
+ */
+function sammleBezugspunkte(
+  elemente: OsmElement[],
+  osmKnoten: Map<number, OsmElement>,
+  knoten: Map<string, GraphKnoten>,
+): Bezugspunkt[] {
+  const physisch = [...knoten.values()].filter((k) => k.id.startsWith('n'));
+  const punkte: Bezugspunkt[] = [];
+  for (const el of elemente) {
+    const tags = el.tags;
+    if (!tags) continue;
+    const art = istAusgang(tags) && el.type === 'node' ? 'ausgang' : istLaden(tags) ? 'laden' : undefined;
+    if (!art) continue;
+    const punkt = poiPunkt(el, osmKnoten);
+    if (!punkt) continue;
+    let knotenIdHier: string | undefined;
+    let level: number | undefined;
+    const levels = parseLevels(tags.level);
+    if (el.type === 'node') {
+      const instanzen = physisch.filter((k) => k.id.startsWith(`n${el.id}@`));
+      const passend = levels.length > 0 ? instanzen.find((k) => k.level === levels[0]) : instanzen[0];
+      if (passend) {
+        knotenIdHier = passend.id;
+        level = passend.level;
+      }
+    }
+    if (level === undefined && levels.length > 0) level = levels[0];
+    if (level === undefined) {
+      let bester: GraphKnoten | undefined;
+      let abstand = BEZUG_EBENE_MAX_M;
+      for (const k of physisch) {
+        const d = haversineM(punkt.lat, punkt.lon, k.lat, k.lon);
+        if (d <= abstand) {
+          abstand = d;
+          bester = k;
+        }
+      }
+      if (!bester) continue;
+      level = bester.level;
+    }
+    punkte.push({
+      art,
+      ...(tags.name ? { name: tags.name.trim() } : {}),
+      lat: punkt.lat,
+      lon: punkt.lon,
+      level,
+      ...(knotenIdHier ? { knotenId: knotenIdHier } : {}),
+    });
+  }
+  return punkte;
 }
 
 function knotenId(osmId: number, level: number): string {
@@ -619,9 +739,10 @@ function baueGraphOhneNaht(
   for (const way of ways) {
     const tags = way.tags ?? {};
     if (!istEbenerWeg(tags) || istEbenenwechselWeg(tags)) continue;
-    const ebene = wayEbene(tags);
+    const { ebene, ebeneBelegt } = wayEbeneMitBeleg(tags);
     const typ = kantenTypFuerWay(tags);
     const barrierefrei = istBarrierefrei(typ, tags);
+    const merkmale = kantenMerkmale(tags, ebene, ebeneBelegt);
     for (let i = 0; i < way.nodes!.length - 1; i++) {
       const vonId = stelleKnotenSicher(way.nodes![i], ebene);
       const nachId = stelleKnotenSicher(way.nodes![i + 1], ebene);
@@ -635,6 +756,7 @@ function baueGraphOhneNaht(
         deltaLevel: 0,
         typ,
         barrierefrei,
+        ...merkmale,
       });
     }
   }
@@ -692,6 +814,7 @@ function baueGraphOhneNaht(
       typ,
       barrierefrei: istBarrierefrei(typ, tags),
       anlageSchluessel: `w${way.id}`,
+      ebeneBelegt: enden !== null,
     });
   }
 
@@ -1300,6 +1423,7 @@ function baueGraphOhneNaht(
     // Umriss als begehbare Kanten – verbindet Treppen/Aufzüge, die Knoten
     // mit der Bahnsteigkante teilen, auch ohne ref.
     const barrierefrei = tags.wheelchair !== 'no';
+    const ebeneBelegt = bahnsteig.ebeneBelegt;
     for (const nodeListe of nodeListen) {
       for (let i = 0; i < nodeListe.length - 1; i++) {
         const vonId = stelleKnotenSicher(nodeListe[i], ebene);
@@ -1314,6 +1438,8 @@ function baueGraphOhneNaht(
           deltaLevel: 0,
           typ: 'eben',
           barrierefrei,
+          lage: 'bahnsteig',
+          ebeneBelegt,
         });
       }
     }
@@ -1371,6 +1497,8 @@ function baueGraphOhneNaht(
             deltaLevel: 0,
             typ: 'eben',
             barrierefrei: true,
+            lage: 'bahnsteig',
+            ebeneBelegt: bahnsteig.ebeneBelegt,
           });
         }
         vorherigeId = id;
@@ -1496,8 +1624,10 @@ function baueGraphOhneNaht(
   // --- Pass F: verwaiste Aufzugausstiege an ihren Bahnsteig anschliessen ---
   verbindeVerwaisteAufzuege(knoten, adjazenz, fuegeKanteHinzu);
 
+  const bezugspunkte = sammleBezugspunkte(osm.elements, osmKnoten, knoten);
+
   // Stufe wird erst durch die Klassifikation (Task 5) gesetzt – Start: 3.
-  return { knoten, adjazenz, stufe: 3, gleise, bahnsteigLinien, gleisArt, ubahnSteige };
+  return { knoten, adjazenz, stufe: 3, gleise, bahnsteigLinien, gleisArt, ubahnSteige, bezugspunkte };
 }
 
 /**
@@ -1646,6 +1776,7 @@ function verdichteBahnsteigketten(
           deltaLevel: 0,
           typ: 'eben',
           barrierefrei: true,
+          lage: 'bahnsteig',
         });
       }
     }
@@ -1780,6 +1911,7 @@ export function kopiereGraph(graph: StationGraph): StationGraph {
     ...(graph.bahnsteigLinien ? { bahnsteigLinien: graph.bahnsteigLinien } : {}),
     ...(graph.gleisArt ? { gleisArt: graph.gleisArt } : {}),
     ...(graph.ubahnSteige ? { ubahnSteige: graph.ubahnSteige } : {}),
+    ...(graph.bezugspunkte ? { bezugspunkte: graph.bezugspunkte } : {}),
   };
 }
 

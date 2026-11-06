@@ -15,13 +15,17 @@ describe('wegAusPfad', () => {
     expect(w.gehzeitSek).toBe(gehzeitSekunden(p, 'normal'));
     expect(w.schritte.reduce((s, x) => s + (x.sekunden ?? 0), 0)).toBe(w.gehzeitSek);
     expect(w.schritte.at(-1)!.text).toMatch(/zu Steig B$/);
-    expect(w.schritte[0].text).toMatch(/^Nach Ausstieg/);
+    // Der Fussweg weiss nicht, ob man aus Bus oder Zug steigt (Konzept 09).
+    expect(w.schritte[0].text).toMatch(/^Vom Ausstieg aus/);
+    expect(w.kurzfassung).toMatch(/zu Steig B\.$/);
   });
 
-  it('Ebenenwechsel Berlin: eigener Treppenschritt „hoch zur Ebene -1“', () => {
+  it('Ebenenwechsel Berlin: eigener Treppenschritt „Treppe hoch“, ohne Ebenennummer', () => {
     const w = wegAusPfad(pfad('plan-berlin-hbf-gleis7-bus'), 'normal');
     const treppe = w.schritte.find((s) => s.typ === 'treppe')!;
-    expect(treppe.text).toMatch(/Treppe hoch zur (Unterführung \(-1\)|Ebene -1)/);
+    expect(treppe.text).toMatch(/^Treppe hoch/);
+    expect(treppe.level).toBe(-1);
+    expect(w.schritte.some((s) => /Ebene|-\d/.test(s.text))).toBe(false);
     expect(Object.keys(w.karte!)).toContain('-2');
   });
 
@@ -52,7 +56,7 @@ describe('wegAusPfad: Goettingen Gleis 10 -> Bus am ZOB (21.10.2026)', () => {
     );
     const weg = wegAusPfad(pfadAusPlan(plan)!, 'normal', 'zu Steig A (Bus 21)');
     expect(weg.schritte.length).toBeLessThanOrEqual(7);
-    expect(weg.schritte.filter((s) => /Treppe/.test(s.text))).toHaveLength(1);
+    expect(weg.schritte.filter((s) => s.typ === 'treppe')).toHaveLength(1);
     expect(weg.schritte.some((s) => /wenige Meter/i.test(s.text))).toBe(false);
   });
 });

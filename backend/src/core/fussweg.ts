@@ -1,6 +1,6 @@
 import { GESCHWINDIGKEIT, gehzeitSekunden } from './gehzeit.js';
 import { haversineM, pfadZuGeoJSON } from './graph.js';
-import { generiereSchritte } from './textgen.js';
+import { generiereText } from './textgen.js';
 import type { Gehprofil, RoutenPfad, Steigpunkt, Weg } from './typen.js';
 
 /**
@@ -16,17 +16,21 @@ export const UMWEGFAKTOR = 1.3;
 export const GLAETTUNG_DRAUSSEN_M = 12;
 
 export function wegAusPfad(pfad: RoutenPfad, profil: Gehprofil, zielZusatz?: string): Weg {
+  const text = generiereText(pfad, {
+    profil,
+    // Der Haltestellenpfad hat kein Ebenenschema: Treppen ueber Zwischenebenen
+    // werden ein Schritt. Und er fuehrt meist draussen, wo MOTIS den Weg
+    // zackig ueber Plaetze zeichnet (Goettingen Bahnhofsvorplatz, 21.10.2026).
+    ueberEbenen: true,
+    glaettungM: GLAETTUNG_DRAUSSEN_M,
+    // Ob man aus Bus, Tram oder Zug steigt, weiss der Fussweg nicht.
+    startVorsatz: 'Vom Ausstieg aus',
+    ...(zielZusatz ? { zielZusatz } : {}),
+  });
   return {
     stufe: 1,
-    schritte: generiereSchritte(pfad, {
-      profil,
-      // Der Haltestellenpfad hat kein Ebenenschema: Treppen ueber Zwischenebenen
-      // werden ein Schritt. Und er fuehrt meist draussen, wo MOTIS den Weg
-      // zackig ueber Plaetze zeichnet (Goettingen Bahnhofsvorplatz, 21.10.2026).
-      ueberEbenen: true,
-      glaettungM: GLAETTUNG_DRAUSSEN_M,
-      ...(zielZusatz ? { zielZusatz } : {}),
-    }),
+    schritte: text.schritte,
+    ...(text.kurzfassung ? { kurzfassung: text.kurzfassung } : {}),
     gehzeitSek: gehzeitSekunden(pfad, profil),
     karte: pfadZuGeoJSON(pfad),
     hinweise: [],

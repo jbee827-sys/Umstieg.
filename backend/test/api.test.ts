@@ -70,7 +70,8 @@ describe('GET /api/route', () => {
     const ergebnis = res.json() as RouteErgebnis;
     expect(ergebnis.stufe).toBe(1);
     expect(ergebnis.schritte.length).toBeGreaterThan(0);
-    expect(ergebnis.schritte[0].text).toMatch(/^Nach Ausstieg/);
+    expect(ergebnis.schritte[0].text).toMatch(/^Vom Zug aus/);
+    expect(ergebnis.kurzfassung).toMatch(/Gleis \w+\.$/);
     expect(ergebnis.gehzeitSek).toBeGreaterThan(0);
     expect(ergebnis.karte).toBeDefined();
     expect(Array.isArray(ergebnis.hinweise)).toBe(true);

@@ -1397,7 +1397,7 @@ describe('Aufzug als Schacht', () => {
   });
 
   it('ein Schritt: "Aufzug zur Ebene 1"', () => {
-    expect(generiereSchritte(pfad).filter((s) => s.typ === 'aufzug').map((s) => s.text)).toEqual(['Aufzug zur Ebene 1']);
+    expect(generiereSchritte(pfad, { stil: 'klassisch' }).filter((s) => s.typ === 'aufzug').map((s) => s.text)).toEqual(['Aufzug zur Ebene 1']);
   });
 
   it('Aufzug mit nur einer angebundenen Ebene: keine Kante, kein Fehler', () => {
@@ -1497,15 +1497,73 @@ describe('Aufzug als Schacht', () => {
       const aufzug = pfad14.kanten.filter((k) => k.typ === 'aufzug');
       expect(aufzug).toHaveLength(1);
       expect(Math.abs(aufzug[0].deltaLevel)).toBe(4);
-      expect(generiereSchritte(pfad14).filter((s) => s.typ === 'aufzug').map((s) => s.text)).toEqual(['Aufzug zur Ebene -2']);
+      expect(generiereSchritte(pfad14, { stil: 'klassisch' }).filter((s) => s.typ === 'aufzug').map((s) => s.text)).toEqual(['Aufzug zur Ebene -2']);
       expect(gehzeitSekunden(pfad14, 'normal')).toBeLessThan(280);
     });
 
     it('2 -> 12 haelt nicht mehr auf der -1, an der niemand aussteigt', () => {
       // Zwei Aufzuege, weil es zwei sind: F.A 9 (-2..0) und 35 m weiter F.PA3
       // bis zur 1. Der Halt von F.PA3 auf -2 liegt jenseits der Gleise.
-      const texte = generiereSchritte(route('2', '12')).map((s) => s.text);
+      const texte = generiereSchritte(route('2', '12'), { stil: 'klassisch' }).map((s) => s.text);
       expect(texte.filter((t) => t.startsWith('Aufzug'))).toEqual(['Aufzug zur Ebene 0', 'Aufzug zur Ebene 1']);
     });
+  });
+});
+
+describe('Merkmale fuer den Wegtext (Konzept 09, 4.2)', () => {
+  const punkt = (id: number, lat: number, lon: number, tags?: Record<string, string>) => ({
+    type: 'node' as const,
+    id,
+    lat,
+    lon,
+    ...(tags ? { tags } : {}),
+  });
+  const weg = (id: number, nodes: number[], tags: Record<string, string>) => ({ type: 'way' as const, id, nodes, tags });
+  const osm: OverpassAntwort = {
+    elements: [
+      punkt(1, 52.0, 13.0),
+      punkt(2, 52.0003, 13.0),
+      punkt(3, 52.0006, 13.0, { entrance: 'main', name: 'Ausgang Nord' }),
+      punkt(4, 52.0, 13.0005),
+      punkt(5, 52.0003, 13.0005),
+      punkt(6, 52.0, 13.001),
+      punkt(7, 52.0003, 13.001),
+      punkt(8, 52.00031, 13.00101, { shop: 'bakery', name: 'Backwerk' }),
+      weg(10, [1, 2], { highway: 'footway', tunnel: 'yes', level: '-1', name: 'Nordpassage' }),
+      weg(11, [2, 3], { highway: 'footway', level: '-1', name: 'Bahnhofstraße' }),
+      weg(12, [4, 5], { highway: 'corridor', level: '-1' }),
+      weg(13, [6, 7], { highway: 'footway', name: 'Bahnhofstraße' }),
+    ],
+  };
+  const graph = baueGraph(osm);
+  const kanteVon = (a: number, b: number, level: number): GraphKante =>
+    graph.adjazenz.get(`n${a}@${level}`)!.find((k) => k.von === `n${b}@${level}` || k.nach === `n${b}@${level}`)!;
+
+  it('Tunnel ist Unterführung, mit Gangnamen und belegter Ebene', () => {
+    expect(kanteVon(1, 2, -1)).toMatchObject({ lage: 'unterfuehrung', name: 'Nordpassage', ebeneBelegt: true });
+  });
+
+  it('ein Strassenname an einem Fussweg ohne Innenlage ist kein Gangname', () => {
+    const k = kanteVon(2, 3, -1);
+    expect(k.name).toBeUndefined();
+    expect(k.lage).toBeUndefined();
+  });
+
+  it('ein Innengang unter der Erde ist ein Gang, keine Unterführung (Berlin Hbf -1)', () => {
+    expect(kanteVon(4, 5, -1).lage).toBe('gang');
+  });
+
+  it('ohne level ist die Ebene geraten, und die Lage bleibt offen', () => {
+    expect(kanteVon(6, 7, 0)).toMatchObject({ ebeneBelegt: false });
+    expect(kanteVon(6, 7, 0).lage).toBeUndefined();
+  });
+
+  it('Ausgaenge und benannte Laeden werden Bezugspunkte, mit Ebene vom Wegenetz', () => {
+    expect(graph.bezugspunkte).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ art: 'ausgang', name: 'Ausgang Nord', level: -1, knotenId: 'n3@-1' }),
+        expect.objectContaining({ art: 'laden', name: 'Backwerk', level: 0 }),
+      ]),
+    );
   });
 });

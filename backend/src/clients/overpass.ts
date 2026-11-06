@@ -39,7 +39,24 @@ export function protokolliereVersuch(log: VersuchsLogger): (v: OverpassVersuch) 
   };
 }
 
-export function baueOverpassQL(lat: number, lon: number, radiusM: number): string {
+/**
+ * Fragt die Abfrage auch Ausgaenge und benannte Laeden ab (Konzept 09, Paket 2)?
+ *
+ * Noch aus: Die Abfrage bestimmt `ABFRAGE_VERSION`, und eine neue Version
+ * macht den ganzen Startbestand veraltet - in Produktion holte jeder Bahnhof
+ * seine Daten neu von Overpass. Eingeschaltet wird zusammen mit dem Neufuellen
+ * (`scripts/bestand-fuellen.ts`) und der Groessenmessung an zehn Bahnhoefen,
+ * nach Julians Freigabe. Der Graph nutzt die Punkte, sobald sie da sind;
+ * Ausgaenge an Wegknoten kennt er schon jetzt.
+ */
+export const ABFRAGE_MIT_BEZUGSPUNKTEN = false;
+
+export function baueOverpassQL(
+  lat: number,
+  lon: number,
+  radiusM: number,
+  mitBezugspunkten: boolean = ABFRAGE_MIT_BEZUGSPUNKTEN,
+): string {
   const um = `around:${radiusM},${lat},${lon}`;
   // Elementklassen gemäß Konzept 4.1: Bahnsteige (+ ref-Gleisnummern),
   // Fußwege/Treppen/Korridore, Aufzüge, Rolltreppen (conveying), inkl. aller
@@ -56,6 +73,10 @@ export function baueOverpassQL(lat: number, lon: number, radiusM: number): strin
   //
   // `platform_edge`: Viele grosse Bahnhoefe (Stuttgart, Karlsruhe, Mannheim
   // Hbf) tragen die Gleisnummer nicht am Bahnsteig, sondern an seiner Kante.
+  //
+  // Ausgaenge und benannte Laeden sind Bezugspunkte des Wegtexts (Konzept 09,
+  // 4.1; Julian, 06.11.2026: auch Apotheke, Reisezentrum, Lounge). Ausgaenge
+  // ausdruecklich, damit auch frei stehende kommen, nicht nur Weg-Knoten.
   return `[out:json][timeout:25];
 (
   way["railway"="platform"](${um});
@@ -68,10 +89,19 @@ export function baueOverpassQL(lat: number, lon: number, radiusM: number): strin
   node["amenity"="toilets"](${um});
   way["amenity"="toilets"](${um});
   node["shop"="kiosk"](${um});
-  way["shop"="kiosk"](${um});
+  way["shop"="kiosk"](${um});${mitBezugspunkten ? bezugspunktZeilen(um) : ''}
 );
 (._;>>;);
 out body;`;
+}
+
+function bezugspunktZeilen(um: string): string {
+  return `
+  node["railway"="train_station_entrance"](${um});
+  node["entrance"](${um});
+  node["shop"]["name"](${um});
+  way["shop"]["name"](${um});
+  node["amenity"~"^(cafe|fast_food|restaurant|pharmacy|lounge)$"]["name"](${um});`;
 }
 
 function instanzReihenfolge(): string[] {

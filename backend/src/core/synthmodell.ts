@@ -1,3 +1,4 @@
+import { textStilAusUmgebung } from './segmente.js';
 import { bahnsteigSchluessel, verankerterBahnsteig } from './fasta-gleisbezug.js';
 import { haversineM } from './graph.js';
 import type {
@@ -398,6 +399,7 @@ export function gleicherBahnsteigErgebnis(gleisAb: string, stufe: Stufe): RouteE
   return {
     stufe,
     schritte: [{ text: `Gleis ${gleisAb} gegenüber, kein Ebenenwechsel`, typ: 'ziel' }],
+    ...(textStilAusUmgebung() === 'bezug' ? { kurzfassung: `Gleich am selben Bahnsteig gegenüber, Gleis ${gleisAb}.` } : {}),
     gehzeitSek: 30,
     hinweise: [],
   };

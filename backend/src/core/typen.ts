@@ -95,6 +95,33 @@ export interface GraphKante {
    * eine Stoerung den ganzen Schacht sperrt. Wird erst vom Graphbau gesetzt.
    */
   anlageSchluessel?: string;
+  /**
+   * Wo die Kante liegt (Konzept 09, 4.2) - fuer den Wegtext. Abgeleitet aus
+   * `tunnel`, `bridge`, `indoor`, `highway=corridor` und Bahnsteig. Unbekannt
+   * bleibt `undefined`, nicht geraten: „Unterführung“ sagt der Text nur, wenn
+   * die Lage es belegt.
+   */
+  lage?: KantenLage;
+  /**
+   * Name des Gangs („Nordpassage“), nur innen oder wenn der Name einen Gang
+   * bezeichnet. Strassennamen gehoeren nicht in den Bahnhofstext.
+   */
+  name?: string;
+  /** Ist die Ebene dieser Kante belegt (`level`, Tunnel, Bruecke) oder geraten? */
+  ebeneBelegt?: boolean;
+}
+
+export type KantenLage = 'unterfuehrung' | 'ueberfuehrung' | 'bahnsteig' | 'halle' | 'draussen' | 'gang';
+
+/** Ein Ort, an dem sich jemand im Bahnhof orientieren kann (Konzept 09, 4.2). */
+export interface Bezugspunkt {
+  art: 'ausgang' | 'laden';
+  name?: string;
+  lat: number;
+  lon: number;
+  level: number;
+  /** Liegt er auf dem Wegenetz, der Knoten dort. */
+  knotenId?: string;
 }
 
 export interface StationGraph {
@@ -115,6 +142,8 @@ export interface StationGraph {
   gleisArt?: Map<string, 'zug' | 'sbahn'>;
   /** U-Bahn-Steige: keine Gleise, nicht in `gleise`, aber routbar. */
   ubahnSteige?: UbahnSteig[];
+  /** Ausgaenge und benannte Laeden - Bezugspunkte fuer den Wegtext. */
+  bezugspunkte?: Bezugspunkt[];
 }
 
 // --- Route und Ausgabe ---
@@ -151,6 +180,11 @@ export interface RouteErgebnis {
   /** Maßstabsfreies Bahnhofsbild für die schematische Navigation. */
   schema?: BahnhofSchema;
   hinweise: string[]; // transparente Degradations-/Fallback-Hinweise
+  /**
+   * Der ganze Weg in einem Satz (Konzept 09, 6.3): „Treppe runter in die
+   * Unterführung, dann Treppe hoch zu Gleis 3.“ Fehlt im klassischen Textstil.
+   */
+  kurzfassung?: string;
 }
 
 // --- Schematisches Bahnhofsbild ---
