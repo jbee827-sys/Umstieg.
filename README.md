@@ -19,13 +19,33 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 06.11.2026)
+## Hier weitermachen (Stand 07.11.2026)
 
 ### Ausgeliefert am 06.11.2026: Textnavigation nach Bezugspunkten (`feat/textnavigation`)
 
 Konzept `Umstieg_Konzepte/09-konzept-textnavigation.md`. Abgezweigt von
-`68a28fe`. Ausgeliefert ist `08f6410`: Backend per `flyctl deploy backend
---ha=false` (eine Maschine), Frontend per Fast-Forward auf `main`.
+`68a28fe`. Live ist `8c7290d`:
+- Backend `08f6410` per `flyctl deploy backend --ha=false`, eine Maschine.
+  Der Deploy ist für Claude gesperrt; Julian startet ihn mit `!`.
+- Frontend per Fast-Forward auf `main`, danach zwei reine Frontend-Fixes
+  (siehe unten).
+- `feat/textnavigation` und `main` stehen gleich.
+
+**Nachgezogen am Abend (Julian, am Handy geprüft: „passt“):**
+
+- **Kurzfassung nicht mehr angezeigt** (`ba10f92`): Die Zeile „Weg: …“ über
+  dem Schritt nahm dem Ebenenschema die halbe Höhe. Schrittsheet und
+  Navigation sind wieder wie vor der Textnavigation. Das Backend liefert
+  `kurzfassung` weiter, nichts zeigt sie an.
+- **Ebenenwahl in der Karte** (`8c7290d`):
+  - Im Haltestellenpfad brachen die Ebenenknöpfe („Unterführung (−1)“,
+    „Ebene +1“) in Zeilen um, und die Karte schrumpfte bis auf 160 px.
+  - Jetzt steht die Wahl als senkrechte Leiste rechts oben in der Karte:
+    „+1 / 0 / −1“, oben die höchste Ebene, bei nur einer Ebene keine Leiste.
+  - „Blauer Punkt: dein Standort · Ebene unbekannt“ ist entfernt.
+    „Standort zu ungenau“ steht als Schild in der Karte.
+  - Die Kartenfläche ist damit in allen Fällen gleich groß: Im
+    Haltestellenpfad füllt sie den Bildbereich, im Aufklapper hat sie 380 px.
 
 Live geprüft auf Fly:
 - Bonn 1 → 5 ab Anfang: „Vom Zug aus nach rechts bis zur nächsten Rolltreppe“,
@@ -43,9 +63,9 @@ gilt nur noch als letzter Ausweg.
 
 - **Text** (`core/wegtext.ts`, `etappen.ts`, `bezugspunkte.ts`,
   `satzbausteine.ts`; Segmentierung jetzt in `segmente.ts`):
-  - Etappen statt Meter und Winkel: „Vom Zug aus Richtung Ostende bis zur
-    Treppe“ · „Treppe runter in die Unterführung“ · „Zweiter Aufgang rechts,
-    Treppe hoch zu Gleis 5“.
+  - Etappen statt Meter und Winkel: „Vom Zug aus nach rechts bis zur
+    nächsten Rolltreppe“ · „Rolltreppe runter in die Unterführung, unten
+    rechts“ · „Dritter Aufgang links, Rolltreppe hoch zu Gleis 5“ (Bonn 1 → 5).
   - Erster Schritt „Vom Zug aus …“, im Haltestellenpfad „Vom Ausstieg aus …“
     (Julian, 06.11.).
   - Richtung am Ankunftsbahnsteig ohne Himmelsrichtungen (Julian, 06.11.):
@@ -64,9 +84,9 @@ gilt nur noch als letzter Ausweg.
     eindeutigem Namen und höchstens 10 m vom Weg.
   - Geratene Nähte (Rampe 0 m) heißen „weiter nach unten/oben“.
   - Stufe 3 behält „ca.“ und sagt nie „gegenüber“.
-- **Kurzfassung** (`RouteErgebnis.kurzfassung`), nur im Schrittsheet
-  (Julian, 06.11.): „Treppe runter in die Unterführung, dann zweiter Aufgang
-  rechts hoch zu Gleis 5.“
+- **Kurzfassung** (`RouteErgebnis.kurzfassung`): „Treppe runter in die
+  Unterführung, dann zweiter Aufgang rechts hoch zu Gleis 5.“ Seit dem Abend
+  des 06.11. nicht mehr angezeigt (siehe oben).
 - **Schalter** `TEXT_STIL=bezug|klassisch`, Vorgabe `bezug`. Der alte Text
   bleibt abrufbar.
 - **Karte zum Text:** Die Routenlinien tragen ihren Pfadindex (`knotenAb`).
@@ -77,10 +97,11 @@ gilt nur noch als letzter Ausweg.
 - **Overpass:** Ausgänge und benannte Läden (auch Apotheke, Reisezentrum,
   Lounge) sind gebaut, aber über `ABFRAGE_MIT_BEZUGSPUNKTEN = false`
   abgeschaltet. Eine neue Abfrage macht den ganzen Startbestand veraltet.
+  Eingeschaltet wird mit ToDo 41.
 
 **Geprüft:**
 
-- Backend: 1083 von 1083 Tests. Frontend: 1117 von 1117. Lint und Build sauber.
+- Backend: 1084 von 1084 Tests. Frontend: 1125 von 1125. Lint und Build sauber.
 - Erste Schritte über die 1.527 Wege (offline, also ohne Fahrtrichtung):
   1.190 mit rechts/links. 337 ohne Richtung, darunter 117 kurze Wege direkt
   zur Treppe und 43 „gegenüber“. Keine Himmelsrichtung.
@@ -90,17 +111,16 @@ gilt nur noch als letzter Ausweg.
   - 3 Wege mit mehr als 6 Schritten (Wiesloch-Walldorf 2, Chemnitz 1).
     Ursache sind Zwischenebenen, die das Schema als eigene Bänder zeigt.
 - Musterwege mit Soll-Text: `test/textgen-muster.test.ts`.
-- Nicht geprüft: Sichtprüfung im Browser. Die Chrome-Erweiterung fand ihre
-  Tab-Gruppe nicht.
+- Sichtprüfung: Julian am Handy auf www.umstieg.online (Schema in alter Größe,
+  Karte im Haltestellenpfad). Die Chrome-Erweiterung fand ihre Tab-Gruppe
+  nicht; lokal geprüft wurde über `http://<Rechner-IP>:5174/`.
 
 **Offen:**
 
 1. **Schalter:** `bezug` gilt für alle. Zurück geht es mit `TEXT_STIL=klassisch`
    als Fly-Secret.
-2. **Paket 2 einschalten** (Julian: „die OSM-Abfragen kommen später dazu“): `ABFRAGE_MIT_BEZUGSPUNKTEN = true` setzen, an zehn
-   großen Bahnhöfen die Größe messen (Rückfrage bei mehr als 30 %), dann
-   `scripts/bestand-fuellen.ts`, `npm run bahnhofsseiten` und
-   `npm run vorfuehrdaten` laufen lassen.
+2. **Bahnhöfe neu abfragen, mit Läden, Restaurants und Ausgängen:** ToDo 41.
+   Julian: „die OSM-Abfragen kommen später dazu“.
 3. G1-Restfälle: Der Text sagt nichts Falsches über Ebenen, behebt aber die
    Ursache im Graphen nicht.
 4. Draußen das Hauptgebäude als Bezugspunkt: Die Abfrage holt keine Gebäude,
@@ -2590,7 +2610,8 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | 28 | **Stumme Treppen und Rampen** | Lauf 4: 195 Routen an 19 Bahnhöfen nehmen eine Treppe oder Rampe, ohne dass der Graph einen Ebenenwechsel kennt (35 Treppen-, 769 Rampenkanten) – etwa eine Unterführung ohne `level`. Im Bild steht dort keine Scheibe, im Text schon. Je Fall zu klären: Fehlt `level` in OSM, oder liest der Graph `incline`/`ramp` nicht? |
 | 29 | **Umwege zu einem Zugang an 7 Bahnhöfen** | `pruefeBahnsteigwege`, Lauf 4: Bielefeld (Gleis 5, zwei Treppen), Bonn (Gleis 4), Gütersloh (Gleis 2 und 3), Schwerin (Gleis 1: Treppe über 258 statt 120 m, zwei Aufzüge), Wittenberge (Gleis 1, Aufzug), Berlin-Spandau (Gleis 3: Treppe bei 397 m unerreichbar). **Seit Lauf 8 (02.10.) dazu Berlin Ostkreuz** (Gleis 5: Treppe bei 21 m über 236 statt 28 m) – Ostkreuz hat erst seit `32292fb` Gleise, der Fall war vorher unsichtbar. Nach der Kettenkorrektur eine andere Ursache – je Bahnhof am Graphen nachsehen. |
 | 30 | **M10: das neue Schema am Gerät** | Mit M9 nach dem Deployment (ToDo 25). Tragen die 11-px-Symbole in der Halle bei Gegenlicht? Reicht auf dem Ankunftsband der Punkt ohne Linie – auch am Kopfbahnhof, wo die U-Form nur noch im Text steht (154 Routen an 18 Bahnhöfen)? Stimmen die geglätteten Schritte im Gehen (`GLAETTUNG_M = 6` ist begründet, nicht gemessen)? **Seit dem 19.09. dazu:** Bleibt das verankerte Bild beim Durchklicken wirklich ruhig, oder wirkt das Springen der Nachbarebenen darum herum unruhig? Und findet die Hand den „Weiter"-Knopf unten am Rand mit Koffer in der anderen? |
-| ~~31~~ | ~~**Was „Anfang" im Bahnhof heißt**~~ ✅ **entschieden und umgesetzt 15.09.2026** | **Anfang = Nord- bzw. Westende**, für alle Bahnsteige einer Ebene an derselben Achse ausgerichtet (`core/richtung.ts`, angewandt in `baueGraph`). Die Knöpfe und die Standortmarken im Bild sagen es: „Nordende · Mitte · Südende" oder „Westende · Mitte · Ostende" – vergleichend, also „das nördlichere der beiden Enden". Warum die Himmelsrichtung: Sie ist die einzige Orientierung, die an **jedem** Bahnhof aus den Daten belegt ist. Kopf und Empfangsgebäude kennt die Overpass-Abfrage nicht, und die Fahrtrichtung ließe sich nur aus dem Laufweg schätzen – an Brücken und Kurven das falsche Ende. Ohne gemessene Achse (Standardmodell) bleibt es bei „Anfang/Ende". Vorher: die zufällige Zeichenrichtung in OSM, an Nachbarbahnsteigen oft entgegengesetzt. Siehe „Hier weitermachen". |
+| **41** | **Bahnhöfe neu abfragen: Läden, Restaurants, Ausgänge (Konzept 09, Paket 2)** | Der Wegtext kann Bezugspunkte nennen („an Backwerk vorbei“, „am Ausgang Nord vorbei“). Im Startbestand stehen aber nur Kioske mit Namen; Läden, Gastronomie, Apotheken, Reisezentren, Lounges und frei stehende Ausgänge fragt die Overpass-Abfrage noch nicht ab. Code und Tests stehen (`bezugspunktZeilen` in `clients/overpass.ts`, `sammleBezugspunkte` in `core/graph.ts`, Absicherung in `core/bezugspunkte.ts`: Name eindeutig im Bahnhof, höchstens 10 m vom Weg, gleiche Ebene). **Ablauf:** (1) `ABFRAGE_MIT_BEZUGSPUNKTEN = true`. (2) An zehn großen Bahnhöfen Bytes und Laufzeit gegen die alte Abfrage messen; liegt der Zuwachs über 30 %, Julian fragen. (3) `scripts/bestand-fuellen.ts` (alle 382 Bahnhöfe, langer Overpass-Lauf). (4) `npm run bahnhofsseiten`, `npm run vorfuehrdaten`, `npx tsx scripts/textpruefung.ts`; Musterwege in `test/textgen-muster.test.ts` nachziehen. (5) Backend und Frontend zusammen ausliefern. **Achtung:** Die neue Abfrage ändert `ABFRAGE_VERSION`. Wer sie ausliefert, ohne den Bestand neu zu füllen, lässt jeden Bahnhof in Produktion neu bei Overpass abfragen. Danach offen: das Hauptgebäude als Bezugspunkt draußen (die Abfrage holt keine Gebäude). |
+| ~~31~~ | ~~**Was „Anfang" im Bahnhof heißt**~~ ✅ **entschieden und umgesetzt 15.09.2026** | **Anfang = Nord- bzw. Westende**, für alle Bahnsteige einer Ebene an derselben Achse ausgerichtet (`core/richtung.ts`, angewandt in `baueGraph`). Die Knöpfe und die Standortmarken im Bild sagen es: „Nordende · Mitte · Südende" oder „Westende · Mitte · Ostende" – vergleichend, also „das nördlichere der beiden Enden". Warum die Himmelsrichtung: Sie ist die einzige Orientierung, die an **jedem** Bahnhof aus den Daten belegt ist. Kopf und Empfangsgebäude kennt die Overpass-Abfrage nicht, und die Fahrtrichtung ließe sich nur aus dem Laufweg schätzen – an Brücken und Kurven das falsche Ende. Ohne gemessene Achse (Standardmodell) bleibt es bei „Anfang/Ende". Vorher: die zufällige Zeichenrichtung in OSM, an Nachbarbahnsteigen oft entgegengesetzt. **Abgelöst am 06.11.2026** (Julian: Wo Norden ist, weiß niemand): Die Knöpfe heißen jetzt „Zuganfang · Zugmitte · Zugende“ oder „Links · Mitte · Rechts“ mit dem Zug im Rücken (`ausstiegLinks`, `core/gleisseite.ts`). Die Himmelsrichtung gilt nur noch, wenn beides fehlt. Siehe „Hier weitermachen". |
 
 Der Umbau nach dem Entwurf ist am 31.08. erfolgt (Spec und Plan unter
 `docs/superpowers/`); Spec-Abschnitt 8 ist
