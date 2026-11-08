@@ -21,12 +21,13 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 
 ## Hier weitermachen (Stand 08.11.2026)
 
-### ToDo 41 begonnen: Startbestand mit Bezugspunkten neu gefüllt (Zweig `feat/textnavigation`, nicht ausgeliefert)
+### ToDo 41 bis auf Sichtprüfung und Ausliefern erledigt: Startbestand mit Bezugspunkten (Zweig `feat/textnavigation`, nicht ausgeliefert)
 
 `ABFRAGE_MIT_BEZUGSPUNKTEN = true` (`clients/overpass.ts`), neue `ABFRAGE_VERSION`
 `160f2ffa856a`. Der Startbestand `backend/osm-bestand/` ist neu gefüllt
-(9,5 MB statt 6,2 MB gepackt). **Nicht ausgeliefert:** Wer Backend oder Frontend
-jetzt ausliefert, ohne den Rest unten zu erledigen, bringt Produktion und
+(9,5 MB statt 6,2 MB gepackt). Commits `95de883`, `0602239`, `fe10809`.
+**Nicht ausgeliefert:** Backend und Frontend gehören zusammen heraus (siehe
+„Anstehende ToDos“, Punkt 1). Wer nur eines ausliefert, bringt Produktion und
 Bestand aus dem Takt.
 
 **Messung (Schritt 2, 07.11.):** An 8 großen Bahnhöfen wuchs die Antwort um
@@ -35,13 +36,36 @@ Bestand aus dem Takt.
 scheiterten an Overpass. Messskript:
 `backend/osm-ablage/diagnose/bezugspunkte-messung.ts` (gitignored).
 
-**Der Lauf (`scripts/bestand-fuellen.ts`, 07.–08.11.):** **378 von 382** Bahnhöfen
-tragen die neue Version. Es fehlen vier, sie liegen noch im alten Stand:
-**München Ost, Paderborn Hbf, Berlin Südkreuz** (Overpass antwortete nach drei
-Versuchen nicht) und **Wesel** (Stationsauskunft der DB). Ein Nachlauf hing am
-08.11. nachts und wurde beendet. Der Lauf brauchte rund 8 Stunden
-(07.11. 12:00 bis 20:07 UTC) statt der geplanten einen wegen der Overpass-Ausfälle.
-Zählung: `backend/osm-ablage/diagnose/zaehle-version.ts` (gitignored).
+**Der Lauf (`scripts/bestand-fuellen.ts`, 07.–08.11.):** **Alle 382 Bahnhöfe**
+tragen die neue Version (gezählt mit `backend/osm-ablage/diagnose/zaehle-version.ts`,
+gitignored). Der erste Durchgang holte 378; München Ost, Paderborn Hbf, Berlin
+Südkreuz und Wesel kamen in einem Nachlauf am 08.11. abends. Der Lauf brauchte
+rund 8 Stunden (07.11. 12:00 bis 20:07 UTC) statt der geplanten einen wegen der
+Overpass-Ausfälle. Frankfurt (Oder) meldete einmal „Stationsauskunft: fetch
+failed“; die Datei lag schon im neuen Stand.
+
+**Danach erzeugt und geprüft (08.11.):**
+
+- `npm run bahnhofsseiten`: 380 Seitendateien (2,86 MB), Stufe 1: 346, Stufe 2: 34,
+  München-Giesing ohne Seite, Saarlouis Hbf unter zwei Gleisen. `npm run
+  vorfuehrdaten`: Tour-Aufzeichnung neu (Berlin Hbf 14 → 6: 453 s Anfang, 237 s
+  Mitte, 309 s Ende).
+- **Schritt 7 der Einführungstour** („ganz rechts sind es hier 8 statt 4
+  Minuten“) stimmt unverändert: 453 s = 7,6 min → 8, 237 s = 4,0 min → 4.
+  `schritte.test.ts` prüft den Satz gegen die Aufzeichnung. Die 9/6 aus älteren
+  Abschnitten gelten seit dem 04.11. nicht mehr.
+- `scripts/textpruefung.ts`: 1534 Wege an 382 Bahnhöfen, **0 Regelverstöße**,
+  Schritte je Weg im Mittel 3,1, höchstens 9, dieselben drei Wege über 6 Schritte
+  (Wiesloch-Walldorf 1→3 und 3→1, Chemnitz 11→8). **172 Wege nennen jetzt einen
+  Laden** („an Ditsch vorbei“, häufigste: ServiceStore DB, Ditsch, DB
+  Reisezentrum), „Ausgang“ kommt nur 5-mal vor. Ergebnis in
+  `osm-ablage/laeufe/textpruefung-2026-11-08.txt` (gitignored).
+- Musterwege nachgezogen: München 5→82 (Ditsch), Bonn 1→5 (DB Reisezentrum),
+  Leipzig 2→10 (Gourmétage); bei München und Leipzig auch die Kurzfassung.
+  `overpass.test.ts` erwartet Bezugspunkte als Vorgabe; `prellbock.test.ts` hat
+  30 s Frist (der Graph aus dem Bestand braucht knapp 4 s, vorher unter 5 s).
+- **Backend 1084 von 1084, Frontend 1125 von 1125, Lint beider Teile sauber.**
+  Nacheinander gelaufen, nicht parallel.
 
 **Was die Fehlversuche waren (gemessen, 07.11.):**
 
@@ -71,28 +95,23 @@ Die Ausgabe trägt Zeitstempel, Dauer und je Fehlversuch Instanz und Status.
 
 **Anstehende ToDos (Reihenfolge):**
 
-1. **Die vier fehlenden Bahnhöfe holen:** Skript erneut starten (überspringt
-   Fertiges), zu einer Zeit, in der Overpass ruhiger ist. Danach zählen: alle 382
-   Dateien müssen `ABFRAGE_VERSION` tragen. `osm-startbestand.test.ts` hält Anzahl,
-   Größe (< 15 MB) und Version fest.
-2. **Abgeleitete Daten neu erzeugen:** `cd backend && npm run bahnhofsseiten`,
-   dann `npm run vorfuehrdaten`. Danach Schritt 7 der Einführungstour
-   („9 statt 6 Minuten“) gegen die neuen Gehzeiten prüfen.
-3. **Text prüfen:** `npx tsx scripts/textpruefung.ts` (Regelverstöße, Schritte je
-   Weg); Musterwege in `test/textgen-muster.test.ts` nachziehen; Backend- und
-   Frontend-Tests **nacheinander**, nicht parallel.
-4. **Sichtprüfung am Handy:** Läden und Ausgänge im Text („an Backwerk vorbei“,
-   „am Ausgang Nord vorbei“) an ein paar Bahnhöfen lesen.
-5. **Ausliefern (nur auf Julians Satz):** Backend und Frontend zusammen. Das
+1. **Sichtprüfung am Handy** (Julian): Läden im Text an ein paar Bahnhöfen lesen
+   („an Backwerk vorbei“). In der Stichprobe fiel „an Junge vorbei“ auf –
+   vermutlich eine Bäckerei, nicht nachgeprüft. Auch „Ausgang“ ist selten (5 von
+   1534 Wegen).
+2. **Ausliefern (nur auf Julians Satz):** Backend und Frontend **zusammen**. Das
    Backend-Deploy ist für Claude gesperrt (`flyctl deploy backend --ha=false`,
    Julian startet es mit `!`). Das Volume auf Fly hält Alt-Daten mit der alten
-   Version; sie gelten ab jetzt als veraltet und werden im Hintergrund erneuert.
-6. **Overpass-Abbruch prüfen:** `TIMEOUT_MS` (30 s) anheben und am Skript testen
-   – nicht im Betrieb, wo ein Nutzer wartet.
-7. **Offen aus ToDo 41:** das Hauptgebäude als Bezugspunkt draußen (die Abfrage
-   holt keine Gebäude).
-8. **Nicht committet bleibt:** Messskript und Läufe unter `osm-ablage/`
-   (gitignored).
+   Version; sie gelten ab jetzt als veraltet und werden im Hintergrund erneuert
+   (höchstens 50 je Stunde). Der Startbestand im Image ist neu, daher fragt
+   kein Bahnhof der 382 bei Overpass nach. Danach live prüfen, etwa Bonn 1 → 5.
+3. **Overpass-Abbruch prüfen:** `TIMEOUT_MS` (30 s) in `clients/overpass.ts`
+   anheben und am Skript testen – nicht im Betrieb, wo ein Nutzer wartet.
+4. **Offen aus ToDo 41:** das Hauptgebäude als Bezugspunkt draußen (die Abfrage
+   holt keine Gebäude; der Haltestellenpfad hat keinen eigenen Graphen).
+5. **Später erneuern:** Der Bestand ist ab 30 Tagen veraltet; die Erneuerung im
+   Betrieb übernimmt das. Ein erneuter Gesamtlauf lohnt nur nach einer neuen
+   Abfrage, dann mit `PAUSE_MS=2000 FEHLER_PAUSE_MS=15000`.
 
 ### Ausgeliefert am 06.11.2026: Textnavigation nach Bezugspunkten (`feat/textnavigation`)
 
@@ -168,9 +187,8 @@ gilt nur noch als letzter Ausweg.
   Stück als der Text. Jetzt ist das Stück des Schritts hervorgehoben.
 - **Schema** sagt „runter/hoch“ wie der Text.
 - **Overpass:** Ausgänge und benannte Läden (auch Apotheke, Reisezentrum,
-  Lounge) sind gebaut, aber über `ABFRAGE_MIT_BEZUGSPUNKTEN = false`
-  abgeschaltet. Eine neue Abfrage macht den ganzen Startbestand veraltet.
-  Eingeschaltet wird mit ToDo 41.
+  Lounge) waren am 06.11. über `ABFRAGE_MIT_BEZUGSPUNKTEN = false`
+  abgeschaltet. **Seit dem 08.11. an**, Bestand neu gefüllt (siehe oben).
 
 **Geprüft:**
 
@@ -192,8 +210,8 @@ gilt nur noch als letzter Ausweg.
 
 1. **Schalter:** `bezug` gilt für alle. Zurück geht es mit `TEXT_STIL=klassisch`
    als Fly-Secret.
-2. **Bahnhöfe neu abfragen, mit Läden, Restaurants und Ausgängen:** ToDo 41.
-   Julian: „die OSM-Abfragen kommen später dazu“.
+2. ~~Bahnhöfe neu abfragen, mit Läden, Restaurants und Ausgängen: ToDo 41.~~
+   Erledigt am 08.11., ausgeliefert noch nicht (siehe oben).
 3. G1-Restfälle: Der Text sagt nichts Falsches über Ebenen, behebt aber die
    Ursache im Graphen nicht.
 4. Draußen das Hauptgebäude als Bezugspunkt: Die Abfrage holt keine Gebäude,
@@ -2683,7 +2701,7 @@ Overpass-Abruf ansetzen, nicht am Cache.
 | 28 | **Stumme Treppen und Rampen** | Lauf 4: 195 Routen an 19 Bahnhöfen nehmen eine Treppe oder Rampe, ohne dass der Graph einen Ebenenwechsel kennt (35 Treppen-, 769 Rampenkanten) – etwa eine Unterführung ohne `level`. Im Bild steht dort keine Scheibe, im Text schon. Je Fall zu klären: Fehlt `level` in OSM, oder liest der Graph `incline`/`ramp` nicht? |
 | 29 | **Umwege zu einem Zugang an 7 Bahnhöfen** | `pruefeBahnsteigwege`, Lauf 4: Bielefeld (Gleis 5, zwei Treppen), Bonn (Gleis 4), Gütersloh (Gleis 2 und 3), Schwerin (Gleis 1: Treppe über 258 statt 120 m, zwei Aufzüge), Wittenberge (Gleis 1, Aufzug), Berlin-Spandau (Gleis 3: Treppe bei 397 m unerreichbar). **Seit Lauf 8 (02.10.) dazu Berlin Ostkreuz** (Gleis 5: Treppe bei 21 m über 236 statt 28 m) – Ostkreuz hat erst seit `32292fb` Gleise, der Fall war vorher unsichtbar. Nach der Kettenkorrektur eine andere Ursache – je Bahnhof am Graphen nachsehen. |
 | 30 | **M10: das neue Schema am Gerät** | Mit M9 nach dem Deployment (ToDo 25). Tragen die 11-px-Symbole in der Halle bei Gegenlicht? Reicht auf dem Ankunftsband der Punkt ohne Linie – auch am Kopfbahnhof, wo die U-Form nur noch im Text steht (154 Routen an 18 Bahnhöfen)? Stimmen die geglätteten Schritte im Gehen (`GLAETTUNG_M = 6` ist begründet, nicht gemessen)? **Seit dem 19.09. dazu:** Bleibt das verankerte Bild beim Durchklicken wirklich ruhig, oder wirkt das Springen der Nachbarebenen darum herum unruhig? Und findet die Hand den „Weiter"-Knopf unten am Rand mit Koffer in der anderen? |
-| **41** | **Bahnhöfe neu abfragen: Läden, Restaurants, Ausgänge (Konzept 09, Paket 2)** | Der Wegtext kann Bezugspunkte nennen („an Backwerk vorbei“, „am Ausgang Nord vorbei“). Im Startbestand stehen aber nur Kioske mit Namen; Läden, Gastronomie, Apotheken, Reisezentren, Lounges und frei stehende Ausgänge fragt die Overpass-Abfrage noch nicht ab. Code und Tests stehen (`bezugspunktZeilen` in `clients/overpass.ts`, `sammleBezugspunkte` in `core/graph.ts`, Absicherung in `core/bezugspunkte.ts`: Name eindeutig im Bahnhof, höchstens 10 m vom Weg, gleiche Ebene). **Ablauf:** (1) `ABFRAGE_MIT_BEZUGSPUNKTEN = true`. (2) An zehn großen Bahnhöfen Bytes und Laufzeit gegen die alte Abfrage messen; liegt der Zuwachs über 30 %, Julian fragen. (3) `scripts/bestand-fuellen.ts` (alle 382 Bahnhöfe, langer Overpass-Lauf). (4) `npm run bahnhofsseiten`, `npm run vorfuehrdaten`, `npx tsx scripts/textpruefung.ts`; Musterwege in `test/textgen-muster.test.ts` nachziehen. (5) Backend und Frontend zusammen ausliefern. **Achtung:** Die neue Abfrage ändert `ABFRAGE_VERSION`. Wer sie ausliefert, ohne den Bestand neu zu füllen, lässt jeden Bahnhof in Produktion neu bei Overpass abfragen. Danach offen: das Hauptgebäude als Bezugspunkt draußen (die Abfrage holt keine Gebäude). |
+| **41** | **Bahnhöfe neu abfragen: Läden, Restaurants, Ausgänge (Konzept 09, Paket 2)** | **Stand 08.11.2026: Schritte 1–4 erledigt (Bestand neu, Seiten und Tour neu, Text und Tests grün), offen nur Sichtprüfung und Ausliefern – siehe „Hier weitermachen“.** Ursprüngliche Beschreibung: Der Wegtext kann Bezugspunkte nennen („an Backwerk vorbei“, „am Ausgang Nord vorbei“). Im Startbestand stehen aber nur Kioske mit Namen; Läden, Gastronomie, Apotheken, Reisezentren, Lounges und frei stehende Ausgänge fragt die Overpass-Abfrage noch nicht ab. Code und Tests stehen (`bezugspunktZeilen` in `clients/overpass.ts`, `sammleBezugspunkte` in `core/graph.ts`, Absicherung in `core/bezugspunkte.ts`: Name eindeutig im Bahnhof, höchstens 10 m vom Weg, gleiche Ebene). **Ablauf:** (1) `ABFRAGE_MIT_BEZUGSPUNKTEN = true`. (2) An zehn großen Bahnhöfen Bytes und Laufzeit gegen die alte Abfrage messen; liegt der Zuwachs über 30 %, Julian fragen. (3) `scripts/bestand-fuellen.ts` (alle 382 Bahnhöfe, langer Overpass-Lauf). (4) `npm run bahnhofsseiten`, `npm run vorfuehrdaten`, `npx tsx scripts/textpruefung.ts`; Musterwege in `test/textgen-muster.test.ts` nachziehen. (5) Backend und Frontend zusammen ausliefern. **Achtung:** Die neue Abfrage ändert `ABFRAGE_VERSION`. Wer sie ausliefert, ohne den Bestand neu zu füllen, lässt jeden Bahnhof in Produktion neu bei Overpass abfragen. Danach offen: das Hauptgebäude als Bezugspunkt draußen (die Abfrage holt keine Gebäude). |
 | ~~31~~ | ~~**Was „Anfang" im Bahnhof heißt**~~ ✅ **entschieden und umgesetzt 15.09.2026** | **Anfang = Nord- bzw. Westende**, für alle Bahnsteige einer Ebene an derselben Achse ausgerichtet (`core/richtung.ts`, angewandt in `baueGraph`). Die Knöpfe und die Standortmarken im Bild sagen es: „Nordende · Mitte · Südende" oder „Westende · Mitte · Ostende" – vergleichend, also „das nördlichere der beiden Enden". Warum die Himmelsrichtung: Sie ist die einzige Orientierung, die an **jedem** Bahnhof aus den Daten belegt ist. Kopf und Empfangsgebäude kennt die Overpass-Abfrage nicht, und die Fahrtrichtung ließe sich nur aus dem Laufweg schätzen – an Brücken und Kurven das falsche Ende. Ohne gemessene Achse (Standardmodell) bleibt es bei „Anfang/Ende". Vorher: die zufällige Zeichenrichtung in OSM, an Nachbarbahnsteigen oft entgegengesetzt. **Abgelöst am 06.11.2026** (Julian: Wo Norden ist, weiß niemand): Die Knöpfe heißen jetzt „Zuganfang · Zugmitte · Zugende“ oder „Links · Mitte · Rechts“ mit dem Zug im Rücken (`ausstiegLinks`, `core/gleisseite.ts`). Die Himmelsrichtung gilt nur noch, wenn beides fehlt. Siehe „Hier weitermachen". |
 
 Der Umbau nach dem Entwurf ist am 31.08. erfolgt (Spec und Plan unter
