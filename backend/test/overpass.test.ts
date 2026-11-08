@@ -46,8 +46,8 @@ describe('baueOverpassQL', () => {
     expect(mit).toContain('node["shop"]["name"]');
     expect(mit).toContain('way["shop"]["name"]');
     expect(mit).toContain('cafe|fast_food|restaurant|pharmacy|lounge');
-    // Vorgabe bis zum Neufuellen des Startbestands: aus
-    expect(baueOverpassQL(52.5, 13.4, 400)).toBe(ohne);
+    // Vorgabe seit dem Neufuellen des Startbestands (ToDo 41, 08.11.2026): an
+    expect(baueOverpassQL(52.5, 13.4, 400)).toBe(mit);
   });
 });
 

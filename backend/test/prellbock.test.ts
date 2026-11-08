@@ -43,11 +43,11 @@ describe('prellbockEnde – wo die Kopfgleise enden', () => {
       const ende = prellbockEnde(graph, kopfgleise, gleis);
       expect(ende).toBeDefined();
       expect(richtungVon(graph, gleis, ende!)).toBe(richtung);
-    });
+    }, 30_000); // Graph aus dem Startbestand; mit Bezugspunkten (08.11.2026) knapp unter 5 s
   }
 
   it('schweigt ohne Kopfgleise im Graphen', async () => {
     const graph = await graphVon('8000105');
     expect(prellbockEnde(graph, ['999'], '999')).toBeUndefined();
-  });
+  }, 30_000);
 });
