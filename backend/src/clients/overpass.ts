@@ -49,7 +49,7 @@ export function protokolliereVersuch(log: VersuchsLogger): (v: OverpassVersuch) 
  * nach Julians Freigabe. Der Graph nutzt die Punkte, sobald sie da sind;
  * Ausgaenge an Wegknoten kennt er schon jetzt.
  */
-export const ABFRAGE_MIT_BEZUGSPUNKTEN = false;
+export const ABFRAGE_MIT_BEZUGSPUNKTEN = true;
 
 export function baueOverpassQL(
   lat: number,

@@ -42,9 +42,11 @@ export function gruppeVerlaesslich(info: Pick<StationsInfo, 'gruppeUnvollstaendi
   return info.gruppeUnvollstaendig !== true;
 }
 
-const PAUSE_MS = 8000;
+// Einstellbar fuer Messungen (ToDo 41); Vorgaben wie bisher.
+const PAUSE_MS = Number(process.env.PAUSE_MS ?? 8000);
+const MAX_NEU = Number(process.env.MAX_NEU ?? Infinity);
 const PAUSE_DB_MS = 1500;
-const PAUSE_NACH_FEHLER_MS = 45_000;
+const PAUSE_NACH_FEHLER_MS = Number(process.env.FEHLER_PAUSE_MS ?? 45_000);
 const VERSUCHE = 3;
 const warte = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
@@ -78,7 +80,8 @@ async function main(): Promise<void> {
   const gescheitert: string[] = [];
   const pausen = erzeugeOverpassPausen();
   for (const [i, s] of stationen.entries()) {
-    const kopf = `[${i + 1}/${stationen.length}] ${s.name}`;
+    if (geholt >= MAX_NEU) break;
+    const kopf = `${new Date().toISOString().slice(11, 19)} [${i + 1}/${stationen.length}] ${s.name}`;
     const eva = hauptEva(s);
     if (!eva) {
       gescheitert.push(`${s.name}: keine EVA`);
@@ -117,8 +120,9 @@ async function main(): Promise<void> {
     }
     let ok = false;
     for (let versuch = 1; versuch <= VERSUCHE && !ok; versuch++) {
+      const t0 = Date.now();
       try {
-        const osm = await overpassQuery(info.lat, info.lon, OVERPASS_RADIUS_M, fetch, 2000, undefined, pausen);
+        const osm = await overpassQuery(info.lat, info.lon, OVERPASS_RADIUS_M, fetch, 2000, (v) => { if (!v.ok) console.log(`      ${v.instanz} Versuch ${v.versuch}: ${v.status ?? ''} ${(v.fehler ?? '').toString().slice(0, 50)} nach ${(v.dauerMs / 1000).toFixed(1)} s`); }, pausen);
         writeFileSync(
           pfad,
           await packeEintrag({
@@ -131,12 +135,12 @@ async function main(): Promise<void> {
             osm,
           }),
         );
-        console.log(`${kopf} … geholt (${schluessel}, ${osm.elements.length} Elemente)`);
+        console.log(`${kopf} … geholt (${schluessel}, ${osm.elements.length} Elemente, ${((Date.now() - t0) / 1000).toFixed(1)} s)`);
         geholt++;
         ok = true;
         await warte(PAUSE_MS);
       } catch (e) {
-        console.log(`${kopf} … Versuch ${versuch}: ${String(e).slice(0, 70)}`);
+        console.log(`${kopf} … Versuch ${versuch} nach ${((Date.now() - t0) / 1000).toFixed(1)} s: ${String(e).slice(0, 70)}`);
         await warte(PAUSE_NACH_FEHLER_MS * versuch);
       }
     }

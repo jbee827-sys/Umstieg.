@@ -19,7 +19,80 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 07.11.2026)
+## Hier weitermachen (Stand 08.11.2026)
+
+### ToDo 41 begonnen: Startbestand mit Bezugspunkten neu gefüllt (Zweig `feat/textnavigation`, nicht ausgeliefert)
+
+`ABFRAGE_MIT_BEZUGSPUNKTEN = true` (`clients/overpass.ts`), neue `ABFRAGE_VERSION`
+`160f2ffa856a`. Der Startbestand `backend/osm-bestand/` ist neu gefüllt
+(9,5 MB statt 6,2 MB gepackt). **Nicht ausgeliefert:** Wer Backend oder Frontend
+jetzt ausliefert, ohne den Rest unten zu erledigen, bringt Produktion und
+Bestand aus dem Takt.
+
+**Messung (Schritt 2, 07.11.):** An 8 großen Bahnhöfen wuchs die Antwort um
+**36,5 %** (Hamburg +45 %, Köln +46 %, Hannover +90 %, Berlin +14 %). Das lag
+über der 30-%-Grenze; Julian gab den Lauf trotzdem frei. München und Nürnberg
+scheiterten an Overpass. Messskript:
+`backend/osm-ablage/diagnose/bezugspunkte-messung.ts` (gitignored).
+
+**Der Lauf (`scripts/bestand-fuellen.ts`, 07.–08.11.):** **378 von 382** Bahnhöfen
+tragen die neue Version. Es fehlen vier, sie liegen noch im alten Stand:
+**München Ost, Paderborn Hbf, Berlin Südkreuz** (Overpass antwortete nach drei
+Versuchen nicht) und **Wesel** (Stationsauskunft der DB). Ein Nachlauf hing am
+08.11. nachts und wurde beendet. Der Lauf brauchte rund 8 Stunden
+(07.11. 12:00 bis 20:07 UTC) statt der geplanten einen wegen der Overpass-Ausfälle.
+Zählung: `backend/osm-ablage/diagnose/zaehle-version.ts` (gitignored).
+
+**Was die Fehlversuche waren (gemessen, 07.11.):**
+
+- Alle von Overpass: Zeitüberschreitung nach 30 s (am häufigsten), 502 und 504.
+  **Kein einziges 429**, weder bei 8 s noch bei 2 s Pause. Auch `/api/status`
+  antwortete zeitweise nicht – der Server war überlastet.
+- Der Abbruch nach 30 s (`TIMEOUT_MS`) ist knapp: Mehrere Erfolge kamen bei
+  27–29 s. Die neue, größere Abfrage ist langsamer; ein Abbruch kostet eine
+  zweite Anfrage.
+- Im Fehlerfall fragt eine Station schon bis zu 4× je Versuch mit 2 s Abstand
+  (und das Skript wiederholt dreimal). Das ist dichter als die Pause nach einem
+  Erfolg – mehr Frequenz bringt nur etwas, wenn Overpass antwortet.
+- Die Pause nach Erfolg (8 s → 2 s) spielt kaum eine Rolle; der Gewinn kam aus
+  der kürzeren Wartezeit nach Fehlern (45 s → 15 s): etwa 1,6 statt 3,4 min je
+  Bahnhof in der Messung. Unter 2 s wurde bewusst nicht getestet (Adresssperre).
+- `curl` ohne Kennung bekommt von `overpass-api.de` ein 406; Anfragen brauchen
+  den User-Agent des Clients.
+
+**Skript-Einstellungen (neu, Vorgaben unverändert):**
+
+```bash
+cd backend
+PAUSE_MS=2000 FEHLER_PAUSE_MS=15000 npx tsx scripts/bestand-fuellen.ts   # MAX_NEU=n begrenzt die Zahl
+```
+
+Die Ausgabe trägt Zeitstempel, Dauer und je Fehlversuch Instanz und Status.
+
+**Anstehende ToDos (Reihenfolge):**
+
+1. **Die vier fehlenden Bahnhöfe holen:** Skript erneut starten (überspringt
+   Fertiges), zu einer Zeit, in der Overpass ruhiger ist. Danach zählen: alle 382
+   Dateien müssen `ABFRAGE_VERSION` tragen. `osm-startbestand.test.ts` hält Anzahl,
+   Größe (< 15 MB) und Version fest.
+2. **Abgeleitete Daten neu erzeugen:** `cd backend && npm run bahnhofsseiten`,
+   dann `npm run vorfuehrdaten`. Danach Schritt 7 der Einführungstour
+   („9 statt 6 Minuten“) gegen die neuen Gehzeiten prüfen.
+3. **Text prüfen:** `npx tsx scripts/textpruefung.ts` (Regelverstöße, Schritte je
+   Weg); Musterwege in `test/textgen-muster.test.ts` nachziehen; Backend- und
+   Frontend-Tests **nacheinander**, nicht parallel.
+4. **Sichtprüfung am Handy:** Läden und Ausgänge im Text („an Backwerk vorbei“,
+   „am Ausgang Nord vorbei“) an ein paar Bahnhöfen lesen.
+5. **Ausliefern (nur auf Julians Satz):** Backend und Frontend zusammen. Das
+   Backend-Deploy ist für Claude gesperrt (`flyctl deploy backend --ha=false`,
+   Julian startet es mit `!`). Das Volume auf Fly hält Alt-Daten mit der alten
+   Version; sie gelten ab jetzt als veraltet und werden im Hintergrund erneuert.
+6. **Overpass-Abbruch prüfen:** `TIMEOUT_MS` (30 s) anheben und am Skript testen
+   – nicht im Betrieb, wo ein Nutzer wartet.
+7. **Offen aus ToDo 41:** das Hauptgebäude als Bezugspunkt draußen (die Abfrage
+   holt keine Gebäude).
+8. **Nicht committet bleibt:** Messskript und Läufe unter `osm-ablage/`
+   (gitignored).
 
 ### Ausgeliefert am 06.11.2026: Textnavigation nach Bezugspunkten (`feat/textnavigation`)
 
