@@ -261,6 +261,27 @@ function wayEbene(tags: Record<string, string>): number {
   return wayEbeneMitBeleg(tags).ebene;
 }
 
+/** Gleisnummern als `ref`: „1;1a“, „2;3“ – nicht „A“/„B“ einer Bushaltestelle. */
+const GLEIS_REF = /^\d+[a-z]?(\s*;\s*\d+[a-z]?)*$/i;
+
+/**
+ * Bahnsteigflaeche: `railway=platform`, oder nur noch `public_transport=platform`
+ * ohne `railway` und ohne `highway` (osm/pt-bahnsteige.ts: Frankfurt 1+1a seit
+ * dem 06.11.2026, Frankenthal 2;3). Solche Elemente holt die Abfrage nur an den
+ * dort gelisteten Bahnhoefen. Auch dann nur mit `train=yes` oder einer
+ * Gleisnummer als `ref`: Die Suche vom 08.11.2026 fand im selben Umkreis
+ * Bushaltestellen ohne `bus=yes` (Bebra „Gilfershäuser Straße“ A/B,
+ * Neudietendorf) und einen stillgelegten Bahnsteig (Dueren 23,
+ * `disused:railway=platform`).
+ */
+export function istBahnsteigFlaeche(tags: Record<string, string> | undefined): boolean {
+  if (!tags) return false;
+  if (tags.railway === 'platform') return true;
+  if (tags.public_transport !== 'platform' || tags.railway || tags.highway) return false;
+  if (tags.bus === 'yes' || tags.tram === 'yes' || tags['disused:railway'] || tags['abandoned:railway']) return false;
+  return tags.train === 'yes' || GLEIS_REF.test(tags.ref ?? '');
+}
+
 // Bahnsteige laufen separat über Pass D (Ways UND Relationen einheitlich).
 function istEbenerWeg(tags: Record<string, string>): boolean {
   const hw = tags.highway;
@@ -474,7 +495,7 @@ function belegteEbenen(elemente: OsmElement[]): Map<number, Set<number>> {
         merke(el.nodes[0], enden[0]);
         merke(el.nodes[el.nodes.length - 1], enden[1]);
       }
-    } else if (istEbenerWeg(tags) || tags.railway === 'platform' || tags.railway === 'platform_edge') {
+    } else if (istEbenerWeg(tags) || istBahnsteigFlaeche(tags) || tags.railway === 'platform_edge') {
       const { ebene, ebeneBelegt } = wayEbeneMitBeleg(tags);
       if (ebeneBelegt) for (const id of el.nodes) merke(id, ebene);
     }
@@ -641,14 +662,14 @@ function schliesseLueckenAmTreppenfuss(graph: StationGraph, elemente: OsmElement
   const { wurzel, verbinde } = inselnVon(graph);
   const relationsWege = new Set<number>();
   for (const el of elemente) {
-    if (el.type === 'relation' && el.tags?.railway === 'platform') {
+    if (el.type === 'relation' && istBahnsteigFlaeche(el.tags)) {
       for (const m of el.members ?? []) if (m.type === 'way') relationsWege.add(m.ref);
     }
   }
   const aufBahnsteig = new Set<number>();
   for (const el of elemente) {
     if (el.type !== 'way') continue;
-    if (relationsWege.has(el.id) || el.tags?.railway === 'platform' || el.tags?.railway === 'platform_edge') {
+    if (relationsWege.has(el.id) || istBahnsteigFlaeche(el.tags) || el.tags?.railway === 'platform_edge') {
       for (const n of el.nodes ?? []) aufBahnsteig.add(n);
     }
   }
@@ -1057,7 +1078,7 @@ function baueGraphOhneNaht(
 
   for (const rel of relationen) {
     const tags = rel.tags ?? {};
-    if (tags.railway !== 'platform') continue;
+    if (!istBahnsteigFlaeche(tags)) continue;
     const nodeListen: number[][] = [];
     for (const member of rel.members ?? []) {
       if (member.type !== 'way' || member.role === 'inner') continue;
@@ -1074,7 +1095,7 @@ function baueGraphOhneNaht(
 
   for (const way of ways) {
     const tags = way.tags ?? {};
-    if (tags.railway !== 'platform') continue;
+    if (!istBahnsteigFlaeche(tags)) continue;
     if (relationsMitgliedWays.has(way.id)) continue; // schon über Relation erfasst
     nimmAuf({ bahnsteigId: `w${way.id}`, refs: [], ...wayEbeneMitBeleg(tags), tags, nodeListen: [way.nodes!] });
   }

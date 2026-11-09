@@ -9,6 +9,7 @@ import Fastify, {
 import { holeAnlagen } from './clients/fasta.js';
 import { overpassQuery, protokolliereVersuch } from './clients/overpass.js';
 import { erzeugeOverpassPausen } from './clients/overpass-pausen.js';
+import { mitPtBahnsteigen } from './osm/pt-bahnsteige.js';
 import {
   holeGruppe,
   holeStationsInfo,
@@ -350,8 +351,8 @@ export function buildApp(
     const pausen = erzeugeOverpassPausen();
     const overpass: OverpassFn =
       clients.overpass ??
-      ((lat, lon, radiusM) =>
-        overpassQuery(lat, lon, radiusM, fetch, 2000, protokolliereVersuch(instanz.log), pausen));
+      ((lat, lon, radiusM, schluessel) =>
+        overpassQuery(lat, lon, radiusM, fetch, 2000, protokolliereVersuch(instanz.log), pausen, mitPtBahnsteigen(schluessel)));
     /*
      * OSM-Bestand (Spec 2026-10-12): Startbestand im Image, Gelerntes auf dem
      * Volume. Beide nur ueber Einstellungen - ohne sie (lokal, Tests) bleibt

@@ -3,7 +3,7 @@ import type { OverpassAntwort, StationsInfo } from '../core/typen.js';
 import type { OverpassFn } from '../routes/api.js';
 import { istVeraltet, schluesselVon, type OsmBestand } from './bestand.js';
 import type { ErneuerungsAuftrag, OsmErneuerung } from './erneuerung.js';
-import { ABFRAGE_VERSION } from './version.js';
+import { abfrageVersionFuer } from './version.js';
 
 export interface OsmQuelle {
   /** OSM-Daten des Bahnhofs – aus dem Bestand, sonst von Overpass. Wirft wie Overpass. */
@@ -44,7 +44,7 @@ export function erzeugeOsmQuelle(o: {
       }
       let osm: OverpassAntwort;
       try {
-        osm = await o.overpass(info.lat, info.lon, OVERPASS_RADIUS_M);
+        osm = await o.overpass(info.lat, info.lon, OVERPASS_RADIUS_M, auftrag.schluessel);
       } catch (e) {
         // Spec 2026-10-14, Abschnitt 5: Niemand muss erneut fragen – die
         // Erneuerung holt den Bahnhof in einer Stunde nach.
@@ -58,7 +58,7 @@ export function erzeugeOsmQuelle(o: {
         lat: auftrag.lat,
         lon: auftrag.lon,
         geholtAm: jetzt().toISOString(),
-        abfrageVersion: ABFRAGE_VERSION,
+        abfrageVersion: abfrageVersionFuer(auftrag.schluessel),
         osm,
       });
       return osm;

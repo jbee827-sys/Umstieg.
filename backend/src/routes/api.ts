@@ -38,7 +38,8 @@ import type {
   TafelEintrag,
 } from '../core/typen.js';
 
-export type OverpassFn = (lat: number, lon: number, radiusM: number) => Promise<OverpassAntwort>;
+/** `schluessel`: der Bahnhof im Bestand - manche fragen Zusatzzeilen ab (osm/pt-bahnsteige.ts). */
+export type OverpassFn = (lat: number, lon: number, radiusM: number, schluessel?: string) => Promise<OverpassAntwort>;
 
 export interface StationsClient {
   sucheBahnhoefe(q: string): Promise<BahnhofTreffer[]>;

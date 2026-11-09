@@ -1,7 +1,7 @@
 import { OVERPASS_RADIUS_M } from '../clients/overpass.js';
 import type { OverpassFn } from '../routes/api.js';
 import type { OsmBestand, Warner } from './bestand.js';
-import { ABFRAGE_VERSION } from './version.js';
+import { abfrageVersionFuer } from './version.js';
 
 export const PAUSE_MS = 10_000;
 export const MAX_PRO_STUNDE = 50;
@@ -84,14 +84,14 @@ export function erzeugeErneuerung(o: {
   async function erneuere(a: ErneuerungsAuftrag): Promise<void> {
     letzterVersuch.set(a.schluessel, jetzt().getTime());
     try {
-      const osm = await o.overpass(a.lat, a.lon, OVERPASS_RADIUS_M);
+      const osm = await o.overpass(a.lat, a.lon, OVERPASS_RADIUS_M, a.schluessel);
       const geschrieben = await o.bestand.schreibe({
         schluessel: a.schluessel,
         name: a.name,
         lat: a.lat,
         lon: a.lon,
         geholtAm: jetzt().toISOString(),
-        abfrageVersion: ABFRAGE_VERSION,
+        abfrageVersion: abfrageVersionFuer(a.schluessel),
         osm,
       });
       if (!geschrieben) return;

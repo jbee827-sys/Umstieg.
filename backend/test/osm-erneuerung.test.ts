@@ -48,7 +48,7 @@ describe('Hintergrund-Erneuerung', () => {
     a.erneuerung.beiErneuert(erneuert);
     a.erneuerung.stosseAn(auftrag('8002549'));
     await a.erneuerung.leerlauf();
-    expect(a.overpass).toHaveBeenCalledWith(52, 13, 400);
+    expect(a.overpass).toHaveBeenCalledWith(52, 13, 400, '8002549');
     expect(a.geschrieben[0]).toMatchObject({
       schluessel: '8002549',
       abfrageVersion: ABFRAGE_VERSION,
@@ -174,7 +174,7 @@ describe('Hintergrund-Erneuerung – Nachholen', () => {
     expect(NACHHOL_WARTEZEIT_MS).toBe(60 * 60 * 1000);
     a.zeitgeber[0].fn();
     await a.erneuerung.leerlauf();
-    expect(a.overpass).toHaveBeenCalledWith(52, 13, 400);
+    expect(a.overpass).toHaveBeenCalledWith(52, 13, 400, '8010376');
     expect(a.bestand.schreibe).toHaveBeenCalledWith(expect.objectContaining({ schluessel: '8010376' }));
     expect(erneuert).toHaveBeenCalledWith(expect.objectContaining({ schluessel: '8010376' }));
   });

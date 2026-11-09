@@ -42,12 +42,9 @@ export function protokolliereVersuch(log: VersuchsLogger): (v: OverpassVersuch) 
 /**
  * Fragt die Abfrage auch Ausgaenge und benannte Laeden ab (Konzept 09, Paket 2)?
  *
- * Noch aus: Die Abfrage bestimmt `ABFRAGE_VERSION`, und eine neue Version
- * macht den ganzen Startbestand veraltet - in Produktion holte jeder Bahnhof
- * seine Daten neu von Overpass. Eingeschaltet wird zusammen mit dem Neufuellen
- * (`scripts/bestand-fuellen.ts`) und der Groessenmessung an zehn Bahnhoefen,
- * nach Julians Freigabe. Der Graph nutzt die Punkte, sobald sie da sind;
- * Ausgaenge an Wegknoten kennt er schon jetzt.
+ * An seit dem 08.11.2026 (ToDo 41), Startbestand neu gefuellt. Die Abfrage
+ * bestimmt `ABFRAGE_VERSION`; eine neue Version macht den ganzen Startbestand
+ * veraltet.
  */
 export const ABFRAGE_MIT_BEZUGSPUNKTEN = true;
 
@@ -56,6 +53,7 @@ export function baueOverpassQL(
   lon: number,
   radiusM: number,
   mitBezugspunkten: boolean = ABFRAGE_MIT_BEZUGSPUNKTEN,
+  mitPtBahnsteigen = false,
 ): string {
   const um = `around:${radiusM},${lat},${lon}`;
   // Elementklassen gemäß Konzept 4.1: Bahnsteige (+ ref-Gleisnummern),
@@ -89,10 +87,22 @@ export function baueOverpassQL(
   node["amenity"="toilets"](${um});
   way["amenity"="toilets"](${um});
   node["shop"="kiosk"](${um});
-  way["shop"="kiosk"](${um});${mitBezugspunkten ? bezugspunktZeilen(um) : ''}
+  way["shop"="kiosk"](${um});${mitBezugspunkten ? bezugspunktZeilen(um) : ''}${mitPtBahnsteigen ? ptBahnsteigZeilen(um) : ''}
 );
 (._;>>;);
 out body;`;
+}
+
+/**
+ * Bahnsteige, die nur noch `public_transport=platform` tragen (osm/pt-bahnsteige.ts).
+ * Nur fuer die dort gelisteten Bahnhoefe - sonst aenderte sich die Abfrage und
+ * damit die Version des ganzen Startbestands. Ohne `highway`: Bussteige und
+ * als Fussweg gezeichnete Steige bleiben draussen.
+ */
+function ptBahnsteigZeilen(um: string): string {
+  return `
+  way["public_transport"="platform"][!"railway"][!"highway"](${um});
+  relation["public_transport"="platform"][!"railway"](${um});`;
 }
 
 function bezugspunktZeilen(um: string): string {
@@ -123,8 +133,9 @@ export async function overpassQuery(
   retryWartezeitMs = 2000,
   beiVersuch?: (v: OverpassVersuch) => void,
   pausen?: OverpassPausen,
+  mitPtBahnsteigen = false,
 ): Promise<OverpassAntwort> {
-  const ql = baueOverpassQL(lat, lon, radiusM);
+  const ql = baueOverpassQL(lat, lon, radiusM, ABFRAGE_MIT_BEZUGSPUNKTEN, mitPtBahnsteigen);
   const versuche = instanzReihenfolge();
   // Wer in DIESER Abfrage mit 429, 406 oder abgewiesener Verbindung geantwortet
   // hat, bekommt keinen zweiten Versuch (Spec 2026-10-14, Abschnitt 4).

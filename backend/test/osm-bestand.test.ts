@@ -10,7 +10,7 @@ import {
   schluesselVon,
   type BestandsEintrag,
 } from '../src/osm/bestand.js';
-import { ABFRAGE_VERSION } from '../src/osm/version.js';
+import { ABFRAGE_VERSION, abfrageVersionFuer } from '../src/osm/version.js';
 import { baueOverpassQL } from '../src/clients/overpass.js';
 import { createHash } from 'node:crypto';
 import type { OverpassAntwort } from '../src/core/typen.js';
@@ -26,7 +26,8 @@ function eintrag(schluessel: string, ueber: Partial<BestandsEintrag> = {}): Best
     lat: 52,
     lon: 13,
     geholtAm: '2026-10-12T10:00:00.000Z',
-    abfrageVersion: ABFRAGE_VERSION,
+    // Je Bahnhof: 8000105 (Frankfurt) traegt die Fassung mit pt-Bahnsteigen.
+    abfrageVersion: abfrageVersionFuer(schluessel),
     osm: { elements: [{ type: 'node', id: 1, lat: 52, lon: 13 }] } as unknown as OverpassAntwort,
     ...ueber,
   };

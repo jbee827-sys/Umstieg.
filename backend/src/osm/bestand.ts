@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { gunzip, gzip } from 'node:zlib';
 import type { OverpassAntwort } from '../core/typen.js';
-import { ABFRAGE_VERSION } from './version.js';
+import { abfrageVersionFuer } from './version.js';
 
 const entpacke = promisify(gunzip);
 const packe = promisify(gzip);
@@ -48,9 +48,10 @@ export function dateiname(schluessel: string): string {
 }
 
 export function istVeraltet(
-  e: { geholtAm: string; abfrageVersion: string },
+  e: { geholtAm: string; abfrageVersion: string; schluessel?: string },
   jetzt: Date,
-  version: string = ABFRAGE_VERSION,
+  // Je Bahnhof: die mit Zusatzzeilen (osm/pt-bahnsteige.ts) tragen eine eigene Fassung.
+  version: string = abfrageVersionFuer(e.schluessel),
 ): boolean {
   if (e.abfrageVersion !== version) return true;
   const geholt = Date.parse(e.geholtAm);

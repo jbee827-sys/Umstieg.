@@ -18,7 +18,8 @@ import { erzeugeOverpassPausen } from '../src/clients/overpass-pausen.js';
 import { dbAuthHeader, holeStationsInfo } from '../src/clients/stations.js';
 import type { StationsInfo } from '../src/core/typen.js';
 import { dateiname, entpackeEintrag, packeEintrag, schluesselVon } from '../src/osm/bestand.js';
-import { ABFRAGE_VERSION } from '../src/osm/version.js';
+import { mitPtBahnsteigen } from '../src/osm/pt-bahnsteige.js';
+import { ABFRAGE_VERSION, abfrageVersionFuer } from '../src/osm/version.js';
 import { ladeSecrets } from './secrets.js';
 
 export const BESTAND = fileURLToPath(new URL('../osm-bestand/', import.meta.url));
@@ -60,10 +61,10 @@ async function holeStadaListe(): Promise<StadaStation[]> {
   return j.result ?? [];
 }
 
-async function liegtAktuell(pfad: string): Promise<boolean> {
+async function liegtAktuell(pfad: string, schluessel: string): Promise<boolean> {
   if (!existsSync(pfad)) return false;
   try {
-    return (await entpackeEintrag(readFileSync(pfad))).abfrageVersion === ABFRAGE_VERSION;
+    return (await entpackeEintrag(readFileSync(pfad))).abfrageVersion === abfrageVersionFuer(schluessel);
   } catch {
     return false;
   }
@@ -114,7 +115,7 @@ async function main(): Promise<void> {
     }
     erledigt.add(schluessel);
     const pfad = join(BESTAND, dateiname(schluessel));
-    if (await liegtAktuell(pfad)) {
+    if (await liegtAktuell(pfad, schluessel)) {
       console.log(`${kopf} … liegt schon (${schluessel})`);
       continue;
     }
@@ -122,7 +123,7 @@ async function main(): Promise<void> {
     for (let versuch = 1; versuch <= VERSUCHE && !ok; versuch++) {
       const t0 = Date.now();
       try {
-        const osm = await overpassQuery(info.lat, info.lon, OVERPASS_RADIUS_M, fetch, 2000, (v) => { if (!v.ok) console.log(`      ${v.instanz} Versuch ${v.versuch}: ${v.status ?? ''} ${(v.fehler ?? '').toString().slice(0, 50)} nach ${(v.dauerMs / 1000).toFixed(1)} s`); }, pausen);
+        const osm = await overpassQuery(info.lat, info.lon, OVERPASS_RADIUS_M, fetch, 2000, (v) => { if (!v.ok) console.log(`      ${v.instanz} Versuch ${v.versuch}: ${v.status ?? ''} ${(v.fehler ?? '').toString().slice(0, 50)} nach ${(v.dauerMs / 1000).toFixed(1)} s`); }, pausen, mitPtBahnsteigen(schluessel));
         writeFileSync(
           pfad,
           await packeEintrag({
@@ -131,7 +132,7 @@ async function main(): Promise<void> {
             lat: info.lat,
             lon: info.lon,
             geholtAm: new Date().toISOString(),
-            abfrageVersion: ABFRAGE_VERSION,
+            abfrageVersion: abfrageVersionFuer(schluessel),
             osm,
           }),
         );

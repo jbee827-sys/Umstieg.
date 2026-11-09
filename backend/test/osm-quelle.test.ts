@@ -87,7 +87,7 @@ describe('OSM-Quelle', () => {
   it('holt einen fehlenden Bahnhof von Overpass und schreibt ihn', async () => {
     const a = aufbau(null);
     expect(await a.quelle.hole(berlin)).toBe(AUS_OVERPASS);
-    expect(a.overpass).toHaveBeenCalledWith(52.525, 13.369, 400);
+    expect(a.overpass).toHaveBeenCalledWith(52.525, 13.369, 400, '8011160');
     expect(a.bestand.schreibe).toHaveBeenCalledWith({
       schluessel: '8011160',
       name: 'Berlin Hbf',

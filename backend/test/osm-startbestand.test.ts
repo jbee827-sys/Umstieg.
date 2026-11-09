@@ -3,7 +3,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { entpackeEintrag } from '../src/osm/bestand.js';
-import { ABFRAGE_VERSION } from '../src/osm/version.js';
+import { abfrageVersionFuer } from '../src/osm/version.js';
 
 const BESTAND = fileURLToPath(new URL('../osm-bestand/', import.meta.url));
 const dateien = (() => {
@@ -31,7 +31,8 @@ describe('Startbestand im Repo', () => {
   it('ist durchweg in der aktuellen Abfrageversion und heisst wie sein Schluessel', async () => {
     for (const n of dateien) {
       const e = await entpackeEintrag(readFileSync(join(BESTAND, n)));
-      expect(e.abfrageVersion, n).toBe(ABFRAGE_VERSION);
+      // Je Bahnhof: Frankfurt und Frankenthal tragen die Fassung mit pt-Bahnsteigen.
+      expect(e.abfrageVersion, n).toBe(abfrageVersionFuer(e.schluessel));
       expect(`${e.schluessel}.json.gz`).toBe(n);
     }
   }, ENTPACKEN_MS);
