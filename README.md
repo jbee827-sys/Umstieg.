@@ -21,6 +21,41 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 
 ## Hier weitermachen (Stand 09.11.2026)
 
+**Abgeschlossen:** ToDo 41 (Startbestand mit Bezugspunkten) und der Fix für
+Frankfurt Hbf Gleis 1a und Frankenthal Gleis 3. Beides ist ausgeliefert und
+live geprüft, nichts davon ist mehr offen.
+
+- `main` und `feat/textnavigation` stehen auf `origin` gleich.
+- Das Backend auf Fly läuft mit dem Code von `a5d92df`. Danach kamen nur
+  README-Commits.
+
+**Offene Punkte (Reihenfolge):**
+
+1. **Sichtprüfung am Handy** (Julian): Läden im Text an ein paar Bahnhöfen
+   lesen. In der Stichprobe fiel „an Junge vorbei“ auf, vermutlich eine
+   Bäckerei, nicht nachgeprüft. „Ausgang“ kommt nur in 5 von 1536 Wegen vor.
+2. **Prüfregel in `frontend/scripts/simulation-bild.ts` anpassen:** Sie meldet
+   966 Fehlalarme „Anfang, Mitte, Ende nicht von links nach rechts“. Die Regel
+   ist vom 02.10. Seit `08f6410` (06.11., „Links · Mitte · Rechts mit dem Zug
+   im Rücken“) ist das Bild gespiegelt, und die Reihenfolge darf umgekehrt
+   sein. Die Regel muss `ausstiegLinks` berücksichtigen.
+3. **Frankfurt 1 → 1a: 30 s in der App, 8 s auf der Bahnhofsseite.** Die App
+   sagt „Gleis 1a gegenüber“, die Seite rechnet den Weg am selben Bahnsteig.
+   Das war auch vor dem 09.11. so. Klären, welche Zahl stimmt.
+4. **Overpass-Abbruch prüfen:** `TIMEOUT_MS` (30 s) in `clients/overpass.ts`
+   anheben und am Skript testen, nicht im Betrieb, wo ein Nutzer wartet.
+5. **Offen aus ToDo 41:** das Hauptgebäude als Bezugspunkt draußen. Die
+   Abfrage holt keine Gebäude, und der Haltestellenpfad hat keinen eigenen
+   Graphen.
+6. **Weitere Bahnhöfe mit Bahnsteigen nur unter `public_transport=platform`:**
+   Wenn ein Gleis ohne Weg auffällt, wie unten unter „Einen weiteren Bahnhof
+   aufnehmen“ beschrieben vorgehen.
+7. **Später erneuern:** Der Bestand gilt nach 30 Tagen als veraltet, die
+   Erneuerung im Betrieb übernimmt das. Das Volume auf Fly hält noch Alt-Daten
+   der alten Version, die im Hintergrund erneuert werden (höchstens 50 je
+   Stunde). Ein neuer Gesamtlauf lohnt sich nur nach einer neuen Abfrage, dann
+   mit `PAUSE_MS=2000 FEHLER_PAUSE_MS=15000`.
+
 ### Ausgeliefert am 09.11.2026: ToDo 41 (Bezugspunkte) und Frankfurt 1a
 
 - **Backend:** Julian hat es am 09.11. abends deployt, mit
@@ -37,7 +72,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - Die Bahnhofsseiten Frankfurt und Frankenthal gleichen dem lokalen Build bis
   auf den Hash von `messung-*.js`.
 
-### Frankfurt Hbf Gleis 1a und Frankenthal Gleis 3 (`b24346e`, 09.11.2026)
+### Abgeschlossen: Frankfurt Hbf Gleis 1a und Frankenthal Gleis 3 (`b24346e`, 09.11.2026)
 
 **Der Fehler:** Im neuen Startbestand vom 08.11. war Frankfurt (Main) Hbf
 Gleis 1a von keinem anderen Gleis aus erreichbar (56 Gleispaare ohne Weg).
@@ -83,14 +118,10 @@ npm run bahnhofsseiten
 | Frankfurt Hbf | 1 ↔ 1a in 8 s, alle 812 Gleispaare mit Weg (wie vor dem 06.11.) |
 | `LISTE=ablage simulation-lauf3.ts` | 2157 Routen, identisch mit `origin/main` (`c46339c`) |
 
-**Offen, nicht von diesem Stand verursacht:** `simulation-bild.ts` meldet
-966 Routen mit „Anfang, Mitte, Ende nicht von links nach rechts“, auf
-`origin/main` genauso. Die Regel stammt vom 02.10. Seit `08f6410` (06.11.,
-„Links · Mitte · Rechts mit dem Zug im Rücken“) wird das Bild aber gespiegelt,
-die Reihenfolge darf also auch umgekehrt sein. Die Regel in
-`frontend/scripts/simulation-bild.ts` an `ausstiegLinks` anpassen.
+`simulation-bild.ts` meldete 966 Befunde, auf `origin/main` genauso. Sie
+kommen nicht von diesem Stand, siehe oben „Offene Punkte“, Punkt 2.
 
-### ToDo 41 bis auf Sichtprüfung erledigt: Startbestand mit Bezugspunkten (Zweig `feat/textnavigation`)
+### Abgeschlossen: ToDo 41, Startbestand mit Bezugspunkten (Zweig `feat/textnavigation`)
 
 `ABFRAGE_MIT_BEZUGSPUNKTEN = true` (`clients/overpass.ts`), neue `ABFRAGE_VERSION`
 `160f2ffa856a`. Der Startbestand `backend/osm-bestand/` ist neu gefüllt
@@ -160,23 +191,7 @@ PAUSE_MS=2000 FEHLER_PAUSE_MS=15000 npx tsx scripts/bestand-fuellen.ts   # MAX_N
 
 Die Ausgabe trägt Zeitstempel, Dauer und je Fehlversuch Instanz und Status.
 
-**Anstehende ToDos (Reihenfolge):**
-
-1. **Sichtprüfung am Handy** (Julian): Läden im Text an ein paar Bahnhöfen lesen
-   („an Backwerk vorbei“). In der Stichprobe fiel „an Junge vorbei“ auf –
-   vermutlich eine Bäckerei, nicht nachgeprüft. Auch „Ausgang“ ist selten (5 von
-   1534 Wegen).
-2. ~~**Ausliefern**~~ ✅ **erledigt 09.11.2026.** Das Volume auf Fly hält
-   Alt-Daten mit der alten Version. Sie gelten als veraltet und werden im
-   Hintergrund erneuert (höchstens 50 je Stunde). Der Startbestand im Image ist
-   neu, deshalb fragt keiner der 382 Bahnhöfe bei Overpass nach.
-3. **Overpass-Abbruch prüfen:** `TIMEOUT_MS` (30 s) in `clients/overpass.ts`
-   anheben und am Skript testen – nicht im Betrieb, wo ein Nutzer wartet.
-4. **Offen aus ToDo 41:** das Hauptgebäude als Bezugspunkt draußen (die Abfrage
-   holt keine Gebäude; der Haltestellenpfad hat keinen eigenen Graphen).
-5. **Später erneuern:** Der Bestand ist ab 30 Tagen veraltet; die Erneuerung im
-   Betrieb übernimmt das. Ein erneuter Gesamtlauf lohnt nur nach einer neuen
-   Abfrage, dann mit `PAUSE_MS=2000 FEHLER_PAUSE_MS=15000`.
+Die übrigen ToDos stehen gesammelt oben unter „Offene Punkte“.
 
 ### Ausgeliefert am 06.11.2026: Textnavigation nach Bezugspunkten (`feat/textnavigation`)
 
