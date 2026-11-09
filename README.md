@@ -19,9 +19,62 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 08.11.2026)
+## Hier weitermachen (Stand 09.11.2026)
 
-### ToDo 41 bis auf Sichtprüfung und Ausliefern erledigt: Startbestand mit Bezugspunkten (Zweig `feat/textnavigation`, nicht ausgeliefert)
+### Frankfurt Hbf Gleis 1a und Frankenthal Gleis 3 (`b24346e`, 09.11.2026)
+
+**Der Fehler:** Im neuen Startbestand vom 08.11. war Frankfurt (Main) Hbf
+Gleis 1a von keinem anderen Gleis aus erreichbar (56 Gleispaare ohne Weg).
+Ursache war eine OSM-Bearbeitung vom 06.11.2026: Die Bahnsteigfläche „Bstg.
+1+1a“ (Relation 21494088, Version 3) verlor `railway=platform`, `level` und
+`train`. Die Abfrage fragt nach `railway=platform`, deshalb fehlten die Fläche
+und ihre zwei Randlinien. In Frankenthal Hbf fehlte Gleis 3 aus demselben
+Grund (Way 166118826, nur `public_transport=platform` und `train=yes`).
+
+**Die Lösung:**
+
+- Nur die Bahnhöfe in `backend/src/osm/pt-bahnsteige.ts` (`PT_BAHNSTEIGE`)
+  fragen zusätzlich Bahnsteige ab, die nur `public_transport=platform` tragen.
+  Bussteige (`highway`) bleiben außen vor.
+- Die zwei Bahnhöfe haben dafür eine eigene Abfrageversion
+  (`ABFRAGE_VERSION_PT`, `17b1e2a304b8`). Alle anderen bleiben auf
+  `160f2ffa856a`, der Startbestand muss also nicht neu gefüllt werden.
+- `istBahnsteigFlaeche` (`core/graph.ts`) nimmt solche Flächen nur mit
+  `train=yes` oder einer Gleisnummer als `ref`. Bushaltestellen ohne `bus=yes`
+  (Bebra, Neudietendorf) und stillgelegte Bahnsteige (Düren 23) fallen heraus.
+- Gefunden wurden die zwei Bahnhöfe mit
+  `osm-ablage/diagnose/pt-bahnsteige-suche.ts` (gitignored). Durchsucht wurden
+  die 36 Bahnhöfe, an denen ein DB-Gleis isoliert ist oder fehlt.
+
+**Einen weiteren Bahnhof aufnehmen:** Schlüssel (kleinste EVA der Gruppe) in
+`PT_BAHNSTEIGE` eintragen, dann:
+
+```bash
+cd backend
+npx tsx scripts/bestand-einzeln.ts <schluessel>   # holt nur diesen Bahnhof neu
+npm run bahnhofsseiten
+```
+
+**Geprüft vor der Auslieferung (09.11.):**
+
+| Prüfung | Ergebnis |
+|---|---|
+| Backend: Tests und Lint | 1092 von 1092, sauber |
+| Frontend: Tests, Lint und Build | 1125 von 1125, sauber, 379 Bahnhofsseiten |
+| `anfragen-pruefung.ts` | 3446 Anfragen, 0 Befunde |
+| `textpruefung.ts` | 1536 Wege (vorher 1534), 0 Regelverstöße |
+| `npm run bahnhofsseiten` neu erzeugt | keine Datei geändert |
+| Frankfurt Hbf | 1 ↔ 1a in 8 s, alle 812 Gleispaare mit Weg (wie vor dem 06.11.) |
+| `LISTE=ablage simulation-lauf3.ts` | 2157 Routen, identisch mit `origin/main` (`c46339c`) |
+
+**Offen, nicht von diesem Stand verursacht:** `simulation-bild.ts` meldet
+966 Routen mit „Anfang, Mitte, Ende nicht von links nach rechts“, auf
+`origin/main` genauso. Die Regel stammt vom 02.10. Seit `08f6410` (06.11.,
+„Links · Mitte · Rechts mit dem Zug im Rücken“) wird das Bild aber gespiegelt,
+die Reihenfolge darf also auch umgekehrt sein. Die Regel in
+`frontend/scripts/simulation-bild.ts` an `ausstiegLinks` anpassen.
+
+### ToDo 41 bis auf Sichtprüfung erledigt: Startbestand mit Bezugspunkten (Zweig `feat/textnavigation`)
 
 `ABFRAGE_MIT_BEZUGSPUNKTEN = true` (`clients/overpass.ts`), neue `ABFRAGE_VERSION`
 `160f2ffa856a`. Der Startbestand `backend/osm-bestand/` ist neu gefüllt
