@@ -21,6 +21,22 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 
 ## Hier weitermachen (Stand 09.11.2026)
 
+### Ausgeliefert am 09.11.2026: ToDo 41 (Bezugspunkte) und Frankfurt 1a
+
+- **Backend:** Julian hat es am 09.11. abends deployt, mit
+  `flyctl deploy backend --ha=false` auf `a5d92df` (eine Maschine).
+- **Frontend:** `main` per Fast-Forward von `c46339c` auf `a5d92df` gebracht,
+  Vercel hat ausgeliefert.
+- **`feat/textnavigation`:** liegt jetzt auch auf `origin`, gleichauf mit `main`.
+
+**Live geprüft:**
+
+- Frankfurt 1 → 1a 30 s („gegenüber“), 1a → 2 325 s, 24 → 1a 616 s.
+- Frankenthal 1 → 3 199 s („an Eckert vorbei“).
+- Bonn 1 → 5 ab Anfang 206 s („an DB Reisezentrum vorbei“).
+- Die Bahnhofsseiten Frankfurt und Frankenthal gleichen dem lokalen Build bis
+  auf den Hash von `messung-*.js`.
+
 ### Frankfurt Hbf Gleis 1a und Frankenthal Gleis 3 (`b24346e`, 09.11.2026)
 
 **Der Fehler:** Im neuen Startbestand vom 08.11. war Frankfurt (Main) Hbf
@@ -79,9 +95,7 @@ die Reihenfolge darf also auch umgekehrt sein. Die Regel in
 `ABFRAGE_MIT_BEZUGSPUNKTEN = true` (`clients/overpass.ts`), neue `ABFRAGE_VERSION`
 `160f2ffa856a`. Der Startbestand `backend/osm-bestand/` ist neu gefüllt
 (9,5 MB statt 6,2 MB gepackt). Commits `95de883`, `0602239`, `fe10809`.
-**Nicht ausgeliefert:** Backend und Frontend gehören zusammen heraus (siehe
-„Anstehende ToDos“, Punkt 1). Wer nur eines ausliefert, bringt Produktion und
-Bestand aus dem Takt.
+**Ausgeliefert am 09.11.2026** (siehe oben), Backend und Frontend zusammen.
 
 **Messung (Schritt 2, 07.11.):** An 8 großen Bahnhöfen wuchs die Antwort um
 **36,5 %** (Hamburg +45 %, Köln +46 %, Hannover +90 %, Berlin +14 %). Das lag
@@ -152,12 +166,10 @@ Die Ausgabe trägt Zeitstempel, Dauer und je Fehlversuch Instanz und Status.
    („an Backwerk vorbei“). In der Stichprobe fiel „an Junge vorbei“ auf –
    vermutlich eine Bäckerei, nicht nachgeprüft. Auch „Ausgang“ ist selten (5 von
    1534 Wegen).
-2. **Ausliefern (nur auf Julians Satz):** Backend und Frontend **zusammen**. Das
-   Backend-Deploy ist für Claude gesperrt (`flyctl deploy backend --ha=false`,
-   Julian startet es mit `!`). Das Volume auf Fly hält Alt-Daten mit der alten
-   Version; sie gelten ab jetzt als veraltet und werden im Hintergrund erneuert
-   (höchstens 50 je Stunde). Der Startbestand im Image ist neu, daher fragt
-   kein Bahnhof der 382 bei Overpass nach. Danach live prüfen, etwa Bonn 1 → 5.
+2. ~~**Ausliefern**~~ ✅ **erledigt 09.11.2026.** Das Volume auf Fly hält
+   Alt-Daten mit der alten Version. Sie gelten als veraltet und werden im
+   Hintergrund erneuert (höchstens 50 je Stunde). Der Startbestand im Image ist
+   neu, deshalb fragt keiner der 382 Bahnhöfe bei Overpass nach.
 3. **Overpass-Abbruch prüfen:** `TIMEOUT_MS` (30 s) in `clients/overpass.ts`
    anheben und am Skript testen – nicht im Betrieb, wo ein Nutzer wartet.
 4. **Offen aus ToDo 41:** das Hauptgebäude als Bezugspunkt draußen (die Abfrage
