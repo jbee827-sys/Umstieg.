@@ -551,6 +551,30 @@
 }
 
 /*
+ * Gesperrt und schwebend (z. B. „Umstieg starten", solange kein Gleis
+ * gewaehlt ist): der Texture-Knopf zu 45 %, wie in der Vorschau - aber
+ * vorgemischt statt per opacity, damit der Rollbereich nicht durchscheint.
+ * Ohne diese Regel malte `.knopf-schwebend:disabled` eine flache Flaeche.
+ */
+.knopf-textur.knopf-schwebend:disabled {
+  color: color-mix(in srgb, #ffffff 45%, var(--color-bg));
+  background:
+    linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--texturknopf-oben) 45%, var(--color-bg)),
+        color-mix(in srgb, var(--texturknopf-unten) 45%, var(--color-bg))
+      )
+      padding-box,
+    linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--texturknopf-licht-oben) 45%, var(--color-bg)),
+        color-mix(in srgb, var(--texturknopf-licht-unten) 45%, var(--color-bg))
+      )
+      border-box;
+  box-shadow: var(--texturknopf-ring), var(--shadow-md);
+}
+
+/*
  * Angeheftet ist nur der Knopf (12.10.2026): Er schwebt ueber dem
  * Rollbereich, der Inhalt rollt darunter durch. Vorher endete der Rollbereich
  * ueber ihm, und der Knopf stand in einem eigenen Streifen vor der Leiste.

@@ -114,6 +114,20 @@ describe('App.css: der Texture-Look der Hauptknoepfe', () => {
     expect(deklarationenVon(css, '.knopf-textur:active').join(' ')).toContain('var(--texturknopf-oben-druck)')
   })
 
+  /**
+   * Gesperrt (z. B. solange kein Gleis gewaehlt ist) sieht er aus wie der
+   * Texture-Knopf zu 45 % - Verlauf und Lichtrand bleiben erkennbar. Weil er
+   * schwebt, nicht per opacity, sondern vorgemischt: sonst schiene der
+   * Rollbereich durch (siehe „der schwebende Knopf").
+   */
+  it('behaelt gesperrt und schwebend Verlauf und Lichtrand, vorgemischt zu 45 %', () => {
+    const gesperrt = deklarationenVon(css, '.knopf-textur.knopf-schwebend:disabled').join(' ')
+    expect(gesperrt).toMatch(/color-mix\(in srgb, var\(--texturknopf-oben\) 45%, var\(--color-bg\)\)/)
+    expect(gesperrt).toMatch(/color-mix\(in srgb, var\(--texturknopf-licht-oben\) 45%, var\(--color-bg\)\)/)
+    expect(gesperrt).toContain('padding-box')
+    expect(gesperrt).toContain('border-box')
+  })
+
   it('hat eine Nachtfassung in beiden dunklen Bloecken', () => {
     const treffer = cssVon('index.css').match(/--texturknopf-oben: #ff5a3d/g) ?? []
     expect(treffer).toHaveLength(2)
