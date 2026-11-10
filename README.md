@@ -570,7 +570,7 @@ Gleis“ heißt nicht, dass der Weg offen ist.
    App zeigt laufend „Neue Abfahrtszeit“ zu Zügen, die niemand gewählt hat (lokal
    gesehen, in der Produktion ungeprüft).
 
-### iOS-App (Stand 24.10.2026, Zweig `feat/app-ios`, nicht ausgeliefert)
+### iOS-App (Stand 10.11.2026, in `main` seit 01.11.2026, TestFlight intern)
 
 Plan: `Umstieg_Konzepte/05-umsetzungsplan-app-store.md`. Aufbau und
 Einrichtung: [`docs/app-ios.md`](./docs/app-ios.md). Web und App teilen einen
@@ -582,7 +582,7 @@ Code (`istApp()`); die Web-Fassung ändert sich nur im Suchfeld
 | 0 Apple-Konto | erledigt (Julian, 24.10.2026) |
 | 1 Lizenz-Ausnahme (§ 7 AGPL) | umgesetzt in `NOTICE`, `CONTRIBUTING.md` – **Freigabe Julian** |
 | 2 Capacitor + Cloud-Bau | fertig; Actions-Lauf grün mit 12 Fotos (iPhone 6,9", iPad 13", hell/dunkel); `capacitor://localhost` steht seit 24.10.2026 in `CORS_ORIGIN` auf Fly |
-| 3 TestFlight | Job `testflight` steht; braucht Paket 0 und die vier Geheimnisse (`docs/app-ios.md`) |
+| 3 TestFlight | **erster Bau hochgeladen am 10.11.2026** (1.0, aus `main`). Dafür nötig: registriertes iPhone, echte App Group `group.online.umstieg.app` beiden App-IDs zugeordnet, Bundle-ID `online.umstieg.app` im App-Eintrag (war mit der Gruppe verwechselt) – Details in `docs/app-ios.md`. Apple-Warnung ITMS-90683 danach behoben (Text `NSLocationAlwaysAndWhenInUseUsageDescription`), kommt mit Bau 2 |
 | 4 Messung mit Einwilligung | fertig: eigener Zähler `POST /api/zaehle` (nur Ereignisname, Summen je Stunde als `app-nutzung` im Fly-Protokoll), Abfrage beim ersten Start, Widerruf unter „Einstellungen“. Backend auf Fly ausgerollt am 24.10.2026 |
 | 5 Native Grundfunktionen | fertig (Standort mit Erklärung vor der Abfrage, Haptik, Wachhalten, Statusleiste, Start, Symbol, Safari-Ansicht, Datenschutz-Manifest) |
 | 6 Lokale Mitteilungen | fertig (Gleiswechsel/Ausfall des Anschlusses, Ampel Rot, Erinnerung 5 min vor Ankunft) |

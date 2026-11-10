@@ -1,7 +1,8 @@
 # Umstieg. als iOS-App
 
 Plan: `Umstieg_Konzepte/05-umsetzungsplan-app-store.md` (außerhalb des Repos).
-Zweig: `feat/app-ios`. Web und App teilen sich einen Code; was nur in der App
+Seit PR #1 (01.11.2026) liegt die App in `main`; `feat/app-ios` ist veraltet.
+TestFlight-Bauten von Hand aus `main` starten. Web und App teilen sich einen Code; was nur in der App
 gilt, fragt `istApp()` (`frontend/src/plattform/istApp.ts`).
 
 ## Aufbau
@@ -59,13 +60,24 @@ Voraussetzung: Mitgliedschaft im Apple Developer Program ist freigeschaltet.
      *Certificates, Identifiers & Profiles* → *Identifiers* → **+** → *App
      IDs* → *App* → *Explicit* `online.umstieg.app`, unter *Capabilities*
      **App Groups** anhaken.
-   - Die Teilen-Erweiterung braucht eine zweite ID und eine App Group. Der
-     Actions-Lauf legt beide mit dem Admin-Schlüssel selbst an. Scheitert er
-     daran („No profiles for 'online.umstieg.app.teilen'“ oder „App Group“),
-     von Hand: *Identifiers* → **+** → *App Groups* → `group.online.umstieg.app`;
-     dann **+** → *App IDs* → *App* → `online.umstieg.app.teilen` mit *App
-     Groups*; bei beiden App-IDs unter *App Groups* → *Configure* die Gruppe
-     wählen.
+   - **Bundle-ID nicht verwechseln:** Im App-Eintrag steht `online.umstieg.app`,
+     nie `group.online.umstieg.app`. Bis zum ersten hochgeladenen Bau lässt
+     sie sich unter *App-Informationen* noch ändern, danach nicht mehr.
+   - Die Teilen-Erweiterung braucht eine zweite ID und eine App Group. Die
+     beiden App-IDs (`online.umstieg.app`, `online.umstieg.app.teilen`, im
+     Portal „XC …“) legt der Actions-Lauf mit dem Admin-Schlüssel selbst an,
+     **die App Group aber nicht** – auch nicht ihre Zuordnung. Von Hand:
+     *Identifiers* → **+** → Typ **App Groups** (nicht *App IDs*!) →
+     `group.online.umstieg.app`; dann bei beiden App-IDs unter *App Groups* →
+     *Configure* die Gruppe anhaken → *Save*. Danach steht dort „Enabled App
+     Groups (1)“. Fehlt das, scheitert das Archiv mit „Provisioning profile …
+     doesn't match the entitlements file's value for the
+     com.apple.security.application-groups entitlement“.
+   - **Mindestens ein Gerät registrieren** (*Devices* → **+**, UDID des
+     iPhones aus der Windows-App „Apple-Geräte“). Die automatische Signatur
+     archiviert mit einem Entwicklungsprofil und signiert erst beim Export
+     für den App Store um; ohne Gerät gibt es kein Entwicklungsprofil („Your
+     team has no devices“).
 2. **API-Schlüssel.** *Benutzer und Zugriff* → *Integrationen* → *App Store
    Connect API* → *Teamschlüssel* → **+**. Name `GitHub Actions`, Rolle
    **Admin**.
@@ -92,8 +104,18 @@ Voraussetzung: Mitgliedschaft im Apple Developer Program ist freigeschaltet.
    | `APPLE_TEAM_ID` | Team-ID aus Schritt 3 |
 
 5. **Ersten Bau starten.** GitHub → *Actions* → *iOS* → *Run workflow* →
-   Zweig `feat/app-ios`. Nach etwa 20 Minuten steht der Bau in App Store
-   Connect unter *TestFlight* (Apple verarbeitet ihn noch einige Minuten).
+   Zweig `main`. Nach etwa 40 Minuten (erst Simulator-Job, dann TestFlight)
+   steht der Bau in App Store Connect unter *TestFlight* (Apple verarbeitet
+   ihn noch einige Minuten). Scheitert nur der TestFlight-Job: im Lauf
+   *Re-run jobs* → **Re-run failed jobs**, das spart den Simulator-Job.
+   „exit code 65“ ist nur die Sammelmeldung von xcodebuild – die Ursache
+   steht weiter oben im Log (*View raw logs*, nach `error:` suchen).
+   - Das Repository ist privat: macOS-Minuten zählen bei GitHub zehnfach.
+   - Erster erfolgreicher Bau: 10.11.2026 (1.0). Apple warnte mit
+     ITMS-90683 (fehlender Text `NSLocationAlwaysAndWhenInUseUsageDescription`,
+     weil das Standort-Plugin die „Immer“-Abfrage im Code enthält); der Text
+     steht seitdem in `Info.plist`, die App fragt weiterhin nur „Beim
+     Verwenden“.
    Spätere Fassungen: Tag setzen, etwa `git tag app-v1.0.0 && git push
    origin app-v1.0.0` – die Version kommt dann aus dem Tag.
 6. **Selbst testen.** *TestFlight* → *Interne Tests* → Gruppe anlegen → dich

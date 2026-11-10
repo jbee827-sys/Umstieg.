@@ -4,7 +4,8 @@
 # testflight: von Hand oder per Tag app-v* - signiert, Upload zu App Store
 #             Connect. Braucht die Geheimnisse aus docs/app-ios.md.
 #
-# Das Repository ist oeffentlich - macOS-Rechner kosten hier nichts.
+# Das Repository ist privat (Stand 10.11.2026) - macOS-Minuten zaehlen
+# zehnfach. Fehlgeschlagenes nur mit "Re-run failed jobs" wiederholen.
 name: iOS
 
 on:
