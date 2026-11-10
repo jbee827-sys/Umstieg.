@@ -582,14 +582,99 @@ Code (`istApp()`); die Web-Fassung ändert sich nur im Suchfeld
 | 0 Apple-Konto | erledigt (Julian, 24.10.2026) |
 | 1 Lizenz-Ausnahme (§ 7 AGPL) | umgesetzt in `NOTICE`, `CONTRIBUTING.md` – **Freigabe Julian** |
 | 2 Capacitor + Cloud-Bau | fertig; Actions-Lauf grün mit 12 Fotos (iPhone 6,9", iPad 13", hell/dunkel); `capacitor://localhost` steht seit 24.10.2026 in `CORS_ORIGIN` auf Fly |
-| 3 TestFlight | **erster Bau hochgeladen am 10.11.2026** (1.0, aus `main`). Dafür nötig: registriertes iPhone, echte App Group `group.online.umstieg.app` beiden App-IDs zugeordnet, Bundle-ID `online.umstieg.app` im App-Eintrag (war mit der Gruppe verwechselt) – Details in `docs/app-ios.md`. Apple-Warnung ITMS-90683 danach behoben (Text `NSLocationAlwaysAndWhenInUseUsageDescription`), kommt mit Bau 2 |
+| 3 TestFlight | **fertig (10.11.2026):** Bau 1 und 2 (1.0, aus `main`) in TestFlight, Bau 2 ohne Apple-Warnung; Julian hat die App als interner Tester auf dem iPhone. Dafür nötig waren: registriertes iPhone, echte App Group `group.online.umstieg.app` beiden App-IDs zugeordnet, Bundle-ID `online.umstieg.app` im App-Eintrag (war mit der Gruppe verwechselt), Text `NSLocationAlwaysAndWhenInUseUsageDescription` (ITMS-90683) – Details in `docs/app-ios.md` |
 | 4 Messung mit Einwilligung | fertig: eigener Zähler `POST /api/zaehle` (nur Ereignisname, Summen je Stunde als `app-nutzung` im Fly-Protokoll), Abfrage beim ersten Start, Widerruf unter „Einstellungen“. Backend auf Fly ausgerollt am 24.10.2026 |
 | 5 Native Grundfunktionen | fertig (Standort mit Erklärung vor der Abfrage, Haptik, Wachhalten, Statusleiste, Start, Symbol, Safari-Ansicht, Datenschutz-Manifest) |
 | 6 Lokale Mitteilungen | fertig (Gleiswechsel/Ausfall des Anschlusses, Ampel Rot, Erinnerung 5 min vor Ankunft) |
 | 7 Teilen-Erweiterung | gebaut: Ziel `Teilen` (Share Extension) legt den Text in der App Group ab, die App holt ihn beim Öffnen und zeigt „Reise importieren“. Prüfbar erst mit TestFlight am iPhone (Julian, mit DB Navigator) |
 | 8 iPad/HIG | teilweise: Wischgeste (greift seit 24.10.2026 wirklich – `SceneDelegate` setzte vorher Capacitors eigenen ViewController), Textgröße des Geräts, Suchfeld, Platzhalter entfernt; Sichtprüfung iPad steht aus |
-| 9 Datenquellen | Karte auf OpenFreeMap umgestellt (Web und App, `liberty`/`dark`, CSP, Datenschutz, `NOTICE`) – geht mit dem nächsten Web-Release live; DB-Prüfliste und Transitous-Anfrage in `docs/app-store-datenquellen.md`, Julian schickt ab |
+| 9 Datenquellen | Karte auf OpenFreeMap umgestellt (Web und App, CSP, Datenschutz, `NOTICE`), live; seit 02.11.2026 immer `liberty`, auch im Dunkelmodus; DB-Prüfliste und Transitous-Anfrage in `docs/app-store-datenquellen.md`, Julian schickt ab |
 | 10 Store-Eintrag | Vorlagen in `docs/app-store-eintrag.md`; Datenschutz-Abschnitt „App“ – **Freigabe Julian** |
+
+#### Offene Punkte bis zur Einreichung im App Store (Stand 10.11.2026)
+
+Für später gesammelt, grob in Reihenfolge. **J** = Julian (Konto, Gerät,
+Entscheidung), **C** = Code/Doku.
+
+**A. Erst am iPhone testen (J, mit TestFlight-Bau 2)** – Befunde sammeln,
+daraus wird Bau 3:
+
+- [ ] Erster Start: Abfrage zur Messung (Paket 4), Startbildschirm hell/dunkel.
+- [ ] Standort: eigene Erklärung vor dem Systemdialog; Systemdialog bietet nur
+      „Beim Verwenden“/„Einmal“; Bahnhof wird vor Ort erkannt. Dazu README-Punkt
+      M1 (Berechtigungsdialog nur nach Nutzergeste).
+- [ ] Teilen-Erweiterung (Paket 7): DB Navigator → Verbindung → *Teilen* →
+      „Umstieg.“ (evtl. unter „Mehr“) → App öffnen → „Reise importieren“ mit
+      der richtigen Verbindung.
+- [ ] Mitteilungen (Paket 6): Erlaubnisabfrage; Gleiswechsel/Ausfall, Ampel
+      Rot, Erinnerung 5 min vor Ankunft – nur auf echter Fahrt prüfbar.
+- [ ] Bedienung: Zurück-Wischgeste, große Systemschrift, Ränder an Dynamic
+      Island und Home-Balken, Safari-Ansicht für Links, Haptik, Display bleibt an.
+- [ ] Verbindung zum Backend: Routen und Abfahrten kommen (CORS
+      `capacitor://localhost` auf Fly).
+- [ ] Auffälligkeit aus dem Web prüfen: laufend „Neue Abfahrtszeit“ zu nicht
+      gewählten Zügen (siehe „Kleinere Punkte“ oben).
+
+**B. Entscheidungen und Freigaben (J)**
+
+- [ ] **Repo privat vs. Store-Text.** Die Beschreibung in
+      `docs/app-store-eintrag.md` sagt „Quelloffen unter der AGPL:
+      github.com/jbee827-sys/Umstieg.“ – das Repo ist privat (spätestens seit
+      01.11.2026, da antwortete die API ohne Login mit 404), der Link liefe ins Leere (auch für die App-Prüfung). Entweder
+      Repo wieder öffentlich (dann kostet der Cloud-Bau nichts mehr) oder den
+      Satz streichen und `NOTICE`/Lizenzseite der App anpassen.
+- [ ] Paket 1: Lizenz-Ausnahme (§ 7 AGPL) in `NOTICE`/`CONTRIBUTING.md` freigeben.
+- [ ] Paket 10: Datenschutz-Abschnitt „App“ auf umstieg.online freigeben und
+      ausliefern; Datenschutz-Etikett wie vorgeschlagen (grober Standort +
+      Produktinteraktion, beides nicht verknüpft, kein Tracking).
+- [ ] Bildschirmfotos auswählen (Artefakt `ios-bildschirmfotos` des letzten
+      Laufs; Vorschlag: hell, Eingabe/Übersicht/Weg, iPhone 6,9" + iPad 13").
+- [ ] Verfügbarkeit: nur Deutschland zum Start (Vorlage) – bestätigen.
+
+**C. Datenquellen (Paket 9, J schickt ab)** – `docs/app-store-datenquellen.md`
+
+- [ ] DB API Marketplace: je Schnittstelle Lizenz und Zugangsbedingungen
+      prüfen (Endnutzer-App erlaubt? „DB“ im Store-Text erlaubt?), Ergebnis in
+      `NOTICE`.
+- [ ] Transitous: Anfrage abschicken (Text liegt bereit).
+- [x] Karte: OpenFreeMap, live (Web und App).
+
+**D. App Store Connect ausfüllen (J, Vorlagen von C)**
+
+- [ ] Grunddaten, Untertitel, Kategorien, Schlüsselwörter, Werbetext,
+      Beschreibung, Neuigkeiten aus `docs/app-store-eintrag.md`.
+- [ ] Altersfreigabe-Fragebogen (Vorschlag: überall „Keine“/„Nein“ → 4+).
+- [ ] **EU-Händlerstatus (DSA)** angeben – Pflicht für den Vertrieb in der EU.
+      Als „Händler“ werden Adresse, Telefon und E-Mail im Store öffentlich
+      angezeigt; als Privatperson ohne Gewerbe „kein Händler“. Vorher klären.
+- [ ] Support-, Datenschutz- und Marketing-URL; Copyright.
+- [ ] Hinweis für die Prüfung (englisch, Einführungstour als Weg ohne
+      deutschen Bahnhof) einsetzen; Kontakt für die Prüfung angeben.
+- [ ] Exportkonformität: sollte nicht gefragt werden
+      (`ITSAppUsesNonExemptEncryption = NO`).
+
+**E. Technik (C)**
+
+- [ ] Korrekturen aus A umsetzen → Bau 3 über *Actions → iOS → Run workflow*
+      auf `main`.
+- [ ] iPad-Sichtprüfung (Paket 8) an den 13"-Fotos, ggf. Layout nachziehen.
+- [ ] Workflow-Auslöser: Push-Trigger steht noch auf dem veralteten Zweig
+      `feat/app-ios`; auf `main` läuft der Simulator-Job nur von Hand.
+      Entscheiden, ob er bei Änderungen an `frontend/ios/**` auch auf `main`
+      laufen soll (kostet macOS-Minuten, solange das Repo privat ist).
+      Danach `feat/app-ios` löschen.
+- [ ] Versionierung für die Einreichung: Tag `app-v1.0.0` setzen (Version aus
+      dem Tag, Buildnummer = Laufnummer). Hinweis: ein Tag `app-v1.0.0` gab es
+      schon beim ersten, gescheiterten Lauf am 01.11. – vorher prüfen und ggf.
+      `app-v1.0.1` nehmen. Stand 10.11.: `app-v1.0.0` existiert (lokal und
+      auf GitHub) und zeigt auf den alten Commit `1fd512d` – also nicht
+      wiederverwenden, sondern `app-v1.0.1` auf den Einreichungsstand setzen
+      (oder vorher in App Store Connect die Version auf 1.0.1 stellen).
+
+**F. Einreichen (J)**
+
+- [ ] Bau in App Store Connect der Version 1.0 zuordnen → *Zur Prüfung
+      einreichen*. Rückfragen der Prüfung hier sammeln.
 
 ### Zugbild und Zugspitze (Stand 25.10.2026, Zweig `feat/zugbild`, nicht ausgeliefert)
 
