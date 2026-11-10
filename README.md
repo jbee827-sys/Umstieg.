@@ -10,6 +10,7 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 **Plan Schrittnavigation (8 Tasks):** [`docs/superpowers/plans/2026-08-30-schrittnavigation.md`](./docs/superpowers/plans/2026-08-30-schrittnavigation.md)
 **UI-Design (Claude Design Import):** [`design/Umstieg.dc.html`](./design/Umstieg.dc.html)
 **Designregeln (Farben, Schrift, Bauteile):** [`design/DESIGN.md`](./design/DESIGN.md), Begründungen in [`BRIEF.md`](./BRIEF.md)
+**Spec und Plan „Etwas melden“ (10.11.2026):** [`docs/superpowers/specs/2026-11-10-etwas-melden-design.md`](./docs/superpowers/specs/2026-11-10-etwas-melden-design.md), [`docs/superpowers/plans/2026-11-10-etwas-melden.md`](./docs/superpowers/plans/2026-11-10-etwas-melden.md)
 
 **Lizenz:** Quellcode unter AGPL-3.0-only für alle Stände ([`LICENSE`](./LICENSE), zur früheren MIT-Datei siehe [`NOTICE`](./NOTICE)), mit einer zusätzlichen Erlaubnis nach § 7 AGPL für den Vertrieb über App-Marktplätze wie den Apple App Store (Wortlaut in [`NOTICE`](./NOTICE), Beiträge nur einschließlich dieser Erlaubnis, siehe [`CONTRIBUTING.md`](./CONTRIBUTING.md)); die zur Laufzeit abgerufenen Daten (DB, Transitous/DELFI, OpenStreetMap) stehen unter eigenen Lizenzen, siehe [`NOTICE`](./NOTICE). Zugangsdaten liegen nie im Repository – welche nötig sind, zeigt [`.env.example`](./.env.example).
 
@@ -19,17 +20,53 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 09.11.2026)
+## Hier weitermachen (Stand 10.11.2026)
 
-**Abgeschlossen:** ToDo 41 (Startbestand mit Bezugspunkten) und der Fix für
-Frankfurt Hbf Gleis 1a und Frankenthal Gleis 3. Beides ist ausgeliefert und
-live geprüft, nichts davon ist mehr offen.
+**Als Nächstes: „Etwas melden“ umsetzen.** Design und Plan sind fertig und
+von Julian freigegeben, gebaut ist noch nichts:
 
-- `main` und `feat/textnavigation` stehen auf `origin` gleich.
-- Das Backend auf Fly läuft mit dem Code von `a5d92df`. Danach kamen nur
-  README-Commits.
+- Spec: [`docs/superpowers/specs/2026-11-10-etwas-melden-design.md`](./docs/superpowers/specs/2026-11-10-etwas-melden-design.md)
+- Plan (7 Tasks): [`docs/superpowers/plans/2026-11-10-etwas-melden.md`](./docs/superpowers/plans/2026-11-10-etwas-melden.md)
+- Kurz: Textknopf „Etwas melden“ links unter „Einstellungen“ öffnet einen
+  Dialog (Freitext, E-Mail optional); `POST /api/meldung` schickt per SMTP
+  über web.de an `mail.umstieg@web.de`. Nur auf der Website, in der iOS-App
+  vorerst verborgen. Datenschutztexte stehen freigegeben in der Spec.
+- Offen ist die Wahl der Ausführung (Subagenten oder direkt); empfohlen ist
+  direkt.
 
-**Offene Punkte (Reihenfolge):**
+**Vorbereitet, aber noch nicht wirksam:**
+
+- Die fünf SMTP-Werte (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`,
+  `MELDUNG_AN`) liegen auf Fly als Secrets mit Status **„Staged“**. Sie werden
+  mit dem **nächsten** `flyctl deploy` wirksam. Ohne den Meldecode schadet das
+  nicht – die Werte liegen dann nur bereit.
+- Lokale Quelle: `E:\jbeer\.secrets\smtp-webde.env` (Tresor, nur lesen; in
+  der CLAUDE.md eingetragen).
+- Ein Testversand per curl über `smtp.web.de:587` (STARTTLS) ist am
+  10.11.2026 angekommen.
+- Wegwerf-Vorschau des Layouts: `frontend/.entwurf/meldung-vorschau.html`
+  (nicht eingecheckt).
+
+**Ausgeliefert am 10.11.2026: Hauptknöpfe im Texture-Look** (nur Frontend,
+Commits `cb4145e` und `13e6763`, live auf www.umstieg.online geprüft):
+
+- „Umstieg starten“, „Navigation starten“ und „Weiter“ tragen die Farben des
+  [Texture-Buttons von cult-ui](https://www.cult-ui.com/docs/components/texture-button):
+  roter Verlauf, 1-px-Lichtrand von fast Weiß nach Tiefrot, dunkler Ring,
+  weiße Schrift. Pillenform und Archivo 800 bleiben. Klasse `.knopf-textur`
+  in `App.css`, Token `--texturknopf-*` in `index.css`.
+- Gesperrt und schwebend (z. B. „Umstieg starten“ ohne Gleis) bleibt der
+  Verlauf erhalten, vorgemischt zu 45 % – nicht flach.
+- Die übrigen roten Knöpfe sind bewusst flach geblieben; „Angekommen“ ist grün.
+- Vorher verglichen mit dem Halo-Button von cult-ui (Vorschau
+  `frontend/.entwurf/knopf-vorschau.html`, nicht eingecheckt); Julian hat
+  Texture gewählt.
+
+**Stand der Zweige:** `main` steht auf `13e6763` (Frontend live).
+`feat/textnavigation` ist lokal weiter (Spec, Plan, README), nicht gepusht.
+Das Backend auf Fly läuft weiter mit dem Code von `a5d92df`.
+
+**Weitere offene Punkte (Reihenfolge):**
 
 1. **Sichtprüfung am Handy** (Julian): Läden im Text an ein paar Bahnhöfen
    lesen. In der Stichprobe fiel „an Junge vorbei“ auf, vermutlich eine
