@@ -26,6 +26,8 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Umstieg nutzt deinen Standort nur, während du die App verwendest, um den Bahnhof zu erkennen und dir den Weg zum Abfahrtsgleis zu zeigen. Die Position wird gerundet und nicht gespeichert.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Umstieg nutzt deinen Standort, um den Bahnhof zu erkennen und dir den Weg zum Abfahrtsgleis zu zeigen. Die Position wird gerundet und nicht gespeichert.</string>
 	<key>UIApplicationSceneManifest</key>
