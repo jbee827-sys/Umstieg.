@@ -513,6 +513,44 @@
 }
 
 /*
+ * Texture-Look (Wunsch vom 10.11.2026, cult-ui „texture-button"): nur die
+ * Farben, Form und Schrift bleiben die von `.knopf-primaer`. Das Original
+ * schachtelt zwei Elemente - aussen der Lichtrand, innen der Verlauf. Hier
+ * leistet das EIN Element: der Verlauf fuellt die Innenflaeche (padding-box),
+ * der Lichtrand liegt im durchsichtigen 1-px-Rand (border-box), der dunkle
+ * Ring aussen ist ein Schatten ohne Weichzeichnung.
+ * Am 10.11.2026 an „Umstieg starten", „Navigation starten" und „Weiter".
+ */
+.knopf-textur {
+  color: var(--texturknopf-schrift);
+  text-shadow: 0 1px 0 color-mix(in srgb, #000000 12%, transparent);
+  border: 1px solid transparent;
+  background:
+    linear-gradient(to bottom, var(--texturknopf-oben), var(--texturknopf-unten)) padding-box,
+    linear-gradient(to bottom, var(--texturknopf-licht-oben), var(--texturknopf-licht-unten)) border-box;
+  box-shadow: var(--texturknopf-ring), var(--shadow-lg);
+}
+
+@media (hover: hover) {
+  .knopf-textur:hover {
+    background:
+      linear-gradient(to bottom, var(--texturknopf-oben-hover), var(--texturknopf-unten-hover)) padding-box,
+      linear-gradient(to bottom, var(--texturknopf-licht-oben), var(--texturknopf-licht-unten)) border-box;
+  }
+}
+
+.knopf-textur:active {
+  background:
+    linear-gradient(to bottom, var(--texturknopf-oben-druck), var(--texturknopf-unten-druck)) padding-box,
+    linear-gradient(to bottom, var(--texturknopf-licht-oben), var(--texturknopf-licht-unten)) border-box;
+  box-shadow: var(--texturknopf-ring), var(--shadow-md);
+}
+
+.knopf-textur:disabled {
+  text-shadow: none;
+}
+
+/*
  * Angeheftet ist nur der Knopf (12.10.2026): Er schwebt ueber dem
  * Rollbereich, der Inhalt rollt darunter durch. Vorher endete der Rollbereich
  * ueber ihm, und der Knopf stand in einem eigenen Streifen vor der Leiste.

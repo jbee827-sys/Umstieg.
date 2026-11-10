@@ -151,6 +151,19 @@
   --zugknopf-schatten-hover: inset 0 -2.5px 0 0 #cfcccc, 0 1.4px 7.6px 0 color-mix(in srgb, #2d2b2b 12%, transparent);
   --zugknopf-schatten-druck: inset 0 -1.5px 0 0 #b9b6b6, 0 0.5px 2px 0 color-mix(in srgb, #2d2b2b 15%, transparent);
 
+  /* Die Hauptknoepfe im Texture-Look (App.css, `.knopf-textur`): Verlauf
+     innen, 1-px-Lichtrand von fast Weiss nach Tiefrot, dunkler Ring aussen. */
+  --texturknopf-oben: #f2533a;
+  --texturknopf-unten: #c9260b;
+  --texturknopf-oben-hover: #f46a54;
+  --texturknopf-unten-hover: #d4300f;
+  --texturknopf-oben-druck: #d63a20;
+  --texturknopf-unten-druck: #b81f06;
+  --texturknopf-licht-oben: #ffd5cc;
+  --texturknopf-licht-unten: #c42207;
+  --texturknopf-ring: 0 0 0 1px color-mix(in srgb, #000000 10%, transparent);
+  --texturknopf-schrift: color-mix(in srgb, #ffffff 94%, transparent);
+
   /* Das Lockup im Kopf ist ein Bild mit dunkler Wortmarke. */
   /* Hell- und Nachtfassung des Lockups: Welche zu sehen ist, entscheidet die
      Darstellung (App.css, `.lockup-hell`/`.lockup-dunkel`). */
@@ -238,6 +251,18 @@
     --zugknopf-schatten-hover: inset 0 -2.5px 0 0 #121110, 0 1.4px 7.6px 0 color-mix(in srgb, #000000 55%, transparent);
     --zugknopf-schatten-druck: inset 0 -1.5px 0 0 #121110, 0 0.5px 2px 0 color-mix(in srgb, #000000 60%, transparent);
 
+    /* Texture-Hauptknopf nachts: hellerer Verlauf, 2-px-Ring fast schwarz. */
+    --texturknopf-oben: #ff5a3d;
+    --texturknopf-unten: #c42a0e;
+    --texturknopf-oben-hover: #ff6f55;
+    --texturknopf-unten-hover: #d23514;
+    --texturknopf-oben-druck: #e2401f;
+    --texturknopf-unten-druck: #ab1f06;
+    --texturknopf-licht-oben: #ffb3a3;
+    --texturknopf-licht-unten: #e03d20;
+    --texturknopf-ring: 0 0 0 2px #0c0b0b;
+    --texturknopf-schrift: color-mix(in srgb, #ffffff 94%, transparent);
+
     /* Nachts die eigene Fassung des Lockups: helle Schrift, Rot im Nachtrot
        wie Knopf und Ueberschriften. Bis zum 21.10.2026 kehrte ein Filter das
        helle Bild um - das Rot landete rosa, nicht beim Nachtrot (Julian). */
@@ -307,6 +332,18 @@
   --zugknopf-schatten: inset 0 -2.1px 0 0 #121110, 0 1.2px 6.3px 0 color-mix(in srgb, #000000 50%, transparent);
   --zugknopf-schatten-hover: inset 0 -2.5px 0 0 #121110, 0 1.4px 7.6px 0 color-mix(in srgb, #000000 55%, transparent);
   --zugknopf-schatten-druck: inset 0 -1.5px 0 0 #121110, 0 0.5px 2px 0 color-mix(in srgb, #000000 60%, transparent);
+
+  /* Texture-Hauptknopf nachts: hellerer Verlauf, 2-px-Ring fast schwarz. */
+  --texturknopf-oben: #ff5a3d;
+  --texturknopf-unten: #c42a0e;
+  --texturknopf-oben-hover: #ff6f55;
+  --texturknopf-unten-hover: #d23514;
+  --texturknopf-oben-druck: #e2401f;
+  --texturknopf-unten-druck: #ab1f06;
+  --texturknopf-licht-oben: #ffb3a3;
+  --texturknopf-licht-unten: #e03d20;
+  --texturknopf-ring: 0 0 0 2px #0c0b0b;
+  --texturknopf-schrift: color-mix(in srgb, #ffffff 94%, transparent);
 
   /* Nachts die eigene Fassung des Lockups: helle Schrift, Rot im Nachtrot
      wie Knopf und Ueberschriften. Bis zum 21.10.2026 kehrte ein Filter das

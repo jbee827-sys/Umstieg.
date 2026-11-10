@@ -335,7 +335,7 @@ export function Dashboard({
 
       {/* Schwebt ueber dem Rollbereich, der Inhalt rollt darunter durch -
           angeheftet ist nur der Knopf (12.10.2026). */}
-      <button type="button" className="knopf-primaer knopf-schwebend" onClick={onNavigation} data-tour="navigation-starten">
+      <button type="button" className="knopf-primaer knopf-textur knopf-schwebend" onClick={onNavigation} data-tour="navigation-starten">
         <span>Navigation starten</span>
       </button>
     </div>

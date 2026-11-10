@@ -92,6 +92,42 @@ describe('App.css: die Knoepfe der Zugauswahl', () => {
   )
 })
 
+/**
+ * „Umstieg starten", „Navigation starten" und „Weiter" tragen seit dem
+ * 10.11.2026 die Farben des Texture-Buttons von cult-ui: roter Verlauf, ein
+ * 1-px-Lichtrand von fast Weiss nach Tiefrot, ein feiner dunkler Ring aussen,
+ * weisse Schrift. Form und Schrift bleiben die von `.knopf-primaer` (Pille,
+ * Archivo 800) - nur das Farbdesign ist uebernommen.
+ */
+describe('App.css: der Texture-Look der Hauptknoepfe', () => {
+  it('malt Verlauf und Lichtrand aus den Token, ohne die Form anzufassen', () => {
+    const knopf = deklarationenVon(css, '.knopf-textur')
+    expect(knopf).toContain('color: var(--texturknopf-schrift)')
+    expect(knopf).toContain('border: 1px solid transparent')
+    expect(knopf.join(' ')).toMatch(/var\(--texturknopf-oben\), var\(--texturknopf-unten\)\) padding-box/)
+    expect(knopf.join(' ')).toMatch(/var\(--texturknopf-licht-oben\), var\(--texturknopf-licht-unten\)\) border-box/)
+    expect(knopf.filter((d) => /^(border-radius|font|min-height|padding)/.test(d))).toEqual([])
+  })
+
+  it('hat eigene Verlaeufe fuer Darueberfahren und Druecken', () => {
+    expect(deklarationenVon(css, '.knopf-textur:hover').join(' ')).toContain('var(--texturknopf-oben-hover)')
+    expect(deklarationenVon(css, '.knopf-textur:active').join(' ')).toContain('var(--texturknopf-oben-druck)')
+  })
+
+  it('hat eine Nachtfassung in beiden dunklen Bloecken', () => {
+    const treffer = cssVon('index.css').match(/--texturknopf-oben: #ff5a3d/g) ?? []
+    expect(treffer).toHaveLength(2)
+  })
+
+  it.each([
+    ['components/Eingabe.tsx', 'knopf-primaer knopf-textur knopf-schwebend'],
+    ['screens/Dashboard.tsx', 'knopf-primaer knopf-textur knopf-schwebend'],
+    ['components/Schrittsheet.tsx', 'knopf-primaer knopf-textur'],
+  ])('%s nutzt ihn', (datei, klassen) => {
+    expect(cssVon(datei)).toContain(`className="${klassen}"`)
+  })
+})
+
 describe('App.css: der schwebende Knopf', () => {
   const schwebend = () => deklarationenVon(css, '.knopf-schwebend')
 

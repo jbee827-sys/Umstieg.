@@ -73,7 +73,7 @@ export function Schrittsheet({
             <span>Angekommen</span>
           </button>
         ) : (
-          <button type="button" className="knopf-primaer" onClick={onWeiter}>
+          <button type="button" className="knopf-primaer knopf-textur" onClick={onWeiter}>
             <span>Weiter</span>
           </button>
         )}
