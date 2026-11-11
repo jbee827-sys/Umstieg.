@@ -39,6 +39,16 @@ describe('Eingabe: „Etwas melden"', () => {
     screen.getByRole('dialog', { name: 'Etwas melden' })
   })
 
+  // Abschluss-Review 11.11.2026: nach dem Schliessen zurueck, wo man war.
+  it('gibt den Fokus beim Schliessen an „Etwas melden" zurueck', async () => {
+    zeige()
+    const knopf = screen.getByRole('button', { name: 'Etwas melden' })
+    await userEvent.click(knopf)
+    await userEvent.click(screen.getByRole('button', { name: 'Abbrechen' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(document.activeElement).toBe(knopf)
+  })
+
   it('zeigt den Knopf in der App nicht', () => {
     umgebung.app = true
     zeige()

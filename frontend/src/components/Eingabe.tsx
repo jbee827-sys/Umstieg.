@@ -188,6 +188,7 @@ export function Eingabe({
   const [erkennungVerworfen, setErkennungVerworfen] = useState(false)
   const [importOffen, setImportOffen] = useState(false)
   const [meldenOffen, setMeldenOffen] = useState(false)
+  const meldenKnopfRef = useRef<HTMLButtonElement>(null)
   // In der App: eine Verbindung aus dem Teilen-Menue wartet (Paket 7).
   const geteilt = useGeteilterText()
   /*
@@ -1138,7 +1139,7 @@ export function Eingabe({
             zuerst die Datenschutzangaben bei Apple angepasst werden. */}
         {!istApp() && (
           <div className="etwas-melden-einstieg">
-            <button type="button" className="textknopf" onClick={() => setMeldenOffen(true)}>
+            <button type="button" className="textknopf" ref={meldenKnopfRef} onClick={() => setMeldenOffen(true)}>
               Etwas melden
             </button>
           </div>
@@ -1146,7 +1147,15 @@ export function Eingabe({
 
         {fehler && <div className="fehler-box">{fehler}</div>}
         {fuss}
-        {meldenOffen && <EtwasMelden onSchliessen={() => setMeldenOffen(false)} />}
+        {meldenOffen && (
+          <EtwasMelden
+            onSchliessen={() => {
+              setMeldenOffen(false)
+              // Zurueck, wo man war - nicht an den Anfang der Seite.
+              meldenKnopfRef.current?.focus()
+            }}
+          />
+        )}
         {(importOffen || geteilt !== null) && (
           <ReiseImport
             // Ein neu geteilter Text oeffnet den Dialog frisch.

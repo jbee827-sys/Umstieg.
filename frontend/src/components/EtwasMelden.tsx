@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { sendeMeldung } from '../api/meldung'
 import { RECHTSPFAD, oeffneRechtsseite } from '../navigation/rechtsseiten'
 import { MAX_ZEICHEN, adresseStatus, nachrichtStatus } from '../rueckmeldung/regeln'
@@ -27,6 +28,19 @@ export function EtwasMelden({ onSchliessen }: EtwasMeldenProps) {
   // Ein Doppeltipp darf keine zweite Mail ausloesen - der Zustand allein
   // reicht nicht, er ist beim zweiten Klick noch nicht neu gezeichnet.
   const sendetRef = useRef(false)
+  const textRef = useRef<HTMLTextAreaElement>(null)
+  const schliessenRef = useRef<HTMLButtonElement>(null)
+  // Schliessen ueber den Hintergrund nur, wenn der Druck dort BEGANN. Sonst
+  // schloss Text markieren und daneben loslassen den Dialog (Abschluss-Review).
+  const druckAufGrund = useRef(false)
+
+  // aria-modal verspricht, dass man im Dialog ist - also gehoert der Fokus hinein.
+  useEffect(() => {
+    if (zustand === 'danke') schliessenRef.current?.focus()
+  }, [zustand])
+  useEffect(() => {
+    textRef.current?.focus()
+  }, [])
 
   useEffect(() => {
     const beiTaste = (e: KeyboardEvent) => {
@@ -59,14 +73,24 @@ export function EtwasMelden({ onSchliessen }: EtwasMeldenProps) {
     oeffneRechtsseite('datenschutz')
   }
 
-  return (
-    <div className="dialog-grund" onClick={onSchliessen}>
+  // Per Portal an <body>: Der Einstieg liegt im <form> der Eingabe, und Enter
+  // im Adressfeld schickte sonst die Wegberechnung ab (Abschluss-Review).
+  return createPortal(
+    <div
+      className="dialog-grund"
+      onPointerDown={(e) => {
+        druckAufGrund.current = e.target === e.currentTarget
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && druckAufGrund.current) onSchliessen()
+        druckAufGrund.current = false
+      }}
+    >
       <div
         className="dialog etwas-melden"
         role="dialog"
         aria-modal="true"
         aria-labelledby="etwas-melden-titel"
-        onClick={(e) => e.stopPropagation()}
       >
         {zustand === 'danke' ? (
           <>
@@ -79,7 +103,7 @@ export function EtwasMelden({ onSchliessen }: EtwasMeldenProps) {
               <h2 id="etwas-melden-titel">Danke!</h2>
               <p>Deine Meldung ist angekommen.</p>
             </div>
-            <button type="button" className="knopf-primaer" onClick={onSchliessen}>
+            <button type="button" className="knopf-primaer" ref={schliessenRef} onClick={onSchliessen}>
               Schließen
             </button>
           </>
@@ -90,6 +114,7 @@ export function EtwasMelden({ onSchliessen }: EtwasMeldenProps) {
             <div className="feld">
               <label htmlFor="etwas-melden-text">Deine Nachricht</label>
               <textarea
+                ref={textRef}
                 id="etwas-melden-text"
                 className="feldhuelle etwas-melden-text"
                 rows={5}
@@ -163,6 +188,7 @@ export function EtwasMelden({ onSchliessen }: EtwasMeldenProps) {
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

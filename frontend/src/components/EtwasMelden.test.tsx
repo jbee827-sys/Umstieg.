@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { EtwasMelden } from './EtwasMelden'
 import { sendeMeldung } from '../api/meldung'
@@ -97,5 +97,51 @@ describe('EtwasMelden', () => {
   it('verlinkt den Datenschutz', () => {
     render(<EtwasMelden onSchliessen={() => {}} />)
     expect(screen.getByRole('link', { name: 'Datenschutz' }).getAttribute('href')).toBe('/datenschutz')
+  })
+
+  // Abschluss-Review 11.11.2026, Fokus: aria-modal verspricht, dass man im Dialog ist.
+  it('setzt beim Oeffnen den Fokus in die Nachricht', () => {
+    render(<EtwasMelden onSchliessen={() => {}} />)
+    expect(document.activeElement).toBe(nachricht())
+  })
+
+  it('setzt nach dem Senden den Fokus auf „Schließen"', async () => {
+    sendeMock.mockResolvedValue(true)
+    render(<EtwasMelden onSchliessen={() => {}} />)
+    await userEvent.type(nachricht(), 'Gleis 6 fehlt.')
+    await userEvent.click(senden())
+    const schliessen = await screen.findByRole('button', { name: 'Schließen' })
+    expect(document.activeElement).toBe(schliessen)
+  })
+
+  // Abschluss-Review: Text markieren und die Maus neben dem Dialog loslassen
+  // schloss ihn - bis zu 2000 Zeichen waren weg.
+  it('schliesst nicht, wenn der Druck im Dialog begann und daneben endete', () => {
+    const zu = vi.fn()
+    render(<EtwasMelden onSchliessen={zu} />)
+    const grund = screen.getByRole('dialog').parentElement!
+    fireEvent.pointerDown(nachricht())
+    fireEvent.click(grund)
+    expect(zu).not.toHaveBeenCalled()
+  })
+
+  it('schliesst mit einem Klick auf den Hintergrund', () => {
+    const zu = vi.fn()
+    render(<EtwasMelden onSchliessen={zu} />)
+    const grund = screen.getByRole('dialog').parentElement!
+    fireEvent.pointerDown(grund)
+    fireEvent.click(grund)
+    expect(zu).toHaveBeenCalledOnce()
+  })
+
+  // Abschluss-Review: im <form> der Eingabe schickte Enter im Adressfeld die
+  // Wegberechnung ab. Der Dialog haengt deshalb direkt an <body>.
+  it('liegt nicht in einem fremden Formular', () => {
+    render(
+      <form>
+        <EtwasMelden onSchliessen={() => {}} />
+      </form>,
+    )
+    expect(screen.getByRole('dialog').closest('form')).toBeNull()
   })
 })
