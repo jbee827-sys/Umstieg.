@@ -102,7 +102,7 @@ export function EtwasMelden({ onSchliessen }: EtwasMeldenProps) {
               />
               <div className="feld-zeile">
                 <span id="etwas-melden-text-zeile">
-                  {nachricht === 'leer' && <span className="feld-hinweis">Schreib ein paar Worte.</span>}
+                  {nachricht === 'leer' && <span className="etwas-melden-hinweis">Schreib ein paar Worte.</span>}
                   {nachricht === 'zu-kurz' && <span className="feld-fehler">Dein Text ist zu kurz.</span>}
                 </span>
                 <span className="feld-zaehler">

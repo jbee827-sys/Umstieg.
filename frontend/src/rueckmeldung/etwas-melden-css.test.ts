@@ -17,6 +17,17 @@ describe('App.css: die Feldhuelle von „Etwas melden"', () => {
     expect(huelle).toContain('border-radius: 14px')
   })
 
+  /**
+   * Sichtpruefung 11.11.2026: „Schreib ein paar Worte." stand dunkel und fett
+   * da - `.feld-hinweis` gab es schon (Hinweis neben dem Gleisfeld). Der leise
+   * Hinweis braucht einen eigenen Namen.
+   */
+  it('setzt den Hinweis bei leerem Feld leise, mit eigener Klasse', () => {
+    expect(deklarationenVon(css, '.etwas-melden-hinweis')).toContain('color: var(--color-neutral-700)')
+    expect(cssVon('components/EtwasMelden.tsx')).toContain('className="etwas-melden-hinweis"')
+    expect(cssVon('components/EtwasMelden.tsx')).not.toContain('feld-hinweis')
+  })
+
   it('hat eine Nachtfassung in beiden dunklen Bloecken', () => {
     const treffer = cssVon('index.css').match(/--feldhuelle-grund: color-mix\(in srgb, #222120 80%, #171615\)/g) ?? []
     expect(treffer).toHaveLength(2)
