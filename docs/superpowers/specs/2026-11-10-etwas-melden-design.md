@@ -87,7 +87,7 @@ Nachtfassung über Token in `index.css` (beide dunklen Blöcke gleich halten –
 
 | Nachricht (Zeichen **ohne Leerzeichen**) | Zeile unter dem Feld | „Senden“ |
 |---|---|---|
-| 0 | „Schreib ein paar Worte.“ (grau, kein Fehlerrot) | gesperrt |
+| 0 | – (kein Satz; „Schreib ein paar Worte.“ am 11.11.2026 von Julian gestrichen) | gesperrt |
 | 1–4 | „Dein Text ist zu kurz.“ (Fehlerrot, Feldrand rot) | gesperrt |
 | ab 5 | – | frei |
 
@@ -261,7 +261,7 @@ verborgen ist.
 
 ## Festlegungen (von Julian am 10.11.2026 bestätigt)
 
-- Leeres Feld zeigt „Schreib ein paar Worte.“ grau, nicht als Fehler.
+- Leeres Feld zeigt keinen Satz, nur „Senden“ ist gesperrt (11.11.2026).
 - Leerzeichen zählen für die Mindestlänge nicht.
 - Grenze 2000 Zeichen mit Zähler.
 - „Senden“ flach rot, „Abbrechen“ sekundär daneben.

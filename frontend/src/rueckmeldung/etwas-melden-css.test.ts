@@ -18,14 +18,14 @@ describe('App.css: die Feldhuelle von „Etwas melden"', () => {
   })
 
   /**
-   * Sichtpruefung 11.11.2026: „Schreib ein paar Worte." stand dunkel und fett
-   * da - `.feld-hinweis` gab es schon (Hinweis neben dem Gleisfeld). Der leise
-   * Hinweis braucht einen eigenen Namen.
+   * `.feld-hinweis` ist der dunkle Hinweis neben dem Gleisfeld - der Dialog
+   * darf ihn nicht mitbenutzen (Sichtpruefung 11.11.2026). Den leisen
+   * Hinweissatz bei leerem Feld hat Julian am selben Tag gestrichen.
    */
-  it('setzt den Hinweis bei leerem Feld leise, mit eigener Klasse', () => {
-    expect(deklarationenVon(css, '.etwas-melden-hinweis')).toContain('color: var(--color-neutral-700)')
-    expect(cssVon('components/EtwasMelden.tsx')).toContain('className="etwas-melden-hinweis"')
+  it('benutzt den Gleisfeld-Hinweis nicht und hat keinen Leer-Hinweis mehr', () => {
     expect(cssVon('components/EtwasMelden.tsx')).not.toContain('feld-hinweis')
+    expect(cssVon('components/EtwasMelden.tsx')).not.toContain('etwas-melden-hinweis')
+    expect(deklarationenVon(css, '.etwas-melden-hinweis')).toEqual([])
   })
 
   it('hat eine Nachtfassung in beiden dunklen Bloecken', () => {

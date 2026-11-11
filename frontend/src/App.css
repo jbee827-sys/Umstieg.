@@ -2629,11 +2629,6 @@
   gap: 12px;
   margin-top: 6px;
 }
-/* Eigener Name: `.feld-hinweis` ist schon der dunkle Hinweis neben dem Gleisfeld. */
-.etwas-melden-hinweis {
-  font-size: var(--schrift-label);
-  color: var(--color-neutral-700);
-}
 .feld-hilfe,
 .feld-zaehler,
 .feld-optional {

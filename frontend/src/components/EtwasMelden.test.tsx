@@ -14,10 +14,11 @@ const adresse = () => screen.getByLabelText(/E-Mail-Adresse/) as HTMLInputElemen
 const senden = () => screen.getByRole('button', { name: /Senden|Wird gesendet/ }) as HTMLButtonElement
 
 describe('EtwasMelden', () => {
-  it('sperrt Senden bei leerem Text und sagt „Schreib ein paar Worte."', () => {
+  // Julian, 11.11.2026: bei leerem Feld kein Satz mehr - nur „Senden" gesperrt.
+  it('sperrt Senden bei leerem Text, ohne Hinweissatz', () => {
     render(<EtwasMelden onSchliessen={() => {}} />)
     screen.getByRole('dialog', { name: 'Etwas melden' })
-    screen.getByText('Schreib ein paar Worte.')
+    expect(screen.queryByText('Schreib ein paar Worte.')).toBeNull()
     expect(senden().disabled).toBe(true)
   })
 
