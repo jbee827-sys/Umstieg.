@@ -20,32 +20,55 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 10.11.2026)
+## Hier weitermachen (Stand 11.11.2026)
 
-**Als Nächstes: „Etwas melden“ umsetzen.** Design und Plan sind fertig und
-von Julian freigegeben, gebaut ist noch nichts:
+**Ausgeliefert am 11.11.2026: „Etwas melden“** (Backend und Frontend,
+`main` auf `31cfbe8`, live auf www.umstieg.online geprüft):
 
-- Spec: [`docs/superpowers/specs/2026-11-10-etwas-melden-design.md`](./docs/superpowers/specs/2026-11-10-etwas-melden-design.md)
-- Plan (7 Tasks): [`docs/superpowers/plans/2026-11-10-etwas-melden.md`](./docs/superpowers/plans/2026-11-10-etwas-melden.md)
-- Kurz: Textknopf „Etwas melden“ links unter „Einstellungen“ öffnet einen
-  Dialog (Freitext, E-Mail optional); `POST /api/meldung` schickt per SMTP
-  über web.de an `mail.umstieg@web.de`. Nur auf der Website, in der iOS-App
-  vorerst verborgen. Datenschutztexte stehen freigegeben in der Spec.
-- Offen ist die Wahl der Ausführung (Subagenten oder direkt); empfohlen ist
-  direkt.
+- Spec: [`docs/superpowers/specs/2026-11-10-etwas-melden-design.md`](./docs/superpowers/specs/2026-11-10-etwas-melden-design.md),
+  Plan: [`docs/superpowers/plans/2026-11-10-etwas-melden.md`](./docs/superpowers/plans/2026-11-10-etwas-melden.md)
+- Textknopf „Etwas melden“ links unter „Einstellungen“ öffnet einen Dialog
+  (`components/EtwasMelden.tsx`, per Portal an `<body>`): Freitext, E-Mail
+  optional. Mindestens 5 Zeichen ohne Leerzeichen, höchstens 2000; bei
+  leerem oder zu kurzem Text ist „Senden“ gesperrt. Nur auf der Website, in
+  der iOS-App verborgen (`istApp()`) – dort müssten erst die
+  Datenschutzangaben bei Apple angepasst werden.
+- `POST /api/meldung` (`backend/src/routes/meldung.ts`) schickt per SMTP über
+  `smtp.web.de:587` (STARTTLS) an `mail.umstieg@web.de`, die Adresse der
+  Person wird Reply-To. Nichts wird gespeichert oder protokolliert (Test in
+  `backend/test/datenschutz.test.ts`). Grenze: 2 Meldungen je Minute und
+  Aufrufer. Ohne SMTP-Werte antwortet die Route 503.
+- SMTP-Werte: Fly-Secrets `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`,
+  `MELDUNG_AN` (Deployed); lokal `E:\jbeer\.secrets\smtp-webde.env`, siehe
+  `.env.example`.
+- Datenschutzseite um den Abschnitt „Etwas melden“ ergänzt (Speicherdauer
+  höchstens 12 Monate, lit. f, WEB.DE), Kurzfassung und „Deine Rechte“
+  angepasst.
+- Backend auf Fly per `flyctl deploy backend --ha=false` (eine Maschine);
+  Testmeldungen per curl, aus der lokalen App und aus der Produktion
+  verschickt.
 
-**Vorbereitet, aber noch nicht wirksam:**
+**Offen aus „Etwas melden“ (bewusst zurückgestellt):**
 
-- Die fünf SMTP-Werte (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`,
-  `MELDUNG_AN`) liegen auf Fly als Secrets mit Status **„Staged“**. Sie werden
-  mit dem **nächsten** `flyctl deploy` wirksam. Ohne den Meldecode schadet das
-  nicht – die Werte liegen dann nur bereit.
-- Lokale Quelle: `E:\jbeer\.secrets\smtp-webde.env` (Tresor, nur lesen; in
-  der CLAUDE.md eingetragen).
-- Ein Testversand per curl über `smtp.web.de:587` (STARTTLS) ist am
-  10.11.2026 angekommen.
-- Wegwerf-Vorschau des Layouts: `frontend/.entwurf/meldung-vorschau.html`
-  (nicht eingecheckt).
+1. Gemeinsame Obergrenze für alle Aufrufer (z. B. 30 Meldungen je Stunde) –
+   einbauen, sobald Spam auftaucht (Spec, „Für später vorgemerkt“).
+2. In der iOS-App freischalten: vorher `PrivacyInfo.xcprivacy` und die
+   Angaben in App Store Connect (E-Mail, Nutzerinhalte) anpassen.
+3. Adressprüfung lässt `( ) : \` und Umlaute durch; nodemailer formt daraus
+   ein abweichendes Reply-To. An beiden Stellen (`backend/src/core/meldung.ts`,
+   `frontend/src/rueckmeldung/regeln.ts`) ausschließen.
+4. Kein Regressionstest für den CORS-Preflight von `POST /api/meldung`
+   (funktioniert, ist aber nur durch das Spiegeln der Header von
+   `@fastify/cors` abgesichert).
+5. Bei SMTP-Problemen bis ~35 s „Wird gesendet …“; `fetch` ohne Timeout.
+   SMTP-`responseCode` fehlt im Log.
+6. Kommentar in `backend/src/core/meldung.ts` nennt noch den alten Pfad
+   `frontend/src/meldung/regeln.ts`.
+
+**Backend-Suite:** `test/osm-bestand.test.ts` („nimmt den frischen
+Startbestand vor einem Volume-Eintrag aus alter Abfrageversion“) schlägt
+fehl – auch ohne „Etwas melden“, nicht untersucht. `graph` und
+`bahnhofsseiten-daten` liefen unter Last einmal in Zeitgrenzen.
 
 **Ausgeliefert am 10.11.2026: Hauptknöpfe im Texture-Look** (nur Frontend,
 Commits `cb4145e` und `13e6763`, live auf www.umstieg.online geprüft):
@@ -62,9 +85,8 @@ Commits `cb4145e` und `13e6763`, live auf www.umstieg.online geprüft):
   `frontend/.entwurf/knopf-vorschau.html`, nicht eingecheckt); Julian hat
   Texture gewählt.
 
-**Stand der Zweige:** `main` steht auf `13e6763` (Frontend live).
-`feat/textnavigation` ist lokal weiter (Spec, Plan, README), nicht gepusht.
-Das Backend auf Fly läuft weiter mit dem Code von `a5d92df`.
+**Stand der Zweige:** `main` und `feat/textnavigation` stehen auf `origin`
+gleich (Frontend live). Das Backend auf Fly läuft mit dem Code von `31cfbe8`.
 
 **Weitere offene Punkte (Reihenfolge):**
 
