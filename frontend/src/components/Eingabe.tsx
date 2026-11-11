@@ -19,6 +19,7 @@ import { STANDORT_VOREINSTELLUNG } from '../api/standorte'
 import { Zugauswahl } from './Zugauswahl'
 import { Fahrtauswahl } from './Fahrtauswahl'
 import { ReiseImport } from './ReiseImport'
+import { EtwasMelden } from './EtwasMelden'
 import type { Umstieg } from '../reise/reisetext'
 import type { EingabeEntwurf } from '../sitzung/eingabespeicher'
 import { meldeFormularAn } from '../einfuehrung/formularstand'
@@ -186,6 +187,7 @@ export function Eingabe({
   const [fahrtAbfahrt, setFahrtAbfahrt] = useState<HaltestellenTafelEintrag | null>(entwurf?.fahrtAbfahrt ?? null)
   const [erkennungVerworfen, setErkennungVerworfen] = useState(false)
   const [importOffen, setImportOffen] = useState(false)
+  const [meldenOffen, setMeldenOffen] = useState(false)
   // In der App: eine Verbindung aus dem Teilen-Menue wartet (Paket 7).
   const geteilt = useGeteilterText()
   /*
@@ -1131,8 +1133,20 @@ export function Eingabe({
           )}
         </details>
 
+        {/* „Etwas melden" (Spec 2026-11-10): direkt unter den Einstellungen,
+            linksbuendig. Vorerst nur auf der Website - in der App muessten
+            zuerst die Datenschutzangaben bei Apple angepasst werden. */}
+        {!istApp() && (
+          <div className="etwas-melden-einstieg">
+            <button type="button" className="textknopf" onClick={() => setMeldenOffen(true)}>
+              Etwas melden
+            </button>
+          </div>
+        )}
+
         {fehler && <div className="fehler-box">{fehler}</div>}
         {fuss}
+        {meldenOffen && <EtwasMelden onSchliessen={() => setMeldenOffen(false)} />}
         {(importOffen || geteilt !== null) && (
           <ReiseImport
             // Ein neu geteilter Text oeffnet den Dialog frisch.
