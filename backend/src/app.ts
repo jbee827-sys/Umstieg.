@@ -44,6 +44,8 @@ import {
 } from './routes/live.js';
 import { registriereHaltestellenRouten } from './routes/haltestellen.js';
 import { registriereZaehlerRoute } from './routes/zaehler.js';
+import { registriereMeldungRoute } from './routes/meldung.js';
+import { erzeugeMailversand, type Mailversand } from './clients/mailversand.js';
 import { erzeugeHaltestellenClient, type HaltestellenClient } from './clients/haltestellen.js';
 import { erzeugeMotisKern } from './clients/motis.js';
 import { erzeugeMotisPausen } from './clients/motis-pausen.js';
@@ -59,6 +61,11 @@ export interface AppClients extends ApiClients {
   haltestellen: HaltestellenClient | null;
   /** Live-Überwachung der Haltestellen – injizierbar wie `ueberwachung`. */
   haltestellenLive?: HaltestellenLive | null;
+  /**
+   * Versand für „Etwas melden“. `null` = ausdrücklich keiner (Route antwortet
+   * 503); fehlt das Feld, entscheiden die SMTP-Werte der Umgebung.
+   */
+  mailversand?: Mailversand | null;
 }
 
 /**
@@ -102,6 +109,10 @@ const GRENZEN: Record<string, number> = {
   '/api/live/haltestelle': 14,
   // Nutzungszaehlung der App: ein Mensch loest wenige je Minute aus.
   '/api/zaehle': 30,
+  // „Etwas melden": jede Meldung ist eine Mail in Julians Postfach. Eng, damit
+  // es keine Spam-Schleuder wird. Eine gemeinsame Obergrenze fuer alle
+  // Aufrufer ist laut Spec 2026-11-10 fuer spaeter vorgemerkt.
+  '/api/meldung': 2,
 };
 
 /** Fuer alles, was keine eigene Grenze hat. */
@@ -182,7 +193,8 @@ export function buildApp(
     .map((h) => h.trim())
     .filter(Boolean);
   if (erlaubteHerkuenfte.length > 0) {
-    // POST nur fuer /api/zaehle (Nutzungszaehlung der App, routes/zaehler.ts).
+    // POST nur fuer /api/zaehle (Nutzungszaehlung der App, routes/zaehler.ts)
+    // und /api/meldung („Etwas melden", routes/meldung.ts).
     app.register(cors, { origin: erlaubteHerkuenfte, methods: ['GET', 'POST'] });
   }
 
@@ -439,6 +451,12 @@ export function buildApp(
     });
     instanz.addHook('onClose', async () => appZaehler.beende());
     registriereZaehlerRoute(instanz, appZaehler);
+
+    // „Etwas melden" (Spec 2026-11-10): Meldung als Mail an Julians Postfach.
+    registriereMeldungRoute(
+      instanz,
+      clients.mailversand !== undefined ? clients.mailversand : erzeugeMailversand(process.env),
+    );
 
     // Haltestellenpfad (Umstieg 2.0) – dieselbe Bahnhofssuche wie oben, damit
     // `/api/orte` ihren Zwischenspeicher teilt.

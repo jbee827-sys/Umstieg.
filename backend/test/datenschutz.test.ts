@@ -163,6 +163,38 @@ describe('Das Backend haelt seine Datenschutzzusage', () => {
     expect(alles).not.toContain('13.37');
     expect(alles).not.toContain('remoteAddress');
   });
+
+  /**
+   * „Etwas melden" (Spec 2026-11-10): Der Server reicht die Meldung nur
+   * weiter. Scheitert der Versand, wird DASS es scheiterte gemeldet - Text
+   * und Adresse duerfen dabei nicht ins Protokoll, auch nicht ueber die
+   * Fehlermeldung des Mailservers.
+   */
+  it('schreibt weder Text noch Adresse einer Meldung ins Protokoll', async () => {
+    const log = sammelLogger();
+    const app = buildApp(
+      {
+        ...clients(),
+        mailversand: async () => {
+          throw Object.assign(new Error('Absender marke@beispiel.de abgelehnt: MARKE-7f3a'), { code: 'EENVELOPE' });
+        },
+      } as never,
+      log.optionen as never,
+    );
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/meldung',
+      payload: { text: 'MARKE-7f3a Gleis fehlt', email: 'marke@beispiel.de' },
+    });
+    expect(res.statusCode).toBe(502);
+    await app.close();
+
+    const alles = log.roh.join('\n');
+    expect(alles).not.toContain('MARKE-7f3a');
+    expect(alles).not.toContain('marke@beispiel.de');
+    expect(log.zeilen.some((z) => z.ereignis === 'meldung-versand')).toBe(true);
+  });
 });
 
 /**
