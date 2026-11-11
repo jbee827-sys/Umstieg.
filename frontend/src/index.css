@@ -164,6 +164,11 @@
   --texturknopf-ring: 0 0 0 1px color-mix(in srgb, #000000 10%, transparent);
   --texturknopf-schrift: color-mix(in srgb, #ffffff 94%, transparent);
 
+  /* Feldhuelle von „Etwas melden" (App.css, `.feldhuelle`). */
+  --feldhuelle-grund: color-mix(in srgb, #eae9e9 70%, #ffffff);
+  --feldhuelle-rand: color-mix(in srgb, #201e1d 12%, transparent);
+  --feldhuelle-glanz: inset 0 1px 0 rgb(255 255 255 / 0.9);
+
   /* Das Lockup im Kopf ist ein Bild mit dunkler Wortmarke. */
   /* Hell- und Nachtfassung des Lockups: Welche zu sehen ist, entscheidet die
      Darstellung (App.css, `.lockup-hell`/`.lockup-dunkel`). */
@@ -263,6 +268,11 @@
     --texturknopf-ring: 0 0 0 2px #0c0b0b;
     --texturknopf-schrift: color-mix(in srgb, #ffffff 94%, transparent);
 
+    /* Feldhuelle von „Etwas melden" nachts. */
+    --feldhuelle-grund: color-mix(in srgb, #222120 80%, #171615);
+    --feldhuelle-rand: color-mix(in srgb, #f3f2f2 14%, transparent);
+    --feldhuelle-glanz: inset 0 1px 0 rgb(255 255 255 / 0.05);
+
     /* Nachts die eigene Fassung des Lockups: helle Schrift, Rot im Nachtrot
        wie Knopf und Ueberschriften. Bis zum 21.10.2026 kehrte ein Filter das
        helle Bild um - das Rot landete rosa, nicht beim Nachtrot (Julian). */
@@ -344,6 +354,11 @@
   --texturknopf-licht-unten: #e03d20;
   --texturknopf-ring: 0 0 0 2px #0c0b0b;
   --texturknopf-schrift: color-mix(in srgb, #ffffff 94%, transparent);
+
+  /* Feldhuelle von „Etwas melden" nachts. */
+  --feldhuelle-grund: color-mix(in srgb, #222120 80%, #171615);
+  --feldhuelle-rand: color-mix(in srgb, #f3f2f2 14%, transparent);
+  --feldhuelle-glanz: inset 0 1px 0 rgb(255 255 255 / 0.05);
 
   /* Nachts die eigene Fassung des Lockups: helle Schrift, Rot im Nachtrot
      wie Knopf und Ueberschriften. Bis zum 21.10.2026 kehrte ein Filter das

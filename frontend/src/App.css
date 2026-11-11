@@ -2590,6 +2590,117 @@
   font-size: 1.111rem;
 }
 
+/*
+ * „Etwas melden" (Spec 2026-11-10, components/EtwasMelden.tsx).
+ * Felder im Aufbau des Halo-Field von cult-ui - Beschriftung, Huelle, Zeile
+ * darunter -, aber OHNE Halo-Leuchten und in den Farben von Umstieg: leicht
+ * abgesetzter Grund, feiner Rand, Lichtkante oben; im Fokus der rote Rand.
+ */
+.feldhuelle {
+  width: 100%;
+  padding: 11px 14px;
+  font: inherit;
+  font-size: 0.889rem;
+  line-height: 1.45;
+  color: var(--color-text);
+  caret-color: var(--color-accent);
+  background: var(--feldhuelle-grund);
+  border: 1px solid var(--feldhuelle-rand);
+  border-radius: 14px;
+  box-shadow: var(--feldhuelle-glanz);
+  transition: border-color var(--dauer-normal) var(--verlauf-ein), box-shadow var(--dauer-normal) var(--verlauf-ein);
+}
+.feldhuelle:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: var(--feldhuelle-glanz), 0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+.feldhuelle[aria-invalid='true'] {
+  border-color: var(--color-accent);
+}
+.etwas-melden-text {
+  min-height: 120px;
+  resize: vertical;
+}
+.feld-zeile {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 6px;
+}
+.feld-hinweis,
+.feld-hilfe,
+.feld-zaehler,
+.feld-optional {
+  font-size: var(--schrift-label);
+  color: var(--color-neutral-700);
+}
+.feld-hilfe {
+  margin: 0 0 6px;
+}
+.feld-zaehler {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+.feld-fehler {
+  margin: 6px 0 0;
+  font-size: var(--schrift-label);
+  font-weight: 600;
+  color: var(--color-accent-700);
+}
+.feld-zeile .feld-fehler {
+  margin: 0;
+}
+/* Ein Paar wie auf dem Schrittblatt: gleich breit, gleich hoch, oval. */
+.etwas-melden-knoepfe {
+  display: flex;
+  gap: 8px;
+}
+.etwas-melden-knoepfe > * {
+  flex: 1;
+  min-height: 46px;
+  border-radius: var(--radius-pille);
+  justify-content: center;
+}
+.etwas-melden-klein {
+  margin: 0;
+  font-size: var(--schrift-label);
+  color: var(--color-neutral-700);
+}
+.etwas-melden-klein a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+.etwas-melden-danke {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.etwas-melden-danke p {
+  margin: 0;
+}
+.etwas-melden-haken {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--color-gruen);
+  background: color-mix(in srgb, var(--color-gruen) 16%, var(--color-bg));
+}
+.etwas-melden-haken svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* Einstieg unter „Einstellungen" - linksbuendig (Julian), anders als `.feld-rand`. */
+.etwas-melden-einstieg {
+  display: flex;
+  justify-content: flex-start;
+}
+
 .anleitung {
   margin: 0;
   padding-left: 22px;
