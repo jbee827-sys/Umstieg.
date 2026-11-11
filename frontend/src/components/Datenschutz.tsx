@@ -37,6 +37,13 @@ import { BETREIBER } from '../rechtliches/betreiber'
 // - Vier Ereignisse je Umstieg, seit 21.10.2026: analytik/ereignis.ts
 //   (melde - nur der Name), analytik/messpunkte.ts, abgesichert in
 //   analytik/messpunkte.test.ts und App.nutzergewinnung.test.tsx
+// - „Etwas melden", seit 11.11.2026, nur Website (Spec 2026-11-10):
+//   components/EtwasMelden.tsx und api/meldung.ts (nur Text und freiwillige
+//   Adresse), backend/src/routes/meldung.ts und clients/mailversand.ts (SMTP
+//   ueber web.de, nichts gespeichert, nichts protokolliert), abgesichert in
+//   backend/test/datenschutz.test.ts („schreibt weder Text noch Adresse einer
+//   Meldung ins Protokoll") und components/Eingabe.etwas-melden.test.tsx
+//   (in der App verborgen)
 // - Backend ohne Zugriffsprotokoll: backend/src/app.ts
 //   (disableRequestLogging), abgesichert in backend/test/datenschutz.test.ts
 // - Ratenbegrenzung und Sicherheitsprotokoll: backend/src/app.ts (GRENZEN,
@@ -75,7 +82,9 @@ export function Datenschutz({ onZurueck }: { onZurueck?: () => void }) {
           lange, wie dieser Browser-Tab offen ist (in der App: bis iOS die App
           beendet). Dein Standort wird nur mit deiner Erlaubnis verwendet,
           bereits auf deinem Gerät auf etwa 110 Meter gerundet und nirgends
-          gespeichert.
+          gespeichert. Schreibst du uns über „Etwas melden“, kommt deine
+          Nachricht – und deine E-Mail-Adresse, wenn du sie angibst – per
+          E-Mail bei uns an.
         </p>
 
         <h2>Verantwortlicher</h2>
@@ -157,12 +166,42 @@ export function Datenschutz({ onZurueck }: { onZurueck?: () => void }) {
           </li>
           <li>
             <strong>Fly.io Inc.</strong> betreibt den Server, der die Wege
-            berechnet.
+            berechnet und Meldungen weiterreicht.
           </li>
         </ul>
         <p>
           Beide Anbieter sitzen in den USA. Die Übermittlung stützt sich auf die
           Standardvertragsklauseln der EU-Kommission.
+        </p>
+
+        <h2>Etwas melden</h2>
+        <p>
+          Über „Etwas melden“ kannst du uns einen falschen Weg, einen fehlenden
+          Bahnhof oder ein fehlendes Gleis melden oder uns einfach etwas
+          schreiben. Diese Funktion gibt es derzeit nur auf der Webseite.
+        </p>
+        <p>
+          Übertragen wird nur, was du selbst eingibst: deine Nachricht und, wenn
+          du möchtest, deine E-Mail-Adresse. Die Webseite schickt nichts weiter
+          mit – keinen Bahnhof, keine Gleise, keinen Standort.
+        </p>
+        <p>
+          Unser Server reicht die Nachricht als E-Mail an unser Postfach weiter
+          und <strong>speichert sie nicht</strong>; auch in ein Protokoll
+          gelangt sie nicht. Für Versand und Postfach nutzen wir{' '}
+          <strong>WEB.DE</strong> der 1&amp;1 Mail &amp; Media GmbH mit Sitz in
+          Deutschland.
+        </p>
+        <p>
+          Die E-Mail-Adresse ist freiwillig. Wir verwenden sie nur, um dir auf
+          deine Meldung zu antworten.
+        </p>
+        <p>
+          Rechtsgrundlage ist unser berechtigtes Interesse, Fehler in der App zu
+          beheben und deine Meldung zu bearbeiten (Art. 6 Abs. 1 lit. f DSGVO).
+          Die Meldung bleibt in unserem Postfach, bis sie erledigt ist,{' '}
+          <strong>höchstens 12 Monate</strong>; danach löschen wir sie. Möchtest
+          du sie früher gelöscht haben, schreib uns an {BETREIBER.email}.
         </p>
 
         <h2>Kartendaten</h2>
@@ -381,9 +420,12 @@ export function Datenschutz({ onZurueck }: { onZurueck?: () => void }) {
         <p>
           Dir stehen die Rechte auf Auskunft (Art. 15), Berichtigung (Art. 16),
           Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18),
-          Datenübertragbarkeit (Art. 20) und Widerspruch (Art. 21) zu. Da wir
-          keine personenbezogenen Daten speichern, können wir dich in unseren
-          Beständen allerdings nicht identifizieren – es gibt schlicht nichts,
+          Datenübertragbarkeit (Art. 20) und Widerspruch (Art. 21) zu.
+          Personenbezogene Daten bewahren wir nur auf, wenn du uns über „Etwas
+          melden“ schreibst: deine Nachricht und, falls angegeben, deine
+          E-Mail-Adresse in unserem Postfach. Darauf beziehen sich diese Rechte;
+          schreib uns dazu an {BETREIBER.email}. Darüber hinaus können wir dich
+          in unseren Beständen nicht identifizieren – es gibt schlicht nichts,
           worüber Auskunft zu erteilen wäre. Unabhängig davon kannst du dich bei
           einer Datenschutz-Aufsichtsbehörde beschweren (Art. 77 DSGVO).
         </p>

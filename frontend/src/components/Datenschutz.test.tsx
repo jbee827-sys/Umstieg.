@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { Datenschutz } from './Datenschutz'
 
 /**
@@ -211,5 +211,41 @@ describe('Datenschutz: die App', () => {
     expect(text).toContain('Verbindung teilen')
     expect(text).toContain('löscht ihn dabei')
     expect(text).toContain('Der Text verlässt dein Gerät nicht.')
+  })
+})
+
+/**
+ * „Etwas melden" (Spec 2026-11-10): Seit es den Meldedialog gibt, bewahren wir
+ * etwas auf - Text und freiwillige Adresse im Postfach. Die Seite muss das
+ * sagen, und die alte Zusage „wir speichern keine personenbezogenen Daten"
+ * darf nicht zurueckkommen.
+ */
+describe('Datenschutz: „Etwas melden"', () => {
+  it('hat einen Abschnitt „Etwas melden"', () => {
+    render(<Datenschutz onZurueck={() => {}} />)
+    expect(screen.getByRole('heading', { name: 'Etwas melden' })).toBeDefined()
+  })
+
+  it('nennt WEB.DE, lit. f und hoechstens 12 Monate', () => {
+    const text = zeige()
+    expect(text).toContain('WEB.DE der 1&1 Mail & Media GmbH')
+    expect(text).toContain('Art. 6 Abs. 1 lit. f DSGVO). Die Meldung bleibt in unserem Postfach')
+    expect(text).toContain('höchstens 12 Monate')
+  })
+
+  it('sagt, dass der Server Meldungen nicht speichert', () => {
+    expect(zeige()).toContain('Unser Server reicht die Nachricht als E-Mail an unser Postfach weiter und speichert sie nicht')
+  })
+
+  it('behauptet nicht mehr, keine personenbezogenen Daten zu speichern', () => {
+    expect(zeige()).not.toContain('Da wir keine personenbezogenen Daten speichern')
+  })
+
+  it('nennt Fly.io auch fuer das Weiterreichen von Meldungen', () => {
+    expect(zeige()).toContain('betreibt den Server, der die Wege berechnet und Meldungen weiterreicht')
+  })
+
+  it('nennt Meldungen in der Kurzfassung', () => {
+    expect(zeige()).toContain('Schreibst du uns über „Etwas melden“, kommt deine Nachricht')
   })
 })
