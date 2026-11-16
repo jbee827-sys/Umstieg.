@@ -10,7 +10,8 @@ public class UebergabePlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "UebergabePlugin"
     public let jsName = "Uebergabe"
     public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "hole", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "hole", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "zustand", returnType: CAPPluginReturnPromise)
     ]
 
     @objc func hole(_ call: CAPPluginCall) {
@@ -19,5 +20,11 @@ public class UebergabePlugin: CAPPlugin, CAPBridgedPlugin {
         } else {
             call.resolve([:])
         }
+    }
+
+    /// Diagnose (16.11.2026): der Stand des gemeinsamen Speichers, ohne ihn
+    /// zu veraendern - angezeigt unter „Einstellungen“.
+    @objc func zustand(_ call: CAPPluginCall) {
+        call.resolve(UebergabeSpeicher.zustand())
     }
 }

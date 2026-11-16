@@ -34,9 +34,16 @@ class ShareViewController: UIViewController {
                 text: "Teile die Verbindung bitte als Text – im DB Navigator über „Verbindung teilen“."
             )
         } else if UebergabeSpeicher.lege(ohneRand) {
+            // Die Zeichenzahl ist Diagnose (16.11.2026): Sie zeigt, dass
+            // wirklich Text ankam - und in Umstieg steht dieselbe Zahl.
             zeige(
                 titel: "An Umstieg übergeben",
-                text: "Öffne jetzt Umstieg. Dort wartet die Verbindung unter „Reise importieren“ – du wählst nur noch den Umstieg aus."
+                text: "Öffne jetzt Umstieg – von hier aus geht das nicht von selbst. Dort wartet die Verbindung unter „Reise importieren“; du wählst nur noch den Umstieg aus.\n\n\(ohneRand.count) Zeichen übergeben."
+            )
+        } else if !UebergabeSpeicher.gruppeErreichbar {
+            zeige(
+                titel: "Das hat nicht geklappt",
+                text: "Der gemeinsame Speicher mit Umstieg ist nicht erreichbar (App Group fehlt). Kopiere den Text und füge ihn in Umstieg unter „Reise importieren“ ein."
             )
         } else {
             zeige(

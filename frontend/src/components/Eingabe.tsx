@@ -26,7 +26,7 @@ import { meldeFormularAn } from '../einfuehrung/formularstand'
 import { ladeDarstellung, waehleDarstellung, type Darstellung } from '../einstellungen/darstellung'
 import { setzeEinwilligung, useEinwilligung } from '../analytik/einwilligung'
 import { istApp } from '../plattform/istApp'
-import { useGeteilterText, verwirfGeteiltenText } from '../plattform/uebergabe'
+import { uebergabeDiagnose, useGeteilterText, verwirfGeteiltenText } from '../plattform/uebergabe'
 import { useBreitesLayout } from '../aufbau/breite'
 
 /** Haltestellenpfad (Umstieg 2.0): beide Orte mit der gewählten Fahrt. */
@@ -188,6 +188,8 @@ export function Eingabe({
   const [erkennungVerworfen, setErkennungVerworfen] = useState(false)
   const [importOffen, setImportOffen] = useState(false)
   const [meldenOffen, setMeldenOffen] = useState(false)
+  // Diagnose der Teilen-Uebergabe (16.11.2026, voruebergehend).
+  const [teilenDiagnose, setTeilenDiagnose] = useState<string[] | null>(null)
   const meldenKnopfRef = useRef<HTMLButtonElement>(null)
   // In der App: eine Verbindung aus dem Teilen-Menue wartet (Paket 7).
   const geteilt = useGeteilterText()
@@ -1130,6 +1132,30 @@ export function Eingabe({
                   </button>
                 ))}
               </div>
+            </fieldset>
+          )}
+          {/* Diagnose der Teilen-Uebergabe (16.11.2026): voruebergehend, bis
+              „An Umstieg senden“ am iPhone belegt ist. Zeigt Zeiten und
+              Laengen, nie den geteilten Text. */}
+          {istApp() && (
+            <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
+              <label>Teilen-Diagnose</label>
+              <button
+                type="button"
+                className="knopf-sekundaer"
+                onClick={() => void uebergabeDiagnose().then(setTeilenDiagnose)}
+              >
+                Prüfen
+              </button>
+              {teilenDiagnose && (
+                <p className="hinweis-box" role="status">
+                  {teilenDiagnose.map((zeile) => (
+                    <span key={zeile} style={{ display: 'block' }}>
+                      {zeile}
+                    </span>
+                  ))}
+                </p>
+              )}
             </fieldset>
           )}
         </details>

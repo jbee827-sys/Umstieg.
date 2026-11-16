@@ -6,9 +6,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
  * holt den Text beim Start und bei jeder Rueckkehr - in der Tour nie, im
  * Browser nie.
  */
-const nativ = vi.hoisted(() => ({ app: true, hole: vi.fn() }))
+const nativ = vi.hoisted(() => ({ app: true, hole: vi.fn(), zustand: vi.fn() }))
 vi.mock('./istApp', () => ({ istApp: () => nativ.app }))
-vi.mock('@capacitor/core', () => ({ registerPlugin: () => ({ hole: nativ.hole }) }))
+vi.mock('@capacitor/core', () => ({ registerPlugin: () => ({ hole: nativ.hole, zustand: nativ.zustand }) }))
 
 const u = await import('./uebergabe')
 const { setzeVorfuehrung } = await import('../einfuehrung/zustand')
@@ -23,6 +23,7 @@ function sichtbar(ja: boolean) {
 beforeEach(() => {
   nativ.app = true
   nativ.hole.mockReset()
+  nativ.zustand.mockReset()
   u.verwirfGeteiltenText()
 })
 
@@ -80,5 +81,42 @@ describe('Uebergabe', () => {
     u.beobachteUebergabe(angekommen)()
     await abwarten()
     expect(angekommen).not.toHaveBeenCalled()
+  })
+})
+
+describe('Diagnose der Uebergabe (16.11.2026)', () => {
+  it('nennt Speicher, Zaehler und den letzten Abruf - nie den Text', async () => {
+    nativ.hole.mockResolvedValue({ text: 'Mannheim Hbf → Berlin Hbf' })
+    nativ.zustand.mockResolvedValue({ gruppe: true, wartet: false, zeichen: 0, abgelegtZahl: 2, abgelegtVorSek: 30, abgeholtZahl: 1, abgeholtVorSek: 5 })
+    const ende = u.beobachteUebergabe(vi.fn())
+    await abwarten()
+    const zeilen = await u.uebergabeDiagnose()
+    ende()
+    expect(zeilen).toContain('Gemeinsamer Speicher (App Group): erreichbar')
+    expect(zeilen).toContain('Erweiterung hat abgelegt: 2×, zuletzt vor 30 s')
+    expect(zeilen).toContain('App hat abgeholt: 1×, zuletzt vor 5 s')
+    expect(zeilen.some((z) => z.includes('Text geholt (25 Zeichen)'))).toBe(true)
+    expect(zeilen).toContain('Im Dialog wartet: 25 Zeichen')
+    expect(zeilen.join(' ')).not.toContain('Mannheim')
+  })
+
+  it('sagt, wenn die App Group fehlt', async () => {
+    nativ.zustand.mockResolvedValue({ gruppe: false })
+    expect(await u.uebergabeDiagnose()).toContain('Gemeinsamer Speicher (App Group): NICHT erreichbar')
+  })
+
+  it('sagt, wenn das Plugin nicht antwortet, und nennt den Fehler des letzten Abrufs', async () => {
+    nativ.hole.mockRejectedValue(new Error('not implemented'))
+    nativ.zustand.mockRejectedValue(new Error('not implemented'))
+    u.beobachteUebergabe(vi.fn())()
+    await abwarten()
+    const zeilen = await u.uebergabeDiagnose()
+    expect(zeilen[0]).toBe('Plugin: NICHT erreichbar (not implemented)')
+    expect(zeilen.some((z) => z.includes('Fehler des Plugins: not implemented'))).toBe(true)
+  })
+
+  it('im Browser gibt es nichts zu pruefen', async () => {
+    nativ.app = false
+    expect(await u.uebergabeDiagnose()).toEqual(['Nur in der App.'])
   })
 })
