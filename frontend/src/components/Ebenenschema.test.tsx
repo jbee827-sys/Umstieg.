@@ -157,6 +157,52 @@ describe('Die Höhe des aktiven Bandes folgt der Bahnsteigdichte', () => {
   })
 })
 
+describe('Ein Gleisbild wird beschnitten, nicht gestaucht (16.11.2026)', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  // Die Bandhöhe vom Foto: 140 px unter dem Anker, wie auf dem iPhone im
+  // In-App-Browser bei dreizeiliger Überschrift.
+  const eng = () => vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(140 + ANKER_H)
+  const balkenY = (container: HTMLElement) =>
+    [...container.querySelectorAll('.schema-bahnsteig')].map((l) => Number(l.getAttribute('y1'))).sort((a, b) => a - b)
+
+  it('lässt den Balken ihre Abstände, auch wenn das Band zu niedrig ist', () => {
+    eng()
+    const { container } = zeige(MUENCHEN, 0)
+    const ys = balkenY(container)
+    expect(ys.length).toBe(17)
+    // Ungestaucht liegen zwei Balken mindestens 24 px auseinander (`gasseZwischen`).
+    for (let i = 1; i < ys.length; i++) expect(ys[i] - ys[i - 1]).toBeGreaterThanOrEqual(23)
+  })
+
+  it('zeigt davon einen Ausschnitt, in dem der Standpunkt liegt', () => {
+    eng()
+    const { container } = zeige(MUENCHEN, 0)
+    const bild = container.querySelector('.schema-bild')!
+    const sichtH = Number(bild.getAttribute('viewBox')!.split(' ')[3])
+    const ausschnitt = container.querySelector('.schema-ausschnitt')!
+    const fensterH = Number(ausschnitt.getAttribute('height'))
+    expect(fensterH).toBeLessThanOrEqual(sichtH)
+    expect(Math.max(...balkenY(container))).toBeGreaterThan(sichtH)
+    const versatz = 0 - versatzAus(container.querySelector<HTMLElement>('.schema-schwenk')!)
+    const punktY = Number(container.querySelector('.schema-start')!.getAttribute('cy'))
+    expect(punktY - versatz).toBeGreaterThanOrEqual(7)
+    expect(punktY - versatz).toBeLessThanOrEqual(fensterH - 7)
+  })
+
+  it('die Zeile „Anfang · Mitte · Ende" bleibt unten im Band stehen', () => {
+    eng()
+    const { container } = zeige(MUENCHEN, 0)
+    const sichtH = Number(container.querySelector('.schema-bild')!.getAttribute('viewBox')!.split(' ')[3])
+    const zeile = [...container.querySelectorAll('.schema-standort')]
+    expect(zeile.length).toBe(3)
+    for (const t of zeile) {
+      expect(t.closest('.schema-schwenk')).toBeNull()
+      expect(Number(t.getAttribute('y'))).toBeLessThanOrEqual(sichtH)
+    }
+  })
+})
+
 /** Die px-Zahl aus `transform: translateY(-56px)`. */
 function versatzAus(stapel: HTMLElement): number {
   const treffer = /translateY\((-?[\d.]+)px\)/.exec(stapel.style.transform)

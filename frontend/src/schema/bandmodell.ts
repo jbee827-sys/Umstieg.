@@ -40,6 +40,8 @@ export interface Band {
   wechselVorher?: SchemaWechsel
   /** Der Ebenenwechsel zum NÄCHSTEN Band; fehlt beim letzten. */
   wechselNachher?: SchemaWechsel
+  /** Nur am aktiven Band: wie weit der Reisende auf diesem Besuch schon ist. */
+  stand?: Stand
   /** Die Daten dieses Besuchs, für das Bild. */
   ebene: SchemaEbene
 }
@@ -166,6 +168,44 @@ export function besuchJeSchritt(schritte: Schritt[]): number[] {
   return zuordnung
 }
 
+/** Wo auf einem Besuch der Reisende steht, in Metern entlang des Wegs. */
+export interface Stand {
+  /** Schon gegangen, bevor der laufende Schritt beginnt. */
+  m: number
+  /** Alle Meter der Schritte dieses Besuchs – zum Abgleich mit der Länge der Linie. */
+  gesamtM: number
+}
+
+/**
+ * Wie weit ist der Reisende auf SEINEM Besuch, wenn Schritt `position` läuft?
+ *
+ * Der Punkt im Bild steht am ANFANG des laufenden Schritts: dort, wo man
+ * liest, was als Nächstes zu tun ist. Bis zum 16.11.2026 stand er auf dem
+ * Startpunkt fest; an einem Kopfbahnhof ohne Ebenenwechsel (München 9 → 25,
+ * ein Band, drei Schritte) änderte sich das Bild dann über die ganze Route
+ * nicht.
+ *
+ * Der Schritt, der einen Besuch ERÖFFNET, ist der Ebenenwechsel dorthin
+ * (`level` = Ebene, auf der er endet). Seine Meter – „Durch die Unterführung,
+ * dann Treppe hoch“ – liegen auf der Ebene davor und zählen hier nicht.
+ */
+export function standImBesuch(schritte: Schritt[], position: number): Stand {
+  if (schritte.length === 0) return { m: 0, gesamtM: 0 }
+  const zuordnung = besuchJeSchritt(schritte)
+  const p = Math.min(Math.max(position, 0), schritte.length - 1)
+  const besuch = zuordnung[p]
+  let m = 0
+  let gesamtM = 0
+  for (let i = 0; i < schritte.length; i++) {
+    if (zuordnung[i] !== besuch) continue
+    const eroeffnet = besuch > 0 && zuordnung[i - 1] !== besuch
+    const meter = eroeffnet ? 0 : (schritte[i].distanzM ?? 0)
+    if (i < p) m += meter
+    gesamtM += meter
+  }
+  return { m, gesamtM }
+}
+
 /**
  * Der Ebenenwechsel zwischen Besuch `i` und `i + 1`.
  *
@@ -252,6 +292,7 @@ export function baueBandmodell(
       rechts: rechtsText(ebene, i === 0, i === letzterIndex),
       ...(wechselVorher ? { wechselVorher } : {}),
       ...(wechselNachher ? { wechselNachher } : {}),
+      ...(i === aktiverBesuch ? { stand: standImBesuch(schritte, position) } : {}),
       ebene,
     }
   })

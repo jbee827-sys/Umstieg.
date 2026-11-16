@@ -1614,6 +1614,14 @@
   min-height: 0;
   margin-top: 6px;
 }
+/* Der Ausschnitt eines Gleisbilds geht mit dem Reisenden mit (16.11.2026).
+   `prefers-reduced-motion` stellt alle Uebergaenge weiter unten auf sofort. */
+.schema-ausschnitt {
+  overflow: hidden;
+}
+.schema-schwenk {
+  transition: transform var(--dauer-ruhig) var(--verlauf-ein);
+}
 .schema-bild text {
   font-family: var(--font-body);
 }

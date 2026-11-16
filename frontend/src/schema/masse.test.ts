@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AKTIV_KLEIN, ANKER_H, CHROME_H, MIN_BILD_H, RUHIG_H, WECHSEL_H, aktivHoehe, bildflaeche, stapelVersatz } from './masse'
+import { AKTIV_KLEIN, ANKER_H, CHROME_H, MIN_BILD_H, RUHIG_H, WECHSEL_H, aktivHoehe, ausschnittVersatz, bildflaeche, stapelVersatz } from './masse'
 
 describe('stapelVersatz', () => {
   it('haelt das aktive Band bei jedem Schritt auf derselben Hoehe', () => {
@@ -50,5 +50,28 @@ describe('aktivHoehe: so hoch, wie das Bild es braucht – nicht mehr, als Platz
 
   it('die Zeichenflaeche ist das Band ohne Kopf, Fuss und Polster', () => {
     expect(bildflaeche(AKTIV_KLEIN).hoehe).toBe(AKTIV_KLEIN - CHROME_H)
+  })
+})
+
+describe('ausschnittVersatz: das Gleisbild wird beschnitten, nicht gestaucht (16.11.2026)', () => {
+  it('passt das Bild ganz hinein, bleibt es stehen', () => {
+    expect(ausschnittVersatz(100, 100, 20, 80)).toBe(0)
+    expect(ausschnittVersatz(80, 100, 20, 60)).toBe(0)
+  })
+
+  it('zeigt Standpunkt und Ziel zusammen, wenn beide in den Ausschnitt passen', () => {
+    // 600 hoch, 100 zu sehen; Stand bei 300, Ziel bei 340: Mitte 320.
+    expect(ausschnittVersatz(600, 100, 300, 340)).toBe(270)
+  })
+
+  it('liegen sie zu weit auseinander, folgt der Ausschnitt dem Standpunkt', () => {
+    // München 9 → 25: Ankunft unten, Abfahrt oben.
+    expect(ausschnittVersatz(600, 100, 500, 150)).toBe(450)
+    expect(ausschnittVersatz(600, 100, 150, 150)).toBe(100)
+  })
+
+  it('schiebt nie über den Rand des Bildes', () => {
+    expect(ausschnittVersatz(600, 100, 10, 10)).toBe(0)
+    expect(ausschnittVersatz(600, 100, 590, 590)).toBe(500)
   })
 })

@@ -105,7 +105,13 @@ interface Wegbild {
   /** Wird der Weg als Linie gezeichnet? Auf Ankunfts- und Abfahrtsband nicht. */
   zeigeWeg: boolean
   wechsel: Wechselmarke[]
-  /** Nur beim ersten Besuch: wo der Reisende steht. */
+  /**
+   * Wo der Reisende steht – am Anfang des laufenden Schritts.
+   *
+   * Ohne `Bandoptionen.stand` wie bis zum 16.11.2026: nur beim ersten Besuch,
+   * am Startpunkt. Fehlt, wo er auf dem Ziel oder auf dem Ring der Ankunft
+   * stünde – dort sagt die rote Marke schon, wo man ist.
+   */
   start?: Bildpunkt
   /** Nur beim letzten Besuch: wo der Weg endet. */
   ziel?: Zielpunkt
@@ -153,6 +159,11 @@ export interface Bandoptionen {
   wechselVorher?: SchemaWechsel
   /** Der Wechsel, über den er sie verlässt. */
   wechselNachher?: SchemaWechsel
+  /**
+   * Wie weit der Reisende auf diesem Besuch ist (`standImBesuch`). Fehlt es,
+   * steht der Punkt nur beim ersten Besuch, am Start.
+   */
+  stand?: { m: number; gesamtM: number }
 }
 
 /** Rand um das eingepasste Bild, in Zeichenkoordinaten. */
@@ -312,6 +323,73 @@ function wegenden(weg: Bildpunkt[], opt: Bandoptionen): Pick<Wegbild, 'wechsel' 
   }
 }
 
+/**
+ * Der Punkt `stand.m` Meter entlang des Wegs – in Metern, vor dem Einpassen.
+ *
+ * Die Schritte runden auf zehn Meter, die Linie ist geglättet: Ihre Summen
+ * weichen voneinander ab. Sind die Schritte zusammen länger als die Linie,
+ * wird im Verhältnis gekürzt – sonst stünde der Punkt schon am Ende, bevor
+ * der letzte Schritt beginnt.
+ */
+export function punktAmWeg(weg: SchemaPunkt[], stand: { m: number; gesamtM: number }): SchemaPunkt | undefined {
+  if (weg.length === 0) return undefined
+  let laenge = 0
+  for (let i = 1; i < weg.length; i++) laenge += Math.hypot(weg[i].x - weg[i - 1].x, weg[i].y - weg[i - 1].y)
+  let rest = stand.gesamtM > laenge && stand.gesamtM > 0 ? (stand.m * laenge) / stand.gesamtM : stand.m
+  if (!(rest > 0)) return weg[0]
+  for (let i = 1; i < weg.length; i++) {
+    const stueck = Math.hypot(weg[i].x - weg[i - 1].x, weg[i].y - weg[i - 1].y)
+    if (rest <= stueck && stueck > 0) {
+      const t = rest / stueck
+      return { x: weg[i - 1].x + t * (weg[i].x - weg[i - 1].x), y: weg[i - 1].y + t * (weg[i].y - weg[i - 1].y) }
+    }
+    rest -= stueck
+  }
+  return weg[weg.length - 1]
+}
+
+/** Steht der Punkt schon unterwegs? Sonst gilt der Startpunkt wie bisher. */
+function istUnterwegs(opt: Bandoptionen): boolean {
+  return opt.stand !== undefined && (opt.stand.m > 0 || !opt.erster)
+}
+
+/**
+ * Der Standpunkt unterwegs – oder keiner, wo eine rote Marke ihn ersetzt.
+ *
+ * Auf dem Ziel steht nur das Ziel (Julian, 16.11.2026: der weiße Punkt wird
+ * dort durch den roten ersetzt). Dasselbe am Ring der Ankunft: Wer eben die
+ * Treppe heraufkam, steht auf ihrer Marke.
+ */
+function standOderMarke(
+  p: Bildpunkt | undefined,
+  wechsel: Wechselmarke[],
+  ziel: Bildpunkt | undefined,
+): Bildpunkt | undefined {
+  if (!p) return undefined
+  const nah = (q: Bildpunkt, r: number): boolean => Math.hypot(p.x - q.x, p.y - q.y) <= r
+  if (ziel && nah(ziel, PUNKT_R)) return undefined
+  if (wechsel.some((m) => m.art === 'ankommen' && nah(m, SCHEIBE_R))) return undefined
+  return p
+}
+
+/**
+ * Was der Ausschnitt zeigen muss: wo man steht, und wohin es als Nächstes geht.
+ *
+ * `a` ist der Standpunkt (oder die Marke, die ihn ersetzt), `b` das Ziel auf
+ * diesem Band – sonst die Stelle, an der man es verlässt.
+ *
+ * Ohne Standpunkt geht das Ziel dem Ring der Ankunft vor: An gebogenen
+ * Bahnsteigen (Aachen 8/9) liegt der Ring im Bild neben dem Abfahrtsbalken,
+ * und gezeigt werden muss am Ende das Abfahrtsgleis.
+ */
+export function bildfokus(bild: Bandbild): { a: number; b: number } | undefined {
+  const ankunft = bild.wechsel.find((m) => m.art === 'ankommen')
+  const abgang = bild.wechsel.find((m) => m.art === 'verlassen')
+  const a = bild.start?.y ?? bild.ziel?.y ?? ankunft?.y ?? abgang?.y
+  if (a === undefined) return undefined
+  return { a, b: bild.ziel?.y ?? abgang?.y ?? a }
+}
+
 /** Mitte der Punkte einer Anlage – bei Treppe und Rolltreppe die Mitte der Strecke. */
 function mitteVon(element: SchemaElement): SchemaPunkt {
   return {
@@ -369,6 +447,12 @@ export function zeichneUebergang(
   const netz = (ebene.netz ?? []).map((stueck) => stueck.punkte.map(bild))
   const weg = (ebene.weg ?? []).map(bild)
   const enden = wegenden(weg, opt)
+  if (istUnterwegs(opt)) {
+    const roh = punktAmWeg(ebene.weg ?? [], opt.stand!)
+    const stand = standOderMarke(roh ? bild(roh) : undefined, enden.wechsel, enden.ziel)
+    if (stand) enden.start = stand
+    else delete enden.start
+  }
   return {
     art: 'verbindung',
     netz,
@@ -770,7 +854,7 @@ export function zeichneGleisebene(
     wechsel = wechsel.map((m) => legeAufBalken(m, balken))
     const startBalken = balken.find((b) => b.rolle === 'start')
     const hier = standorte?.marken.find((m) => m.hier)
-    if (opt.erster && startBalken && hier) {
+    if (opt.erster && startBalken && hier && !istUnterwegs(opt)) {
       start = { x: begrenze(hier.x, startBalken.x1 + PUNKT_R, startBalken.x2 - PUNKT_R), y: startBalken.y }
     }
     const zielBalken = balken.find((b) => b.rolle === 'ziel')
@@ -790,6 +874,31 @@ export function zeichneGleisebene(
     }
   }
 
+  // --- Unterwegs: der Punkt am Anfang des laufenden Schritts ---
+  if (istUnterwegs(opt)) {
+    const amWeg = punktAmWeg(ebene.weg ?? [], opt.stand!)
+    let p = amWeg ? bild(amWeg) : undefined
+    if (p && !zeigeWeg) {
+      // Auf einem Bahnsteig steht man auf seinem Balken – wie die Scheiben.
+      const q = p
+      const b = balken
+        .filter((k) => k.rolle && Math.abs(q.y - k.y) <= AUF_BALKEN_PX && q.x >= k.x1 - 6 && q.x <= k.x2 + 6)
+        .sort((k, l) => Math.abs(q.y - k.y) - Math.abs(q.y - l.y))[0]
+      if (b) p = { x: begrenze(q.x, b.x1 + PUNKT_R, b.x2 - PUNKT_R), y: b.y }
+    }
+    // Die Scheiben wurden auf ihre Balken gelegt (`legeAufBalken`); der Punkt
+    // kommt aus dem Weg. Gemessen wird deshalb auch an ihrer Lage DAVOR –
+    // sonst stünde er 10 px neben der Treppe, über die man eben kam.
+    const ungelegt = amWeg ? bild(amWeg) : undefined
+    const amRing =
+      ungelegt !== undefined &&
+      enden.wechsel.some((m) => m.art === 'ankommen' && Math.hypot(ungelegt.x - m.x, ungelegt.y - m.y) <= SCHEIBE_R)
+    // Ist die Ankunft am Abfahrtsbahnsteig das Ziel, ist man mit ihr am Ziel:
+    // Dort steht nur noch die rote Marke.
+    const zielErreicht = wechsel.some((m) => m.alsZiel)
+    start = amRing || zielErreicht ? undefined : standOderMarke(p, wechsel, ziel)
+  }
+
   // --- Symbole: erst jetzt, weil sie den Punkten ausweichen ---
   balken.forEach((b, i) => {
     const id = ids[i]
@@ -797,7 +906,7 @@ export function zeichneGleisebene(
     const aufDiesem = (p: Bildpunkt): boolean => p.y === b.y && p.x >= b.x1 - 1 && p.x <= b.x2 + 1
     const scheiben = wechsel.filter((m) => m.aufBalken && aufDiesem(m))
     const hindernisse: Hindernis[] = [
-      ...(!zeigeWeg && start && aufDiesem(start) ? [{ x: start.x, breite: PUNKT_R * 2 }] : []),
+      ...(start && aufDiesem(start) ? [{ x: start.x, breite: PUNKT_R * 2 }] : []),
       ...scheiben.map((m) => ({ x: m.x, breite: istSymboltyp(m.typ) ? SCHEIBE_R * 2 : PUNKT_R * 2 })),
       ...(!zeigeWeg && ziel && aufDiesem(ziel) && !scheiben.some((m) => m.alsZiel)
         ? [{ x: ziel.x, breite: PUNKT_R * 2 }]

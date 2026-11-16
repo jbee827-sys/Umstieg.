@@ -21,6 +21,10 @@
 //     Berührt ein Ankunfts- oder Abfahrtsbalken seinen Nachbarn? Gezeichnet
 //     wird jedes Band so hoch, wie es braucht, höchstens `VERFUEGBAR` px
 //     (Standard: ein kleines Telefon, `AKTIV_KLEIN`).
+//   - Ausschnitt (seit 16.11.2026): Ein Gleisbild wird nicht mehr gestaucht,
+//     das Band zeigt einen Ausschnitt. Für JEDEN Schritt: Liegt der Punkt, an
+//     dem man steht (oder die Marke, die ihn ersetzt), im Ausschnitt? Steht
+//     auf dem letzten Band das Ziel im Bild, sobald man es erreicht hat?
 //
 // Dazu Zählungen ohne Urteil: Wege, die als U-Form um einen Kopf führen (im
 // Bild nicht mehr gezeichnet), Stellen, an denen die gezeichnete Linie
@@ -32,9 +36,9 @@
 import { readFileSync } from 'node:fs'
 import type { BahnhofSchema, Schritt } from '../src/api/typen'
 import { baueBandmodell, besuchJeSchritt } from '../src/schema/bandmodell'
-import { bildBedarf, zeichneBand } from '../src/schema/bandbild'
+import { bildBedarf, bildfokus, zeichneBand } from '../src/schema/bandbild'
 import type { Bandbild, Bildpunkt } from '../src/schema/bandbild'
-import { AKTIV_KLEIN, BREITE, POLSTER, aktivHoehe, bildflaeche } from '../src/schema/masse'
+import { AKTIV_KLEIN, BREITE, POLSTER, STANDORT_ZEILE_H, aktivHoehe, ausschnittVersatz, bildflaeche } from '../src/schema/masse'
 
 const VERFUEGBAR = Number(process.env.VERFUEGBAR ?? AKTIV_KLEIN)
 import { schildBreite, SYMBOL_PX } from '../src/schema/symbole'
@@ -64,8 +68,10 @@ interface Ergebnis {
   scheibenAbseits: number
   schilder: number
   schilderUeberdeckt: number
-  /** Gleisbänder, die nicht in ihren Bedarf passten. Gezählt, nicht verurteilt. */
+  /** Gleisbänder, von denen das Band nur einen Ausschnitt zeigt. Gezählt, nicht verurteilt. */
   gestaucht: number
+  /** Der Punkt steht nach dem ersten Schritt woanders als am Start. */
+  wandert: boolean
 }
 
 function punkteVon(bild: Bandbild): Bildpunkt[] {
@@ -97,6 +103,7 @@ function pruefe(z: Zeile): Ergebnis {
     schilder: 0,
     schilderUeberdeckt: 0,
     gestaucht: 0,
+    wandert: false,
   }
   const { fehler } = e
 
@@ -122,7 +129,10 @@ function pruefe(z: Zeile): Ergebnis {
     }
     // Wie in Ebenenschema.tsx: so hoch, wie das Band braucht, höchstens der Platz.
     const bedarf = bildBedarf(band.ebene, BREITE - POLSTER * 2, opt)
-    const { breite, hoehe } = bildflaeche(aktivHoehe(bedarf, VERFUEGBAR))
+    const sicht = bildflaeche(aktivHoehe(bedarf, VERFUEGBAR))
+    const breite = sicht.breite
+    // Gleisbilder ungestaucht in voller Höhe – das Band zeigt einen Ausschnitt.
+    const hoehe = band.ebene.art === 'gleise' ? Math.max(bedarf, sicht.hoehe) : sicht.hoehe
     const bild = zeichneBand(band.ebene, breite, hoehe, opt)
     const wo = `Band ${band.nr + 1} (Ebene ${band.level})`
     if (!bild) {
@@ -175,7 +185,11 @@ function pruefe(z: Zeile): Ergebnis {
     }
     if (band.erster && bild.standorte) {
       const [a, m, en] = bild.standorte.marken
-      if (!(a.x < m.x && m.x < en.x)) fehler.push(`${wo}: Anfang, Mitte, Ende nicht von links nach rechts`)
+      // Seit dem 06.11.2026 steht links, was beim Aussteigen links liegt –
+      // mit bekannter Gleisseite kann das auch das Ende sein.
+      const endeLinks = band.ebene.bahnsteige.find((b) => b.rolle === 'start')?.ausstiegLinks === 'ende'
+      const [li, re] = endeLinks ? [en, a] : [a, en]
+      if (!(li.x < m.x && m.x < re.x)) fehler.push(`${wo}: Anfang, Mitte, Ende stehen nicht wie die Knöpfe`)
       const hier = bild.standorte.marken.find((x) => x.hier)
       if (z.echt && hier && hier.name.toLowerCase() !== z.abschnitt) {
         fehler.push(`${wo}: gewählt ${z.abschnitt}, im Bild steht „${hier.name}"`)
@@ -198,7 +212,7 @@ function pruefe(z: Zeile): Ergebnis {
         fehler.push(`${wo}: Ankunfts- oder Abfahrtsbalken berührt ${stapel[i].rolle ? stapel[i - 1].gleise.join('/') : stapel[i].gleise.join('/')}`)
       }
     }
-    e.gestaucht += stapel.length > 1 && hoehe < bedarf - 0.5 ? 1 : 0
+    e.gestaucht += stapel.length > 1 && hoehe > sicht.hoehe + 0.5 ? 1 : 0
 
     // Symbole im Balken: nie übereinander, nie über das Ende, nie auf einem Punkt.
     for (const b of bild.balken) {
@@ -252,6 +266,50 @@ function pruefe(z: Zeile): Ergebnis {
       }
     }
   }
+  // Schritt für Schritt: das aktive Band, wie Ebenenschema.tsx es zeigt.
+  for (let position = 0; position < z.schritte.length; position++) {
+    const m = baueBandmodell(z.schema, z.schritte, position)
+    const band = m?.baender.find((b) => b.aktiv)
+    if (!m || !band || band.ebene.art !== 'gleise') continue
+    const opt = {
+      lage: m.lage,
+      erster: band.erster,
+      letzter: band.letzter,
+      ...(band.wechselVorher ? { wechselVorher: band.wechselVorher } : {}),
+      ...(band.wechselNachher ? { wechselNachher: band.wechselNachher } : {}),
+      ...(band.stand ? { stand: band.stand } : {}),
+    }
+    const bedarf = bildBedarf(band.ebene, BREITE - POLSTER * 2, opt)
+    const sicht = bildflaeche(aktivHoehe(bedarf, VERFUEGBAR))
+    const zeichenH = Math.max(bedarf, sicht.hoehe)
+    const bild = zeichneBand(band.ebene, sicht.breite, zeichenH, opt)
+    if (!bild || bild.art !== 'gleise') continue
+    const wo = `Schritt ${position + 1}, Band ${band.nr + 1}`
+    const zeile = bild.standorte ? STANDORT_ZEILE_H : 0
+    const fokus = bildfokus(bild)
+    if (!fokus) {
+      fehler.push(`${wo}: nichts, woran der Ausschnitt sich halten kann`)
+      continue
+    }
+    const fensterH = sicht.hoehe - zeile
+    const versatz = ausschnittVersatz(zeichenH - zeile, fensterH, fokus.a, fokus.b)
+    // 3 px Rand: `quer` legt einen Punkt höchstens 4 px an die Kante (bandbild.ts),
+    // und `kante` rundet auf halbe Pixel.
+    const imFenster = (y: number): boolean => y - versatz >= 3 && y - versatz <= fensterH - 3
+    if (!imFenster(fokus.a)) fehler.push(`${wo}: Standpunkt außerhalb des Ausschnitts`)
+    if (bild.start && (!Number.isFinite(bild.start.x) || bild.start.x < -1 || bild.start.x > sicht.breite + 1)) {
+      fehler.push(`${wo}: Standpunkt seitlich außerhalb`)
+    }
+    if (band.letzter && !bild.start && bild.ziel && !imFenster(bild.ziel.y)) {
+      fehler.push(`${wo}: am Ziel, aber das Ziel steht nicht im Ausschnitt`)
+    }
+    if (position === 0) {
+      const start = bild.balken.find((b) => b.rolle === 'start')
+      if (start && !imFenster(start.y)) fehler.push(`${wo}: Ankunftsbahnsteig nicht im Ausschnitt`)
+    }
+    if (position > 0 && band.erster && bild.start) e.wandert = true
+  }
+
   const zahl = z.schema.wechsel.length
   if (verlassen !== zahl || ankommen !== zahl) {
     fehler.push(`Wechselmarken ${verlassen} verlassen / ${ankommen} ankommen für ${zahl} Wechsel`)
@@ -278,6 +336,7 @@ function main(): void {
   let schilder = 0
   let ueberdeckt = 0
   let gestaucht = 0
+  let wandert = 0
   const mitFehler: { z: Zeile; fehler: string[] }[] = []
   const queren = new Map<string, Set<string>>()
   const uformen = new Map<string, string[]>()
@@ -292,6 +351,7 @@ function main(): void {
     schilder += e.schilder
     ueberdeckt += e.schilderUeberdeckt
     gestaucht += e.gestaucht
+    if (e.wandert) wandert++
     verteilung.set(e.baender, (verteilung.get(e.baender) ?? 0) + 1)
     if (e.fehler.length > 0) mitFehler.push({ z, fehler: e.fehler })
     for (const q of e.queren) {
@@ -312,7 +372,8 @@ function main(): void {
   )
   console.log(`Symbole in Balken: ${symbole} · Scheiben auf dem Balken: ${aufBalken}, abseits: ${abseits}`)
   console.log(`Symbolschilder im Grundriss: ${schilder}, davon überdecken sich ${ueberdeckt} Paare`)
-  console.log(`Gleisbänder gestaucht bei ${VERFUEGBAR} px Platz: ${gestaucht}`)
+  console.log(`Gleisbänder beschnitten (Ausschnitt statt Stauchung) bei ${VERFUEGBAR} px Platz: ${gestaucht}`)
+  console.log(`Routen, auf denen der Punkt auf dem ersten Band weiterwandert: ${wandert}`)
 
   console.log(`\nBEFUNDE: ${mitFehler.length} Routen an ${new Set(mitFehler.map((m) => m.z.bahnhof)).size} Bahnhöfen`)
   const nachArt = new Map<string, number>()

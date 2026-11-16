@@ -3,7 +3,7 @@ import type { SchemaModell } from '../schema/ableitung'
 import type { Bandmodell } from '../schema/bandmodell'
 import { wechselAnweisung, wechselName } from '../schema/bandmodell'
 import { bandTitel, fusstext, wegBeschreibung } from '../schema/bandtext'
-import { bildBedarf, zeichneBand } from '../schema/bandbild'
+import { bildBedarf, bildfokus, zeichneBand } from '../schema/bandbild'
 import type {
   Bildbalken,
   Bildpunkt,
@@ -13,7 +13,18 @@ import type {
   Wechselmarke,
   Zielpunkt,
 } from '../schema/bandbild'
-import { ANKER_H, BREITE, POLSTER, RUHIG_H, WECHSEL_H, aktivHoehe, bildflaeche, stapelVersatz } from '../schema/masse'
+import {
+  ANKER_H,
+  BREITE,
+  POLSTER,
+  RUHIG_H,
+  STANDORT_ZEILE_H,
+  WECHSEL_H,
+  aktivHoehe,
+  ausschnittVersatz,
+  bildflaeche,
+  stapelVersatz,
+} from '../schema/masse'
 import { istSymboltyp, SYMBOL_PX } from '../schema/symbole'
 import { AnlagenSymbol, Glyphe } from './AnlagenSymbol'
 
@@ -208,17 +219,32 @@ function Weg({ bild, breite }: { bild: Gleisbild | Uebergangsbild; breite: numbe
   )
 }
 
-function Gleisband({ bild, breite }: { bild: Gleisbild; breite: number }) {
+/**
+ * Ein Gleisband: die Balken in echten Abständen, davon ein Ausschnitt.
+ *
+ * Das Bild ist `zeichenH` hoch, das Band zeigt `sichtH` davon. Die Balken
+ * liegen in einem eigenen Rahmen, der sie beschneidet und mit dem Reisenden
+ * mitgeht (`ausschnittVersatz`); die Zeile „Anfang · Mitte · Ende" bleibt
+ * unten stehen – sie misst die Länge, und die ändert sich beim Schwenk nicht.
+ */
+function Gleisband({ bild, breite, sichtH, zeichenH }: { bild: Gleisbild; breite: number; sichtH: number; zeichenH: number }) {
+  const zeile = bild.standorte ? STANDORT_ZEILE_H : 0
+  const fokus = bildfokus(bild)
+  const versatz = fokus ? ausschnittVersatz(zeichenH - zeile, sichtH - zeile, fokus.a, fokus.b) : 0
   return (
     <>
-      <Balken balken={bild.balken} />
-      <Weg bild={bild} breite={breite} />
+      <svg className="schema-ausschnitt" x={0} y={0} width={breite} height={sichtH - zeile}>
+        <g className="schema-schwenk" style={{ transform: `translateY(${0 - versatz}px)` }}>
+          <Balken balken={bild.balken} />
+          <Weg bild={bild} breite={breite} />
+        </g>
+      </svg>
       {bild.standorte?.marken.map((m) => (
         <text
           key={m.name}
           className={`schema-standort${m.hier ? ' hier' : ''}`}
           x={m.x}
-          y={bild.standorte!.y + 4}
+          y={sichtH - zeile / 2 + 4.5}
           textAnchor={m.name === 'Anfang' ? 'start' : m.name === 'Ende' ? 'end' : 'middle'}
         >
           {m.hier ? `▲ ${m.text}` : m.text}
@@ -294,6 +320,7 @@ function Bandstapel({ modell, bahnhofName }: { modell: Bandmodell; bahnhofName: 
     letzter: band.letzter,
     ...(band.wechselVorher ? { wechselVorher: band.wechselVorher } : {}),
     ...(band.wechselNachher ? { wechselNachher: band.wechselNachher } : {}),
+    ...(band.stand ? { stand: band.stand } : {}),
   })
 
   // Das aktive Band ist so hoch, wie sein Bild es braucht, und höchstens so
@@ -303,6 +330,10 @@ function Bandstapel({ modell, bahnhofName }: { modell: Bandmodell; bahnhofName: 
   const bedarf = aktiverBand ? bildBedarf(aktiverBand.ebene, BREITE - POLSTER * 2, optionen(aktiverBand)) : 0
   const aktivH = aktivHoehe(bedarf, verfuegbar)
   const flaeche = bildflaeche(aktivH)
+  // Ein Gleisbild wird nie gestaucht: Reicht der Platz nicht, zeigt das Band
+  // einen Ausschnitt (`Gleisband`). Ein Grundriss wird weiter eingepasst –
+  // er schrumpft im Ganzen, ohne dass etwas übereinander fällt.
+  const zeichenH = aktiverBand?.ebene.art === 'gleise' ? Math.max(bedarf, flaeche.hoehe) : flaeche.hoehe
 
   return (
     <section className="schema-bereich" data-tour="schema">
@@ -315,7 +346,7 @@ function Bandstapel({ modell, bahnhofName }: { modell: Bandmodell; bahnhofName: 
         >
           {modell.baender.map((band, i) => {
             const bild = band.aktiv
-              ? zeichneBand(band.ebene, flaeche.breite, flaeche.hoehe, optionen(band))
+              ? zeichneBand(band.ebene, flaeche.breite, zeichenH, optionen(band))
               : null
             const fuss = band.aktiv ? fusstext(band) : null
             const w = band.wechselNachher
@@ -336,7 +367,7 @@ function Bandstapel({ modell, bahnhofName }: { modell: Bandmodell; bahnhofName: 
                       aria-hidden="true"
                     >
                       {bild.art === 'gleise' ? (
-                        <Gleisband bild={bild} breite={flaeche.breite} />
+                        <Gleisband bild={bild} breite={flaeche.breite} sichtH={flaeche.hoehe} zeichenH={zeichenH} />
                       ) : (
                         <Uebergangsband bild={bild} breite={flaeche.breite} />
                       )}

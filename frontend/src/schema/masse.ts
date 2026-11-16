@@ -62,6 +62,32 @@ export function bildflaeche(aktivH: number): { breite: number; hoehe: number } {
   }
 }
 
+/** Platz unter den Balken für „Anfang · Mitte · Ende" (wie `STANDORT_ZEILE` in bandbild.ts). */
+export const STANDORT_ZEILE_H = 16
+
+/** So viel Luft braucht eine Stelle im Ausschnitt: halber Balken, Schrift darüber. */
+const FOKUS_LUFT = 26
+
+/**
+ * Wie weit das Gleisbild im Band nach oben geschoben wird.
+ *
+ * Seit dem 16.11.2026 wird ein Gleisbild NICHT mehr gestaucht (Julian). Es
+ * wird in seinen echten Abständen gezeichnet (`zeichenH`), und das Band zeigt
+ * davon einen Ausschnitt (`sichtH`); der Rest steht außerhalb. Unter rund
+ * 160 px Bandhöhe hatte die Stauchung an 114 von 117 Bahnhöfen den Ankunfts-
+ * oder Abfahrtsbalken auf seine Nachbarn gelegt.
+ *
+ * Der Ausschnitt folgt dem Reisenden: Passen Standpunkt (`a`) und Ziel (`b`)
+ * zusammen hinein, stehen beide; sonst steht `a` in der Mitte – am Anfang
+ * das Ankunftsgleis, am Ende das Abfahrtsgleis.
+ */
+export function ausschnittVersatz(zeichenH: number, sichtH: number, a: number, b: number): number {
+  const weit = Math.max(0, zeichenH - sichtH)
+  if (weit === 0) return 0
+  const mitte = Math.abs(a - b) + FOKUS_LUFT * 2 <= sichtH ? (a + b) / 2 : a
+  return Math.round(Math.min(weit, Math.max(0, mitte - sichtH / 2)))
+}
+
 /**
  * Luft über dem aktiven Band — genau eine ruhige Zeile samt Wechsel.
  *

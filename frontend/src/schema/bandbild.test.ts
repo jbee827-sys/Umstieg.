@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { RouteErgebnis, SchemaEbene } from '../api/typen'
 import { baueBandmodell } from './bandmodell'
 import type { Bandmodell } from './bandmodell'
-import { bildBedarf, bildlageFuer, zeichneBand } from './bandbild'
+import { bildBedarf, bildfokus, bildlageFuer, punktAmWeg, zeichneBand } from './bandbild'
 import type { Bandbild, Bildpunkt, Gleisbild, Uebergangsbild } from './bandbild'
 import { AKTIV_KLEIN, bildflaeche, aktivHoehe } from './masse'
 import { SYMBOL_PX } from './symbole'
@@ -514,5 +514,83 @@ describe('Bildlage: links ist links beim Aussteigen (06.11.2026)', () => {
   it('liegt beim Aussteigen das Ende links, wird das Bild gedreht', () => {
     expect(bildlageFuer([ebene('ende')])).toEqual({ gedreht180: true })
     expect(bildlageFuer([ebene('anfang')])).toEqual({ gedreht180: false })
+  })
+})
+
+describe('Der Punkt geht mit den Schritten (16.11.2026)', () => {
+  // München Hbf 14 → 25 aus der Simulation: eine Ebene, um den Kopf herum.
+  const ebene: SchemaEbene = {
+    level: 0,
+    art: 'gleise',
+    bahnsteige: [
+      { bahnsteigId: 'a', gleise: ['24', '25'], laengeM: 365, querM: 80, rolle: 'ziel', von: { x: 55, y: -74 }, bis: { x: 419, y: -99 } },
+      { bahnsteigId: 'b', gleise: ['14', '15'], laengeM: 424, querM: 165, rolle: 'start', von: { x: 0, y: 0 }, bis: { x: 425, y: -4 } },
+    ],
+    weg: [
+      { x: 0, y: 0 },
+      { x: 212, y: 0 },
+      { x: 427, y: -12 },
+      { x: 423, y: -92 },
+      { x: 237, y: -87 },
+    ],
+  }
+  const lage = bildlageFuer([ebene])
+  const bei = (stand?: { m: number; gesamtM: number }) =>
+    gleisbild(zeichneBand(ebene, 332, 200, { lage, erster: true, letzter: true, ...(stand ? { stand } : {}) })!)
+
+  it('punktAmWeg misst entlang der Linie und kürzt, wenn die Schritte länger sind als sie', () => {
+    expect(punktAmWeg(ebene.weg!, { m: 0, gesamtM: 700 })).toEqual({ x: 0, y: 0 })
+    expect(punktAmWeg(ebene.weg!, { m: 106, gesamtM: 0 })).toEqual({ x: 106, y: 0 })
+    expect(punktAmWeg(ebene.weg!, { m: 5000, gesamtM: 0 })).toEqual({ x: 237, y: -87 })
+    expect(punktAmWeg(ebene.weg!, { m: 700, gesamtM: 700 })!.x).toBeCloseTo(237, 6)
+    expect(punktAmWeg([], { m: 10, gesamtM: 10 })).toBeUndefined()
+  })
+
+  it('am ersten Schritt steht er, wo er immer stand', () => {
+    expect(bei({ m: 0, gesamtM: 700 }).start).toEqual(bei().start)
+  })
+
+  it('wandert mit jedem Schritt weiter', () => {
+    const eins = bei({ m: 0, gesamtM: 700 }).start!
+    const zwei = bei({ m: 430, gesamtM: 700 }).start!
+    const drei = bei({ m: 510, gesamtM: 700 }).start!
+    // Schritt 2 beginnt am Ende des Ankunftsbahnsteigs, Schritt 3 am Kopf des Abfahrtsbahnsteigs.
+    expect(zwei.x).toBeGreaterThan(eins.x + 100)
+    expect(Math.abs(zwei.y - balken(bei(), 'start').y)).toBeLessThan(20)
+    expect(Math.abs(drei.y - balken(bei(), 'ziel').y)).toBeLessThan(20)
+    expect(drei.y).not.toBe(zwei.y)
+  })
+
+  it('auf dem Ziel steht nur das rote Ziel, kein weißer Punkt', () => {
+    const bild = bei({ m: 700, gesamtM: 700 })
+    expect(bild.ziel).toBeDefined()
+    expect(bild.start).toBeUndefined()
+  })
+
+  it('der Ausschnitt hat, was er zeigen soll: Standpunkt und Ziel', () => {
+    const bild = bei({ m: 430, gesamtM: 700 })
+    expect(bildfokus(bild)).toEqual({ a: bild.start!.y, b: bild.ziel!.y })
+    const amZiel = bei({ m: 700, gesamtM: 700 })
+    expect(bildfokus(amZiel)).toEqual({ a: amZiel.ziel!.y, b: amZiel.ziel!.y })
+  })
+
+  it('auf einem späteren Band ersetzt der Ring der Ankunft den Punkt', () => {
+    const route = ROUTEN.leipzigMitte
+    // Der erste Schritt, mit dem ein neues Band aktiv wird.
+    const position = route.schritte.findIndex((_, i) => !baueBandmodell(route.schema, route.schritte, i)!.baender[0].aktiv)
+    expect(position).toBeGreaterThan(0)
+    const modell = baueBandmodell(route.schema, route.schritte, position)!
+    const band = modell.baender.find((b) => b.aktiv)!
+    const { breite, hoehe } = bildflaeche(AKTIV_KLEIN)
+    const bild = zeichneBand(band.ebene, breite, hoehe, {
+      lage: modell.lage,
+      erster: band.erster,
+      letzter: band.letzter,
+      ...(band.wechselVorher ? { wechselVorher: band.wechselVorher } : {}),
+      ...(band.wechselNachher ? { wechselNachher: band.wechselNachher } : {}),
+      stand: band.stand!,
+    })!
+    expect(bild.wechsel.some((m) => m.art === 'ankommen')).toBe(true)
+    expect(bild.start).toBeUndefined()
   })
 })

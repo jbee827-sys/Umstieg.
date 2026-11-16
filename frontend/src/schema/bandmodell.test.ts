@@ -7,6 +7,7 @@ import {
   ebenenZahl,
   gleisEbenen,
   massgeblicherBahnsteig,
+  standImBesuch,
 } from './bandmodell'
 import leipzigAnfang from './testdaten/leipzig-6-16-anfang.json'
 import leipzigMitte from './testdaten/leipzig-6-16-mitte.json'
@@ -151,5 +152,39 @@ describe('besuchJeSchritt mit Stopp', () => {
       { text: 'c', typ: 'eben', level: 1 },
     ]
     expect(besuchJeSchritt(schritte)).toEqual([0, 1, 1, 1])
+  })
+})
+
+describe('standImBesuch: der Punkt steht am Anfang des laufenden Schritts (16.11.2026)', () => {
+  // München Hbf 14 → 25, ohne Ebenenwechsel: ein Besuch, drei Schritte.
+  const muenchen: RouteErgebnis['schritte'] = [
+    { text: 'Vom Zug aus über den Bahnsteig', typ: 'eben', distanzM: 430, level: 0 },
+    { text: 'Durch den Gang', typ: 'eben', distanzM: 80, level: 0 },
+    { text: 'Links auf den Bahnsteig zu Gleis 25', typ: 'eben', distanzM: 190, level: 0 },
+  ]
+
+  it('zählt die Meter der Schritte davor, im selben Besuch', () => {
+    expect(standImBesuch(muenchen, 0)).toEqual({ m: 0, gesamtM: 700 })
+    expect(standImBesuch(muenchen, 1)).toEqual({ m: 430, gesamtM: 700 })
+    expect(standImBesuch(muenchen, 2)).toEqual({ m: 510, gesamtM: 700 })
+  })
+
+  it('beginnt auf jedem Besuch neu – und der eröffnende Ebenenwechsel zählt nicht mit', () => {
+    // Aachen: Die 80 m „durch die Unterführung" liegen auf der Ebene davor.
+    const aachen: RouteErgebnis['schritte'] = [
+      { text: 'Vom Zug aus etwa 60 m bis zur Treppe', typ: 'eben', distanzM: 60, level: 1 },
+      { text: 'Treppe runter in die Unterführung', typ: 'treppe', level: 0 },
+      { text: 'Durch die Unterführung, dann Treppe hoch', typ: 'treppe', distanzM: 80, level: 1 },
+      { text: 'Am Bahnsteig entlang zu Gleis 9', typ: 'eben', distanzM: 70, level: 1 },
+    ]
+    expect(standImBesuch(aachen, 1)).toEqual({ m: 0, gesamtM: 0 })
+    expect(standImBesuch(aachen, 2)).toEqual({ m: 0, gesamtM: 70 })
+    expect(standImBesuch(aachen, 3)).toEqual({ m: 0, gesamtM: 70 })
+  })
+
+  it('nur das aktive Band trägt den Stand', () => {
+    const route = ROUTEN.leipzigMitte
+    const modell = baueBandmodell(route.schema, route.schritte, 0)!
+    expect(modell.baender.filter((b) => b.stand !== undefined).map((b) => b.aktiv)).toEqual([true])
   })
 })
