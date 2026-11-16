@@ -52,8 +52,12 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 
 1. Gemeinsame Obergrenze für alle Aufrufer (z. B. 30 Meldungen je Stunde) –
    einbauen, sobald Spam auftaucht (Spec, „Für später vorgemerkt“).
-2. In der iOS-App freischalten: vorher `PrivacyInfo.xcprivacy` und die
-   Angaben in App Store Connect (E-Mail, Nutzerinhalte) anpassen.
+2. In der iOS-App freischalten: **vorbereitet am 16.11.2026, noch nicht
+   ausgeliefert.** Knopf in der App sichtbar, `PrivacyInfo.xcprivacy` und
+   Datenschutzseite angepasst, Vorlage in `docs/app-store-eintrag.md`
+   („App-Datenschutz“). Julian trägt in App Store Connect *E-Mail-Adresse*
+   und *Kundensupport* ein und gibt den geänderten Datenschutztext frei;
+   danach kommt es mit dem nächsten Bau.
 3. Adressprüfung lässt `( ) : \` und Umlaute durch; nodemailer formt daraus
    ein abweichendes Reply-To. An beiden Stellen (`backend/src/core/meldung.ts`,
    `frontend/src/rueckmeldung/regeln.ts`) ausschließen.
@@ -684,7 +688,7 @@ daraus wird Bau 3:
       Satz streichen und `NOTICE`/Lizenzseite der App anpassen.
 - [ ] Paket 1: Lizenz-Ausnahme (§ 7 AGPL) in `NOTICE`/`CONTRIBUTING.md` freigeben.
 - [ ] Paket 10: Datenschutz-Abschnitt „App“ auf umstieg.online freigeben und
-      ausliefern; Datenschutz-Etikett wie vorgeschlagen (grober Standort +
+      ausliefern; Datenschutz-Etikett wie vorgeschlagen (genauer Standort +
       Produktinteraktion, beides nicht verknüpft, kein Tracking).
 - [ ] Bildschirmfotos auswählen (Artefakt `ios-bildschirmfotos` des letzten
       Laufs; Vorschlag: hell, Eingabe/Übersicht/Weg, iPhone 6,9" + iPad 13").

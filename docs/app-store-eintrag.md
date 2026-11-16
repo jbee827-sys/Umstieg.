@@ -97,16 +97,32 @@ aufbewahrt, als die Anfrage in Echtzeit braucht. Umstieg. bewahrt nichts auf
 Server an Transitous, und dort haben wir keinen Einfluss darauf, ob sie
 protokolliert wird. Deshalb der vorsichtige Vorschlag:
 
-- **Ja, Daten werden erfasst** – zwei Arten:
-  - *Standort → Grober Standort*: Verwendung **App-Funktionalität**, mit
-    der Identität verknüpft **Nein**, Tracking **Nein**
+- **Ja, Daten werden erfasst** – vier Arten (die letzten beiden seit dem
+  16.11.2026, für „Etwas melden“ in der App):
+  - *Standort → Genauer Standort*: Verwendung **App-Funktionalität**, mit
+    der Identität verknüpft **Nein**, Tracking **Nein**. Nicht „grob“: Die
+    App rundet auf drei Nachkommastellen (etwa 110 m), und ab drei Stellen
+    zählt Apple den Standort als genau (berichtigt am 16.11.2026).
   - *Nutzungsdaten → Produktinteraktion*: Verwendung **Analyse**, mit der
     Identität verknüpft **Nein**, Tracking **Nein** (die Nutzungszählung mit
     Einwilligung, Paket 4 – nur Ereignisnamen, Summen je Stunde)
+  - *Kontaktinformationen → E-Mail-Adresse*: Verwendung
+    **App-Funktionalität**, mit der Identität verknüpft **Ja**, Tracking
+    **Nein** (freiwillig in „Etwas melden“, nur für die Antwort)
+  - *Benutzerinhalte → Kundensupport*: Verwendung **App-Funktionalität**,
+    mit der Identität verknüpft **Ja**, Tracking **Nein** (die Nachricht aus
+    „Etwas melden“; sie liegt bis zu 12 Monate im Postfach)
+
+„Verknüpft: Ja“ ist die vorsichtige Angabe: Wer seine Adresse dazuschreibt,
+ist über sie erkennbar, und die Nachricht steht in derselben Mail. Apple
+nimmt freiwillige Rückmeldeformulare unter Bedingungen von der Angabepflicht
+aus (selten genutzt, nicht Kernfunktion, jedes Mal bewusst abgeschickt) –
+ob die Ausnahme hier greift, muss Julian in App Store Connect an Apples
+aktuellem Wortlaut prüfen. Angeben schadet nicht; Weglassen kann es.
 
 Die strenge Lesart („Daten werden nicht erfasst“) wäre vertretbar, solange
 nur unser Server die Koordinate sieht; mit Transitous als Drittem ist sie es
-nicht sicher. Dieselben zwei Angaben stehen in `PrivacyInfo.xcprivacy`.
+nicht sicher. Dieselben vier Angaben stehen in `PrivacyInfo.xcprivacy`.
 
 ## Exportkonformität
 

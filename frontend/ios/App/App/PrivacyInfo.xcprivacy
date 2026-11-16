@@ -5,12 +5,19 @@
 
   Kein Tracking. Angegeben ist, was auch im App-Datenschutz von App Store
   Connect steht (docs/app-store-eintrag.md):
-  - Grober Standort fuer die App-Funktion: Die gerundete Position geht fuer
+  - Genauer Standort fuer die App-Funktion: Die gerundete Position geht fuer
     die Bahnhofs- und Haltestellensuche ueber unser Backend an Transitous.
     Wir speichern sie nicht; ob Transitous protokolliert, liegt nicht bei uns.
+    „Genau“ seit dem 16.11.2026: Gerundet wird auf drei Nachkommastellen
+    (standort/schwellen.ts, etwa 110 m), und ab drei Stellen zaehlt Apple
+    den Standort als genau. Bis dahin stand hier „grob“.
   - Produktinteraktion fuer Analyse: die Nutzungszaehlung mit Einwilligung
     (analytik/einwilligung.ts) - nur Ereignisnamen, Summen je Stunde.
   Beides nicht mit der Identitaet verknuepft.
+  - Seit dem 16.11.2026 „Etwas melden“ (components/EtwasMelden.tsx): die
+    Nachricht (Kundensupport) und - nur wenn angegeben - die E-Mail-Adresse.
+    Beides freiwillig, nur auf eigenen Tipp, als Mail an unser Postfach.
+    Verknuepft: ja - die Adresse steht neben der Nachricht.
 
   Schnittstellen mit Begruendungspflicht nutzt der eigene Code nicht. Die
   Capacitor-Pakete bringen ihre eigenen Manifeste mit.
@@ -25,7 +32,7 @@
 	<array>
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
-			<string>NSPrivacyCollectedDataTypeCoarseLocation</string>
+			<string>NSPrivacyCollectedDataTypePreciseLocation</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
 			<false/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
@@ -45,6 +52,30 @@
 			<key>NSPrivacyCollectedDataTypePurposes</key>
 			<array>
 				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeEmailAddress</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeCustomerSupport</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
 			</array>
 		</dict>
 	</array>

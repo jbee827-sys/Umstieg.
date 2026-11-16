@@ -37,13 +37,13 @@ import { BETREIBER } from '../rechtliches/betreiber'
 // - Vier Ereignisse je Umstieg, seit 21.10.2026: analytik/ereignis.ts
 //   (melde - nur der Name), analytik/messpunkte.ts, abgesichert in
 //   analytik/messpunkte.test.ts und App.nutzergewinnung.test.tsx
-// - „Etwas melden", seit 11.11.2026, nur Website (Spec 2026-11-10):
+// - „Etwas melden", seit 11.11.2026, seit 16.11.2026 auch in der App (Spec 2026-11-10):
 //   components/EtwasMelden.tsx und api/meldung.ts (nur Text und freiwillige
 //   Adresse), backend/src/routes/meldung.ts und clients/mailversand.ts (SMTP
 //   ueber web.de, nichts gespeichert, nichts protokolliert), abgesichert in
 //   backend/test/datenschutz.test.ts („schreibt weder Text noch Adresse einer
-//   Meldung ins Protokoll") und components/Eingabe.etwas-melden.test.tsx
-//   (in der App verborgen)
+//   Meldung ins Protokoll") und components/Eingabe.etwas-melden.test.tsx;
+//   App-Datenschutz: ios/App/App/PrivacyInfo.xcprivacy
 // - Backend ohne Zugriffsprotokoll: backend/src/app.ts
 //   (disableRequestLogging), abgesichert in backend/test/datenschutz.test.ts
 // - Ratenbegrenzung und Sicherheitsprotokoll: backend/src/app.ts (GRENZEN,
@@ -178,12 +178,12 @@ export function Datenschutz({ onZurueck }: { onZurueck?: () => void }) {
         <p>
           Über „Etwas melden“ kannst du uns einen falschen Weg, einen fehlenden
           Bahnhof oder ein fehlendes Gleis melden oder uns einfach etwas
-          schreiben. Diese Funktion gibt es derzeit nur auf der Webseite.
+          schreiben – auf der Webseite und in der App.
         </p>
         <p>
           Übertragen wird nur, was du selbst eingibst: deine Nachricht und, wenn
-          du möchtest, deine E-Mail-Adresse. Die Webseite schickt nichts weiter
-          mit – keinen Bahnhof, keine Gleise, keinen Standort.
+          du möchtest, deine E-Mail-Adresse. Webseite und App schicken nichts
+          weiter mit – keinen Bahnhof, keine Gleise, keinen Standort.
         </p>
         <p>
           Unser Server reicht die Nachricht als E-Mail an unser Postfach weiter

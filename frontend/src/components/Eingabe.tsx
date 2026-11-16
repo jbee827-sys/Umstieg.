@@ -1161,15 +1161,14 @@ export function Eingabe({
         </details>
 
         {/* „Etwas melden" (Spec 2026-11-10): direkt unter den Einstellungen,
-            linksbuendig. Vorerst nur auf der Website - in der App muessten
-            zuerst die Datenschutzangaben bei Apple angepasst werden. */}
-        {!istApp() && (
-          <div className="etwas-melden-einstieg">
-            <button type="button" className="textknopf" ref={meldenKnopfRef} onClick={() => setMeldenOffen(true)}>
-              Etwas melden
-            </button>
-          </div>
-        )}
+            linksbuendig. Seit dem 16.11.2026 auch in der App - dazu gehoeren
+            die Angaben „E-Mail-Adresse“ und „Kundensupport“ im App-Datenschutz
+            (PrivacyInfo.xcprivacy, docs/app-store-eintrag.md). */}
+        <div className="etwas-melden-einstieg">
+          <button type="button" className="textknopf" ref={meldenKnopfRef} onClick={() => setMeldenOffen(true)}>
+            Etwas melden
+          </button>
+        </div>
 
         {fehler && <div className="fehler-box">{fehler}</div>}
         {fuss}

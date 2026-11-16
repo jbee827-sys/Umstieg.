@@ -5,8 +5,8 @@ import { Eingabe } from './Eingabe'
 
 /**
  * „Etwas melden" (Spec 2026-11-10): Textknopf direkt unter „Einstellungen",
- * linksbuendig. Vorerst nur auf der Website - in der App blieben sonst die
- * Datenschutzangaben in App Store Connect unwahr (Julian).
+ * linksbuendig. Bis zum 16.11.2026 nur auf der Website; seitdem auch in der
+ * App, mit den passenden Angaben im App-Datenschutz (docs/app-store-eintrag.md).
  */
 const umgebung = vi.hoisted(() => ({ app: false }))
 vi.mock('../plattform/istApp', () => ({ istApp: () => umgebung.app }))
@@ -49,9 +49,10 @@ describe('Eingabe: „Etwas melden"', () => {
     expect(document.activeElement).toBe(knopf)
   })
 
-  it('zeigt den Knopf in der App nicht', () => {
+  it('zeigt den Knopf auch in der App und oeffnet dort den Dialog', async () => {
     umgebung.app = true
     zeige()
-    expect(screen.queryByRole('button', { name: 'Etwas melden' })).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Etwas melden' }))
+    screen.getByRole('dialog', { name: 'Etwas melden' })
   })
 })
