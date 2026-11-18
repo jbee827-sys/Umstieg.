@@ -9,19 +9,29 @@
 //
 // Je Bahnhof der StaDa-Kategorien:
 //   - Haupt-EVA aus StaDa (`evaNumbers` mit `isMain`, wie bestand-fuellen.ts).
-//   - Soll-Bahnhof = der Suchtreffer, der diese EVA fuehrt oder enthaelt;
-//     fehlt er in der Suche: `nicht-in-suche`.
+//   - Soll-Bahnhof = der Suchtreffer, dessen Gruppe (mehr als ein Mitglied) diese
+//     EVA enthaelt; sonst der Treffer mit genau dieser EVA; fehlt beides in der
+//     Suche: `nicht-in-suche`.
 //   - Namen: fuehrende (nameLong/nameShort des Soll-Bahnhofs) und andere
 //     (Namen der uebrigen Mitglieder, die normalisiert keinem fuehrenden gleichen).
 //   - Jeder Name durch Ansatz A (`loeseBahnhofsnamen`) und Ansatz B (Vergleich:
-//     Klammerzusatz abschneiden, nur bei genau einem Bahnhof mit diesem Namen
-//     waehlen). Ergebnis je Name: richtig (Soll-Bahnhof), falsch (anderer), keins.
+//     Klammerzusatz abschneiden, suchen, nur bei genau einem Treffer waehlen,
+//     egal wie er heisst). Ergebnis je Name: richtig, falsch, keins.
+//     richtig = gewaehlte EVA ist der Soll-Bahnhof ODER irgendeine EVA seiner
+//     Gruppe (die App loest die ganze Gruppe von jeder EVA aus auf); falsch =
+//     eine andere EVA; keins = nichts gewaehlt.
+//   - Ein Fehler beim Abruf eines Mitgliedsnamens macht den Bahnhof zu `fehler`
+//     (wird beim Neustart wiederholt) - nichts wird still verschluckt.
+//   - Gruppen werden einmal gezaehlt (Eintraege mit gleicher Soll-EVA zaehlen
+//     nur einmal in der Auswertung).
 //   - Alt (vor der Aenderung): nie automatisch gewaehlt, also 0 %.
 //
 // Nur Stationsdaten (RIS::Stations, StaDa) - keine Timetables-Abrufe. RIS
 // hoechstens 50 je Minute (Abstand 1 200 ms), nach 429 Pause 65 s. Zwischenstand
 // je Bahnhof in `osm-ablage/bahnhofsnamen/rohdaten.json` (gitignored); beim
 // Neustart werden erledigte Bahnhoefe uebersprungen (Fehler werden wiederholt).
+// Die rohen Antworten (Suche je Anfrage, Namen je EVA) liegen in `apicache.json`
+// und werden beim Start gelesen: eine neue Auswertung braucht keine neuen Abrufe.
 //
 // Aufruf (aus backend/): npx tsx scripts/simulation-bahnhofsnamen.ts [--kategorien 1-4] [--grenze N]
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -40,6 +50,7 @@ import { ladeSecrets } from './secrets.js';
 
 const AUSGABE = fileURLToPath(new URL('../osm-ablage/bahnhofsnamen/', import.meta.url));
 const ROHDATEN = join(AUSGABE, 'rohdaten.json');
+const APICACHE = join(AUSGABE, 'apicache.json');
 
 const RIS_ABSTAND_MS = 1_200;
 const PAUSE_429_MS = 65_000;
@@ -67,6 +78,25 @@ async function taktFetch(eingabe: RequestInfo | URL, init?: RequestInit): Promis
 // Zwischenspeicher im Lauf: gleiche Suche / gleiche EVA nur einmal abrufen.
 const sucheCache = new Map<string, Promise<BahnhofMitGruppe[]>>();
 const namenCache = new Map<string, Promise<string[]>>();
+// Rohe Antworten, auf Platte gemerkt (nur erfolgreiche Abrufe).
+const apiSuche: Record<string, BahnhofMitGruppe[]> = {};
+const apiNamen: Record<string, string[]> = {};
+function ladeApiCache(): void {
+  if (!existsSync(APICACHE)) return;
+  const c = JSON.parse(readFileSync(APICACHE, 'utf8')) as {
+    suche?: Record<string, BahnhofMitGruppe[]>;
+    namen?: Record<string, string[]>;
+  };
+  for (const [k, v] of Object.entries(c.suche ?? {})) {
+    apiSuche[k] = v;
+    sucheCache.set(k, Promise.resolve(v));
+  }
+  for (const [k, v] of Object.entries(c.namen ?? {})) {
+    apiNamen[k] = v;
+    namenCache.set(k, Promise.resolve(v));
+  }
+}
+const speichereApiCache = () => writeFileSync(APICACHE, JSON.stringify({ suche: apiSuche, namen: apiNamen }));
 
 function cacheGet<T>(cache: Map<string, Promise<T>>, schluessel: string, hole: () => Promise<T>): Promise<T> {
   let p = cache.get(schluessel);
@@ -79,8 +109,10 @@ function cacheGet<T>(cache: Map<string, Promise<T>>, schluessel: string, hole: (
   return p;
 }
 
-const suche = (q: string) => cacheGet(sucheCache, q, () => sucheBahnhoefeMitGruppen(q, taktFetch));
-const namenVon = (eva: string) => cacheGet(namenCache, eva, () => holeAmtlicheNamen(eva, taktFetch));
+const suche = (q: string) =>
+  cacheGet(sucheCache, q, async () => (apiSuche[q] = await sucheBahnhoefeMitGruppen(q, taktFetch)));
+const namenVon = (eva: string) =>
+  cacheGet(namenCache, eva, async () => (apiNamen[eva] = await holeAmtlicheNamen(eva, taktFetch)));
 
 const quelle: NamensQuelle = { sucheMitGruppen: suche, amtlicheNamen: namenVon };
 
@@ -149,7 +181,7 @@ async function ansatzB(name: string): Promise<BahnhofMitGruppe | null> {
 
 function urteil(gewaehlt: { eva: string } | null, soll: BahnhofMitGruppe): { u: Urteil; eva?: string } {
   if (!gewaehlt) return { u: 'keins' };
-  const richtig = gewaehlt.eva === soll.eva;
+  const richtig = gewaehlt.eva === soll.eva || soll.mitglieder.includes(gewaehlt.eva);
   return { u: richtig ? 'richtig' : 'falsch', eva: gewaehlt.eva };
 }
 
@@ -157,7 +189,11 @@ async function bearbeite(s: StadaStation, eva: string): Promise<Eintrag> {
   const basis = { stadaName: s.name, eva };
   // Suche nach dem StaDa-Namen; den Soll-Bahnhof ueber die EVA finden.
   const treffer = await suche(s.name);
-  const soll = treffer.find((k) => k.eva === eva) ?? treffer.find((k) => k.mitglieder.includes(eva));
+  // Die Gruppe geht vor: ein Treffer, der nur das Mitglied selbst ist (ohne
+  // Gruppe), darf den fuehrenden Bahnhof nicht verdraengen.
+  const soll =
+    treffer.find((k) => k.mitglieder.length > 1 && k.mitglieder.includes(eva)) ??
+    treffer.find((k) => k.eva === eva);
   if (!soll) return { ...basis, kategorie: 'nicht-in-suche' };
 
   const fuehrend = soll.namen;
@@ -170,12 +206,7 @@ async function bearbeite(s: StadaStation, eva: string): Promise<Eintrag> {
   const gesehen = new Set(fuehrendNorm);
   for (const mitglied of soll.mitglieder) {
     if (mitglied === soll.eva) continue;
-    let fremde: string[];
-    try {
-      fremde = await namenVon(mitglied);
-    } catch {
-      continue; // ausgefallenes Mitglied zaehlt als namenlos
-    }
+    const fremde = await namenVon(mitglied); // Fehler -> Bahnhof wird `fehler`, Wiederholung
     for (const name of fremde) {
       const n = normalisiereBahnhofsname(name);
       if (gesehen.has(n)) continue;
@@ -211,19 +242,26 @@ async function bearbeite(s: StadaStation, eva: string): Promise<Eintrag> {
 const prozent = (n: number, von: number) => (von === 0 ? '-' : `${Math.round((n / von) * 1000) / 10} %`);
 
 function auswerten(eintraege: Eintrag[]): string {
-  const ok = eintraege.filter((e) => e.kategorie === 'ok');
+  // Eine Gruppe nur einmal: mehrere StaDa-Eintraege mit gleichem Soll-Bahnhof zaehlen einmal.
+  const gesehenSoll = new Set<string>();
+  const ok = eintraege.filter((e) => {
+    if (e.kategorie !== 'ok') return false;
+    if (gesehenSoll.has(e.sollEva!)) return false;
+    gesehenSoll.add(e.sollEva!);
+    return true;
+  });
   const nicht = eintraege.filter((e) => e.kategorie === 'nicht-in-suche');
   const fehler = eintraege.filter((e) => e.kategorie === 'fehler');
   const mehrere = ok.filter((e) => (e.mitglieder?.length ?? 0) > 1);
   const mitAnderen = ok.filter((e) => e.namen!.some((n) => n.art === 'anders'));
-  const alle = ok.flatMap((e) => e.namen!.map((n) => ({ ...n, bahnhof: e.sollName ?? e.stadaName })));
+  const alle = ok.flatMap((e) => e.namen!.map((n) => ({ ...n, bahnhof: e.sollName ?? e.stadaName, sollEva: e.sollEva! })));
 
   const z: string[] = [];
   z.push('# Simulation: Bahnhof ueber andere offizielle Namen', '');
   z.push(`Erzeugt ${new Date().toISOString()}`, '');
   z.push('## Bestand', '');
-  z.push(`- Bahnhoefe untersucht: ${eintraege.length}`);
-  z.push(`  - aufgeloest (Soll-Bahnhof in der Suche gefunden): ${ok.length}`);
+  z.push(`- StaDa-Eintraege untersucht: ${eintraege.length}`);
+  z.push(`  - aufgeloest (Soll-Bahnhof in der Suche gefunden): ${eintraege.filter((e) => e.kategorie === 'ok').length}, davon ${ok.length} verschiedene Gruppen (nur diese zaehlen unten)`);
   z.push(`  - nicht-in-suche: ${nicht.length}`);
   z.push(`  - Fehler (werden beim naechsten Lauf wiederholt): ${fehler.length}`);
   z.push(`- Bahnhoefe mit mehreren Verkehrsstellen: ${mehrere.length} von ${ok.length}`);
@@ -243,19 +281,18 @@ function auswerten(eintraege: Eintrag[]): string {
       `| ${art} | ${n.length} | ${c('a', 'richtig')} | ${c('a', 'falsch')} | ${c('a', 'keins')} | ${c('b', 'richtig')} | ${c('b', 'falsch')} | ${c('b', 'keins')} |`,
     );
   }
-  z.push('', 'A = `loeseBahnhofsnamen` (neu), B = Klammerzusatz abschneiden, nur bei genau einem Bahnhof.', '');
+  z.push('', 'A = `loeseBahnhofsnamen` (neu), B = Klammerzusatz abschneiden, nur bei genau einem Treffer (naiv). richtig = Soll-Bahnhof oder eine EVA seiner Gruppe.', '');
 
   const zeile = (x: (typeof alle)[number]) =>
-    `- ${x.bahnhof} (Soll ${ok.find((e) => (e.sollName ?? e.stadaName) === x.bahnhof)?.sollEva ?? '?'}): „${x.name}" (${x.art}, EVA ${x.eva})`;
+    `- ${x.bahnhof} (Soll ${x.sollEva}): „${x.name}" (${x.art}, EVA ${x.eva})`;
   const falschA = alle.filter((x) => x.a === 'falsch');
   z.push(`## Ansatz A: falsch (${falschA.length})`, '');
   for (const x of falschA) z.push(`${zeile(x)} -> gewaehlt ${x.aEva}`);
   if (falschA.length === 0) z.push('keine');
   const falschB = alle.filter((x) => x.b === 'falsch');
   z.push('', `## Ansatz B: falsch (${falschB.length})`, '');
-  for (const x of falschB.slice(0, 30)) z.push(`${zeile(x)} -> gewaehlt ${x.bEva}`);
+  for (const x of falschB) z.push(`${zeile(x)} -> gewaehlt ${x.bEva}`);
   if (falschB.length === 0) z.push('keine');
-  else if (falschB.length > 30) z.push(`... und ${falschB.length - 30} weitere (siehe ergebnis.json)`);
 
   const keinsA = alle.filter((x) => x.a === 'keins');
   z.push('', `## Ansatz A: keins (erste 30 von ${keinsA.length})`, '');
@@ -283,11 +320,12 @@ async function main(): Promise<void> {
   const kategorien = arg('--kategorien') ?? '1-4';
   const grenze = arg('--grenze') ? Number(arg('--grenze')) : Infinity;
 
+  ladeApiCache();
   const roh: Rohdaten = existsSync(ROHDATEN) ? (JSON.parse(readFileSync(ROHDATEN, 'utf8')) as Rohdaten) : {};
   const alleStationen = await holeStadaListe(kategorien);
   const stationen = alleStationen.slice(0, grenze);
   console.log(
-    `${alleStationen.length} Bahnhoefe der Kategorien ${kategorien}, ${stationen.length} im Lauf, ${Object.keys(roh).length} schon in rohdaten.json`,
+    `${alleStationen.length} Bahnhoefe der Kategorien ${kategorien}, ${stationen.length} im Lauf, ${Object.keys(roh).length} schon in rohdaten.json, ${Object.keys(apiSuche).length} Suchen und ${Object.keys(apiNamen).length} Namensabrufe im apicache`,
   );
 
   const reihenfolge: string[] = [];
@@ -317,8 +355,10 @@ async function main(): Promise<void> {
         `, ${abrufe - vorher} Abrufe`,
     );
     writeFileSync(ROHDATEN, JSON.stringify(roh));
+    speichereApiCache();
   }
   writeFileSync(ROHDATEN, JSON.stringify(roh));
+  speichereApiCache();
 
   const eintraege = [...new Set(reihenfolge)].map((eva) => roh[eva]).filter((e): e is Eintrag => !!e);
   writeFileSync(join(AUSGABE, 'ergebnis.json'), JSON.stringify(eintraege, null, 1));
