@@ -2754,8 +2754,7 @@
 }
 
 /* Gewählt: grüner Rand und Haken rechts oben. */
-.umstieg-wahl.gewaehlt,
-.umstieg-wahl.gewaehlt:has(input:focus-visible) {
+.umstieg-wahl.gewaehlt {
   border-color: var(--color-gruen);
 }
 
@@ -2767,8 +2766,23 @@
   color: var(--color-gruen);
 }
 
-.umstieg-wahl:has(input:focus-visible) {
-  border-color: var(--color-divider);
+/* Tastaturfokus: Die Karte trägt den Ring, der Radioknopf ist unsichtbar.
+   :focus-within als Rückfall für Browser ohne :has(); wo :has() greift,
+   erscheint der Ring nur bei Tastaturfokus. */
+.umstieg-wahl:focus-within {
+  outline: 2px solid var(--color-text);
+  outline-offset: 2px;
+}
+
+@supports selector(:has(a)) {
+  .umstieg-wahl:focus-within {
+    outline: none;
+  }
+
+  .umstieg-wahl:has(input:focus-visible) {
+    outline: 2px solid var(--color-text);
+    outline-offset: 2px;
+  }
 }
 
 /* Abbrechen und Bestätigen nebeneinander, gleich breit. */
