@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Eingabe } from './Eingabe'
 import { holeTafel } from '../api/client'
 import { sucheOrte } from '../api/orte'
 import { holeHaltestellenTafel } from '../api/haltestellen'
+import { bahnhofZumNamen } from '../api/bahnhofZumNamen'
 import type { HaltestellenTafelEintrag, Ort, QuellenStand, TafelEintrag } from '../api/typen'
 import type { EingabeEntwurf } from '../sitzung/eingabespeicher'
 import { uhrzeit } from '../api/zeit'
@@ -13,6 +14,7 @@ import { raeumeBreiteAuf, stelleBreite } from '../aufbau/testbreite'
 vi.mock('../api/client', () => ({ holeTafel: vi.fn() }))
 vi.mock('../api/orte', () => ({ sucheOrte: vi.fn() }))
 vi.mock('../api/haltestellen', () => ({ holeHaltestellenTafel: vi.fn() }))
+vi.mock('../api/bahnhofZumNamen', () => ({ bahnhofZumNamen: vi.fn() }))
 const sucheMock = vi.mocked(sucheOrte)
 const holeTafelMock = vi.mocked(holeTafel)
 
@@ -225,10 +227,31 @@ describe('Eingabe: gespeicherter Entwurf', () => {
 })
 
 describe('Eingabe: Reise importieren', () => {
+  const aufloesMock = vi.mocked(bahnhofZumNamen)
+
   beforeEach(() => {
     sucheMock.mockReset()
     sucheMock.mockResolvedValue(orteAntwort([BERLIN, BERNAU]))
+    // Standard: Der Name ist nicht eindeutig - der Bahnhof bleibt Suchtext.
+    aufloesMock.mockReset()
+    aufloesMock.mockResolvedValue(null)
+    holeTafelMock.mockReset()
+    holeTafelMock.mockResolvedValue({ ok: true, eintraege: [] })
   })
+  afterEach(raeumeBreiteAuf)
+
+  /** Einfuegen und im Fenster bestaetigen - die Klickfolge seit Paket 5. */
+  async function importiere(text: string) {
+    // Im breiten Aufbau heisst der Knopf „Verbindung einfügen“.
+    await userEvent.click(
+      screen.getByRole('button', { name: /^(Reise importieren|Verbindung einfügen)$/ }),
+    )
+    await userEvent.click(screen.getByRole('textbox', { name: /Text der Verbindung/i }))
+    await userEvent.paste(text)
+    await userEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Bestätigen' }),
+    )
+  }
 
   const REISE = [
     'Mannheim Hbf → Berlin Hbf',
@@ -302,21 +325,81 @@ describe('Eingabe: Reise importieren', () => {
   })
 
   /**
-   * Der Name allein reicht nicht: Berlin Hbf fuehrt drei EVA-Nummern, und
-   * 8011160 hat ueberhaupt keinen Fahrplan (gemessen 03.09.2026). Welche
-   * Verkehrsstelle gemeint ist, entscheidet die Bahnhofssuche - deshalb steht
-   * der Bahnhof danach als Suchtext da und nicht als getroffene Wahl.
+   * Der Name aus dem Reisetext wird im Backend ueber den offiziellen Namen
+   * der Verkehrsstellengruppe aufgeloest. Der Treffer gilt wie ein Tipp in
+   * der Vorschlagsliste: gewaehlt, mit Tafeln.
    */
-  it('laesst die Verkehrsstelle weiterhin von der Bahnhofssuche bestimmen', async () => {
+  it('waehlt den aufgeloesten Bahnhof wie einen Tipp in der Liste', async () => {
+    // Im breiten Aufbau oeffnen sich die Tafeln mit der Wahl von selbst.
+    stelleBreite(true)
+    aufloesMock.mockResolvedValue(BERLIN)
     zeige()
-    await userEvent.click(screen.getByRole('button', { name: 'Reise importieren' }))
-    await userEvent.click(screen.getByRole('textbox', { name: /Text der Verbindung/i }))
-    await userEvent.paste(REISE)
-    await userEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', { name: 'Bestätigen' }),
-    )
+    await importiere(REISE)
 
-    expect(await screen.findByRole('button', { name: /^Berlin Hbf/ })).toBeTruthy()
+    await waitFor(() =>
+      expect(screen.getByText(/Berlin Hbf/, { selector: '.bahnhof-gewaehlt' })).toBeTruthy(),
+    )
+    expect(feld().value).toBe('Berlin Hbf')
+    expect(screen.queryByText('Bitte Bahnhof antippen')).toBeNull()
+    expect(aufloesMock).toHaveBeenCalledWith('Berlin Hbf')
+    // Die Tafeln sind offen - wie nach einem Tipp.
+    expect(await screen.findByRole('heading', { name: 'Ankunft · Berlin Hbf' })).toBeDefined()
+    expect(holeTafelMock).toHaveBeenCalledWith('8011160', 'arr')
+    expect(holeTafelMock).toHaveBeenCalledWith('8011160', 'dep')
+    // Gleise und Zuege aus dem Reisetext bleiben stehen.
+    expect((screen.getByLabelText('Ankunft: Gleis') as HTMLInputElement).value).toBe('8')
+    expect((screen.getByLabelText('Anschluss: Gleis') as HTMLInputElement).value).toBe('7')
+    expect(document.body.textContent).toMatch(/ICE 1134/)
+  })
+
+  /**
+   * Ohne eindeutigen Treffer bleibt es beim Suchtext - Berlin Hbf fuehrt drei
+   * EVA-Nummern, und welche gemeint ist, entscheidet dann die Bahnhofssuche.
+   * Damit niemand glaubt, der Bahnhof sei schon gewaehlt, steht ein Hinweis da.
+   */
+  it('zeigt "Bitte Bahnhof antippen", wenn nichts eindeutig ist', async () => {
+    zeige()
+    await importiere(REISE)
+
+    expect(await screen.findByText('Bitte Bahnhof antippen')).toBeTruthy()
+    expect(feld().value).toBe('Berlin Hbf')
+    await userEvent.click(await screen.findByRole('button', { name: /^Berlin Hbf/ }))
+
+    expect(screen.queryByText('Bitte Bahnhof antippen')).toBeNull()
+    expect(screen.getByText(/Berlin Hbf/, { selector: '.bahnhof-gewaehlt' })).toBeTruthy()
+  })
+
+  it('versucht nach dem Abfahrtsnamen den Ankunftsnamen', async () => {
+    aufloesMock.mockReset()
+    aufloesMock.mockResolvedValueOnce(null).mockResolvedValueOnce(BERLIN)
+    zeige()
+    await importiere(REISE.replace('Ab 12:02 Berlin Hbf, Gleis 7', 'Ab 12:02 Berlin Hbf (tief), Gleis 7'))
+
+    await waitFor(() =>
+      expect(screen.getByText(/Berlin Hbf/, { selector: '.bahnhof-gewaehlt' })).toBeTruthy(),
+    )
+    expect(aufloesMock.mock.calls).toEqual([['Berlin Hbf (tief)'], ['Berlin Hbf']])
+    expect(feld().value).toBe('Berlin Hbf')
+    expect(screen.queryByText('Bitte Bahnhof antippen')).toBeNull()
+  })
+
+  /**
+   * Die Aufloesung braucht eine Antwort vom Server. Wer bis dahin schon tippt,
+   * hat entschieden - ein spaeter Treffer darf das nicht ueberschreiben.
+   */
+  it('ueberschreibt keine Eingabe, die waehrend der Aufloesung getippt wurde', async () => {
+    let loese: (ort: Ort | null) => void = () => {}
+    aufloesMock.mockReturnValue(new Promise((r) => (loese = r)))
+    zeige()
+    await importiere(REISE)
+
+    await userEvent.clear(feld())
+    await userEvent.type(feld(), 'Pots')
+    await act(async () => loese(BERLIN))
+
+    expect(feld().value).toBe('Pots')
+    expect(screen.queryByText(/Berlin Hbf/, { selector: '.bahnhof-gewaehlt' })).toBeNull()
+    expect(screen.queryByText('Bitte Bahnhof antippen')).toBeNull()
   })
 
   /**

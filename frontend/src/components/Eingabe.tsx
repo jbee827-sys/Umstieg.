@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { holeHaltestellenTafel } from '../api/haltestellen'
+import { bahnhofZumNamen } from '../api/bahnhofZumNamen'
 import { sucheOrte } from '../api/orte'
 import { uhrzeit } from '../api/zeit'
 import type {
@@ -200,19 +201,49 @@ export function Eingabe({
    * verzoegert ein, eine Tafel, die dann aufklappt, bewegte sich von selbst.
    */
   const [bewegung, setBewegung] = useState(false)
+  /*
+   * Nach einem Import, dessen Bahnhofsname sich nicht eindeutig aufloesen
+   * liess: Der Name steht nur als Suchtext da, und das sieht einem gewaehlten
+   * Bahnhof zum Verwechseln aehnlich. Weg, sobald der Nutzer tippt oder waehlt.
+   */
+  const [bahnhofAntippen, setBahnhofAntippen] = useState(false)
+  /*
+   * Zaehlt Importe UND jede Handlung am Bahnhofsfeld. Die Aufloesung des
+   * Namens wartet auf den Server; ihr Ergebnis gilt nur, wenn der Zaehler
+   * seither gleich geblieben ist. Sonst ueberschriebe ein spaeter Treffer,
+   * was der Nutzer inzwischen getippt oder angetippt hat - oder den Bahnhof
+   * eines neueren Imports.
+   */
+  const importLauf = useRef(0)
+
+  /** Der Nutzer hat am Bahnhofsfeld selbst entschieden. */
+  function bahnhofVomNutzer() {
+    importLauf.current++
+    setBahnhofAntippen(false)
+  }
 
   /**
    * Uebernimmt einen Umstieg aus dem DB-Navigator-Export.
    *
-   * Der Bahnhof wird als SUCHTEXT gesetzt, nicht als Treffer: Die App braucht
-   * die Verkehrsstelle, und ein Name reicht dafuer nicht. Berlin Hbf fuehrt
-   * drei EVA-Nummern, und 8011160 hat ueberhaupt keinen Fahrplan - welche
-   * gemeint ist, entscheidet die Bahnhofssuche, nicht der Text.
+   * Der Bahnhof wird zunaechst als SUCHTEXT gesetzt und dann im Hintergrund
+   * ueber den Namen aufgeloest (`bahnhofZumNamen`): Das Backend sucht den
+   * offiziellen Namen der Verkehrsstellengruppe und liefert nur einen
+   * eindeutigen Bahnhof. Erst der Abfahrtsname (`bahnhof`), dann - falls er
+   * anders lautet - der Ankunftsname (`anBahnhof`). Ein Treffer wird gewaehlt
+   * wie ein Tipp in der Vorschlagsliste.
+   *
+   * Findet sich nichts Eindeutiges, bleibt es beim Suchtext, und der Hinweis
+   * „Bitte Bahnhof antippen“ erscheint: Die App braucht die Verkehrsstelle,
+   * und ein Name allein reicht dafuer nicht. Berlin Hbf fuehrt drei
+   * EVA-Nummern, und 8011160 hat ueberhaupt keinen Fahrplan - welche gemeint
+   * ist, entscheidet dann die Bahnhofssuche, nicht der Text.
    *
    * Die Zugauswahl wird geleert: Ein zuvor angetippter Zug gehoert zu einer
    * anderen Reise und waere nach dem Import stillschweigend falsch.
    */
   function uebernimmUmstieg(u: Umstieg) {
+    const lauf = ++importLauf.current
+    setBahnhofAntippen(false)
     setBewegung(true)
     setGewaehlt(null)
     setSuchtext(u.bahnhof)
@@ -256,6 +287,29 @@ export function Eingabe({
         ? { zug: u.abZug, zeitSoll: u.abZeit, gleisSoll: u.abGleis ?? '', ziel: u.abZiel }
         : null,
     )
+
+    void waehleBahnhofZumNamen(u, lauf)
+  }
+
+  /**
+   * Der zweite Teil des Imports: den Namen zum Bahnhof aufloesen. Ein Treffer
+   * setzt nur Bahnhof und Feldtext - anders als `onWahl` werden keine Fahrten
+   * geleert; Gleise, Zuege und Wagen stehen schon so, wie der Import sie
+   * gesetzt hat, und Fahrten gibt es nach einem Import keine.
+   */
+  async function waehleBahnhofZumNamen(u: Umstieg, lauf: number) {
+    let ort = await bahnhofZumNamen(u.bahnhof)
+    if (!ort && u.anBahnhof && u.anBahnhof !== u.bahnhof && lauf === importLauf.current) {
+      ort = await bahnhofZumNamen(u.anBahnhof)
+    }
+    // Inzwischen getippt, gewaehlt oder neu importiert: Das Ergebnis ist veraltet.
+    if (lauf !== importLauf.current) return
+    if (ort) {
+      setGewaehlt(ort)
+      setSuchtext(ort.name)
+    } else {
+      setBahnhofAntippen(true)
+    }
   }
 
   // Vorbelegt wird NUR ein leeres Feld: Die Erkennung trifft verzoegert ein
@@ -791,6 +845,7 @@ export function Eingabe({
             text={suchtext}
             gewaehlt={gewaehlt}
             onText={(t) => {
+              bahnhofVomNutzer()
               setSuchtext(t)
               setGewaehlt(null)
               // Eine Fahrt gehoert zu ihrem Ort; die Abfahrt haengt am
@@ -801,6 +856,7 @@ export function Eingabe({
               setBewegung(true)
             }}
             onWahl={(o) => {
+              bahnhofVomNutzer()
               setBewegung(true)
               setGewaehlt(o)
               setFahrtAnkunft(null)
@@ -815,6 +871,11 @@ export function Eingabe({
             }
             zusatz={
               <>
+                {bahnhofAntippen && !gewaehlt && (
+                  <div className="hinweis-box" style={{ marginTop: 8 }}>
+                    Bitte Bahnhof antippen
+                  </div>
+                )}
                 {!gewaehlt && !erkennungVerworfen && erkannt && erkannt.length > 1 && (
                   <div style={{ marginTop: 8 }}>
                     <div className="hinweis-box">Bahnhöfe und Haltestellen in deiner Nähe:</div>
@@ -825,6 +886,7 @@ export function Eingabe({
                             type="button"
                             className="ort-vorschlag"
                             onClick={() => {
+                              bahnhofVomNutzer()
                               setBewegung(true)
                               setGewaehlt(ort)
                               setSuchtext(ort.name)
