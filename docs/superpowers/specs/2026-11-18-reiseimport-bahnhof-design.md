@@ -97,7 +97,8 @@ Backend, neuer Endpunkt (Name dem Builder überlassen), Eingabe ein Name:
    seinen `groupMembers` (`stop-places/{eva}`, Stamm-Cache 24 h).
 3. Vergleich **exakt** nach Normalisierung: Groß/klein egal, Leerraum
    zusammengefasst, Leerzeichen vor „(“ egal („Bernau (S)“ = „Bernau(S)“).
-   Verglichen werden `nameLong`, `nameShort`, `nameLocal` – nicht
+   Verglichen werden `nameLong` und `nameShort` – nicht `nameLocal` (zu grob:
+   „Bernau“ ist der `nameLocal` von Bernau a Chiemsee), nicht
    `speech*` (zu grob: „Bernau“) und nicht `synonyms` (Kürzel).
 4. Genau eine Gruppe passt → deren führender Bahnhof (EVA + Name). Keine oder
    mehrere → kein Ergebnis.
