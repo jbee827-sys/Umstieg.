@@ -138,12 +138,12 @@ async function holeStadaListe(kategorien: string): Promise<StadaStation[]> {
 
 // --- Bewertung ---
 
-/** Ansatz B: Klammerzusatz abschneiden, nur bei genau einem Bahnhof mit diesem Namen waehlen. */
+/** Ansatz B (naiv): Klammerzusatz abschneiden, suchen, nur bei genau einem Bahnhof waehlen - egal wie er heisst. */
 async function ansatzB(name: string): Promise<BahnhofMitGruppe | null> {
   const gesucht = haltnamenZurSuche(name).at(-1)!;
-  const norm = normalisiereBahnhofsname(gesucht);
-  if (!norm) return null;
-  const treffer = (await suche(gesucht)).filter((k) => k.namen.some((n) => normalisiereBahnhofsname(n) === norm));
+  if (!normalisiereBahnhofsname(gesucht)) return null;
+  // Bewusst ohne Namensvergleich: genau EIN Bahnhof in der Trefferliste -> gewaehlt.
+  const treffer = await suche(gesucht);
   return treffer.length === 1 ? treffer[0] : null;
 }
 
