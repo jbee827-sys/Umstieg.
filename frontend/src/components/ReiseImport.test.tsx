@@ -73,46 +73,29 @@ describe('ReiseImport', () => {
 
   /**
    * NICHTS wird von selbst uebernommen - auch nicht bei genau einem Umstieg.
-   *
-   * Anfangs schloss das Fenster hier sofort und fuellte die Felder. Das war
-   * falsch: Gelesen werden fremde, undokumentierte Formate, und ein falsch
-   * erkanntes Gleis, das ungefragt im Formular landet, faellt niemandem auf -
-   * bis man am falschen Ende des Bahnsteigs steht.
+   * Der einzige Umstieg ist nur vorgewaehlt; uebernommen wird erst auf
+   * „Bestaetigen".
    */
-  it('uebernimmt nichts ungefragt - auch nicht bei genau einem Umstieg', async () => {
+  it('waehlt den einzigen Umstieg vor und uebernimmt erst auf Bestaetigen', async () => {
     const { onSchliessen, onUebernehmen } = zeige()
     await userEvent.click(feld())
     await userEvent.paste(MIT_EINEM_UMSTIEG)
 
     expect(onUebernehmen).not.toHaveBeenCalled()
-    expect(onSchliessen).not.toHaveBeenCalled()
-    // Stattdessen liegt das Erkannte zur Bestaetigung vor.
-    expect(document.body.textContent).toMatch(/Stimmt das\?/)
-  })
-
-  it('übernimmt den einen Umstieg nach Bestaetigung', async () => {
-    const { onSchliessen, onUebernehmen } = zeige()
-    await userEvent.click(feld())
-    await userEvent.paste(MIT_EINEM_UMSTIEG)
-    await userEvent.click(screen.getByRole('button', { name: /Frankfurt\(Main\)Hbf/ }))
-
-    // Auswahl allein uebernimmt noch nichts - erst der zweite Knopf.
-    expect(onUebernehmen).not.toHaveBeenCalled()
-    expect(document.body.textContent).toMatch(/Das wird übernommen/)
-    await userEvent.click(screen.getByRole('button', { name: 'Übernehmen' }))
+    expect(screen.getByRole('radio', { name: /Frankfurt\(Main\)Hbf/ })).toHaveProperty(
+      'checked',
+      true,
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Bestätigen' }))
 
     expect(onUebernehmen).toHaveBeenCalledOnce()
     const [umstieg, datum] = onUebernehmen.mock.calls[0]
-    expect(umstieg).toMatchObject({
-      bahnhof: 'Frankfurt(Main)Hbf',
-      anGleis: '8',
-      abGleis: '7',
-    })
+    expect(umstieg).toMatchObject({ bahnhof: 'Frankfurt(Main)Hbf', anGleis: '8', abGleis: '7' })
     expect(datum).toBe('15.08.2026')
     expect(onSchliessen).toHaveBeenCalledOnce()
   })
 
-  it('legt bei mehreren Umstiegen erst die Auswahl vor', async () => {
+  it('legt bei mehreren Umstiegen die Auswahl vor, ohne etwas vorzuwaehlen', async () => {
     const { onUebernehmen, onSchliessen } = zeige()
     await userEvent.click(feld())
     await userEvent.paste(MIT_VIER_UMSTIEGEN)
@@ -122,14 +105,19 @@ describe('ReiseImport', () => {
     expect(screen.getByText(/Mannheim Hbf/)).toBeTruthy()
     expect(screen.getByText(/Frankfurt\(Main\)Hbf/)).toBeTruthy()
     expect(screen.getByText(/Berlin Hbf/)).toBeTruthy()
+    for (const r of screen.getAllByRole('radio')) expect(r).toHaveProperty('checked', false)
   })
 
-  it('übernimmt den angetippten Umstieg und schliesst', async () => {
+  it('sperrt Bestaetigen bei mehreren Umstiegen bis zur Wahl', async () => {
     const { onUebernehmen, onSchliessen } = zeige()
     await userEvent.click(feld())
     await userEvent.paste(MIT_VIER_UMSTIEGEN)
-    await userEvent.click(screen.getByRole('button', { name: /Frankfurt\(Main\)Hbf/ }))
-    await userEvent.click(screen.getByRole('button', { name: 'Übernehmen' }))
+
+    const bestaetigen = screen.getByRole('button', { name: 'Bestätigen' })
+    expect(bestaetigen).toHaveProperty('disabled', true)
+    await userEvent.click(screen.getByRole('radio', { name: /Frankfurt\(Main\)Hbf/ }))
+    expect(bestaetigen).toHaveProperty('disabled', false)
+    await userEvent.click(bestaetigen)
 
     expect(onUebernehmen).toHaveBeenCalledOnce()
     expect(onUebernehmen.mock.calls[0][0]).toMatchObject({
@@ -140,6 +128,35 @@ describe('ReiseImport', () => {
     expect(onSchliessen).toHaveBeenCalledOnce()
   })
 
+  it('zeigt keinen Zusammenfassungskasten mehr', async () => {
+    zeige()
+    await userEvent.click(feld())
+    await userEvent.paste(MIT_EINEM_UMSTIEG)
+    expect(document.body.textContent).not.toMatch(
+      /Stimmt das\?|Welcher Umstieg\?|Abschnitte erkannt|Das wird übernommen/,
+    )
+  })
+
+  it('Abbrechen und Bestaetigen stehen nebeneinander, Bestaetigen gruen', async () => {
+    zeige()
+    await userEvent.click(feld())
+    await userEvent.paste(MIT_EINEM_UMSTIEG)
+    const bestaetigen = screen.getByRole('button', { name: 'Bestätigen' })
+    const abbrechen = screen.getByRole('button', { name: 'Abbrechen' })
+    expect(bestaetigen.className).toMatch(/knopf-angekommen/)
+    expect(bestaetigen.parentElement).toBe(abbrechen.parentElement)
+    expect(bestaetigen.parentElement?.className).toMatch(/dialog-knoepfe/)
+  })
+
+  it('ohne Umstieg oder bei unlesbarem Text gibt es nur Abbrechen', async () => {
+    zeige()
+    expect(screen.queryByRole('button', { name: 'Bestätigen' })).toBeNull()
+    await userEvent.click(feld())
+    await userEvent.paste('Hallo, das ist keine Reiseverbindung.')
+    expect(screen.queryByRole('button', { name: 'Bestätigen' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Abbrechen' })).toBeTruthy()
+  })
+
   // Ein Umstieg ohne Ankunftsgleis (Bushaltestelle) darf erscheinen, muss
   // aber als unvollstaendig kenntlich sein - sonst laeuft jemand zu einem
   // Gleis, das die App gar nicht kennt.
@@ -148,39 +165,6 @@ describe('ReiseImport', () => {
     await userEvent.click(feld())
     await userEvent.paste(MIT_VIER_UMSTIEGEN)
     expect(document.body.textContent).toMatch(/Gleis unbekannt/i)
-  })
-
-  // Nicht die App wird benannt, sondern was gefunden wurde. Fehlt irgendwo
-  // ein Gleis, steht es hier - dann lohnt ein Blick, bevor man losläuft.
-  it('nennt, was erkannt wurde - samt fehlender Gleise', async () => {
-    zeige()
-    await userEvent.click(feld())
-    await userEvent.paste(MIT_VIER_UMSTIEGEN)
-    expect(document.body.textContent).toMatch(/5 Abschnitte erkannt/)
-    expect(document.body.textContent).toMatch(/nicht überall ein Gleis/)
-  })
-
-  it('meldet vollständige Gleise, wenn alle dastehen', async () => {
-    zeige()
-    await userEvent.click(feld())
-    await userEvent.paste(
-      [
-        'RE1',
-        'ab 10:15 Berlin Hbf (Gleis 12)',
-        'an 10:25 Berlin Ostbahnhof (Gleis 3)',
-        '',
-        'S7',
-        'ab 10:31 Berlin Ostbahnhof (Gleis 8)',
-        'an 10:40 Berlin Alexanderplatz (Gleis 1)',
-        '',
-        'U2',
-        'ab 10:45 Berlin Alexanderplatz (Gleis 2)',
-        'an 10:52 Senefelderplatz (Gleis 1)',
-      ].join('\n'),
-    )
-    expect(document.body.textContent).toMatch(/3 Abschnitte erkannt/)
-    expect(document.body.textContent).toMatch(/Gleise vollständig/)
-    expect(screen.getByRole('button', { name: /Berlin Ostbahnhof/ })).toBeTruthy()
   })
 
   /**
@@ -273,7 +257,7 @@ describe('ReiseImport mit geteiltem Text', () => {
   it('zeigt den Text und die erkannte Verbindung sofort', () => {
     zeige({ vorgabe: MIT_EINEM_UMSTIEG, jetzt: new Date('2026-08-15T09:00:00') })
     expect((feld() as HTMLTextAreaElement).value).toBe(MIT_EINEM_UMSTIEG)
-    expect(document.body.textContent).toMatch(/Stimmt das\?/)
+    expect(screen.getByRole('radio', { name: /Frankfurt\(Main\)Hbf/ })).toBeTruthy()
   })
 
   it('uebernimmt auch dann nichts ungefragt', () => {

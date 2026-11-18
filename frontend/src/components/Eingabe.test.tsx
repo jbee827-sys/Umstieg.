@@ -270,9 +270,8 @@ describe('Eingabe: Reise importieren', () => {
     // Nichts wird ungefragt uebernommen - erst die Bestaetigung im Fenster.
     expect(feld().value).toBe('')
     await userEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', { name: /Berlin Hbf/ }),
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Bestätigen' }),
     )
-    await userEvent.click(screen.getByRole('button', { name: 'Übernehmen' }))
 
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(feld().value).toBe('Berlin Hbf')
@@ -295,9 +294,8 @@ describe('Eingabe: Reise importieren', () => {
     await userEvent.click(screen.getByRole('textbox', { name: /Text der Verbindung/i }))
     await userEvent.paste(REISE)
     await userEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', { name: /Berlin Hbf/ }),
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Bestätigen' }),
     )
-    await userEvent.click(screen.getByRole('button', { name: 'Übernehmen' }))
 
     expect((screen.getByLabelText('Ankunft: Wagen (optional)') as HTMLInputElement).value).toBe('')
     expect((screen.getByLabelText('Anschluss: Wagen (optional)') as HTMLInputElement).value).toBe('')
@@ -315,9 +313,8 @@ describe('Eingabe: Reise importieren', () => {
     await userEvent.click(screen.getByRole('textbox', { name: /Text der Verbindung/i }))
     await userEvent.paste(REISE)
     await userEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', { name: /Berlin Hbf/ }),
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Bestätigen' }),
     )
-    await userEvent.click(screen.getByRole('button', { name: 'Übernehmen' }))
 
     expect(await screen.findByRole('button', { name: /^Berlin Hbf/ })).toBeTruthy()
   })
@@ -337,9 +334,8 @@ describe('Eingabe: Reise importieren', () => {
     await userEvent.click(screen.getByRole('textbox', { name: /Text der Verbindung/i }))
     await userEvent.paste(REISE)
     await userEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', { name: /Berlin Hbf/ }),
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Bestätigen' }),
     )
-    await userEvent.click(screen.getByRole('button', { name: 'Übernehmen' }))
 
     await userEvent.click(await screen.findByRole('button', { name: /^Berlin Hbf/ }))
 

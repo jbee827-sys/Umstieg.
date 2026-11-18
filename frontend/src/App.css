@@ -507,7 +507,8 @@
   box-shadow: var(--shadow-md);
 }
 
-.knopf-primaer:disabled {
+.knopf-primaer:disabled,
+.knopf-angekommen:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
@@ -2745,17 +2746,43 @@
   text-align: left;
   color: var(--color-text);
   background: var(--color-surface);
-  border: 1px solid transparent;
+  border: 2px solid transparent;
   border-radius: var(--radius-mittel);
   cursor: pointer;
+  position: relative;
+  box-sizing: border-box;
 }
 
-.umstieg-wahl:focus-visible {
+/* Gewählt: grüner Rand und Haken rechts oben. */
+.umstieg-wahl.gewaehlt,
+.umstieg-wahl.gewaehlt:has(input:focus-visible) {
+  border-color: var(--color-gruen);
+}
+
+.umstieg-haken {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-weight: 800;
+  color: var(--color-gruen);
+}
+
+.umstieg-wahl:has(input:focus-visible) {
   border-color: var(--color-divider);
 }
 
+/* Abbrechen und Bestätigen nebeneinander, gleich breit. */
+.dialog-knoepfe {
+  display: flex;
+  gap: 8px;
+}
+
+.dialog-knoepfe > button {
+  flex: 1;
+}
+
 @media (hover: hover) {
-  .umstieg-wahl:hover {
+  .umstieg-wahl:not(.gewaehlt):hover {
     border-color: var(--color-divider);
   }
 }

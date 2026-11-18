@@ -32,15 +32,15 @@ export function ReiseImport({ onSchliessen, onUebernehmen, jetzt, vorgabe }: Rei
   const [reise, setReise] = useState<Reise | null>(null)
   const [unlesbar, setUnlesbar] = useState(false)
   /**
-   * Der ausgewählte Umstieg – noch NICHT übernommen.
+   * Index des gewählten Umstiegs in `reise.umstiege`; `null` = noch keiner.
    *
-   * Auswahl und Übernahme sind bewusst zwei Schritte. Vorher war das Antippen
-   * beides zugleich: Man wählte einen Umstieg und hatte die Werte schon im
-   * Formular, ohne je gesehen zu haben, was genau in welches Feld wandert.
-   * Bei einem Parser, der undokumentierte Fremdformate liest, ist das die
-   * Stelle, an der ein falsch gelesenes Gleis unbemerkt durchrutscht.
+   * Es gibt nur EINEN Bestätigungsschritt: Die gewählte Karte zeigt schon
+   * alles, was ins Formular wandert (Bahnhof, beide Züge mit Zeit und Gleis,
+   * Umsteigezeit). Ein zweiter Zwischenschritt wiederholte nur dieselben
+   * Zeilen. Übernommen wird trotzdem nie ohne Tipp auf „Bestätigen" - bei
+   * einem einzigen Umstieg ist die Karte nur vorgewählt.
    */
-  const [gewaehlt, setGewaehlt] = useState<Umstieg | null>(null)
+  const [gewaehlt, setGewaehlt] = useState<number | null>(null)
   const feldRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -62,6 +62,7 @@ export function ReiseImport({ onSchliessen, onUebernehmen, jetzt, vorgabe }: Rei
   }, [onSchliessen])
 
   function verarbeite(text: string) {
+    setGewaehlt(null)
     if (!text.trim()) {
       setReise(null)
       setUnlesbar(false)
@@ -85,9 +86,11 @@ export function ReiseImport({ onSchliessen, onUebernehmen, jetzt, vorgabe }: Rei
      * Bahnhof steht man dann am falschen Ende.
      *
      * Ein Blick und ein Tipp kosten eine Sekunde. Ein falscher Bahnsteig
-     * kostet den Anschluss.
+     * kostet den Anschluss. Bei genau einem Umstieg ist er deshalb nur
+     * vorgewählt, übernommen wird erst mit „Bestätigen".
      */
     setReise(gelesen)
+    if (gelesen.umstiege.length === 1) setGewaehlt(0)
   }
 
   const nichtHeute = reise?.datum && !istReisetag(reise.datum, jetzt ?? new Date())
@@ -151,57 +154,8 @@ export function ReiseImport({ onSchliessen, onUebernehmen, jetzt, vorgabe }: Rei
           </p>
         )}
 
-        {/*
-          Zweiter Schritt: Was genau in welches Feld wandert - und erst dann
-          der Knopf, der es tut. Wer hier ein falsches Gleis sieht, bricht ab,
-          statt es am Bahnsteig zu merken.
-        */}
-        {reise && gewaehlt && (
+        {reise && reise.umstiege.length > 0 && (
           <>
-            <p className="hinweis-box">
-              <strong>Das wird übernommen:</strong>
-              <br />
-              Umstiegsbahnhof: {gewaehlt.bahnhof}
-              <br />
-              Ankunft: Gleis {gewaehlt.anGleis ?? '– unbekannt –'}
-              {gewaehlt.anZug ? ` (${gewaehlt.anZug}, ${gewaehlt.anZeit})` : ''}
-              <br />
-              Anschluss: Gleis {gewaehlt.abGleis ?? '– unbekannt –'}
-              {gewaehlt.abZug ? ` (${gewaehlt.abZug}, ${gewaehlt.abZeit})` : ''}
-            </p>
-            <button
-              type="button"
-              className="knopf-primaer knopf-breit"
-              onClick={() => {
-                onUebernehmen(gewaehlt, reise.datum)
-                onSchliessen()
-              }}
-            >
-              Übernehmen
-            </button>
-            <button type="button" className="knopf-sekundaer" onClick={() => setGewaehlt(null)}>
-              Zurück zur Auswahl
-            </button>
-          </>
-        )}
-
-        {reise && !gewaehlt && reise.umstiege.length > 0 && (
-          <>
-            <p className="hinweis-box">
-              {reise.von && reise.nach ? `${reise.von} → ${reise.nach}` : 'Verbindung erkannt'}
-              {reise.datum ? `, ${reise.datum}` : ''}.{' '}
-              {reise.umstiege.length === 1 ? 'Stimmt das?' : 'Welcher Umstieg?'}
-              <br />
-              {/* Was gefunden wurde - nicht, welche App es geschrieben hat.
-                  Daran laesst sich ablesen, ob ein Blick auf die Gleise
-                  lohnt: Fehlt eines, steht es hier. */}
-              <span className="umstieg-zeile schwach">
-                {reise.erkannt.abschnitte} Abschnitte erkannt
-                {reise.erkannt.gleiseVollstaendig
-                  ? ', Gleise vollständig'
-                  : ', nicht überall ein Gleis genannt'}
-              </span>
-            </p>
             {nichtHeute && (
               <p className="fehler-box">
                 Live-Daten zu Gleisen und Verspätungen gibt es erst am Reisetag. Bis dahin siehst du
@@ -211,11 +165,22 @@ export function ReiseImport({ onSchliessen, onUebernehmen, jetzt, vorgabe }: Rei
             <ul className="umstieg-liste">
               {reise.umstiege.map((u, i) => (
                 <li key={`${u.bahnhof}-${u.abZeit}-${i}`}>
-                  <button
-                    type="button"
-                    className="umstieg-wahl"
-                    onClick={() => setGewaehlt(u)}
-                  >
+                  {/* Eine Auswahlkarte: Der Radioknopf ist nur vorlesbar, die
+                      Karte selbst ist die Trefferfläche. Gewählt zeigt sie
+                      Rand und Haken. */}
+                  <label className={`umstieg-wahl${gewaehlt === i ? ' gewaehlt' : ''}`}>
+                    <input
+                      type="radio"
+                      name="umstieg"
+                      className="nur-vorlesen"
+                      checked={gewaehlt === i}
+                      onChange={() => setGewaehlt(i)}
+                    />
+                    {gewaehlt === i && (
+                      <span className="umstieg-haken" aria-hidden="true">
+                        ✓
+                      </span>
+                    )}
                     <strong>{u.bahnhof}</strong>
                     <span className="umstieg-zeile">
                       {u.anZug} an {u.anZeit} Gl. {u.anGleis ?? '?'} → {u.abZug} ab {u.abZeit} Gl.{' '}
@@ -225,16 +190,32 @@ export function ReiseImport({ onSchliessen, onUebernehmen, jetzt, vorgabe }: Rei
                       {u.minuten} min Umsteigezeit
                       {!u.vollstaendig && ' · Gleis unbekannt'}
                     </span>
-                  </button>
+                  </label>
                 </li>
               ))}
             </ul>
           </>
         )}
 
-        <button type="button" className="knopf-sekundaer" onClick={onSchliessen}>
-          Abbrechen
-        </button>
+        <div className="dialog-knoepfe">
+          <button type="button" className="knopf-sekundaer" onClick={onSchliessen}>
+            Abbrechen
+          </button>
+          {reise && reise.umstiege.length > 0 && (
+            <button
+              type="button"
+              className="knopf-angekommen"
+              disabled={gewaehlt === null}
+              onClick={() => {
+                if (gewaehlt === null) return
+                onUebernehmen(reise.umstiege[gewaehlt], reise.datum)
+                onSchliessen()
+              }}
+            >
+              Bestätigen
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
