@@ -633,7 +633,7 @@ Gleis“ heißt nicht, dass der Weg offen ist.
    App zeigt laufend „Neue Abfahrtszeit“ zu Zügen, die niemand gewählt hat (lokal
    gesehen, in der Produktion ungeprüft).
 
-### iOS-App (Stand 10.11.2026, in `main` seit 01.11.2026, TestFlight intern)
+### iOS-App (Stand 18.11.2026, in `main` seit 01.11.2026, TestFlight intern)
 
 Plan: `Umstieg_Konzepte/05-umsetzungsplan-app-store.md`. Aufbau und
 Einrichtung: [`docs/app-ios.md`](./docs/app-ios.md). Web und App teilen einen
@@ -645,7 +645,7 @@ Code (`istApp()`); die Web-Fassung ändert sich nur im Suchfeld
 | 0 Apple-Konto | erledigt (Julian, 24.10.2026) |
 | 1 Lizenz-Ausnahme (§ 7 AGPL) | umgesetzt in `NOTICE`, `CONTRIBUTING.md` – **Freigabe Julian** |
 | 2 Capacitor + Cloud-Bau | fertig; Actions-Lauf grün mit 12 Fotos (iPhone 6,9", iPad 13", hell/dunkel); `capacitor://localhost` steht seit 24.10.2026 in `CORS_ORIGIN` auf Fly |
-| 3 TestFlight | **fertig (10.11.2026):** Bau 1 und 2 (1.0, aus `main`) in TestFlight, Bau 2 ohne Apple-Warnung; Julian hat die App als interner Tester auf dem iPhone. Dafür nötig waren: registriertes iPhone, echte App Group `group.online.umstieg.app` beiden App-IDs zugeordnet, Bundle-ID `online.umstieg.app` im App-Eintrag (war mit der Gruppe verwechselt), Text `NSLocationAlwaysAndWhenInUseUsageDescription` (ITMS-90683) – Details in `docs/app-ios.md` |
+| 3 TestFlight | **fertig (10.11.2026):** Bau 1 und 2 (1.0, aus `main`) in TestFlight, Bau 2 ohne Apple-Warnung. **Bau 3 am 18.11.2026** aus `main` (`d983ce7`: Teilen-Diagnose, „Etwas melden“ in der App, Gleisbild) in TestFlight. Stolperstein dabei: Apple verlangte neue Vereinbarungen – erst scheiterte das Archiv („PLA Update available … No profiles for 'online.umstieg.app'“, gelöst durch Annahme auf developer.apple.com), dann der Upload (`403 FORBIDDEN.REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`, gelöst durch Annahme in App Store Connect); jeweils „Re-run failed jobs“. Bei „No profiles“ zuerst im Log nach „PLA“ suchen; Julian hat die App als interner Tester auf dem iPhone. Dafür nötig waren: registriertes iPhone, echte App Group `group.online.umstieg.app` beiden App-IDs zugeordnet, Bundle-ID `online.umstieg.app` im App-Eintrag (war mit der Gruppe verwechselt), Text `NSLocationAlwaysAndWhenInUseUsageDescription` (ITMS-90683) – Details in `docs/app-ios.md` |
 | 4 Messung mit Einwilligung | fertig: eigener Zähler `POST /api/zaehle` (nur Ereignisname, Summen je Stunde als `app-nutzung` im Fly-Protokoll), Abfrage beim ersten Start, Widerruf unter „Einstellungen“. Backend auf Fly ausgerollt am 24.10.2026 |
 | 5 Native Grundfunktionen | fertig (Standort mit Erklärung vor der Abfrage, Haptik, Wachhalten, Statusleiste, Start, Symbol, Safari-Ansicht, Datenschutz-Manifest) |
 | 6 Lokale Mitteilungen | fertig (Gleiswechsel/Ausfall des Anschlusses, Ampel Rot, Erinnerung 5 min vor Ankunft) |
@@ -662,18 +662,32 @@ Entscheidung), **C** = Code/Doku.
 **A. Erst am iPhone testen (J, mit TestFlight-Bau 2)** – Befunde sammeln,
 daraus wird Bau 3:
 
+> **Test mit Bau 3 am 18.11.2026 (Julian, Fotos in `E:\Claude-code\Fehlerbilder\1-3`):**
+> „Alles funktioniert so, wie es bis jetzt gebaut ist.“ Teilen aus dem DB
+> Navigator kommt an (Reise Eberswalde Hbf → Berlin-Karow erkannt), die
+> Mitteilungsabfrage erscheint bei laufender Reise, Routen kommen vom Backend.
+> Zwei Befunde: (1) Reise-Import unklar bedienbar und Bahnhof „Bernau (S)“
+> nicht automatisch gewählt → in Arbeit, siehe „Reise-Import: Bahnhof per
+> offiziellem Namen“ unten. (2) Frage, ob Meldungen als Mitteilung aufs Handy
+> kommen: nur Gleiswechsel/Ausfall des **Anschlusses**, Ampel Rot und die
+> Erinnerung 5 min vor Ankunft – und die ersten beiden nur, solange iOS die
+> App im Hintergrund noch laufen lässt (kein Hintergrundmodus); verlässlich
+> kommt nur die vorab geplante Erinnerung. Zuverlässige Mitteilungen bei
+> gesperrtem Handy bräuchten Server-Push (APNs) – eigenes Paket mit Backend
+> und Gerätekennungen, **noch nicht entschieden**.
+
 - [ ] Erster Start: Abfrage zur Messung (Paket 4), Startbildschirm hell/dunkel.
 - [ ] Standort: eigene Erklärung vor dem Systemdialog; Systemdialog bietet nur
       „Beim Verwenden“/„Einmal“; Bahnhof wird vor Ort erkannt. Dazu README-Punkt
       M1 (Berechtigungsdialog nur nach Nutzergeste).
-- [ ] Teilen-Erweiterung (Paket 7): DB Navigator → Verbindung → *Teilen* →
+- [x] Teilen-Erweiterung (Paket 7, geprüft mit Bau 3 am 18.11.2026): DB Navigator → Verbindung → *Teilen* →
       „Umstieg.“ (evtl. unter „Mehr“) → App öffnen → „Reise importieren“ mit
       der richtigen Verbindung.
 - [ ] Mitteilungen (Paket 6): Erlaubnisabfrage; Gleiswechsel/Ausfall, Ampel
       Rot, Erinnerung 5 min vor Ankunft – nur auf echter Fahrt prüfbar.
 - [ ] Bedienung: Zurück-Wischgeste, große Systemschrift, Ränder an Dynamic
       Island und Home-Balken, Safari-Ansicht für Links, Haptik, Display bleibt an.
-- [ ] Verbindung zum Backend: Routen und Abfahrten kommen (CORS
+- [x] Verbindung zum Backend (18.11.2026): Routen und Abfahrten kommen (CORS
       `capacitor://localhost` auf Fly).
 - [ ] Auffälligkeit aus dem Web prüfen: laufend „Neue Abfahrtszeit“ zu nicht
       gewählten Zügen (siehe „Kleinere Punkte“ oben).
@@ -718,8 +732,10 @@ daraus wird Bau 3:
 
 **E. Technik (C)**
 
-- [ ] Korrekturen aus A umsetzen → Bau 3 über *Actions → iOS → Run workflow*
-      auf `main`.
+- [x] Bau 3 über *Actions → iOS → Run workflow* auf `main` (18.11.2026).
+- [ ] Korrekturen aus dem Test mit Bau 3 (Reise-Import, siehe unten) nach
+      `main` bringen → Bau 4. Die „Teilen-Diagnose“ unter Einstellungen ist
+      vorübergehend (16.11.2026) – vor der Einreichung entfernen.
 - [ ] iPad-Sichtprüfung (Paket 8) an den 13"-Fotos, ggf. Layout nachziehen.
 - [ ] Workflow-Auslöser: Push-Trigger steht noch auf dem veralteten Zweig
       `feat/app-ios`; auf `main` läuft der Simulator-Job nur von Hand.
@@ -738,6 +754,60 @@ daraus wird Bau 3:
 
 - [ ] Bau in App Store Connect der Version 1.0 zuordnen → *Zur Prüfung
       einreichen*. Rückfragen der Prüfung hier sammeln.
+
+### Reise-Import: Bahnhof per offiziellem Namen (Stand 18.11.2026, Zweig `feat/reiseimport-bahnhof`, nicht ausgeliefert, nicht gepusht)
+
+Anlass: Test mit TestFlight-Bau 3 (siehe iOS-App, Punkt A). Design:
+`docs/superpowers/specs/2026-11-18-reiseimport-bahnhof-design.md`, Plan:
+`docs/superpowers/plans/2026-11-18-reiseimport-bahnhof.md`. Umgesetzt im
+Ablauf „ein Agent je Aufgabe + Review“; Fortschrittsbuch (gitignored):
+`.superpowers/sdd/2026-11-18-reiseimport-bahnhof/progress.md`.
+
+**Befund (RIS::Stations, 18.11.2026):** Ein Bahnhof besteht aus mehreren
+EVA-Nummern mit eigenem offiziellen Namen. „Bernau (S)“ ist der `nameLong`
+von EVA 8089205, Mitglied der Gruppe von 8013470 „Bernau(b Berlin)“; ebenso
+„Berlin Gesundbrunnen(S)“ (8089015). Die Namenssuche liefert nur den
+führenden Eintrag (mit `groupMembers`) – deshalb fand die Suche „Bernau (S)“
+nie. Der DB Navigator schreibt im Reisetext den Namen der Verkehrsstelle des
+Abschnitts. Je EVA gibt es außerdem `nameShort`, `nameLocal`, `speech*`,
+`synonyms`. Regel: Treffer nur **exakt** (normalisiert) auf `nameLong` oder
+`nameShort` – nicht `nameLocal` („Bernau“ ist der `nameLocal` von Bernau a
+Chiemsee), nicht Sprechnamen, nicht Kürzel. Keine Timetables-Abfrage.
+
+| # | Aufgabe | Stand |
+|---|---|---|
+| 1 | `core/namensaufloesung.ts`: `loeseBahnhofsnamen` – erst führende Namen, dann Gruppenmitglieder; mehrdeutig → nichts | fertig, Review ok (`6d30cd8`) |
+| 2 | `clients/stations.ts`: `sucheBahnhoefeMitGruppen`, `holeAmtlicheNamen`; Fixtures Bernau aufgezeichnet | fertig, Review ok (`45d423b`) |
+| 3 | Route `GET /api/bahnhof-zum-namen?name=` → `{ ort }`, 400/502/503, Grenze 14/min, gecacht | fertig, Review ok (`fd10287`) |
+| 4 | Frontend: `Umstieg.anBahnhof`, `api/bahnhofZumNamen.ts` (jeder Fehler → `null`) | fertig, Review ok (`1eff5b8`) |
+| 5 | Dialog: wählbare Karten (ein Umstieg vorgewählt), **Abbrechen** + grünes **Bestätigen** nebeneinander; Kasten „Stimmt das?“ und Zwischenschritt „Das wird übernommen“ entfallen | fertig, Review ok nach einer Nachbesserung (Tastaturfokus, `a5bfc8d`, `48de6bc`) |
+| 6 | Nach „Bestätigen“ wird der Bahnhof aufgelöst (Abfahrtsname, dann Ankunftsname) und gewählt wie ein Tipp; sonst Hinweis „Bitte Bahnhof antippen“; spätes Ergebnis überschreibt keine Eingabe | fertig, Review ok (`295ca3f`) |
+| 7 | Simulation `backend/scripts/simulation-bahnhofsnamen.ts` (StaDa Kat. 1–4 = 1026 Bahnhöfe; A = neue Regel, B = naiv „Zusatz ab, genau ein Treffer“) | **offen**: Skript fertig (`7e87a7a`, `1ac1f12`), Review fand zwei Zählfehler; Nachbesserung `d57a870` committet, aber **nicht nachgeprüft**; Volllauf abgebrochen, **keine Zahlen** |
+| 8 | README | dieser Abschnitt |
+
+**Offen, in Reihenfolge:**
+
+- [ ] Nachprüfung von `d57a870` (Soll-Bahnhof = Gruppe vor Mitglied; `richtig`
+      auch bei jeder EVA der Soll-Gruppe; Mitgliedsfehler → `fehler` statt
+      verschluckt; Gruppe einmal gezählt; alle `falsch`-Fälle im Bericht;
+      API-Antworten in `osm-ablage/bahnhofsnamen/apicache.json`).
+- [ ] Volllauf (aus `backend/`, ca. 40–80 min, nur RIS::Stations ≤ 50/min):
+      `npx tsx scripts/simulation-bahnhofsnamen.ts --kategorien 1-4`, Bericht
+      in `backend/osm-ablage/bahnhofsnamen/ergebnis.md`; Zahlen hier eintragen.
+      Jeder `falsch`-Fall von A wird ein Testfall in Task 1, nicht wegerklärt.
+- [ ] Abschlussreview des ganzen Zweigs. Dafür gesammelte Kleinpunkte:
+      Variantenschleife in `namensaufloesung.ts` doppelt zu
+      `sucheBahnhoefeMitVarianten`; `nameShort`-Pfad ohne Test; 502-Log der
+      Route ohne Fehlerursache; Hinweis „Bitte Bahnhof antippen“ ohne
+      `role="status"`; kein `.catch` an der Auflösung in `Eingabe.tsx`; Tests
+      für veraltetes Ergebnis nach Tipp/Nähe-Vorschlag/zweitem Import fehlen;
+      Fokusring am Rand des Dialogs evtl. abgeschnitten.
+- [ ] Sichtprüfung des Dialogs hell/dunkel (grüner Rand auf `--color-surface`)
+      – lokal und am iPhone.
+- [ ] Zweig nach `main` und Bau 4 – nur auf ausdrückliche Anweisung.
+- [ ] Unabhängig vom Zweig: `backend/test/osm-bestand.test.ts` „nimmt den
+      frischen Startbestand vor einem Volume-Eintrag“ schlägt schon auf `main`
+      fehl (festgestellt 18.11.2026).
 
 ### Zugbild und Zugspitze (Stand 25.10.2026, Zweig `feat/zugbild`, nicht ausgeliefert)
 
