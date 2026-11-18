@@ -7,6 +7,8 @@ import {
 } from '../clients/stations.js';
 import { TimetablesAusgelastetError } from '../clients/timetables-budget.js';
 import { namensvarianten } from '../core/bahnhofsname.js';
+import { loeseBahnhofsnamen, type NamensQuelle } from '../core/namensaufloesung.js';
+import { bahnhofAlsOrt } from '../core/orte.js';
 import { gleicherHaltname, haltnamenZurSuche } from '../core/haltname.js';
 import { gehzeitSekunden } from '../core/gehzeit.js';
 import { berlinTeile } from '../core/zeit.js';
@@ -79,6 +81,8 @@ export interface ApiClients {
    * dann fragt jede Route Overpass wie bisher.
    */
   osmQuelle?: OsmQuelle;
+  /** Namensaufloesung fuer geteilte Reisetexte (Spec 2026-11-18). */
+  namen?: NamensQuelle;
 }
 
 const GEHPROFILE: Gehprofil[] = ['zuegig', 'normal', 'langsam'];
@@ -317,6 +321,36 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
         return reply.code(503).send({ fehler: 'db-zugang-fehlt' });
       }
       throw e;
+    }
+  });
+
+  /**
+   * Reiseimport: ein Bahnhofsname aus einem geteilten Text ("Bernau (S)") wird
+   * auf den fuehrenden Bahnhof seiner Gruppe abgebildet - oder auf `null`,
+   * wenn nichts eindeutig passt.
+   */
+  app.get<{ Querystring: { name?: string } }>('/api/bahnhof-zum-namen', async (req, reply) => {
+    const name = req.query.name?.trim();
+    if (!name) {
+      return reply.code(400).send({ fehler: 'parameter-fehlt', detail: 'name ist erforderlich' });
+    }
+    if (name.length > HALTNAME_MAX) {
+      return reply
+        .code(400)
+        .send({ fehler: 'parameter-ungueltig', detail: `name ist laenger als ${HALTNAME_MAX} Zeichen` });
+    }
+    if (!clients.namen) {
+      return reply.code(503).send({ fehler: 'db-zugang-fehlt' });
+    }
+    try {
+      const treffer = await loeseBahnhofsnamen(name, clients.namen);
+      return { ort: treffer ? bahnhofAlsOrt(treffer) : null };
+    } catch (e) {
+      if (e instanceof FehlendeZugangsdatenError) {
+        return reply.code(503).send({ fehler: 'db-zugang-fehlt' });
+      }
+      req.log.warn({ degradation: 'namensaufloesung-ausfall' }, 'Namensaufloesung ausgefallen');
+      return reply.code(502).send({ fehler: 'quelle-ausfall' });
     }
   });
 

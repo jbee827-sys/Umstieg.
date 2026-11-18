@@ -11,9 +11,11 @@ import { overpassQuery, protokolliereVersuch } from './clients/overpass.js';
 import { erzeugeOverpassPausen } from './clients/overpass-pausen.js';
 import { mitPtBahnsteigen } from './osm/pt-bahnsteige.js';
 import {
+  holeAmtlicheNamen,
   holeGruppe,
   holeStationsInfo,
   sucheBahnhoefe,
+  sucheBahnhoefeMitGruppen,
   sucheBahnhoefeNahebei,
 } from './clients/stations.js';
 import { erzeugeTimetablesQuelle } from './clients/timetables.js';
@@ -100,6 +102,8 @@ const GRENZEN: Record<string, number> = {
   '/api/board/:eva': 21,
   // Ortssuche ueber Bahnhoefe und Haltestellen - gleiche Tippsuche wie oben.
   '/api/orte': 21,
+  // Namensaufloesung beim Reiseimport: bis zu zwei DB-Aufrufe je Anfrage.
+  '/api/bahnhof-zum-namen': 14,
   '/api/haltestelle/tafel': 21,
   // Fussweg ueber MOTIS /plan - teurer als Suche und Tafel, wie /api/route.
   '/api/weg': 14,
@@ -434,6 +438,10 @@ export function buildApp(
       overpass,
       osmQuelle: clients.osmQuelle ?? erzeugeOsmQuelle({ bestand, erneuerung, overpass }),
       stations,
+      namen: clients.namen ?? {
+        sucheMitGruppen: mitCache((q: string) => sucheBahnhoefeMitGruppen(q), (q) => q, SUCHE_TTL_MS, 500),
+        amtlicheNamen: mitCache((eva: string) => holeAmtlicheNamen(eva), (eva) => eva, STAMM_TTL_MS, 1000),
+      },
       tafel: tafelFuerRouten,
       wagenposition:
         clients.wagenposition ?? ((zug, datum, wagen) => holeWagenposition(zug, datum, wagen)),
