@@ -98,6 +98,10 @@ describe('parseReise', () => {
     })
   })
 
+  it('nennt je Umstieg auch den Ankunftsnamen', () => {
+    expect(parseReise(ECHT)!.umstiege[2].anBahnhof).toBe('Frankfurt(Main)Hbf')
+  })
+
   // Fuer die Zuguebernahme im Formular: Ein TafelEintrag traegt auch das
   // Ziel, sonst stuende in der Auswahl "aus  ·  12:02" mit einer Luecke.
   it('nennt je Umstieg auch die Ziele beider Zuege', () => {

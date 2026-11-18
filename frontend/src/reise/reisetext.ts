@@ -59,6 +59,8 @@ export interface Abschnitt {
 
 export interface Umstieg {
   bahnhof: string
+  /** Name des Umstiegs auf der Ankunftsseite; kann von `bahnhof` abweichen. */
+  anBahnhof: string
   anZug: string
   anZeit: string
   anGleis?: string
@@ -380,6 +382,7 @@ function umstiegeAus(abschnitte: Abschnitt[]): Umstieg[] {
       // findet. Die Ankunftsseite schreibt bei Haltestellen oft anders
       // („Bahnhof, Hockenheim" gegenüber „Hockenheim").
       bahnhof: abfahrt.abBahnhof,
+      anBahnhof: ankunft.anBahnhof,
       anZug: ankunft.zug,
       anZeit: ankunft.anZeit,
       anGleis: ankunft.anGleis,
