@@ -4,7 +4,7 @@ import {
   epStopPlacesByName,
   epStopPlacesByPosition,
 } from './db-endpunkte.js';
-import type { BahnhofTreffer, RisPlatform, StationsInfo } from '../core/typen.js';
+import type { BahnhofMitGruppe, BahnhofTreffer, RisPlatform, StationsInfo } from '../core/typen.js';
 
 /** DB-Zugangsdaten fehlen – Aufrufer degradiert transparent (Fixtures/Synthese). */
 export class FehlendeZugangsdatenError extends Error {
@@ -41,7 +41,7 @@ async function dbGet(url: string, fetchFn: typeof fetch): Promise<unknown> {
 // Antwortschema, verifiziert gegen die echte API (31.08.2026).
 interface StopPlace {
   evaNumber?: string;
-  names?: { DE?: { nameLong?: string } };
+  names?: { DE?: { nameLong?: string; nameShort?: string } };
   position?: { latitude?: number; longitude?: number };
   /**
    * Alle Verkehrsstellen des Bahnhofs. Steht NUR in den Suchantworten
@@ -100,6 +100,46 @@ export async function sucheBahnhoefe(
   fetchFn: typeof fetch = fetch,
 ): Promise<BahnhofTreffer[]> {
   return zuTreffern((await dbGet(epStopPlacesByName(q), fetchFn)) as { stopPlaces?: StopPlace[] });
+}
+
+/**
+ * Amtliche Namen einer Verkehrsstelle: nameLong und nameShort, ohne leere,
+ * entdoppelt. nameLocal, Sprechnamen und Kuerzel zaehlen bewusst nicht –
+ * nameLocal ist mehrdeutig (8000911 "Bernau a Chiemsee" fuehrt "Bernau").
+ */
+function amtlicheNamen(sp: StopPlace): string[] {
+  const de = sp.names?.DE;
+  return [...new Set([de?.nameLong, de?.nameShort].filter((n): n is string => !!n))];
+}
+
+/** Namenssuche samt Verkehrsstellengruppe und amtlichen Namen (Namensquelle). */
+export async function sucheBahnhoefeMitGruppen(
+  q: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<BahnhofMitGruppe[]> {
+  const body = (await dbGet(epStopPlacesByName(q), fetchFn)) as { stopPlaces?: StopPlace[] };
+  return (body.stopPlaces ?? [])
+    .filter((sp) => sp.evaNumber && sp.names?.DE?.nameLong && istGueltigeEva(sp.evaNumber))
+    .map((sp) => {
+      const eva = sp.evaNumber!;
+      const mitglieder = [...new Set((sp.groupMembers ?? []).filter(istGueltigeEva))];
+      return {
+        name: sp.names!.DE!.nameLong!,
+        eva,
+        lat: sp.position?.latitude ?? 0,
+        lon: sp.position?.longitude ?? 0,
+        namen: amtlicheNamen(sp),
+        mitglieder: mitglieder.length > 0 ? mitglieder : [eva],
+      };
+    });
+}
+
+/** Amtliche Namen (nameLong, nameShort) einer einzelnen EVA. */
+export async function holeAmtlicheNamen(
+  eva: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<string[]> {
+  return amtlicheNamen(await ladeStopPlace(eva, fetchFn));
 }
 
 /** Bahnhöfe im Umkreis – Grundlage der Standorterkennung (P1). */

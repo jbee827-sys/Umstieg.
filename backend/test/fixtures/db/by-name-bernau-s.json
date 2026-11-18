@@ -1,0 +1,470 @@
+{
+  "stopPlaces": [
+    {
+      "evaNumber": "8013470",
+      "groupMembers": [
+        "8013470",
+        "8089205"
+      ],
+      "names": {
+        "DE": {
+          "nameLong": "Bernau(b Berlin)",
+          "speechLong": "Bernau bei Berlin",
+          "speechShort": "Bernau bei Berlin",
+          "synonyms": [
+            "BER-"
+          ]
+        }
+      },
+      "availableTransports": [
+        "INTERCITY_TRAIN",
+        "REGIONAL_TRAIN",
+        "CITY_TRAIN"
+      ],
+      "position": {
+        "longitude": 13.5926414,
+        "latitude": 52.6755689
+      },
+      "replacementTransportsAvailable": false,
+      "stationID": "571"
+    },
+    {
+      "evaNumber": "738882",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Bernau Bahnhof (S), Bernau bei Berlin",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "BUS"
+      ],
+      "position": {
+        "longitude": 13.592792,
+        "latitude": 52.676516
+      },
+      "replacementTransportsAvailable": false
+    },
+    {
+      "evaNumber": "739600",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Bernau-Friedenstal (S), Bernau bei Berlin",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "BUS"
+      ],
+      "position": {
+        "longitude": 13.564597,
+        "latitude": 52.668369
+      },
+      "replacementTransportsAvailable": false
+    },
+    {
+      "evaNumber": "8000911",
+      "groupMembers": [
+        "8000911"
+      ],
+      "names": {
+        "DE": {
+          "nameLong": "Bernau a Chiemsee",
+          "nameLocal": "Bernau",
+          "speechLong": "Bernau am Chiemsee",
+          "speechShort": "Bernau am Chiemsee",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "REGIONAL_TRAIN"
+      ],
+      "position": {
+        "longitude": 12.380957,
+        "latitude": 47.816482
+      },
+      "replacementTransportsAvailable": true,
+      "stationID": "572"
+    },
+    {
+      "evaNumber": "209321",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Minigolfplatz, Bernau a. Chiemsee",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "REGIONAL_TRAIN"
+      ],
+      "position": {
+        "longitude": 12.375442,
+        "latitude": 47.810966
+      },
+      "replacementTransportsAvailable": true
+    },
+    {
+      "evaNumber": "437162",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Chiemseestraße/Abzw. Kampenwand, Bernau a. Chiemse",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "REGIONAL_TRAIN"
+      ],
+      "position": {
+        "longitude": 12.384768,
+        "latitude": 47.824753
+      },
+      "replacementTransportsAvailable": true
+    },
+    {
+      "evaNumber": "437161",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Chiemseestraße/Abzw. Kampenwand, Bernau a. Chiemse",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "REGIONAL_TRAIN"
+      ],
+      "position": {
+        "longitude": 12.383943,
+        "latitude": 47.823778
+      },
+      "replacementTransportsAvailable": true
+    },
+    {
+      "evaNumber": "593732",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Minigolfplatz, Bernau a. Chiemsee",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "BUS"
+      ],
+      "position": {
+        "longitude": 12.3757,
+        "latitude": 47.810858
+      },
+      "replacementTransportsAvailable": false
+    },
+    {
+      "evaNumber": "593508",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Osterham, Bernau a. Chiemsee",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "BUS"
+      ],
+      "position": {
+        "longitude": 12.382999,
+        "latitude": 47.803076
+      },
+      "replacementTransportsAvailable": false
+    },
+    {
+      "evaNumber": "593751",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Farbing, Bernau a. Chiemsee",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "BUS"
+      ],
+      "position": {
+        "longitude": 12.391679,
+        "latitude": 47.800891
+      },
+      "replacementTransportsAvailable": false
+    },
+    {
+      "evaNumber": "590092",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Wiedendorf, Bernau a. Chiemsee",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "BUS"
+      ],
+      "position": {
+        "longitude": 12.361941,
+        "latitude": 47.820125
+      },
+      "replacementTransportsAvailable": false
+    },
+    {
+      "evaNumber": "595828",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Weisham, Bernau a. Chiemsee",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "BUS"
+      ],
+      "position": {
+        "longitude": 12.360019,
+        "latitude": 47.828104
+      },
+      "replacementTransportsAvailable": false
+    },
+    {
+      "evaNumber": "590091",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Aschauer Str. 10, Bernau a. Chiemsee",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "BUS"
+      ],
+      "position": {
+        "longitude": 12.371769,
+        "latitude": 47.810756
+      },
+      "replacementTransportsAvailable": false
+    },
+    {
+      "evaNumber": "593733",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Joseph-Decker-Straße, Bernau a. Chiemsee",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "BUS"
+      ],
+      "position": {
+        "longitude": 12.364663,
+        "latitude": 47.808422
+      },
+      "replacementTransportsAvailable": false
+    },
+    {
+      "evaNumber": "593734",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Gattern, Bernau a. Chiemsee",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "BUS"
+      ],
+      "position": {
+        "longitude": 12.354521,
+        "latitude": 47.804609
+      },
+      "replacementTransportsAvailable": false
+    },
+    {
+      "evaNumber": "593731",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Bahnhofstr., Bernau a. Chiemsee",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "BUS"
+      ],
+      "position": {
+        "longitude": 12.376242,
+        "latitude": 47.815124
+      },
+      "replacementTransportsAvailable": false
+    },
+    {
+      "evaNumber": "591183",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Kampenwandstr., Bernau a. Chiemsee",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "BUS"
+      ],
+      "position": {
+        "longitude": 12.38395,
+        "latitude": 47.823786
+      },
+      "replacementTransportsAvailable": false
+    },
+    {
+      "evaNumber": "593727",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Felden Schifffahrt, Bernau a. Chiemsee",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "BUS"
+      ],
+      "position": {
+        "longitude": 12.383788,
+        "latitude": 47.829552
+      },
+      "replacementTransportsAvailable": false
+    },
+    {
+      "evaNumber": "503060",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Bernau im Schwarzwald Dorf",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "BUS"
+      ],
+      "position": {
+        "longitude": 8.031674,
+        "latitude": 47.809216
+      },
+      "replacementTransportsAvailable": false
+    },
+    {
+      "evaNumber": "503006",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Weierle Straße, Bernau im Schwarzwald",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "BUS"
+      ],
+      "position": {
+        "longitude": 8.069484,
+        "latitude": 47.794673
+      },
+      "replacementTransportsAvailable": false
+    },
+    {
+      "evaNumber": "503001",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Riggenbach, Bernau im Schwarzwald",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "BUS"
+      ],
+      "position": {
+        "longitude": 8.046566,
+        "latitude": 47.801498
+      },
+      "replacementTransportsAvailable": false
+    },
+    {
+      "evaNumber": "503002",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Altenrond, Bernau im Schwarzwald",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "BUS"
+      ],
+      "position": {
+        "longitude": 8.056808,
+        "latitude": 47.79712
+      },
+      "replacementTransportsAvailable": false
+    },
+    {
+      "evaNumber": "503000",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Riggenbach Haus Kaiser, Bernau im Schwarzwald",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "BUS"
+      ],
+      "position": {
+        "longitude": 8.040477,
+        "latitude": 47.802905
+      },
+      "replacementTransportsAvailable": false
+    },
+    {
+      "evaNumber": "502995",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Innerlehen Rathaus, Bernau im Schwarzwald",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "BUS"
+      ],
+      "position": {
+        "longitude": 8.035456,
+        "latitude": 47.801901
+      },
+      "replacementTransportsAvailable": false
+    },
+    {
+      "evaNumber": "502994",
+      "groupMembers": [],
+      "names": {
+        "DE": {
+          "nameLong": "Schwendele, Bernau im Schwarzwald",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "BUS"
+      ],
+      "position": {
+        "longitude": 8.042684,
+        "latitude": 47.79474
+      },
+      "replacementTransportsAvailable": false
+    }
+  ]
+}

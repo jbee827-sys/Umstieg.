@@ -1,0 +1,38 @@
+{
+  "stopPlaces": [
+    {
+      "evaNumber": "8089205",
+      "names": {
+        "DE": {
+          "nameLong": "Bernau (S)",
+          "speechLong": "Bernau",
+          "speechShort": "Bernau",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "CITY_TRAIN"
+      ],
+      "availablePhysicalTransports": [
+        "CITY_TRAIN"
+      ],
+      "countryCode": "DE",
+      "timeZone": "Europe/Berlin",
+      "metropolis": {
+        "DE": "Bernau"
+      },
+      "municipalityKey": "12060020",
+      "position": {
+        "longitude": 13.5922229,
+        "latitude": 52.6757966
+      },
+      "postalCode": "16321",
+      "replacementTransportsAvailable": false,
+      "state": "BB",
+      "stationID": "571",
+      "transportAssociations": [
+        "VBB"
+      ]
+    }
+  ]
+}
