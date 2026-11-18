@@ -639,3 +639,13 @@ export interface Fahrtverlauf {
   ziel: string;
   halte: FahrtHalt[];
 }
+
+/**
+ * Bahnhofstreffer samt Verkehrsstellengruppe (RIS::Stations): `namen` sind die
+ * offiziellen Namen des Eintrags selbst, `mitglieder` die gueltigen EVAs der
+ * Gruppe (ohne Gruppe: nur die eigene EVA).
+ */
+export interface BahnhofMitGruppe extends BahnhofTreffer {
+  namen: string[];
+  mitglieder: string[];
+}
