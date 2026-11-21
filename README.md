@@ -733,7 +733,7 @@ daraus wird Bau 3:
 **E. Technik (C)**
 
 - [x] Bau 3 über *Actions → iOS → Run workflow* auf `main` (18.11.2026).
-- [ ] Korrekturen aus dem Test mit Bau 3 (Reise-Import, siehe unten) nach
+- [x] Korrekturen aus dem Test mit Bau 3 (Reise-Import, siehe unten) nach
       `main` bringen → Bau 4. Die „Teilen-Diagnose“ unter Einstellungen ist
       vorübergehend (16.11.2026) – vor der Einreichung entfernen.
 - [ ] iPad-Sichtprüfung (Paket 8) an den 13"-Fotos, ggf. Layout nachziehen.
@@ -755,7 +755,16 @@ daraus wird Bau 3:
 - [ ] Bau in App Store Connect der Version 1.0 zuordnen → *Zur Prüfung
       einreichen*. Rückfragen der Prüfung hier sammeln.
 
-### Reise-Import: Bahnhof per offiziellem Namen (Stand 21.11.2026, Zweig `feat/reiseimport-bahnhof`, fertig geprüft)
+### Reise-Import: Bahnhof per offiziellem Namen (ausgeliefert am 21.11.2026, Zweig `feat/reiseimport-bahnhof`)
+
+**Ausgeliefert am 21.11.2026:** Backend per `flyctl deploy backend --ha=false`
+(eine Maschine, `b05351f`). Geprüft mit `/api/bahnhof-zum-namen`: „Bernau (S)“
+→ 8013470, „Berlin Hbf (S-Bahn)“ → `null`, „Berlin Hbf“ → 8011160. Danach
+`main` per Fast-Forward auf `0ffdfd8`, Vercel-Produktion „Ready“. Live auf
+www.umstieg.online geprüft: Die Reise Eberswalde → Bernau (S) → Berlin-Buch
+wählt Bernau(b Berlin) von selbst, die Tafeln öffnen sich, Gleis 3 → 1 und
+RE 3 / S 2 stehen da. **Bau 4** (iOS) startet Julian über *Actions → iOS → Run
+workflow* auf `main`.
 
 Anlass: Test mit TestFlight-Bau 3 (siehe iOS-App, Punkt A). Design:
 `docs/superpowers/specs/2026-11-18-reiseimport-bahnhof-design.md`, Plan:
