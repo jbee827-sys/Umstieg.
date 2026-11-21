@@ -6,8 +6,7 @@ import {
   istGueltigeEva,
 } from '../clients/stations.js';
 import { TimetablesAusgelastetError } from '../clients/timetables-budget.js';
-import { namensvarianten } from '../core/bahnhofsname.js';
-import { loeseBahnhofsnamen, type NamensQuelle } from '../core/namensaufloesung.js';
+import { loeseBahnhofsnamen, sucheMitVarianten, type NamensQuelle } from '../core/namensaufloesung.js';
 import { bahnhofAlsOrt } from '../core/orte.js';
 import { gleicherHaltname, haltnamenZurSuche } from '../core/haltname.js';
 import { gehzeitSekunden } from '../core/gehzeit.js';
@@ -153,18 +152,7 @@ export async function sucheBahnhoefeMitVarianten(
   stations: StationsClient,
   q: string,
 ): Promise<BahnhofTreffer[]> {
-  let ersterFehler: unknown;
-  for (const variante of namensvarianten(q)) {
-    try {
-      const treffer = await stations.sucheBahnhoefe(variante);
-      if (treffer.length > 0) return treffer;
-    } catch (e) {
-      if (e instanceof FehlendeZugangsdatenError) throw e;
-      ersterFehler ??= e;
-    }
-  }
-  if (ersterFehler) throw ersterFehler;
-  return [];
+  return sucheMitVarianten(q, (v) => stations.sucheBahnhoefe(v));
 }
 
 function heuteJJJJMMTT(): string {
@@ -349,7 +337,7 @@ export function registriereApiRouten(app: FastifyInstance, clients: ApiClients):
       if (e instanceof FehlendeZugangsdatenError) {
         return reply.code(503).send({ fehler: 'db-zugang-fehlt' });
       }
-      req.log.warn({ degradation: 'namensaufloesung-ausfall' }, 'Namensaufloesung ausgefallen');
+      req.log.warn({ degradation: 'namensaufloesung-ausfall', grund: String(e) }, 'Namensaufloesung ausgefallen');
       return reply.code(502).send({ fehler: 'quelle-ausfall' });
     }
   });

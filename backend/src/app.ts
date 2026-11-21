@@ -102,7 +102,9 @@ const GRENZEN: Record<string, number> = {
   '/api/board/:eva': 21,
   // Ortssuche ueber Bahnhoefe und Haltestellen - gleiche Tippsuche wie oben.
   '/api/orte': 21,
-  // Namensaufloesung beim Reiseimport: bis zu zwei DB-Aufrufe je Anfrage.
+  // Namensaufloesung beim Reiseimport: eine Suche je Namensvariante, dazu die
+  // Namen der Gruppenmitglieder von bis zu MAX_KANDIDATEN Treffern - beides
+  // gecacht (Suche SUCHE_TTL_MS, Namen STAMM_TTL_MS).
   '/api/bahnhof-zum-namen': 14,
   '/api/haltestelle/tafel': 21,
   // Fussweg ueber MOTIS /plan - teurer als Suche und Tafel, wie /api/route.

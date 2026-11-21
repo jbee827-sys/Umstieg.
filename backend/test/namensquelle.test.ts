@@ -49,4 +49,33 @@ describe('Namensquelle aus RIS::Stations', () => {
   it('nennt nameLong und nameShort einer EVA - kein nameLocal, keine Sprechnamen, keine Kuerzel', async () => {
     expect(await holeAmtlicheNamen('8089205', fake('stop-place-8089205'))).toEqual(['Bernau (S)']);
   });
+
+  it('nimmt nameShort dazu, wenn er vom nameLong abweicht', async () => {
+    // Nachgebaut (nicht aufgezeichnet) nach der Antwort fuer 8089001, wie sie
+    // die Namenssimulation am 21.11.2026 erhielt: nameShort "Berlin Alexanderpl.S".
+    // nameLocal und speechLong sind hier gesetzt, um zu zeigen, dass sie nicht zaehlen.
+    const antwort = {
+      stopPlaces: [
+        {
+          evaNumber: '8089001',
+          names: {
+            DE: {
+              nameLong: 'Berlin Alexanderplatz (S)',
+              nameShort: 'Berlin Alexanderpl.S',
+              nameLocal: 'Alexanderplatz',
+              speechLong: 'Berlin Alexanderplatz',
+            },
+          },
+        },
+      ],
+    };
+    const f = vi.fn(async () => new Response(JSON.stringify(antwort), { status: 200 })) as unknown as typeof fetch;
+    expect(await holeAmtlicheNamen('8089001', f)).toEqual(['Berlin Alexanderplatz (S)', 'Berlin Alexanderpl.S']);
+  });
+
+  it('nennt einen nameShort gleich dem nameLong nur einmal', async () => {
+    const antwort = { stopPlaces: [{ evaNumber: '8000001', names: { DE: { nameLong: 'Aachen Hbf', nameShort: 'Aachen Hbf' } } }] };
+    const f = vi.fn(async () => new Response(JSON.stringify(antwort), { status: 200 })) as unknown as typeof fetch;
+    expect(await holeAmtlicheNamen('8000001', f)).toEqual(['Aachen Hbf']);
+  });
 });

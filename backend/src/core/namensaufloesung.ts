@@ -27,13 +27,18 @@ export function normalisiereBahnhofsname(name: string): string {
     .replace(/\s+\(/g, '(');
 }
 
-/** Wie `sucheBahnhoefeMitVarianten`: erste Variante mit Treffern gewinnt. */
-async function sucheKandidaten(name: string, quelle: NamensQuelle): Promise<BahnhofMitGruppe[]> {
+/**
+ * Sucht die Namensvarianten der Reihe nach; die erste mit Treffern gewinnt.
+ * Faellt eine Variante aus, wird die naechste versucht; fehlende
+ * Zugangsdaten gehen sofort weiter. Kam keine durch, wirft sie den ersten
+ * Fehler - ein Ausfall ist kein „nichts gefunden“.
+ */
+export async function sucheMitVarianten<T>(name: string, suche: (q: string) => Promise<T[]>): Promise<T[]> {
   let ersterFehler: unknown;
   for (const variante of namensvarianten(name)) {
     try {
-      const treffer = await quelle.sucheMitGruppen(variante);
-      if (treffer.length > 0) return treffer.slice(0, MAX_KANDIDATEN);
+      const treffer = await suche(variante);
+      if (treffer.length > 0) return treffer;
     } catch (e) {
       if (e instanceof FehlendeZugangsdatenError) throw e;
       ersterFehler ??= e;
@@ -41,6 +46,10 @@ async function sucheKandidaten(name: string, quelle: NamensQuelle): Promise<Bahn
   }
   if (ersterFehler) throw ersterFehler;
   return [];
+}
+
+async function sucheKandidaten(name: string, quelle: NamensQuelle): Promise<BahnhofMitGruppe[]> {
+  return (await sucheMitVarianten(name, (q) => quelle.sucheMitGruppen(q))).slice(0, MAX_KANDIDATEN);
 }
 
 function alsTreffer(k: BahnhofMitGruppe): BahnhofTreffer {
