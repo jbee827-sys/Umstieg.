@@ -69,10 +69,10 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 6. Kommentar in `backend/src/core/meldung.ts` nennt noch den alten Pfad
    `frontend/src/meldung/regeln.ts`.
 
-**Backend-Suite:** `test/osm-bestand.test.ts` („nimmt den frischen
-Startbestand vor einem Volume-Eintrag aus alter Abfrageversion“) schlägt
-fehl – auch ohne „Etwas melden“, nicht untersucht. `graph` und
-`bahnhofsseiten-daten` liefen unter Last einmal in Zeitgrenzen.
+**Backend-Suite:** Der rote Test in `test/osm-bestand.test.ts` hing an der
+echten Uhr und hat seit dem 21.11.2026 eine feste (siehe „Reise-Import“
+unten). `graph` und `bahnhofsseiten-daten` liefen unter Last einmal in
+Zeitgrenzen.
 
 **Ausgeliefert am 10.11.2026: Hauptknöpfe im Texture-Look** (nur Frontend,
 Commits `cb4145e` und `13e6763`, live auf www.umstieg.online geprüft):
@@ -755,7 +755,7 @@ daraus wird Bau 3:
 - [ ] Bau in App Store Connect der Version 1.0 zuordnen → *Zur Prüfung
       einreichen*. Rückfragen der Prüfung hier sammeln.
 
-### Reise-Import: Bahnhof per offiziellem Namen (Stand 18.11.2026, Zweig `feat/reiseimport-bahnhof`, nicht ausgeliefert, nicht gepusht)
+### Reise-Import: Bahnhof per offiziellem Namen (Stand 21.11.2026, Zweig `feat/reiseimport-bahnhof`, fertig geprüft)
 
 Anlass: Test mit TestFlight-Bau 3 (siehe iOS-App, Punkt A). Design:
 `docs/superpowers/specs/2026-11-18-reiseimport-bahnhof-design.md`, Plan:
@@ -782,32 +782,61 @@ Chiemsee), nicht Sprechnamen, nicht Kürzel. Keine Timetables-Abfrage.
 | 4 | Frontend: `Umstieg.anBahnhof`, `api/bahnhofZumNamen.ts` (jeder Fehler → `null`) | fertig, Review ok (`1eff5b8`) |
 | 5 | Dialog: wählbare Karten (ein Umstieg vorgewählt), **Abbrechen** + grünes **Bestätigen** nebeneinander; Kasten „Stimmt das?“ und Zwischenschritt „Das wird übernommen“ entfallen | fertig, Review ok nach einer Nachbesserung (Tastaturfokus, `a5bfc8d`, `48de6bc`) |
 | 6 | Nach „Bestätigen“ wird der Bahnhof aufgelöst (Abfahrtsname, dann Ankunftsname) und gewählt wie ein Tipp; sonst Hinweis „Bitte Bahnhof antippen“; spätes Ergebnis überschreibt keine Eingabe | fertig, Review ok (`295ca3f`) |
-| 7 | Simulation `backend/scripts/simulation-bahnhofsnamen.ts` (StaDa Kat. 1–4 = 1026 Bahnhöfe; A = neue Regel, B = naiv „Zusatz ab, genau ein Treffer“) | **offen**: Skript fertig (`7e87a7a`, `1ac1f12`), Review fand zwei Zählfehler; Nachbesserung `d57a870` committet, aber **nicht nachgeprüft**; Volllauf abgebrochen, **keine Zahlen** |
+| 7 | Simulation `backend/scripts/simulation-bahnhofsnamen.ts` (StaDa Kat. 1–4 = 1026 Bahnhöfe; A = neue Regel, B = naiv „Zusatz ab, genau ein Treffer“) | fertig (21.11.2026): `d57a870` nachgeprüft, dazu `1b63f94` (auch abgefangene Abruffehler machen einen Bahnhof zu `fehler`); Volllauf, Zahlen unten |
 | 8 | README | dieser Abschnitt |
 
-**Offen, in Reihenfolge:**
+**Ergebnis der Simulation (21.11.2026, Regel ab `b05351f`):** 1026
+StaDa-Bahnhöfe, davon 990 aufgelöst (36 findet schon die Suche nach dem
+StaDa-Namen nicht, z. B. „Alte Wöhr (Stadtpark)“, „Celle Pbf“), 0 Fehler. 43
+Bahnhöfe haben mehrere Verkehrsstellen mit eigenem Namen.
 
-- [ ] Nachprüfung von `d57a870` (Soll-Bahnhof = Gruppe vor Mitglied; `richtig`
-      auch bei jeder EVA der Soll-Gruppe; Mitgliedsfehler → `fehler` statt
-      verschluckt; Gruppe einmal gezählt; alle `falsch`-Fälle im Bericht;
-      API-Antworten in `osm-ablage/bahnhofsnamen/apicache.json`).
-- [ ] Volllauf (aus `backend/`, ca. 40–80 min, nur RIS::Stations ≤ 50/min):
-      `npx tsx scripts/simulation-bahnhofsnamen.ts --kategorien 1-4`, Bericht
-      in `backend/osm-ablage/bahnhofsnamen/ergebnis.md`; Zahlen hier eintragen.
-      Jeder `falsch`-Fall von A wird ein Testfall in Task 1, nicht wegerklärt.
-- [ ] Abschlussreview des ganzen Zweigs. Dafür gesammelte Kleinpunkte:
-      Variantenschleife in `namensaufloesung.ts` doppelt zu
-      `sucheBahnhoefeMitVarianten`; `nameShort`-Pfad ohne Test; 502-Log der
-      Route ohne Fehlerursache; Hinweis „Bitte Bahnhof antippen“ ohne
-      `role="status"`; kein `.catch` an der Auflösung in `Eingabe.tsx`; Tests
-      für veraltetes Ergebnis nach Tipp/Nähe-Vorschlag/zweitem Import fehlen;
-      Fokusring am Rand des Dialogs evtl. abgeschnitten.
-- [ ] Sichtprüfung des Dialogs hell/dunkel (grüner Rand auf `--color-surface`)
-      – lokal und am iPhone.
-- [ ] Zweig nach `main` und Bau 4 – nur auf ausdrückliche Anweisung.
-- [ ] Unabhängig vom Zweig: `backend/test/osm-bestand.test.ts` „nimmt den
-      frischen Startbestand vor einem Volume-Eintrag“ schlägt schon auf `main`
-      fehl (festgestellt 18.11.2026).
+| Namensart | Namen | A richtig | A falsch | A keins | B richtig | B falsch | B keins |
+|---|---|---|---|---|---|---|---|
+| führend (Name des Bahnhofs selbst) | 1089 | 1008 (92,6 %) | **0** | 81 | 756 (69,4 %) | 2 | 331 |
+| anders (Name eines Mitglieds, z. B. „Bernau (S)“) | 71 | 52 (73,2 %) | **0** | 19 | 36 (50,7 %) | 0 | 35 |
+
+Vorher wurde nie automatisch gewählt (0 %). Die „keins“-Fälle von A sind fast
+alle Kurzformen aus `nameShort` („Berlin Gesundbr. (S)“, „Düsseldorf
+Flugh.“). Die Suche findet sie nicht, und der DB Navigator schreibt den langen
+Namen. Dort erscheint „Bitte Bahnhof antippen“. B hätte zweimal falsch gewählt
+(„Frankfurt(M)Konst.“, „Friedrichshafen St.“).
+
+**Der eine Falschfall des ersten Laufs** wurde ein Testfall und ist behoben
+(`b05351f`): „Berlin Hbf (S-Bahn)“ ist der amtliche Name zweier EVAs. 8089021
+gehört zur Gruppe Berlin Hbf (stationID 1071), 8089522 steht allein und hat
+keine stationID. Stufe 1 nahm den Einzelgänger, weil er den Namen selbst
+trägt. Jetzt gilt ein direkter Treffer als mehrdeutig, wenn ein Mitglied einer
+anderen Gruppe genauso heißt. Abgefragt werden die Mitgliedsnamen dafür nur bei
+Treffern mit Gruppe.
+
+Bericht und Rohdaten (gitignored) in `backend/osm-ablage/bahnhofsnamen/`
+(`ergebnis.md`, `ergebnis.json`, `apicache.json`; der erste Lauf liegt
+daneben als `*-regel1.*`). Eine neue Auswertung braucht dank `apicache.json`
+keine Abrufe: `rohdaten.json` löschen und
+`npx tsx scripts/simulation-bahnhofsnamen.ts --kategorien 1-4` aus `backend/`.
+
+**Abschlussreview (21.11.2026), erledigt:** Variantenschleife zusammengelegt
+(`sucheMitVarianten` in `core/namensaufloesung.ts`, genutzt auch von
+`sucheBahnhoefeMitVarianten`), Tests für den `nameShort`-Pfad, Fehlerursache
+im 502-Log, Hinweis mit `role="status"`, `.catch` an der Auflösung, Tests für
+veraltete Ergebnisse nach Tipp, Nähe-Vorschlag und zweitem Import
+(Gegenprobe: ohne Sperre schlagen alle vier fehl). „Abbrechen“ hat jetzt
+dieselbe Pillenform und Höhe wie „Bestätigen“ (Julian, `0ae329a`).
+Sichtprüfung im Browser, hell und dunkel: grüner Rand gut sichtbar, Fokusring
+(1,6 px mit Abstand) nicht abgeschnitten, 20 px Luft zum Dialogrand. Backend
+1149/1149, Frontend 1204/1204, Lint sauber.
+
+**Nebenbei behoben:** `backend/test/osm-bestand.test.ts` „nimmt den frischen
+Startbestand vor einem Volume-Eintrag aus alter Abfrageversion“ hing an der
+echten Uhr. Die Testdaten tragen `geholtAm` 12.10.2026, also galt seit dem
+11.11. auch der Startbestand als veraltet (30 Tage), und der Code blieb zu
+Recht beim Volume. Die Lesetests haben jetzt eine feste Uhr (`02ba120`). Am
+Produktivcode war kein Fehler.
+
+**Offen:**
+
+- [ ] Sichtprüfung am iPhone (Julian, mit Bau 4).
+- [ ] Die „Teilen-Diagnose“ unter Einstellungen vor der Einreichung entfernen.
 
 ### Zugbild und Zugspitze (Stand 25.10.2026, Zweig `feat/zugbild`, nicht ausgeliefert)
 
