@@ -178,3 +178,25 @@ describe('App.css: der schwebende Knopf', () => {
     )
   })
 })
+
+/**
+ * Reise importieren (Wunsch vom 21.11.2026): „Abbrechen“ steht neben dem
+ * grünen „Bestätigen“ und hat dieselbe Pillenform und Höhe – nicht die
+ * kleinen Ecken der übrigen Nebenknöpfe.
+ */
+describe('App.css: Abbrechen und Bestätigen im Import-Dialog', () => {
+  const wert = (selektor: string, eigenschaft: string) =>
+    deklarationenVon(css, selektor).find((d) => d.startsWith(`${eigenschaft}:`))
+
+  it('rundet Abbrechen wie Bestätigen', () => {
+    expect(wert('.dialog-knoepfe > .knopf-sekundaer', 'border-radius')).toBe(
+      wert('.knopf-angekommen', 'border-radius'),
+    )
+  })
+
+  it('gibt Abbrechen die Höhe von Bestätigen', () => {
+    expect(wert('.dialog-knoepfe > .knopf-sekundaer', 'min-height')).toBe(
+      wert('.knopf-angekommen', 'min-height'),
+    )
+  })
+})

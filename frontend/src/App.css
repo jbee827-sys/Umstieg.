@@ -2795,6 +2795,13 @@
   flex: 1;
 }
 
+/* „Abbrechen“ in derselben Pillenform und Höhe wie „Bestätigen“ daneben
+   (Julian, 21.11.2026) – zwei Knöpfe nebeneinander, eine Form. */
+.dialog-knoepfe > .knopf-sekundaer {
+  min-height: 47px;
+  border-radius: var(--radius-pille);
+}
+
 @media (hover: hover) {
   .umstieg-wahl:not(.gewaehlt):hover {
     border-color: var(--color-divider);
