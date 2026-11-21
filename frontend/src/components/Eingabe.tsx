@@ -288,7 +288,11 @@ export function Eingabe({
         : null,
     )
 
-    void waehleBahnhofZumNamen(u, lauf)
+    // `bahnhofZumNamen` wirft nie; faengt trotzdem etwas, gilt es als „nicht
+    // eindeutig“ - nie als stiller Fehler ohne Hinweis.
+    waehleBahnhofZumNamen(u, lauf).catch(() => {
+      if (lauf === importLauf.current) setBahnhofAntippen(true)
+    })
   }
 
   /**
@@ -872,7 +876,7 @@ export function Eingabe({
             zusatz={
               <>
                 {bahnhofAntippen && !gewaehlt && (
-                  <div className="hinweis-box" style={{ marginTop: 8 }}>
+                  <div className="hinweis-box" role="status" style={{ marginTop: 8 }}>
                     Bitte Bahnhof antippen
                   </div>
                 )}

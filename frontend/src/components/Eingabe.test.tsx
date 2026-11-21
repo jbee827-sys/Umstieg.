@@ -402,6 +402,62 @@ describe('Eingabe: Reise importieren', () => {
     expect(screen.queryByText('Bitte Bahnhof antippen')).toBeNull()
   })
 
+  it('ueberschreibt keinen Tipp in der Vorschlagsliste waehrend der Aufloesung', async () => {
+    let loese: (ort: Ort | null) => void = () => {}
+    aufloesMock.mockReturnValue(new Promise((r) => (loese = r)))
+    zeige()
+    await importiere(REISE)
+
+    // Der Suchtext „Berlin Hbf“ bringt die Vorschlaege; der Nutzer nimmt Bernau.
+    await userEvent.click(await screen.findByRole('button', { name: /^Bernau \(b Berlin\)/ }))
+    await act(async () => loese(BERLIN))
+
+    expect(screen.getByText(/Bernau \(b Berlin\)/, { selector: '.bahnhof-gewaehlt' })).toBeTruthy()
+    expect(screen.queryByText(/Berlin Hbf/, { selector: '.bahnhof-gewaehlt' })).toBeNull()
+    expect(feld().value).toBe('Bernau (b Berlin)')
+  })
+
+  it('ueberschreibt keinen angetippten Bahnhof in der Naehe waehrend der Aufloesung', async () => {
+    let loese: (ort: Ort | null) => void = () => {}
+    aufloesMock.mockReturnValue(new Promise((r) => (loese = r)))
+    // Ohne Vorschlagsliste: nur die Naehe-Knoepfe sollen Bernau anbieten.
+    sucheMock.mockResolvedValue(orteAntwort([]))
+    zeige([BERLIN, BERNAU])
+    await importiere(REISE)
+
+    const naehe = (await screen.findByText(/in deiner Nähe/)).parentElement!
+    await userEvent.click(within(naehe).getByRole('button', { name: /^Bernau \(b Berlin\)/ }))
+    await act(async () => loese(BERLIN))
+
+    expect(screen.getByText(/Bernau \(b Berlin\)/, { selector: '.bahnhof-gewaehlt' })).toBeTruthy()
+    expect(feld().value).toBe('Bernau (b Berlin)')
+  })
+
+  it('laesst das Ergebnis eines frueheren Imports nicht ueber einen neueren siegen', async () => {
+    let loeseErsten: (ort: Ort | null) => void = () => {}
+    aufloesMock.mockReset()
+    aufloesMock
+      .mockReturnValueOnce(new Promise((r) => (loeseErsten = r)))
+      .mockResolvedValueOnce(BERNAU)
+    zeige()
+    await importiere(REISE)
+    await importiere(REISE)
+
+    await waitFor(() =>
+      expect(screen.getByText(/Bernau \(b Berlin\)/, { selector: '.bahnhof-gewaehlt' })).toBeTruthy(),
+    )
+    await act(async () => loeseErsten(BERLIN))
+
+    expect(screen.getByText(/Bernau \(b Berlin\)/, { selector: '.bahnhof-gewaehlt' })).toBeTruthy()
+    expect(screen.queryByText(/Berlin Hbf/, { selector: '.bahnhof-gewaehlt' })).toBeNull()
+  })
+
+  it('zeigt den Hinweis als Statusmeldung fuer Bildschirmleser', async () => {
+    zeige()
+    await importiere(REISE)
+    expect((await screen.findByText('Bitte Bahnhof antippen')).getAttribute('role')).toBe('status')
+  })
+
   /**
    * Wie bei der normalen Auswahl aus der Live-Tafel: Nicht nur Bahnhof und
    * Gleise, sondern auch die beiden Zuege. Sie sind es, an denen die
