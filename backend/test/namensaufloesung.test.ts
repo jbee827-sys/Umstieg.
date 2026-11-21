@@ -28,7 +28,34 @@ const CHIEMSEE: BahnhofMitGruppe = {
   namen: ['Bernau a Chiemsee'],
   mitglieder: ['8000911'],
 };
-const MITGLIEDSNAMEN: Record<string, string[]> = { '8089205': ['Bernau (S)'] };
+/**
+ * Aus der Namenssimulation vom 21.11.2026 (einziger Falschfall von 1160
+ * Namen): "Berlin Hbf (S-Bahn)" ist der amtliche Name ZWEIER EVAs - 8089021
+ * gehoert zur Gruppe Berlin Hbf (stationID 1071), 8089522 steht allein und
+ * hat keine stationID. Die Suche liefert beide Eintraege; Stufe 1 nahm den
+ * Einzelgaenger, weil er den Namen selbst traegt.
+ */
+const BERLIN_HBF: BahnhofMitGruppe = {
+  name: 'Berlin Hbf',
+  eva: '8011160',
+  lat: 52.525592,
+  lon: 13.369545,
+  namen: ['Berlin Hbf'],
+  mitglieder: ['8011160', '8089021', '8098160'],
+};
+const S_BAHN_EINZELN: BahnhofMitGruppe = {
+  name: 'Berlin Hbf (S-Bahn)',
+  eva: '8089522',
+  lat: 52.52543,
+  lon: 13.37031,
+  namen: ['Berlin Hbf (S-Bahn)'],
+  mitglieder: ['8089522'],
+};
+const MITGLIEDSNAMEN: Record<string, string[]> = {
+  '8089205': ['Bernau (S)'],
+  '8089021': ['Berlin Hbf (S-Bahn)'],
+  '8098160': ['Berlin Hbf'],
+};
 
 function quelle(kandidaten: BahnhofMitGruppe[]) {
   return {
@@ -63,6 +90,22 @@ describe('loeseBahnhofsnamen', () => {
   it('waehlt nichts bei einem Namen, der zwei Gruppen trifft', async () => {
     const zweiter = { ...BERNAU, eva: '8099999', mitglieder: ['8099999'] };
     expect(await loeseBahnhofsnamen('Bernau(b Berlin)', quelle([BERNAU, zweiter]))).toBeNull();
+  });
+
+  it('waehlt nichts, wenn ein Treffer den Namen selbst und ein Gruppenmitglied eines anderen ihn auch traegt', async () => {
+    const q = quelle([BERLIN_HBF, S_BAHN_EINZELN]);
+    expect(await loeseBahnhofsnamen('Berlin Hbf (S-Bahn)', q)).toBeNull();
+  });
+
+  it('waehlt Berlin Hbf weiterhin ueber seinen eigenen Namen', async () => {
+    const q = quelle([BERLIN_HBF, S_BAHN_EINZELN]);
+    expect((await loeseBahnhofsnamen('Berlin Hbf', q))?.eva).toBe('8011160');
+  });
+
+  it('nimmt den direkten Treffer, wenn das gleichnamige Mitglied zu seiner eigenen Gruppe gehoert', async () => {
+    // Berlin Hbf traegt "Berlin Hbf" selbst und ueber 8098160 - dieselbe Gruppe, nicht mehrdeutig.
+    const q = quelle([BERLIN_HBF]);
+    expect((await loeseBahnhofsnamen('Berlin Hbf', q))?.eva).toBe('8011160');
   });
 
   it('waehlt nichts bei bloss aehnlichem Namen', async () => {

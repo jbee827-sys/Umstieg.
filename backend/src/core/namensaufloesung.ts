@@ -67,16 +67,32 @@ export async function loeseBahnhofsnamen(
 
   // Stufe 1: der fuehrende Bahnhof traegt den Namen selbst.
   const direkt = kandidaten.filter((k) => k.namen.some((n) => normalisiereBahnhofsname(n) === gesucht));
-  if (direkt.length > 0) return direkt.length === 1 ? alsTreffer(direkt[0]) : null;
+  if (direkt.length > 1) return null;
+  if (direkt.length === 1) {
+    const treffer = direkt[0];
+    // Traegt ein Mitglied einer ANDEREN Gruppe denselben Namen, ist er
+    // mehrdeutig: "Berlin Hbf (S-Bahn)" heissen 8089522 (allein, ohne
+    // stationID) und 8089021 (Gruppe Berlin Hbf). Gefragt wird nur bei
+    // Treffern mit Gruppe - der gewoehnliche Fall bleibt ohne Mitgliederabruf.
+    for (const k of kandidaten) {
+      if (k === treffer || k.mitglieder.length < 2 || k.mitglieder.includes(treffer.eva)) continue;
+      if (await mitgliedHeisst(k, gesucht, quelle)) return null;
+    }
+    return alsTreffer(treffer);
+  }
 
-  // Stufe 2: ein anderes Mitglied der Gruppe traegt den Namen. Ein
-  // ausgefallenes Mitglied zaehlt als namenlos.
+  // Stufe 2: ein anderes Mitglied der Gruppe traegt den Namen.
   const ueber: BahnhofMitGruppe[] = [];
   for (const k of kandidaten) {
-    const mitglieder = k.mitglieder.filter((eva) => eva !== k.eva);
-    const ergebnisse = await Promise.allSettled(mitglieder.map((eva) => quelle.amtlicheNamen(eva)));
-    const namen = ergebnisse.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
-    if (namen.some((n) => normalisiereBahnhofsname(n) === gesucht)) ueber.push(k);
+    if (await mitgliedHeisst(k, gesucht, quelle)) ueber.push(k);
   }
   return ueber.length === 1 ? alsTreffer(ueber[0]) : null;
+}
+
+/** Traegt ein anderes Mitglied der Gruppe von `k` den Namen? Ein ausgefallenes Mitglied zaehlt als namenlos. */
+async function mitgliedHeisst(k: BahnhofMitGruppe, gesucht: string, quelle: NamensQuelle): Promise<boolean> {
+  const mitglieder = k.mitglieder.filter((eva) => eva !== k.eva);
+  const ergebnisse = await Promise.allSettled(mitglieder.map((eva) => quelle.amtlicheNamen(eva)));
+  const namen = ergebnisse.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+  return namen.some((n) => normalisiereBahnhofsname(n) === gesucht);
 }
