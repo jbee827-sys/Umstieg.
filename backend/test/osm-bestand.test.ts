@@ -75,14 +75,19 @@ describe('istVeraltet', () => {
 });
 
 describe('erzeugeBestand – lesen', () => {
+  // Feste Uhr einen Tag nach `geholtAm` aus `eintrag()`. Mit der echten Uhr galt
+  // ab dem 11.11.2026 (30 Tage nach dem 12.10.) auch der „frische“ Startbestand
+  // als veraltet, und der Test auf den Vorrang des Startbestands schlug fehl.
+  const jetzt = () => new Date('2026-10-13T12:00:00Z');
+
   it('liefert null, wenn nichts da ist', async () => {
-    expect(await erzeugeBestand({ startPfad: start, volumePfad: volume }).lies('8000105')).toBeNull();
+    expect(await erzeugeBestand({ startPfad: start, volumePfad: volume, jetzt }).lies('8000105')).toBeNull();
   });
 
   it('nimmt das Volume vor dem Startbestand', async () => {
     await lege(start, eintrag('8000105', { name: 'aus dem Start' }));
     await lege(volume, eintrag('8000105', { name: 'vom Volume' }));
-    const gefunden = await erzeugeBestand({ startPfad: start, volumePfad: volume }).lies('8000105');
+    const gefunden = await erzeugeBestand({ startPfad: start, volumePfad: volume, jetzt }).lies('8000105');
     expect(gefunden?.name).toBe('vom Volume');
     expect(gefunden?.herkunft).toBe('volume');
   });
@@ -90,7 +95,7 @@ describe('erzeugeBestand – lesen', () => {
   it('nimmt den frischen Startbestand vor einem Volume-Eintrag aus alter Abfrageversion', async () => {
     await lege(start, eintrag('8000105', { name: 'neues Image' }));
     await lege(volume, eintrag('8000105', { name: 'alte Abfrage', abfrageVersion: 'alt000000000' }));
-    const gefunden = await erzeugeBestand({ startPfad: start, volumePfad: volume }).lies('8000105');
+    const gefunden = await erzeugeBestand({ startPfad: start, volumePfad: volume, jetzt }).lies('8000105');
     expect(gefunden?.name).toBe('neues Image');
     expect(gefunden?.herkunft).toBe('start');
   });
@@ -106,13 +111,13 @@ describe('erzeugeBestand – lesen', () => {
   it('bleibt beim Volume, wenn auch der Startbestand veraltet ist', async () => {
     await lege(start, eintrag('8000105', { name: 'aus dem Start', abfrageVersion: 'alt000000000' }));
     await lege(volume, eintrag('8000105', { name: 'vom Volume', abfrageVersion: 'alt000000000' }));
-    const gefunden = await erzeugeBestand({ startPfad: start, volumePfad: volume }).lies('8000105');
+    const gefunden = await erzeugeBestand({ startPfad: start, volumePfad: volume, jetzt }).lies('8000105');
     expect(gefunden?.herkunft).toBe('volume');
   });
 
   it('faellt auf den Startbestand zurueck', async () => {
     await lege(start, eintrag('8000105'));
-    const gefunden = await erzeugeBestand({ startPfad: start, volumePfad: volume }).lies('8000105');
+    const gefunden = await erzeugeBestand({ startPfad: start, volumePfad: volume, jetzt }).lies('8000105');
     expect(gefunden?.herkunft).toBe('start');
     expect(gefunden?.osm.elements).toHaveLength(1);
   });
