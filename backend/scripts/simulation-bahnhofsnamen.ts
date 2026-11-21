@@ -21,7 +21,8 @@
 //     Gruppe (die App loest die ganze Gruppe von jeder EVA aus auf); falsch =
 //     eine andere EVA; keins = nichts gewaehlt.
 //   - Ein Fehler beim Abruf eines Mitgliedsnamens macht den Bahnhof zu `fehler`
-//     (wird beim Neustart wiederholt) - nichts wird still verschluckt.
+//     (wird beim Neustart wiederholt) - nichts wird still verschluckt. Das gilt
+//     auch fuer Abrufe, die `loeseBahnhofsnamen` selbst abfaengt.
 //   - Gruppen werden einmal gezaehlt (Eintraege mit gleicher Soll-EVA zaehlen
 //     nur einmal in der Auswertung).
 //   - Alt (vor der Aenderung): nie automatisch gewaehlt, also 0 %.
@@ -98,13 +99,21 @@ function ladeApiCache(): void {
 }
 const speichereApiCache = () => writeFileSync(APICACHE, JSON.stringify({ suche: apiSuche, namen: apiNamen }));
 
+// Jeder gescheiterte Abruf zaehlt - auch einer, den `loeseBahnhofsnamen` selbst
+// abfaengt (Promise.allSettled in Stufe 2, Fehler einer Namensvariante). Sonst
+// wuerde ein Ausfall still als `keins` oder als falsche Eindeutigkeit gezaehlt.
+let abrufFehler = 0;
+
 function cacheGet<T>(cache: Map<string, Promise<T>>, schluessel: string, hole: () => Promise<T>): Promise<T> {
   let p = cache.get(schluessel);
   if (!p) {
     p = hole();
     cache.set(schluessel, p);
     // Fehler nicht dauerhaft merken.
-    p.catch(() => cache.delete(schluessel));
+    p.catch(() => {
+      abrufFehler++;
+      cache.delete(schluessel);
+    });
   }
   return p;
 }
@@ -341,8 +350,14 @@ async function main(): Promise<void> {
       continue;
     }
     const vorher = abrufe;
+    const fehlerVorher = abrufFehler;
     try {
-      roh[eva] = await bearbeite(s, eva);
+      const ergebnis = await bearbeite(s, eva);
+      // Ein abgefangener Ausfall verfaelscht das Urteil: Bahnhof wiederholen.
+      roh[eva] =
+        abrufFehler > fehlerVorher
+          ? { stadaName: s.name, eva, kategorie: 'fehler', fehler: `${abrufFehler - fehlerVorher} Abruffehler waehrend der Bewertung` }
+          : ergebnis;
     } catch (e) {
       roh[eva] = { stadaName: s.name, eva, kategorie: 'fehler', fehler: String(e).slice(0, 120) };
     }
