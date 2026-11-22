@@ -69,6 +69,26 @@ Ergebnis danach in `NOTICE` unter „Deutsche Bahn“ festhalten.
 
 ## 3. Transitous – Anfrage
 
+**Bedingungen (transitous.org/api, gelesen am 22.11.2026).** Nutzen darf
+Transitous, wer **alle** Punkte erfüllt – „Go ahead if all of these points
+apply to your project“:
+
+1. **„Your project is open-source“** – unter „Publish Your Code“: Der
+   Quellcode muss „published under an appropriate open-source license“ sein
+   (kurze Prototyp-Tests vorher sind erlaubt). Ein privates Repo oder „alle
+   Rechte vorbehalten“ erfüllt das **nicht**.
+2. **„Your project is not commercial“** – „commercial use is not allowed“.
+   Vor den ersten Einnahmen also eigener MOTIS-Server (Konzept 2.0, E1).
+3. Sparsam mit Anfragen; bei viel Last vorher im Matrix-Kanal melden.
+4. `User-Agent` mit App-Name, Version und Kontakt; sichtbarer Link auf
+   `transitous.org/sources/`; OpenStreetMap-Namensnennung.
+
+Die Bedingung „Open Source“ fehlte bis zum 22.11.2026 in den
+Konzeptpapieren. Das Repo war ab etwa 01.11.2026 privat und erfüllte sie in
+dieser Zeit nicht. **Entscheidung Julian (22.11.2026):** Das Repo wird
+wieder öffentlich, die Lizenz bleibt AGPL-3.0-only mit der § 7-Ausnahme aus
+`NOTICE`. Damit stimmen auch „open-source“ und der Link im Entwurf unten.
+
 Transitous wird im Matrix-Kanal abgestimmt (siehe
 `docs/2026-10-16-transitous-erkundung.md`). Entwurf, englisch, für Matrix
 oder E-Mail; Julian schickt ab:

@@ -28,6 +28,12 @@ www.umstieg.online, Backend auf Fly mit dem Code von `b05351f` (eine
 Maschine). Das lokale `main` ist veraltet. Wer darauf arbeiten will, holt es
 zuerst per `git fetch` und `git merge --ff-only origin/main` nach.
 
+**Lizenz und Repo (Entscheidung 22.11.2026):** Das Repo wird wieder
+öffentlich, die Lizenz bleibt AGPL mit der App-Store-Ausnahme. Transitous
+verlangt quelloffene Projekte (Einzelheiten unter „iOS-App“ → „Offene Punkte
+bis zur Einreichung“, B). Die Git-Historie ist auf Schlüssel geprüft, ohne
+Fund. Julian ist in App Store Connect als EU-Händler registriert.
+
 **Ausgeliefert am 21.11.2026: Reise-Import wählt den Bahnhof selbst**
 (Backend und Frontend, live geprüft; Einzelheiten unter „Reise-Import:
 Bahnhof per offiziellem Namen“ weiter unten):
@@ -733,7 +739,19 @@ daraus wird Bau 3:
 
 **B. Entscheidungen und Freigaben (J)**
 
-- [ ] **Repo privat vs. Store-Text.** Die Beschreibung in
+- [x] **Repo wird öffentlich, Lizenz bleibt AGPL (Julian, 22.11.2026).**
+      Grund: Transitous verlangt „Your project is open-source“ (Quellcode
+      unter Open-Source-Lizenz veröffentlicht) und „not commercial“ – siehe
+      `docs/app-store-datenquellen.md`, Abschnitt 3. „Alle Rechte
+      vorbehalten“ ist damit ausgeschlossen. Git-Historie vorher auf
+      Schlüssel geprüft (22.11.2026, alle 481 Commits, alle Zweige und Tags):
+      kein Fund. Prüfskript (gitignored):
+      `.superpowers/schluesselsuche/scan.mjs`, vergleicht die Tresorwerte,
+      ohne sie auszugeben. Mit dem Umschalten werden auch die Actions-Logs
+      und -Artefakte, die Autor-Adresse der Commits und die Zweige
+      `claude/project-thread-*` öffentlich. Umschalten: Julian auf GitHub,
+      *Settings → General → Danger Zone → Change visibility*.
+      Bisherige Notiz dazu: Die Beschreibung in
       `docs/app-store-eintrag.md` sagt „Quelloffen unter der AGPL:
       github.com/jbee827-sys/Umstieg.“ – das Repo ist privat (spätestens seit
       01.11.2026, da antwortete die API ohne Login mit 404), der Link liefe ins Leere (auch für die App-Prüfung). Entweder
@@ -762,7 +780,9 @@ daraus wird Bau 3:
 - [ ] Altersfreigabe-Fragebogen (Vorschlag: überall „Keine“/„Nein“ → 4+).
 - [ ] **EU-Händlerstatus (DSA)** angeben – Pflicht für den Vertrieb in der EU.
       Als „Händler“ werden Adresse, Telefon und E-Mail im Store öffentlich
-      angezeigt; als Privatperson ohne Gewerbe „kein Händler“. Vorher klären.
+      angezeigt; als Privatperson ohne Gewerbe „kein Händler“. **Erledigt
+      (22.11.2026): Julian ist als Händler registriert.** Die Angaben im
+      Store sollen zum Impressum auf umstieg.online passen.
 - [ ] Support-, Datenschutz- und Marketing-URL; Copyright.
 - [ ] Hinweis für die Prüfung (englisch, Einführungstour als Weg ohne
       deutschen Bahnhof) einsetzen; Kontakt für die Prüfung angeben.
@@ -779,7 +799,8 @@ daraus wird Bau 3:
 - [ ] Workflow-Auslöser: Push-Trigger steht noch auf dem veralteten Zweig
       `feat/app-ios`; auf `main` läuft der Simulator-Job nur von Hand.
       Entscheiden, ob er bei Änderungen an `frontend/ios/**` auch auf `main`
-      laufen soll (kostet macOS-Minuten, solange das Repo privat ist).
+      laufen soll (kostet macOS-Minuten, solange das Repo privat ist; nach
+      dem Umschalten auf öffentlich kostenlos).
       Danach `feat/app-ios` löschen.
 - [ ] Versionierung für die Einreichung: Tag `app-v1.0.0` setzen (Version aus
       dem Tag, Buildnummer = Laufnummer). Hinweis: ein Tag `app-v1.0.0` gab es
