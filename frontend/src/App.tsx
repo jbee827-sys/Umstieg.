@@ -61,6 +61,7 @@ import {
   vergissErinnerung,
   wirdRot,
 } from './plattform/mitteilungen'
+import { useZugabgleich } from './reise/useZugabgleich'
 import { abfahrtUm, ampelFarbe, umstiegVon } from './navigation/ampel'
 import type { Ampelfarbe } from './api/typen'
 import {
@@ -739,6 +740,9 @@ function App() {
   // ab (Browserpruefung). Welche Seite gerade offen ist, lesen die Behandler
   // ueber `bildschirmRef`.
   const aufReise = AUF_REISE.includes(bildschirm)
+  // Zuege aus einem Reisetext, die beim Import noch nicht in der Tafel
+  // standen, unterwegs weiter suchen - sonst erkennt der Live-Strom sie nie.
+  useZugabgleich(werte, aufReise && !vorfuehrungLaeuft(), setWerte)
   useEffect(() => {
     // Auch auf der Meldungsseite - ihr leerer Zustand sagt zu, dass noch
     // hingehoert wird, und der Zeitstempel daneben belegt es. Waere der Strom

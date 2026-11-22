@@ -12,6 +12,7 @@ import type {
   TafelEintrag,
 } from '../api/typen'
 import { zugName } from '../api/typen'
+import { gleicheZuegeAb, zugnummer } from '../reise/zugabgleich'
 import { anderHalt, ersatzFahrt, ordneZugZu, ortAusHalt } from '../ort/bahnhofsumfeld'
 import { ortSchluessel, pfadFuer, sucheHaltestelleZu } from '../ort/ortmodell'
 import { steigText } from '../ort/steig'
@@ -68,6 +69,14 @@ export interface EingabeWerte {
    */
   zugAnAnzeige?: string
   zugAbAnzeige?: string
+  /**
+   * Reise-Import: Der Zug stammt aus dem Reisetext und fand sich in der Tafel
+   * noch nicht - `zugAnName`/`zugAbName` sind dann der Name aus dem Text, und
+   * die Live-Ueberwachung erkennt ihn nicht. `App` sucht waehrend der Reise
+   * weiter (`useZugabgleich`).
+   */
+  zugAnAusText?: true
+  zugAbAusText?: true
   ankunftZeit?: string
   abfahrtZeit?: string
   /**
@@ -84,15 +93,6 @@ interface TafelBahnhof {
   eva: string
 }
 
-/** "ICE 1006" → "1006" */
-function zugnummer(zug: string): string | undefined {
-  const letztes = zug.split(' ').pop() || undefined
-  if (!letztes) return undefined
-  // "RE3 (3352)" → "3352". Geteilte Reisetexte schreiben die Nummer in
-  // Klammern hinter die Linie; die Wagenreihung braucht die blanke Zahl.
-  const inKlammern = /^\((\d+)\)$/.exec(letztes)
-  return inKlammern ? inKlammern[1] : letztes
-}
 
 interface EingabeProps {
   laden: boolean
@@ -284,20 +284,18 @@ export function Eingabe({
      * niemand etwas ueber Aenderungen. Ein gefuelltes `gleisIst` faerbte die
      * Anzeige rot und behauptete einen Gleiswechsel, den es nie gab.
      */
-    setZugAnkunft(
-      u.anZug
-        ? { zug: u.anZug, zeitSoll: u.anZeit, gleisSoll: u.anGleis ?? '', ziel: u.anZiel }
-        : null,
-    )
-    setZugAbfahrt(
-      u.abZug
-        ? { zug: u.abZug, zeitSoll: u.abZeit, gleisSoll: u.abGleis ?? '', ziel: u.abZiel }
-        : null,
-    )
+    const an: TafelEintrag | null = u.anZug
+      ? { zug: u.anZug, zeitSoll: u.anZeit, gleisSoll: u.anGleis ?? '', ziel: u.anZiel, ausText: true }
+      : null
+    const ab: TafelEintrag | null = u.abZug
+      ? { zug: u.abZug, zeitSoll: u.abZeit, gleisSoll: u.abGleis ?? '', ziel: u.abZiel, ausText: true }
+      : null
+    setZugAnkunft(an)
+    setZugAbfahrt(ab)
 
     // `bahnhofZumNamen` wirft nie; faengt trotzdem etwas, gilt es als „nicht
     // eindeutig“ - nie als stiller Fehler ohne Hinweis.
-    waehleBahnhofZumNamen(u, lauf).catch(() => {
+    waehleBahnhofZumNamen(u, lauf, an, ab).catch(() => {
       if (lauf === importLauf.current) setBahnhofAntippen(true)
     })
   }
@@ -308,7 +306,7 @@ export function Eingabe({
    * geleert; Gleise, Zuege und Wagen stehen schon so, wie der Import sie
    * gesetzt hat, und Fahrten gibt es nach einem Import keine.
    */
-  async function waehleBahnhofZumNamen(u: Umstieg, lauf: number) {
+  async function waehleBahnhofZumNamen(u: Umstieg, lauf: number, an: TafelEintrag | null, ab: TafelEintrag | null) {
     let ort = await bahnhofZumNamen(u.bahnhof)
     if (!ort && u.anBahnhof && u.anBahnhof !== u.bahnhof && lauf === importLauf.current) {
       ort = await bahnhofZumNamen(u.anBahnhof)
@@ -318,9 +316,36 @@ export function Eingabe({
     if (ort) {
       setGewaehlt(ort)
       setSuchtext(ort.name)
+      if (ort.eva) gleicheImportAb(ort.eva, u, lauf, an, ab)
     } else {
       setBahnhofAntippen(true)
     }
+  }
+
+  /**
+   * Die Zuege aus dem Text in der Tafel wiederfinden (`reise/zugabgleich.ts`).
+   * Ein Treffer gilt wie ein Tipp in der Tafel: Zug und Gleis der Tafel. Er
+   * ersetzt aber nur, was noch vom Import stammt - einen inzwischen
+   * angetippten Zug oder ein getipptes Gleis laesst er stehen.
+   */
+  function gleicheImportAb(eva: string, u: Umstieg, lauf: number, an: TafelEintrag | null, ab: TafelEintrag | null) {
+    void gleicheZuegeAb(
+      eva,
+      an ? { name: an.zug, zeit: an.zeitSoll } : undefined,
+      ab ? { name: ab.zug, zeit: ab.zeitSoll } : undefined,
+    ).then((treffer) => {
+      if (lauf !== importLauf.current) return
+      const tAn = treffer.an
+      if (an && tAn) {
+        setZugAnkunft((z) => (z === an ? tAn : z))
+        setGleisAn((g) => (g === (u.anGleis ?? '') ? (tAn.gleisIst ?? tAn.gleisSoll) : g))
+      }
+      const tAb = treffer.ab
+      if (ab && tAb) {
+        setZugAbfahrt((z) => (z === ab ? tAb : z))
+        setGleisAb((g) => (g === (u.abGleis ?? '') ? (tAb.gleisIst ?? tAb.gleisSoll) : g))
+      }
+    })
   }
 
   // Vorbelegt wird NUR ein leeres Feld: Die Erkennung trifft verzoegert ein
@@ -641,6 +666,8 @@ export function Eingabe({
         zugAbName: zugAbfahrt?.zug,
         zugAnAnzeige: zugAnkunft?.anzeige,
         zugAbAnzeige: zugAbfahrt?.anzeige,
+        ...(zugAnkunft?.ausText ? { zugAnAusText: true as const } : {}),
+        ...(zugAbfahrt?.ausText ? { zugAbAusText: true as const } : {}),
         ankunftZeit: zugAnkunft ? (zugAnkunft.zeitIst ?? zugAnkunft.zeitSoll) : undefined,
         abfahrtZeit: zugAbfahrt ? (zugAbfahrt.zeitIst ?? zugAbfahrt.zeitSoll) : undefined,
       },

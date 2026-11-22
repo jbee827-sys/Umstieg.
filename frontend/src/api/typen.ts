@@ -208,6 +208,12 @@ export interface TafelEintrag {
    * Wagenreihung; angezeigt wird `zugName(eintrag)`.
    */
   anzeige?: string;
+  /**
+   * Nur Reise-Import, nur im Frontend: Der Eintrag stammt aus dem Reisetext
+   * und ist in der Tafel noch nicht gefunden - `zug` ist dann der Name aus
+   * dem Text („RE3 (3352)“), nicht der der Tafel (`reise/zugabgleich.ts`).
+   */
+  ausText?: true;
 }
 
 /** Was von einem Zug zu lesen ist: die Linie, sonst Gattung und Zugnummer. */

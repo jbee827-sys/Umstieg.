@@ -357,6 +357,44 @@ describe('Eingabe: Reise importieren', () => {
    * EVA-Nummern, und welche gemeint ist, entscheidet dann die Bahnhofssuche.
    * Damit niemand glaubt, der Bahnhof sei schon gewaehlt, steht ein Hinweis da.
    */
+  /**
+   * 22.11.2026: Die Zuege aus dem Text werden in der Tafel wiedergefunden.
+   * Mit dem Namen aus dem Text („RE3 (3352)“) kam vorher keine Live-Meldung
+   * an - die Ueberwachung kennt nur den Namen der Tafel („RE 3352“).
+   */
+  it('gleicht die Zuege aus dem Text mit der Tafel ab, wie ein Tipp', async () => {
+    aufloesMock.mockResolvedValue(BERLIN)
+    const ankunft: TafelEintrag = { zug: 'ICE 74', zeitSoll: '11:40', gleisSoll: '8', gleisIst: '9', ziel: 'Mannheim Hbf', vonHalt: 'Berlin Südkreuz' }
+    const anschluss: TafelEintrag = { zug: 'RE 3352', anzeige: 'RE 3', zeitSoll: '12:02', gleisSoll: '7', ziel: 'Eberswalde Hbf' }
+    holeTafelMock.mockImplementation(async (_eva, typ) => ({ ok: true, eintraege: [typ === 'arr' ? ankunft : anschluss] }))
+    const onBerechnen = zeige()
+    await importiere(REISE.replace('ICE 1134', 'RE3 (3352)'))
+
+    // Das Gleis der Tafel gilt - dort stand der Wechsel auf Gleis 9 schon.
+    await waitFor(() => expect((screen.getByLabelText('Ankunft: Gleis') as HTMLInputElement).value).toBe('9'))
+    await userEvent.click(screen.getByRole('button', { name: /Umstieg starten/ }))
+    const [werte] = onBerechnen.mock.calls[0]
+    expect(werte.zugAnName).toBe('ICE 74')
+    expect(werte.zugAbName).toBe('RE 3352')
+    expect(werte.zugAbAnzeige).toBe('RE 3')
+    expect(werte.vonHalt).toBe('Berlin Südkreuz')
+    expect(werte.zugAnAusText).toBeUndefined()
+    expect(werte.zugAbAusText).toBeUndefined()
+  })
+
+  it('merkt sich einen Zug, der in der Tafel (noch) fehlt, fuer spaeter', async () => {
+    aufloesMock.mockResolvedValue(BERLIN)
+    const onBerechnen = zeige()
+    await importiere(REISE.replace('ICE 1134', 'RE3 (3352)'))
+    await waitFor(() => expect(holeTafelMock).toHaveBeenCalledWith('8011160', 'dep'))
+
+    await userEvent.click(screen.getByRole('button', { name: /Umstieg starten/ }))
+    const [werte] = onBerechnen.mock.calls[0]
+    expect(werte.zugAbName).toBe('RE3 (3352)')
+    expect(werte.zugAbAusText).toBe(true)
+    expect(werte.zugAnAusText).toBe(true)
+  })
+
   it('zeigt "Bitte Bahnhof antippen", wenn nichts eindeutig ist', async () => {
     zeige()
     await importiere(REISE)
