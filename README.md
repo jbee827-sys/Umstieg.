@@ -78,18 +78,91 @@ Bahnhof per offiziellem Namen“ weiter unten):
 
 **Als Nächstes:**
 
-1. **Bau 4 ist in TestFlight** (22.11.2026, Lauf 16 auf `main` `7841f8f`,
-   beide Jobs grün, Upload zu App Store Connect erfolgreich). Jetzt am iPhone
-   den neuen Dialog (hell/dunkel) und das Teilen aus dem DB Navigator prüfen
-   (Julian). „Etwas melden“ ist seit Bau 3 in der App.
-2. **Vor der App-Store-Einreichung:** die vorübergehende „Teilen-Diagnose“
+1. **Bau 5 starten (Julian):** *Actions → iOS → Run workflow* auf `main`
+   (`c49b181`: S15, Linienanzeige, Zugabgleich im Reise-Import). Danach am
+   iPhone eine Reise aus dem DB Navigator teilen und prüfen, ob die Züge
+   gewählt werden und Live-Meldungen ankommen. Bau 4 (Lauf 16, `7841f8f`)
+   hat Julian am 22.11.2026 geprüft: „passt alles“.
+2. **Mitteilungen bei gesperrtem Handy – Konzept steht, eine Frage offen**
+   (siehe „Mitteilungen über Firebase“ direkt unter dieser Liste).
+3. **Vor der App-Store-Einreichung:** die vorübergehende „Teilen-Diagnose“
    unter Einstellungen entfernen. Die übrigen Punkte stehen unter „iOS-App“ →
    „Offene Punkte bis zur Einreichung“.
-3. **Mitteilungen bei gesperrtem Handy:** Bisher kommt verlässlich nur die
-   vorab geplante Erinnerung. Server-Push (APNs) wäre ein eigenes Paket mit
-   Backend und Gerätekennungen, **noch nicht entschieden**.
 4. Danach die „Weiteren offenen Punkte“ unten (Sichtprüfung der Läden,
    Prüfregel `simulation-bild.ts`, Frankfurt 1 → 1a, …).
+
+### Mitteilungen über Firebase (Konzept 22.11.2026, noch nicht freigegeben)
+
+**Konzept:** `Umstieg_Konzepte/11-konzept-mitteilungen-firebase.md`
+(außerhalb des Repos). Ziel: Mitteilungen kommen auch an, wenn die App
+angehalten oder weggewischt und das Handy gesperrt ist. Heute entstehen sie
+nur in der App aus dem Live-Strom; iOS hält die App nach ~30 s an, und nur
+die lokal geplante Erinnerung kommt (auf der alten Zeit, auch bei Verspätung).
+
+**Entschieden (Julian, 22.11.2026):**
+
+- Aufs Handy kommen **alle Meldungen der App** (Gleis-/Steigwechsel, neue
+  Zeit, Ausfall – für Ankunftszug und Anschluss) und **Ampel springt auf
+  Rot**; die **Erinnerung 5 Min. vor Ankunft** übernimmt der Server und
+  verschiebt sie bei Verspätung.
+- **Bus und Bahn** werden überwacht (Bahnhofs- und Haltestellenpfad).
+- Überwacht wird, solange die Reise läuft, bis kurz nach Abfahrt des
+  Anschlusses; danach vergisst der Server Gerät und Reise. Ist die App offen,
+  kein zusätzliches Banner.
+- Zustellung über **Firebase Cloud Messaging** – wegen **Android später**;
+  Backend plattformneutral. Abgewogen und verworfen: direkt an APNs (kein
+  Dritter, aber für Android ein zweiter Weg) und „stille“ Weckrufe (iOS stellt
+  sie zu selten zu). **Live-Aktivität** (Sperrbildschirm-Karte, Dynamic
+  Island) erst später als eigenes Paket.
+
+**Claudes Vorschläge im Konzept** (Julian: „alles weitere passt“):
+
+- Verspätungen gedrosselt: nur ab **2 Min.** Unterschied zur zuletzt
+  geschickten oder wenn die Ampel die Farbe wechselt (3 → 4 → 5 → 8 Min. =
+  zwei Mitteilungen).
+- „Reisewache“ im Backend (`core/reisewache.ts`) nutzt die vorhandene
+  `Ueberwachung`; Daten nur im RAM, spätestens nach 8 h weg; Abfrage erst ab
+  90 Min. vor Ankunft (Timetables-Quote). Route `PUT`/`DELETE
+  /api/mitteilungen/reise`; Texte entstehen nur im Server.
+- App: Plugin `@capacitor-firebase/messaging` (Capacitor 8, SPM, liefert auf
+  iOS ein FCM-Token – `@capacitor/push-notifications` nur das APNs-Token).
+  Lokale Mitteilungen bleiben Rückfall, wenn die Anmeldung scheitert; bei
+  angemeldeter Wache aus (keine Doppelten). Kein Firebase Analytics.
+- Julian richtet ein: Firebase-Projekt ohne Analytics, iOS-App, APNs-Schlüssel
+  (`.p8`) in Firebase, Push Notifications an der App-ID, Dienstkonto-JSON
+  (Tresor + Fly-Secret `FIREBASE_SERVICE_ACCOUNT`), `GoogleService-Info.plist`
+  als GitHub-Secret. Datenschutzerklärung und Apple-Angaben anpassen.
+
+**Prüfung des Konzepts** (ein Prüfer las es wie ein Bauender, 22.11.2026) –
+vier Lücken:
+
+1. **Platz in der Überwachung:** Sie beobachtet höchstens 35 Bahnhöfe
+   (`maxEvas`); eine Wache wacht erst 90 Min. vor Ankunft auf – dann könnte
+   kein Platz mehr frei sein, obwohl die App ihre lokalen Mitteilungen schon
+   abgeschaltet hat. **Entschieden (Claude):** Die Wache reserviert ihren
+   Platz beim `PUT`; ohne Platz 503, die App bleibt lokal.
+2. **Was zeigt die App nach dem Antippen?** Die App kennt Ereignisse nicht,
+   die der Server meldete, während sie angehalten war – Meldungsseite leer,
+   Weg zum alten Gleis. **Offen, Julian entscheidet:**
+   A) Mitteilung trägt das Ereignis als Daten mit, die App trägt es als
+   Meldung ein und bietet den neuen Weg an; beim Öffnen ohne Antippen liest
+   sie zugestellte Mitteilungen aus (Plugin-Fähigkeit beim Bau prüfen) –
+   **Claudes Empfehlung**; B) nur die Übersicht, die Lücke bleibt; C) der
+   Server liefert seinen Stand per Abruf nach (Server merkt sich Meldungen je
+   Gerät).
+3. **Ampel Rot durch die Uhr?** In der App färbt nach der Ankunft auch die
+   ablaufende Zeit rot. **Entschieden (Claude):** Der Server meldet Rot nur
+   nach Ereignissen (Verspätung), nie wegen der Uhr – er weiß nicht, ob der
+   Nutzer schon im Anschluss sitzt.
+4. **Gehzeit nach Gleiswechsel:** veraltet, solange die App angehalten ist.
+   **Entschieden (Claude):** keine Neuberechnung im Server; nach einem
+   Gleiswechsel kein Rot mehr, bis die App neu anmeldet.
+
+Selbst entscheidbar laut Prüfer: Tagesbezug der HH:MM-Zeiten, Ist-Zeit beim
+Anmelden, Zustand bei erneutem `PUT`, Erinnerung höchstens einmal.
+
+**Nächster Schritt:** Julian beantwortet Frage 2 und gibt das Konzept frei,
+dann Umsetzungsplan.
 
 **Ausgeliefert am 11.11.2026: „Etwas melden“** (Backend und Frontend,
 `main` auf `31cfbe8`, live auf www.umstieg.online geprüft):
