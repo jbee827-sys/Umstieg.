@@ -23,6 +23,23 @@ interface IrisEreignis {
   cpth?: string; // geänderter Laufweg
   ct?: string; // geänderte Zeit
   cp?: string; // geändertes Gleis
+  l?: string | number; // Linie („S15“, „RE8“, Flixtrain nur „10“); Fernverkehr ohne
+}
+
+/**
+ * Die Linie zum Anzeigen - „S 15“ statt der Zugnummer „S 15632“.
+ *
+ * IRIS schreibt die Linie ohne Leerzeichen („S15“, „RE8“), bei Flixtrain nur
+ * die Ziffern („10“). Private Bahnen fahren unter eigener Gattung (ODEG „OE“),
+ * die Linie nennt aber RE/RB - so steht es auch am Bahnsteig. Ohne Linie
+ * (ICE, IC, EC, NJ …) bleibt es bei der Zugnummer; dann liefert diese
+ * Funktion nichts.
+ */
+export function linienAnzeige(gattung: string | undefined, linie: string | number | undefined): string | undefined {
+  const roh = String(linie ?? '').trim();
+  if (!roh) return undefined;
+  if (/^\d+$/.test(roh)) return gattung ? `${gattung} ${roh}` : roh;
+  return roh.replace(/^([A-Za-z]+)\s*(\d.*)$/, '$1 $2');
 }
 
 interface IrisHalt {
@@ -99,9 +116,13 @@ export function baueTafel(planXmls: string[], aenderungenXml: string, typ: 'arr'
     const zeitIst = zeitText(geaendert?.ct);
     const gleisSoll = ereignis.pp ?? '';
     const gleisIst = geaendert?.cp;
+    // Nur zum Anzeigen. `zug` (Gattung + Zugnummer) bleibt der Schluessel:
+    // Live-Ueberwachung, Entdopplung und Wagenreihung haengen daran.
+    const anzeige = linienAnzeige(halt.tl?.c, ereignis.l);
 
     eintraege.push({
       zug: `${halt.tl?.c ?? ''} ${halt.tl?.n ?? ''}`.trim(),
+      ...(anzeige ? { anzeige } : {}),
       zeitSoll,
       ...(zeitIst && zeitIst !== zeitSoll ? { zeitIst } : {}),
       gleisSoll,

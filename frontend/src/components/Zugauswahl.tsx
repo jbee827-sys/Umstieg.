@@ -9,6 +9,7 @@ import {
   type Kategorieblock,
 } from '../api/tafelauswahl'
 import type { HaltestellenTafelEintrag, Ort, TafelEintrag } from '../api/typen'
+import { zugName } from '../api/typen'
 import { nahverkehrAmBahnhof } from '../ort/bahnhofsumfeld'
 import { ortSchluessel } from '../ort/ortmodell'
 import { FahrtBloecke, GewaehlteFahrt } from './Fahrtauswahl'
@@ -121,7 +122,7 @@ function TafelBloecke({ bloecke, typ, auswahl, markiere, onTipp, einzige, huelle
                     {eintrag.zeitIst && <s className="tafel-alt"> {eintrag.zeitSoll}</s>}
                   </span>
                   <span className="tafel-zug">
-                    <strong>{eintrag.zug}</strong> {typ === 'arr' ? 'aus' : 'nach'}{' '}
+                    <strong>{zugName(eintrag)}</strong> {typ === 'arr' ? 'aus' : 'nach'}{' '}
                     {eintrag.ziel}
                   </span>
                   <span className={`tafel-gleis${eintrag.gleisIst ? ' gleiswechsel' : ''}`}>
@@ -303,7 +304,7 @@ export function Zugauswahl({ eva, typ, label, auswahl, onAuswahl, immerOffen, na
     return (
       <div className="zug-gewaehlt">
         <div className="zug-gewaehlt-text">
-          <strong>{auswahl.zug}</strong>
+          <strong>{zugName(auswahl)}</strong>
           <span>
             {typ === 'arr' ? 'aus' : 'nach'} {auswahl.ziel} ·{' '}
             {auswahl.zeitIst ?? auswahl.zeitSoll}

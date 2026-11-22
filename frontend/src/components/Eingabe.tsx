@@ -11,6 +11,7 @@ import type {
   RoutenVariante,
   TafelEintrag,
 } from '../api/typen'
+import { zugName } from '../api/typen'
 import { anderHalt, ersatzFahrt, ordneZugZu, ortAusHalt } from '../ort/bahnhofsumfeld'
 import { ortSchluessel, pfadFuer, sucheHaltestelleZu } from '../ort/ortmodell'
 import { steigText } from '../ort/steig'
@@ -61,6 +62,12 @@ export interface EingabeWerte {
   /** Volle Bezeichnungen wie in der Tafel ("ICE 1006") – Filter für die Live-Überwachung. */
   zugAnName?: string
   zugAbName?: string
+  /**
+   * Was davon zu lesen ist: die Linie („S 15“, „RE 8“). Fehlt beim
+   * Fernverkehr und in aelteren gespeicherten Reisen - dann gilt der Name.
+   */
+  zugAnAnzeige?: string
+  zugAbAnzeige?: string
   ankunftZeit?: string
   abfahrtZeit?: string
   /**
@@ -120,7 +127,7 @@ interface EingabeProps {
 function zugzeile(e: TafelEintrag, richtung: 'an' | 'ab'): ReactNode {
   return (
     <>
-      {e.zug} · {richtung} {e.zeitIst ?? e.zeitSoll}
+      {zugName(e)} · {richtung} {e.zeitIst ?? e.zeitSoll}
       {e.gleisIst && <strong className="gleiswechsel"> · Gleis {e.gleisIst} (geändert!)</strong>}
     </>
   )
@@ -632,6 +639,8 @@ export function Eingabe({
         nachHalt: zugAnkunft?.nachHalt,
         zugAnName: zugAnkunft?.zug,
         zugAbName: zugAbfahrt?.zug,
+        zugAnAnzeige: zugAnkunft?.anzeige,
+        zugAbAnzeige: zugAbfahrt?.anzeige,
         ankunftZeit: zugAnkunft ? (zugAnkunft.zeitIst ?? zugAnkunft.zeitSoll) : undefined,
         abfahrtZeit: zugAbfahrt ? (zugAbfahrt.zeitIst ?? zugAbfahrt.zeitSoll) : undefined,
       },

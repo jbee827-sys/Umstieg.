@@ -381,7 +381,7 @@ function App() {
   const erinnerungAnkunft = werte?.ankunftZeit
   const erinnerungBahnhof = werte?.bahnhofName
   const erinnerungGleis = werte?.gleisAb
-  const erinnerungZug = werte?.zugAbName
+  const erinnerungZug = werte?.zugAbAnzeige ?? werte?.zugAbName
   useEffect(() => {
     if (!reiseLaeuft || !erinnerungAnkunft || !erinnerungBahnhof || !erinnerungGleis) return
     if (vorfuehrungLaeuft()) return

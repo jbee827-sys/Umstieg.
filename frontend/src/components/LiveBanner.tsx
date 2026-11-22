@@ -21,7 +21,7 @@ export function LiveBanner({ ereignis, onSchliessen }: LiveBannerProps) {
       <div className="live-banner-text">
         <strong>
           {gleiswechsel ? 'Gleiswechsel' : 'Neue Zeit'}
-          {ereignis.zug ? ` · ${ereignis.zug}` : ''}
+          {(ereignis.anzeige ?? ereignis.zug) ? ` · ${ereignis.anzeige ?? ereignis.zug}` : ''}
         </strong>
         <span>
           {ereignis.alt} → {ereignis.neu}

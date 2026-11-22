@@ -140,8 +140,9 @@ export function Dashboard({
   // Bahnhofspfad wie immer „Gl. 7“; an Haltestellen „Steig A“ oder „Gleis 7“.
   const ortAn = halt ? ortsangabe(werte, 'an') : `Gl. ${werte.gleisAn}`
   const ortAb = halt ? ortsangabe(werte, 'ab') : `Gl. ${werte.gleisAb}`
-  const zugAn = halt ? linienName(halt.ankunft.fahrt) : werte.zugAnName
-  const zugAb = halt ? linienName(halt.anschluss.fahrt) : werte.zugAbName
+  // Bahnhofspfad: die Linie („S 15“), sonst Gattung und Zugnummer.
+  const zugAn = halt ? linienName(halt.ankunft.fahrt) : (werte.zugAnAnzeige ?? werte.zugAnName)
+  const zugAb = halt ? linienName(halt.anschluss.fahrt) : (werte.zugAbAnzeige ?? werte.zugAbName)
   return (
     <div className="dashboard-flaeche">
       <div className="dashboard-rollbereich">

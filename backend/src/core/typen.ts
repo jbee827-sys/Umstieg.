@@ -548,7 +548,11 @@ export interface TafelEintrag {
   nachHalt?: string;
   /** Nur Haltestellenpfad (Umstieg 2.0): Fahrt fällt aus. Der Bahnhofspfad setzt es nie. */
   ausfall?: boolean;
-  /** Nur Haltestellenpfad: Linie zum Anzeigen; `zug` ist dort die Fahrt-ID. */
+  /**
+   * Linie zum Anzeigen. Haltestellenpfad: `zug` ist dort die Fahrt-ID.
+   * Bahnhofspfad: die DB-Linie („S 15“, „RE 8“); fehlt beim Fernverkehr,
+   * dann gilt `zug` (Gattung + Zugnummer).
+   */
   anzeige?: string;
 }
 

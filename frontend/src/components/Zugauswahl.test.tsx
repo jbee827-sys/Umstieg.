@@ -419,3 +419,48 @@ describe('Zugauswahl: Bus und Tram am Bahnhof', () => {
     expect(screen.queryByText(/nicht verfügbar/)).toBeNull()
   })
 })
+
+/**
+ * Linie statt Zugnummer (22.11.2026): Die Tafel zeigt „S 15“, nicht
+ * „S 15632“. Gewaehlt wird aber weiter der Eintrag mit seiner Zugnummer -
+ * an ihr haengt die Live-Ueberwachung.
+ */
+describe('Zugauswahl: Linie statt Zugnummer', () => {
+  const S15: TafelEintrag = { ...zug('S 15632', 12, '22'), anzeige: 'S 15' }
+
+  beforeEach(() => {
+    holeTafelMock.mockReset()
+    holeTafelMock.mockResolvedValue({ ok: true, eintraege: [S15, ICE] })
+  })
+
+  /** Die Kategorien sind zugeklappt - eine aufmachen. */
+  async function oeffne(name: string) {
+    const gruppe = await screen.findByRole('group', { name })
+    await userEvent.click(within(gruppe).getByRole('heading', { name }))
+    return gruppe
+  }
+
+  it('zeigt die Linie, wo die Tafel eine hat, sonst die Zugnummer', async () => {
+    zeige()
+    await aufklappen()
+    await oeffne('S-Bahn')
+    await oeffne('Fernverkehr')
+    expect(await screen.findByText('S 15')).toBeDefined()
+    expect(screen.queryByText('S 15632')).toBeNull()
+    expect(screen.getByText('ICE 1006')).toBeDefined()
+  })
+
+  it('gibt bei der Wahl den ganzen Eintrag weiter, samt Zugnummer', async () => {
+    const onAuswahl = zeige()
+    await aufklappen()
+    await oeffne('S-Bahn')
+    await userEvent.click(await screen.findByText('S 15'))
+    expect(onAuswahl).toHaveBeenCalledWith(S15)
+  })
+
+  it('zeigt auch den gewaehlten Zug mit seiner Linie', () => {
+    zeige(S15)
+    expect(screen.getByText('S 15')).toBeDefined()
+    expect(screen.queryByText('S 15632')).toBeNull()
+  })
+})

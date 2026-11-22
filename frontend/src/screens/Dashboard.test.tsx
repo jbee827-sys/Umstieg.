@@ -521,3 +521,21 @@ describe('Dashboard: Haltestellenpfad (Umstieg 2.0)', () => {
     expect(screen.getByRole('button', { name: /Mit Stopp/ })).toBeDefined()
   })
 })
+
+describe('Dashboard: Linie statt Zugnummer', () => {
+  it('zeigt die Linie der gewaehlten Zuege, nicht die Zugnummer', () => {
+    zeige({
+      werte: { ...werte, zugAnName: 'OE 62005', zugAnAnzeige: 'RE 8', zugAbName: 'S 15632', zugAbAnzeige: 'S 15' },
+    })
+    expect(screen.getByText('RE 8')).toBeDefined()
+    expect(screen.getByText('S 15')).toBeDefined()
+    expect(screen.queryByText('S 15632')).toBeNull()
+    cleanup()
+  })
+
+  it('bleibt ohne Linie bei der Zugnummer (Fernverkehr, aeltere gespeicherte Reise)', () => {
+    zeige({ werte: { ...werte, zugAnName: 'ICE 1006' } })
+    expect(screen.getByText('ICE 1006')).toBeDefined()
+    cleanup()
+  })
+})

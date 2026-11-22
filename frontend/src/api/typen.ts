@@ -202,6 +202,17 @@ export interface TafelEintrag {
   vonHalt?: string;
   /** Naechster Halt - fehlt, wo der Zug endet. */
   nachHalt?: string;
+  /**
+   * Linie zum Anzeigen („S 15“, „RE 8“) - fehlt beim Fernverkehr. `zug`
+   * (Gattung + Zugnummer) bleibt der Schluessel fuer Live-Ueberwachung und
+   * Wagenreihung; angezeigt wird `zugName(eintrag)`.
+   */
+  anzeige?: string;
+}
+
+/** Was von einem Zug zu lesen ist: die Linie, sonst Gattung und Zugnummer. */
+export function zugName(eintrag: { zug: string; anzeige?: string }): string {
+  return eintrag.anzeige ?? eintrag.zug;
 }
 
 /** Spiegel von backend/src/core/ueberwachung.ts – SSE-Ereignisse. */

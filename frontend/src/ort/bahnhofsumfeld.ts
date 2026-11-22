@@ -64,7 +64,7 @@ function heuteUm(hhmm: string, jetzt: Date): Date {
 export function ersatzFahrt(zug: TafelEintrag, bahnhof: Ort, jetzt: Date): HaltestellenTafelEintrag {
   return {
     fahrtId: `db|${zug.zug}|${zug.zeitSoll}`,
-    linie: zug.zug,
+    linie: zug.anzeige ?? zug.zug,
     verkehrsmittel: 'bahn',
     ziel: zug.ziel,
     zeitSoll: heuteUm(zug.zeitSoll, jetzt).toISOString(),
