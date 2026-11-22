@@ -22,11 +22,31 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 
 ## Hier weitermachen (Stand 22.11.2026)
 
-**Stand der Zweige:** `main` und `feat/reiseimport-bahnhof` stehen gleich auf
-`7841f8f` (auf `origin` nur `main`; der Zweig ist lokal). Frontend live auf
-www.umstieg.online, Backend auf Fly mit dem Code von `b05351f` (eine
-Maschine). Das lokale `main` ist veraltet. Wer darauf arbeiten will, holt es
-zuerst per `git fetch` und `git merge --ff-only origin/main` nach.
+**Stand der Zweige:** `main` (lokal und `origin`) und `feat/linienanzeige`
+stehen auf `c49b181`. Frontend live auf www.umstieg.online (Vercel „Ready“),
+Backend auf Fly mit demselben Stand (eine Maschine). `feat/linienanzeige`
+und `fix/s15-berlin-hbf` sind lokale Zweige und in `main` aufgegangen.
+
+**Ausgeliefert am 22.11.2026 (Backend und Frontend, live geprüft):**
+
+- **S15 am Berliner Hbf:** 8089522 „Berlin Hbf (S-Bahn)“ (Gleis 22) trägt
+  keine `stationID` und stand in keiner RIS-Gruppe – die App zeigte die S15
+  nie. Feste Zusatzliste `ZUSATZ_MITGLIEDER` in
+  `backend/src/clients/stations.ts` (`733f8ef`). Diagnose: Stichprobe von 20
+  großen Bahnhöfen, einziger Fall. Anlass war die Meldung „keine S-Bahn am
+  Hbf“ – die eigentliche Ursache war eine Sperrung der Stadtbahn-S-Bahn am
+  Sonntag, 22.11. (im DB-Sollplan; Fern- und Regionalverkehr auf der
+  Stadtbahn gesperrt bis 12.12.2026).
+- **Linie statt Zugnummer:** „S 15“, „RE 8“, „FLX 30“ statt „S 15632“,
+  „OE 62005“ (`41118f6`). Aus IRIS-Attribut `l`; Fernverkehr hat keins und
+  behält die Nummer. `zug` bleibt Schlüssel für Live, Wagenreihung,
+  Entdopplung; angezeigt wird `anzeige` (`zugName()` im Frontend).
+- **Reise-Import findet die Züge in der Tafel** (`c49b181`): „S6“,
+  „RE3 (3352)“ aus dem DB Navigator ↔ „S 38617“/„RE 3352“ der Tafel. Vorher
+  kam bei importierten RE/RB/S-Bahn-Reisen **keine Live-Meldung** an.
+  `reise/zugabgleich.ts` (Sollzeit + Linie/Nummer, mehrdeutig → keiner),
+  späterer Abgleich unterwegs alle 3 Min. (`reise/useZugabgleich.ts`).
+- In der iOS-App erst mit **Bau 5** (Start durch Julian).
 
 **Lizenz und Repo (22.11.2026):** Das Repo ist wieder öffentlich, die
 Lizenz bleibt AGPL mit der App-Store-Ausnahme. Transitous
