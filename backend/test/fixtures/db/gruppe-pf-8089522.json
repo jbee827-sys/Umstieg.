@@ -1,0 +1,20 @@
+{
+  "platforms": [
+    {
+      "name": "22",
+      "heights": [
+        {
+          "start": 0,
+          "end": 0,
+          "height": 0
+        }
+      ],
+      "end": 0,
+      "headPlatform": false,
+      "ifopt": "de:11000:900003200:5:58",
+      "linkedPlatforms": [],
+      "sectors": [],
+      "start": 0
+    }
+  ]
+}

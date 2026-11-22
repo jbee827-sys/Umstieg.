@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { buildApp } from '../src/app.js';
-import { holeStationsInfo } from '../src/clients/stations.js';
+import { holeGruppe, holeStationsInfo } from '../src/clients/stations.js';
 import type { TafelEintrag } from '../src/core/typen.js';
 
 /**
@@ -72,7 +72,8 @@ describe('Verkehrsstellengruppe', () => {
 
   it('nennt alle Mitglieder der Gruppe', async () => {
     const info = await holeStationsInfo('8011160', gruppenMock().fetch);
-    expect([...info.evas].sort()).toEqual(['8011160', '8089021', '8098160']);
+    // 8089522 (S15) steht in keiner RIS-Gruppe und kommt aus ZUSATZ_MITGLIEDER.
+    expect([...info.evas].sort()).toEqual(['8011160', '8089021', '8089522', '8098160']);
   });
 
   it('traegt die StaDa-Bahnhofsnummer fuer FaSta', async () => {
@@ -84,7 +85,7 @@ describe('Verkehrsstellengruppe', () => {
     // stop-places/{eva} liefert KEIN groupMembers - auch nicht fuer den
     // Leader. Aufgeloest wird ueber die Suche und den stationID-Abgleich.
     const info = await holeStationsInfo('8098160', gruppenMock().fetch);
-    expect([...info.evas].sort()).toEqual(['8011160', '8089021', '8098160']);
+    expect([...info.evas].sort()).toEqual(['8011160', '8089021', '8089522', '8098160']);
     expect(info.gleise.map((g) => g.gleis)).toContain('14');
   });
 
@@ -96,7 +97,8 @@ describe('Verkehrsstellengruppe', () => {
     const namen = info.gleise.map((g) => g.gleis);
     expect(new Set(namen).size).toBe(namen.length);
     // Berlin: 14 Eintraege tief (inkl. Abschnittsvarianten) + 4 oben + 2 S-Bahn
-    expect(namen).toHaveLength(20);
+    // + Gleis 22 (S15)
+    expect(namen).toHaveLength(21);
   });
 
   /**
@@ -185,7 +187,7 @@ describe('Verkehrsstellengruppe', () => {
       .filter((u) => u.includes('/platforms/'))
       .map((u) => u.split('/platforms/')[1])
       .sort();
-    expect(abgefragt).toEqual(['8011160', '8089021', '8098160']);
+    expect(abgefragt).toEqual(['8011160', '8089021', '8089522', '8098160']);
   });
 
   it('faellt auf die einzelne Verkehrsstelle zurueck, wenn die Suche scheitert', async () => {
@@ -207,6 +209,46 @@ describe('Verkehrsstellengruppe', () => {
     const info = await holeStationsInfo('8011160', fetchFn);
     expect(info.evas).toEqual(['8011160']);
     expect(info.gleise.map((g) => g.gleis)).toEqual(['11', '12', '13', '14']);
+  });
+});
+
+/**
+ * S15 am Berliner Hbf (22.11.2026).
+ *
+ * 8089522 „Berlin Hbf (S-Bahn)“ fuehrt die S15 an Gleis 22, traegt aber KEINE
+ * stationID und steht in keiner `groupMembers`-Liste. Die App zeigte die S15
+ * deshalb nie. Fixtures 8089522 am 22.11.2026 von der echten API aufgezeichnet.
+ */
+describe('Zusatzmitglied S15 (Berlin Hbf, 8089522)', () => {
+  beforeEach(() => {
+    vi.stubEnv('DB_CLIENT_ID', 'test-id');
+    vi.stubEnv('DB_CLIENT_SECRET', 'test-secret');
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('fuehrt Gleis 22 als Gleis der S15-Verkehrsstelle', async () => {
+    const info = await holeStationsInfo('8011160', gruppenMock().fetch);
+    const gleis22 = info.gleise.find((g) => g.gleis === '22');
+    expect(gleis22?.evas).toEqual(['8089522']);
+  });
+
+  it('zaehlt 8089522 zu den reinen S-Bahn-Verkehrsstellen', async () => {
+    const info = await holeStationsInfo('8011160', gruppenMock().fetch);
+    expect(info.sbahnEvas).toContain('8089522');
+  });
+
+  it('liefert die S15 auch fuer die Fahrplantafel (holeGruppe)', async () => {
+    const evas = await holeGruppe('8011160', gruppenMock().fetch);
+    expect([...evas].sort()).toEqual(['8011160', '8089021', '8089522', '8098160']);
+  });
+
+  it('loest von 8089522 aus den ganzen Berliner Hbf auf', async () => {
+    // Ohne stationID gab es bisher gar keine Gruppe - wer die S15-Stelle
+    // oeffnete, sah nur Gleis 22 und keinen Umstieg zur Halle.
+    const evas = await holeGruppe('8089522', gruppenMock().fetch);
+    expect([...evas].sort()).toEqual(['8011160', '8089021', '8089522', '8098160']);
   });
 });
 
@@ -449,9 +491,9 @@ describe('sbahnEvas', () => {
     expect(info.sbahnEvas).toEqual(['8098263']);
   });
 
-  it('Berlin: nur 8089021', async () => {
+  it('Berlin: 8089021 und die S15-Stelle 8089522', async () => {
     const info = await holeStationsInfo('8011160', gruppenMock().fetch);
-    expect(info.sbahnEvas).toEqual(['8089021']);
+    expect([...(info.sbahnEvas ?? [])].sort()).toEqual(['8089021', '8089522']);
   });
 
   it('ein ausgefallenes Mitglied fehlt in sbahnEvas, der Rest bleibt', async () => {

@@ -177,19 +177,43 @@ async function ermittleGruppe(
   stationID: string | undefined,
   fetchFn: typeof fetch,
 ): Promise<string[]> {
+  // Ein Zusatzmitglied hat selbst keine stationID - gefragt wird dann mit
+  // Name und Nummer des Bahnhofs, zu dem es gehoert.
+  const zusatz = ZUSATZ_MITGLIEDER.find((z) =>
+    stationID ? z.stationID === stationID : z.mitglieder.includes(eva),
+  );
+  const nummer = stationID ?? zusatz?.stationID;
+  const suchname = stationID ? name : (zusatz?.name ?? name);
   // Kein Ausfall, sondern eine Auskunft: Ohne Bahnhofsnummer gibt es keine
   // Gruppe, nach der sich fragen liesse. Das bleibt still.
-  if (!stationID) return [eva];
-  const body = (await dbGet(epStopPlacesByName(name), fetchFn)) as { stopPlaces?: StopPlace[] };
+  if (!nummer) return [eva];
+  const body = (await dbGet(epStopPlacesByName(suchname), fetchFn)) as { stopPlaces?: StopPlace[] };
   const treffer = body.stopPlaces ?? [];
   const fuehrend = treffer.find(
-    (sp) => sp.stationID === stationID && (sp.groupMembers?.length ?? 0) > 0,
+    (sp) => sp.stationID === nummer && (sp.groupMembers?.length ?? 0) > 0,
   );
   // istGueltigeEva schützt die Gruppe genauso wie die Trefferliste: Timetables
   // und die Gleisliste kennen fremde Nummernräume nicht.
-  const mitglieder = (fuehrend?.groupMembers ?? []).filter(istGueltigeEva);
+  const mitglieder = [...(fuehrend?.groupMembers ?? []).filter(istGueltigeEva)];
+  // Die Zusatzmitglieder gehoeren nur dazu, wenn RIS die Gruppe wirklich
+  // geliefert hat - sonst bliebe es beim Rueckfall auf die eine Stelle.
+  if (zusatz && mitglieder.length > 0) mitglieder.push(...zusatz.mitglieder);
   return mitglieder.includes(eva) ? [...new Set(mitglieder)] : [eva];
 }
+
+/**
+ * Verkehrsstellen, die zu einem Bahnhof gehoeren, aber in keiner
+ * `groupMembers`-Liste von RIS::Stations stehen.
+ *
+ * 8089522 „Berlin Hbf (S-Bahn)“ fuehrt die S15 an Gleis 22 (S21-Bahnsteig),
+ * traegt aber keine stationID. Die App zeigte die S15 deshalb nie (Diagnose
+ * 22.11.2026: Stichprobe von 20 grossen Bahnhoefen, einziger Fall). Bewusst
+ * eine Liste von Hand statt einer Regel nach Name und Lage: Die Gruppenregel
+ * bleibt eng, und „Berlin Hbf (Invalidenstrasse)“ & Co. geraten nicht hinein.
+ */
+const ZUSATZ_MITGLIEDER: ReadonlyArray<{ stationID: string; name: string; mitglieder: string[] }> = [
+  { stationID: '1071', name: 'Berlin Hbf', mitglieder: ['8089522'] },
+];
 
 async function ladeStopPlace(eva: string, fetchFn: typeof fetch): Promise<StopPlace> {
   const body = (await dbGet(epStopPlace(eva), fetchFn)) as StopPlace | { stopPlaces?: StopPlace[] };

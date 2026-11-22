@@ -119,7 +119,7 @@ describe('holeGruppe verschweigt den Ausfall nicht', () => {
 
   it('liefert die Gruppe, wenn die Suche antwortet', async () => {
     const evas = await holeGruppe('8011160', berlinMock());
-    expect([...evas].sort()).toEqual(['8011160', '8089021', '8098160']);
+    expect([...evas].sort()).toEqual(['8011160', '8089021', '8089522', '8098160']);
   });
 });
 

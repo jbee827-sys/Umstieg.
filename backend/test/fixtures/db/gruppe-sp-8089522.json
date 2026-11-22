@@ -1,0 +1,35 @@
+{
+  "stopPlaces": [
+    {
+      "evaNumber": "8089522",
+      "names": {
+        "DE": {
+          "nameLong": "Berlin Hbf (S-Bahn)",
+          "speechLong": "Berlin Hauptbahnhof",
+          "speechShort": "Berlin Hauptbahnhof",
+          "synonyms": []
+        }
+      },
+      "availableTransports": [
+        "CITY_TRAIN"
+      ],
+      "availablePhysicalTransports": [
+        "CITY_TRAIN"
+      ],
+      "countryCode": "DE",
+      "timeZone": "Europe/Berlin",
+      "metropolis": {},
+      "municipalityKey": "11000000",
+      "position": {
+        "longitude": 13.37031,
+        "latitude": 52.52543
+      },
+      "postalCode": "10557",
+      "replacementTransportsAvailable": false,
+      "state": "BE",
+      "transportAssociations": [
+        "VBB"
+      ]
+    }
+  ]
+}
