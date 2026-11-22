@@ -20,7 +20,49 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 11.11.2026)
+## Hier weitermachen (Stand 22.11.2026)
+
+**Stand der Zweige:** `main` und `feat/reiseimport-bahnhof` stehen gleich auf
+`7841f8f` (auf `origin` nur `main`; der Zweig ist lokal). Frontend live auf
+www.umstieg.online, Backend auf Fly mit dem Code von `b05351f` (eine
+Maschine). Das lokale `main` ist veraltet. Wer darauf arbeiten will, holt es
+zuerst per `git fetch` und `git merge --ff-only origin/main` nach.
+
+**Ausgeliefert am 21.11.2026: Reise-Import wählt den Bahnhof selbst**
+(Backend und Frontend, live geprüft; Einzelheiten unter „Reise-Import:
+Bahnhof per offiziellem Namen“ weiter unten):
+
+- Ein geteilter Reisetext nennt oft den Namen einer einzelnen Verkehrsstelle
+  („Bernau (S)“). `GET /api/bahnhof-zum-namen` löst ihn über die amtlichen
+  Namen der Verkehrsstellengruppe auf (RIS::Stations) und liefert nur einen
+  eindeutigen Bahnhof, sonst `null`. Die App wählt den Treffer wie einen Tipp.
+  Ohne Treffer bleibt der Name Suchtext, und darunter steht „Bitte Bahnhof
+  antippen“.
+- Der Dialog hat wählbare Karten (ein einzelner Umstieg ist vorgewählt) und
+  zwei runde Knöpfe nebeneinander: „Abbrechen“ und das grüne „Bestätigen“.
+- Simulation über 1026 Bahnhöfe (StaDa Kat. 1–4), 1160 Namen: **0
+  Falschwahlen**, 92,6 % der eigenen Namen und 73,2 % der Mitgliedsnamen
+  richtig aufgelöst. Den einen Falschfall des ersten Laufs („Berlin Hbf
+  (S-Bahn)“, zwei EVAs mit demselben Namen) behebt `b05351f`; seitdem gilt ein
+  solcher Name als mehrdeutig.
+- Nebenbei: Der seit dem 11.11. rote Test in
+  `backend/test/osm-bestand.test.ts` hing an der echten Uhr und hat jetzt eine
+  feste. Am Produktivcode war kein Fehler. Backend 1149/1149, Frontend
+  1204/1204.
+
+**Als Nächstes:**
+
+1. **Bau 4** (Julian): *Actions → iOS → Run workflow* auf `main`. Danach am
+   iPhone den neuen Dialog (hell/dunkel) und das Teilen aus dem DB Navigator
+   prüfen. Mit Bau 4 kommt auch „Etwas melden“ in der App (schon in Bau 3).
+2. **Vor der App-Store-Einreichung:** die vorübergehende „Teilen-Diagnose“
+   unter Einstellungen entfernen. Die übrigen Punkte stehen unter „iOS-App“ →
+   „Offene Punkte bis zur Einreichung“.
+3. **Mitteilungen bei gesperrtem Handy:** Bisher kommt verlässlich nur die
+   vorab geplante Erinnerung. Server-Push (APNs) wäre ein eigenes Paket mit
+   Backend und Gerätekennungen, **noch nicht entschieden**.
+4. Danach die „Weiteren offenen Punkte“ unten (Sichtprüfung der Läden,
+   Prüfregel `simulation-bild.ts`, Frankfurt 1 → 1a, …).
 
 **Ausgeliefert am 11.11.2026: „Etwas melden“** (Backend und Frontend,
 `main` auf `31cfbe8`, live auf www.umstieg.online geprüft):
@@ -52,12 +94,12 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 
 1. Gemeinsame Obergrenze für alle Aufrufer (z. B. 30 Meldungen je Stunde) –
    einbauen, sobald Spam auftaucht (Spec, „Für später vorgemerkt“).
-2. In der iOS-App freischalten: **vorbereitet am 16.11.2026, noch nicht
-   ausgeliefert.** Knopf in der App sichtbar, `PrivacyInfo.xcprivacy` und
-   Datenschutzseite angepasst, Vorlage in `docs/app-store-eintrag.md`
-   („App-Datenschutz“). Julian trägt in App Store Connect *E-Mail-Adresse*
-   und *Kundensupport* ein und gibt den geänderten Datenschutztext frei;
-   danach kommt es mit dem nächsten Bau.
+2. In der iOS-App freischalten: **im Code seit `d983ce7` (16.11.2026), in
+   TestFlight seit Bau 3 (18.11.2026).** Knopf in der App sichtbar,
+   `PrivacyInfo.xcprivacy` und Datenschutzseite angepasst, Vorlage in
+   `docs/app-store-eintrag.md` („App-Datenschutz“). Offen für die
+   Einreichung: Julian trägt in App Store Connect *E-Mail-Adresse* und
+   *Kundensupport* ein und gibt den geänderten Datenschutztext frei.
 3. Adressprüfung lässt `( ) : \` und Umlaute durch; nodemailer formt daraus
    ein abweichendes Reply-To. An beiden Stellen (`backend/src/core/meldung.ts`,
    `frontend/src/rueckmeldung/regeln.ts`) ausschließen.
@@ -88,9 +130,6 @@ Commits `cb4145e` und `13e6763`, live auf www.umstieg.online geprüft):
 - Vorher verglichen mit dem Halo-Button von cult-ui (Vorschau
   `frontend/.entwurf/knopf-vorschau.html`, nicht eingecheckt); Julian hat
   Texture gewählt.
-
-**Stand der Zweige:** `main` und `feat/textnavigation` stehen auf `origin`
-gleich (Frontend live). Das Backend auf Fly läuft mit dem Code von `31cfbe8`.
 
 **Weitere offene Punkte (Reihenfolge):**
 
@@ -633,7 +672,7 @@ Gleis“ heißt nicht, dass der Weg offen ist.
    App zeigt laufend „Neue Abfahrtszeit“ zu Zügen, die niemand gewählt hat (lokal
    gesehen, in der Produktion ungeprüft).
 
-### iOS-App (Stand 18.11.2026, in `main` seit 01.11.2026, TestFlight intern)
+### iOS-App (Stand 22.11.2026, in `main` seit 01.11.2026, TestFlight intern)
 
 Plan: `Umstieg_Konzepte/05-umsetzungsplan-app-store.md`. Aufbau und
 Einrichtung: [`docs/app-ios.md`](./docs/app-ios.md). Web und App teilen einen
@@ -645,7 +684,7 @@ Code (`istApp()`); die Web-Fassung ändert sich nur im Suchfeld
 | 0 Apple-Konto | erledigt (Julian, 24.10.2026) |
 | 1 Lizenz-Ausnahme (§ 7 AGPL) | umgesetzt in `NOTICE`, `CONTRIBUTING.md` – **Freigabe Julian** |
 | 2 Capacitor + Cloud-Bau | fertig; Actions-Lauf grün mit 12 Fotos (iPhone 6,9", iPad 13", hell/dunkel); `capacitor://localhost` steht seit 24.10.2026 in `CORS_ORIGIN` auf Fly |
-| 3 TestFlight | **fertig (10.11.2026):** Bau 1 und 2 (1.0, aus `main`) in TestFlight, Bau 2 ohne Apple-Warnung. **Bau 3 am 18.11.2026** aus `main` (`d983ce7`: Teilen-Diagnose, „Etwas melden“ in der App, Gleisbild) in TestFlight. Stolperstein dabei: Apple verlangte neue Vereinbarungen – erst scheiterte das Archiv („PLA Update available … No profiles for 'online.umstieg.app'“, gelöst durch Annahme auf developer.apple.com), dann der Upload (`403 FORBIDDEN.REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`, gelöst durch Annahme in App Store Connect); jeweils „Re-run failed jobs“. Bei „No profiles“ zuerst im Log nach „PLA“ suchen; Julian hat die App als interner Tester auf dem iPhone. Dafür nötig waren: registriertes iPhone, echte App Group `group.online.umstieg.app` beiden App-IDs zugeordnet, Bundle-ID `online.umstieg.app` im App-Eintrag (war mit der Gruppe verwechselt), Text `NSLocationAlwaysAndWhenInUseUsageDescription` (ITMS-90683) – Details in `docs/app-ios.md` |
+| 3 TestFlight | **fertig (10.11.2026):** Bau 1 und 2 (1.0, aus `main`) in TestFlight, Bau 2 ohne Apple-Warnung. **Bau 3 am 18.11.2026** aus `main` (`d983ce7`: Teilen-Diagnose, „Etwas melden“ in der App, Gleisbild) in TestFlight. **Bau 4 steht an** (aus `main` ab `7841f8f`: Reise-Import mit Bahnhofsauflösung, runde Dialogknöpfe), Start durch Julian. Stolperstein dabei: Apple verlangte neue Vereinbarungen – erst scheiterte das Archiv („PLA Update available … No profiles for 'online.umstieg.app'“, gelöst durch Annahme auf developer.apple.com), dann der Upload (`403 FORBIDDEN.REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`, gelöst durch Annahme in App Store Connect); jeweils „Re-run failed jobs“. Bei „No profiles“ zuerst im Log nach „PLA“ suchen; Julian hat die App als interner Tester auf dem iPhone. Dafür nötig waren: registriertes iPhone, echte App Group `group.online.umstieg.app` beiden App-IDs zugeordnet, Bundle-ID `online.umstieg.app` im App-Eintrag (war mit der Gruppe verwechselt), Text `NSLocationAlwaysAndWhenInUseUsageDescription` (ITMS-90683) – Details in `docs/app-ios.md` |
 | 4 Messung mit Einwilligung | fertig: eigener Zähler `POST /api/zaehle` (nur Ereignisname, Summen je Stunde als `app-nutzung` im Fly-Protokoll), Abfrage beim ersten Start, Widerruf unter „Einstellungen“. Backend auf Fly ausgerollt am 24.10.2026 |
 | 5 Native Grundfunktionen | fertig (Standort mit Erklärung vor der Abfrage, Haptik, Wachhalten, Statusleiste, Start, Symbol, Safari-Ansicht, Datenschutz-Manifest) |
 | 6 Lokale Mitteilungen | fertig (Gleiswechsel/Ausfall des Anschlusses, Ampel Rot, Erinnerung 5 min vor Ankunft) |
