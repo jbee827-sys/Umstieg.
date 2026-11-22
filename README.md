@@ -2,7 +2,7 @@
 
 Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum Abfahrtsgleis liefert – als Schritt-für-Schritt-Anweisung und Karte – und live bewertet, ob der Anschluss erreichbar ist.
 
-**Konzept:** [`2026-08-24-umstiegs-navigator-design.md`](./2026-08-24-umstiegs-navigator-design.md)
+**Konzept:** `2026-08-24-umstiegs-navigator-design.md` – liegt seit 22.11.2026 außerhalb des Repos in `Umstieg_Konzepte/`
 **Implementierungsplan MVP (17 Tasks):** [`docs/plans/2026-08-24-umsetzungsplan-mvp.md`](./docs/plans/2026-08-24-umsetzungsplan-mvp.md)
 **Spec Standort (P1):** [`docs/superpowers/specs/2026-08-27-standort-und-navigation-design.md`](./docs/superpowers/specs/2026-08-27-standort-und-navigation-design.md)
 **Plan Standort (P1, 12 Tasks):** [`docs/superpowers/plans/2026-08-27-standort-und-navigation.md`](./docs/superpowers/plans/2026-08-27-standort-und-navigation.md)
@@ -28,8 +28,8 @@ www.umstieg.online, Backend auf Fly mit dem Code von `b05351f` (eine
 Maschine). Das lokale `main` ist veraltet. Wer darauf arbeiten will, holt es
 zuerst per `git fetch` und `git merge --ff-only origin/main` nach.
 
-**Lizenz und Repo (Entscheidung 22.11.2026):** Das Repo wird wieder
-öffentlich, die Lizenz bleibt AGPL mit der App-Store-Ausnahme. Transitous
+**Lizenz und Repo (22.11.2026):** Das Repo ist wieder öffentlich, die
+Lizenz bleibt AGPL mit der App-Store-Ausnahme. Transitous
 verlangt quelloffene Projekte (Einzelheiten unter „iOS-App“ → „Offene Punkte
 bis zur Einreichung“, B). Die Git-Historie ist auf Schlüssel geprüft, ohne
 Fund. Julian ist in App Store Connect als EU-Händler registriert.
@@ -58,9 +58,10 @@ Bahnhof per offiziellem Namen“ weiter unten):
 
 **Als Nächstes:**
 
-1. **Bau 4** (Julian): *Actions → iOS → Run workflow* auf `main`. Danach am
-   iPhone den neuen Dialog (hell/dunkel) und das Teilen aus dem DB Navigator
-   prüfen. Mit Bau 4 kommt auch „Etwas melden“ in der App (schon in Bau 3).
+1. **Bau 4 ist in TestFlight** (22.11.2026, Lauf 16 auf `main` `7841f8f`,
+   beide Jobs grün, Upload zu App Store Connect erfolgreich). Jetzt am iPhone
+   den neuen Dialog (hell/dunkel) und das Teilen aus dem DB Navigator prüfen
+   (Julian). „Etwas melden“ ist seit Bau 3 in der App.
 2. **Vor der App-Store-Einreichung:** die vorübergehende „Teilen-Diagnose“
    unter Einstellungen entfernen. Die übrigen Punkte stehen unter „iOS-App“ →
    „Offene Punkte bis zur Einreichung“.
@@ -690,7 +691,7 @@ Code (`istApp()`); die Web-Fassung ändert sich nur im Suchfeld
 | 0 Apple-Konto | erledigt (Julian, 24.10.2026) |
 | 1 Lizenz-Ausnahme (§ 7 AGPL) | umgesetzt in `NOTICE`, `CONTRIBUTING.md` – **Freigabe Julian** |
 | 2 Capacitor + Cloud-Bau | fertig; Actions-Lauf grün mit 12 Fotos (iPhone 6,9", iPad 13", hell/dunkel); `capacitor://localhost` steht seit 24.10.2026 in `CORS_ORIGIN` auf Fly |
-| 3 TestFlight | **fertig (10.11.2026):** Bau 1 und 2 (1.0, aus `main`) in TestFlight, Bau 2 ohne Apple-Warnung. **Bau 3 am 18.11.2026** aus `main` (`d983ce7`: Teilen-Diagnose, „Etwas melden“ in der App, Gleisbild) in TestFlight. **Bau 4 steht an** (aus `main` ab `7841f8f`: Reise-Import mit Bahnhofsauflösung, runde Dialogknöpfe), Start durch Julian. Stolperstein dabei: Apple verlangte neue Vereinbarungen – erst scheiterte das Archiv („PLA Update available … No profiles for 'online.umstieg.app'“, gelöst durch Annahme auf developer.apple.com), dann der Upload (`403 FORBIDDEN.REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`, gelöst durch Annahme in App Store Connect); jeweils „Re-run failed jobs“. Bei „No profiles“ zuerst im Log nach „PLA“ suchen; Julian hat die App als interner Tester auf dem iPhone. Dafür nötig waren: registriertes iPhone, echte App Group `group.online.umstieg.app` beiden App-IDs zugeordnet, Bundle-ID `online.umstieg.app` im App-Eintrag (war mit der Gruppe verwechselt), Text `NSLocationAlwaysAndWhenInUseUsageDescription` (ITMS-90683) – Details in `docs/app-ios.md` |
+| 3 TestFlight | **fertig (10.11.2026):** Bau 1 und 2 (1.0, aus `main`) in TestFlight, Bau 2 ohne Apple-Warnung. **Bau 3 am 18.11.2026** aus `main` (`d983ce7`: Teilen-Diagnose, „Etwas melden“ in der App, Gleisbild) in TestFlight. **Bau 4 am 22.11.2026** (Lauf 16, aus `main` `7841f8f`: Reise-Import mit Bahnhofsauflösung, runde Dialogknöpfe) in TestFlight hochgeladen, ohne Fehler. Stolperstein dabei: Apple verlangte neue Vereinbarungen – erst scheiterte das Archiv („PLA Update available … No profiles for 'online.umstieg.app'“, gelöst durch Annahme auf developer.apple.com), dann der Upload (`403 FORBIDDEN.REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`, gelöst durch Annahme in App Store Connect); jeweils „Re-run failed jobs“. Bei „No profiles“ zuerst im Log nach „PLA“ suchen; Julian hat die App als interner Tester auf dem iPhone. Dafür nötig waren: registriertes iPhone, echte App Group `group.online.umstieg.app` beiden App-IDs zugeordnet, Bundle-ID `online.umstieg.app` im App-Eintrag (war mit der Gruppe verwechselt), Text `NSLocationAlwaysAndWhenInUseUsageDescription` (ITMS-90683) – Details in `docs/app-ios.md` |
 | 4 Messung mit Einwilligung | fertig: eigener Zähler `POST /api/zaehle` (nur Ereignisname, Summen je Stunde als `app-nutzung` im Fly-Protokoll), Abfrage beim ersten Start, Widerruf unter „Einstellungen“. Backend auf Fly ausgerollt am 24.10.2026 |
 | 5 Native Grundfunktionen | fertig (Standort mit Erklärung vor der Abfrage, Haptik, Wachhalten, Statusleiste, Start, Symbol, Safari-Ansicht, Datenschutz-Manifest) |
 | 6 Lokale Mitteilungen | fertig (Gleiswechsel/Ausfall des Anschlusses, Ampel Rot, Erinnerung 5 min vor Ankunft) |
@@ -749,8 +750,8 @@ daraus wird Bau 3:
       `.superpowers/schluesselsuche/scan.mjs`, vergleicht die Tresorwerte,
       ohne sie auszugeben. Mit dem Umschalten werden auch die Actions-Logs
       und -Artefakte, die Autor-Adresse der Commits und die Zweige
-      `claude/project-thread-*` öffentlich. Umschalten: Julian auf GitHub,
-      *Settings → General → Danger Zone → Change visibility*.
+      `claude/project-thread-*` öffentlich. **Umgeschaltet am 22.11.2026**
+      (Julian); die GitHub-API antwortet seitdem wieder ohne Anmeldung.
       Bisherige Notiz dazu: Die Beschreibung in
       `docs/app-store-eintrag.md` sagt „Quelloffen unter der AGPL:
       github.com/jbee827-sys/Umstieg.“ – das Repo ist privat (spätestens seit
@@ -823,7 +824,7 @@ daraus wird Bau 3:
 `main` per Fast-Forward auf `0ffdfd8`, Vercel-Produktion „Ready“. Live auf
 www.umstieg.online geprüft: Die Reise Eberswalde → Bernau (S) → Berlin-Buch
 wählt Bernau(b Berlin) von selbst, die Tafeln öffnen sich, Gleis 3 → 1 und
-RE 3 / S 2 stehen da. **Bau 4** (iOS) startet Julian über *Actions → iOS → Run
+RE 3 / S 2 stehen da. **Bau 4** (iOS) ist seit 22.11.2026 in TestFlight (Lauf 16); gestartet über *Actions → iOS → Run
 workflow* auf `main`.
 
 Anlass: Test mit TestFlight-Bau 3 (siehe iOS-App, Punkt A). Design:
@@ -5259,7 +5260,7 @@ unwahr; `backend/test/datenschutz.test.ts` hält ihn jetzt fest.
 
 ## Konzeptlücken
 
-Drei Vorgaben aus dem [Umsetzungskonzept](./2026-08-24-umstiegs-navigator-design.md)
+Drei Vorgaben aus dem Umsetzungskonzept (`2026-08-24-umstiegs-navigator-design.md`, in `Umstieg_Konzepte/`)
 sind nie gebaut worden. Sie stehen hier getrennt, weil sie keine Fehler sind,
 sondern Entscheidungen, die noch anstehen.
 
