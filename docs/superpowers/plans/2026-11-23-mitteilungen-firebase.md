@@ -24,6 +24,16 @@
 - Arbeitszweig `feat/mitteilungen` von `main`; Commits mit Autor Julian Beerbaum, ohne Claude-Kennzeichnung; nichts pushen ohne Julians ausdrückliche Anweisung.
 - Frontend- und Backend-Suite nie gleichzeitig laufen lassen.
 
+## Stand (23.11.2026, abends)
+
+Tasks 1–6 erledigt (Backend komplett, 1233 Tests grün). Abweichungen vom Plan:
+- Drosselung **ab** 2 Min. (Julian): 3 → 4 → 5 → 8 ergibt drei Mitteilungen.
+- Neu: **Abgleich beim Aufwachen** (`abgleich` in `reisewache.ts`, `Ueberwachung.stand`): Was sich zwischen Anmeldung und erstem Abruf geändert hat, kam sonst nie als Ereignis an.
+- `fcm.ts`: `INVALID_ARGUMENT` beendet die Wache nur, wenn FCM das Registrierungstoken meint – sonst würde ein Fehler in unserer Nachricht alle Wachen beenden. `FIREBASE_SERVICE_ACCOUNT` roh oder Base64.
+- Testmitteilung trägt `daten.test = '1'` (App trägt sie nicht als Meldung nach).
+
+Weiter mit Task 7 (wartet auf Julians Firebase-Einrichtung: `GoogleService-Info.plist`).
+
 ## Review Focus
 
 1. **Reise über Mitternacht** (Ankunft 23:52, Anschluss 00:10): HH:MM aus dem Live-Strom muss auf den richtigen Tag fallen – sonst Rot und Erinnerung zur falschen Zeit. → Test in Task 2 und Task 3.
@@ -67,7 +77,7 @@
 **Interfaces:**
 - Produces: `Ueberwachung.reserviere(schluessel: string[]): () => void` – zählt die Schlüssel bis zur Freigabe als belegt; mehrfach reserviert = ein Platz; ein Schlüssel, der reserviert UND abonniert ist, belegt einen Platz. `hatKapazitaetFuer`/`hatKapazitaetFuerAlle` zählen `jeEva ∪ reserviert`. Die Freigabefunktion ist idempotent.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 it('zaehlt reservierte Schluessel als belegt', () => {
@@ -96,10 +106,10 @@ it('gibt eine doppelt reservierte Stelle erst nach beiden Freigaben frei', () =>
 });
 ```
 
-- [ ] **Step 2: Run it** – `cd backend && npx vitest run test/ueberwachung-reservierung.test.ts` → FAIL (`reserviere is not a function`)
-- [ ] **Step 3: Implement** `reserviere` mit einem Zähler je Schlüssel (`Map<string, number>`); Kapazität über die Vereinigung beider Mengen.
-- [ ] **Step 4: Run it and the live tests** – `npx vitest run test/ueberwachung-reservierung.test.ts test/live*.test.ts` → PASS
-- [ ] **Step 5: Commit** – `feat(backend): Ueberwachung reserviert Plaetze fuer Reisewachen`
+- [x] **Step 2: Run it** – `cd backend && npx vitest run test/ueberwachung-reservierung.test.ts` → FAIL (`reserviere is not a function`)
+- [x] **Step 3: Implement** `reserviere` mit einem Zähler je Schlüssel (`Map<string, number>`); Kapazität über die Vereinigung beider Mengen.
+- [x] **Step 4: Run it and the live tests** – `npx vitest run test/ueberwachung-reservierung.test.ts test/live*.test.ts` → PASS
+- [x] **Step 5: Commit** – `feat(backend): Ueberwachung reserviert Plaetze fuer Reisewachen`
 
 ---
 
@@ -141,7 +151,7 @@ export function mitteilungsDaten(d: {
 }): Record<string, string>;
 ```
 
-- [ ] **Step 1: Write the failing tests** – Texte wörtlich aus Abschnitt 4a:
+- [x] **Step 1: Write the failing tests** – Texte wörtlich aus Abschnitt 4a:
 
 ```ts
 const RE3: TextZug = { anzeige: 'RE 3', uhr: '16:23', gleis: '6', richtung: 'Schwedt (Oder)' };
@@ -166,10 +176,10 @@ expect(berlinZeitpunktNahe('00:10', bezug).toISOString()).toBe('2026-11-23T23:10
 expect(berlinZeitpunktNahe('23:40', bezug).toISOString()).toBe('2026-11-23T22:40:00.000Z');
 ```
 
-- [ ] **Step 2: Run it** – `npx vitest run test/mitteilungstexte.test.ts` → FAIL
-- [ ] **Step 3: Implement** beide Dateien; `berlinZeitpunktNahe` über `berlinTeile` (Kandidaten gestern/heute/morgen, der nächste gewinnt).
-- [ ] **Step 4: Run it** → PASS
-- [ ] **Step 5: Commit** – `feat(backend): Mitteilungstexte nach Konzept 4a und Berliner Uhrzeit nahe einem Bezug`
+- [x] **Step 2: Run it** – `npx vitest run test/mitteilungstexte.test.ts` → FAIL
+- [x] **Step 3: Implement** beide Dateien; `berlinZeitpunktNahe` über `berlinTeile` (Kandidaten gestern/heute/morgen, der nächste gewinnt).
+- [x] **Step 4: Run it** → PASS
+- [x] **Step 5: Commit** – `feat(backend): Mitteilungstexte nach Konzept 4a und Berliner Uhrzeit nahe einem Bezug`
 
 ---
 
@@ -223,7 +233,7 @@ Regeln, die die Tests festhalten (aus der Spec):
 - Erinnerung: Ankunft (aktuell) − 5 Min.; `null`, wenn schon vorbei (< jetzt + 30 s) oder keine Ankunft.
 - `daten` füllt Task 2 `mitteilungsDaten`: `status` aus der Ampel (`rot` → `knapp`, sonst `erreichbar`; Ausfall → `faellt-aus`), `aktion` = `verbindung` bei Ausfall, sonst `weg` mit dem aktuellen Anschlussgleis.
 
-- [ ] **Step 1: Write the failing tests** (Beispielreise: ICE 1134 an 16:01 Gleis 8, RE 3352/„RE 3“ ab 16:23 Gleis 6, Gehzeit 240 s, Berlin Hbf)
+- [x] **Step 1: Write the failing tests** (Beispielreise: ICE 1134 an 16:01 Gleis 8, RE 3352/„RE 3“ ab 16:23 Gleis 6, Gehzeit 240 s, Berlin Hbf)
 
 ```ts
 it('drosselt Verspaetungen ab 2 Min.: 3 → 4 → 5 → 8 Min. ergeben drei Mitteilungen', ...)   // Ereignisse 16:26, 16:27, 16:28, 16:31 → geschickt 16:26, 16:28 und 16:31 (Julian 23.11.: „ab 2 Minuten“)
@@ -241,10 +251,10 @@ it('wacht 90 Min. vor der Ankunft auf', ...)
 
 Jeder Test prüft `mitteilungen.map(m => [m.art, m.titel, m.text])` mit den Werten aus Task 2.
 
-- [ ] **Step 2: Run it** – `npx vitest run test/reisewache.test.ts` → FAIL
-- [ ] **Step 3: Implement** `reisewache.ts` – rein, ohne Zeitgeber und ohne Fastify.
-- [ ] **Step 4: Run it** → PASS
-- [ ] **Step 5: Commit** – `feat(backend): Reisewache entscheidet, wann eine Mitteilung faellig ist`
+- [x] **Step 2: Run it** – `npx vitest run test/reisewache.test.ts` → FAIL
+- [x] **Step 3: Implement** `reisewache.ts` – rein, ohne Zeitgeber und ohne Fastify.
+- [x] **Step 4: Run it** → PASS
+- [x] **Step 5: Commit** – `feat(backend): Reisewache entscheidet, wann eine Mitteilung faellig ist`
 
 ---
 
@@ -277,7 +287,7 @@ export class Reisewachen {
 
 Verhalten: reserviert beim `melde` (Bahnhof: `[eva]`; Haltestelle: beide `haltestellenLiveSchluessel(...)`), ruht bis `wachAb`, abonniert dann (Bahnhof: Züge `[an.name, ab.name]`; Haltestelle: `merkeOrt` + je Schlüssel die Fahrt), stellt den Erinnerungs-Zeitgeber nach jeder Ankunftsänderung neu, endet bei `endeAm`. `token-ungueltig` beendet die Wache sofort; `fehler` nur protokollieren (`degradation: 'mitteilung-fehlgeschlagen'`, ohne Token). Protokoll nur als Summen (`ereignis: 'mitteilungen'`, je Stunde: angelegt, geschickt je Art, Fehler) – Muster `core/anfragezaehler.ts`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it('reserviert beim Anmelden und abonniert erst 90 Min. vor der Ankunft', ...)
@@ -291,10 +301,10 @@ it('schickt die Erinnerung zur verschobenen Zeit', ...)
 it('schreibt nie Token, Zug oder Bahnhof ins Protokoll', ...) // Protokoll-Spy, JSON.stringify(alle Aufrufe) enthält keins davon
 ```
 
-- [ ] **Step 2: Run it** → FAIL
-- [ ] **Step 3: Implement** `reisewachen.ts` (`setTimeout` mit `unref`, alle Zeitgeber je Wache in `beende`/`vergiss` geräumt).
-- [ ] **Step 4: Run it** → PASS
-- [ ] **Step 5: Commit** – `feat(backend): Reisewachen mit Platz, Zeitgebern und Ende`
+- [x] **Step 2: Run it** → FAIL
+- [x] **Step 3: Implement** `reisewachen.ts` (`setTimeout` mit `unref`, alle Zeitgeber je Wache in `beende`/`vergiss` geräumt).
+- [x] **Step 4: Run it** → PASS
+- [x] **Step 5: Commit** – `feat(backend): Reisewachen mit Platz, Zeitgebern und Ende`
 
 ---
 
@@ -317,7 +327,7 @@ export function fcmNachricht(token: string, plattform: Plattform, m: Mitteilung)
 
 `fcmNachricht` setzt: `message.token`, `notification { title, body }`, `data` = `m.daten`, `apns.headers['apns-collapse-id']` = `m.buendel` (gekürzt auf 64 Byte), `apns.payload.aps { sound: 'default', category: 'reise' }`, `android.collapse_key` = `m.buendel`.
 
-- [ ] **Step 1: Write the failing tests** – gefälschter `fetchFn`, Testschlüssel per `crypto.generateKeyPairSync('rsa', { modulusLength: 2048 })`:
+- [x] **Step 1: Write the failing tests** – gefälschter `fetchFn`, Testschlüssel per `crypto.generateKeyPairSync('rsa', { modulusLength: 2048 })`:
 
 ```ts
 it('liefert null ohne Dienstkonto', () => expect(erzeugeFcmVersand({})).toBeNull());
@@ -327,10 +337,10 @@ it('meldet token-ungueltig bei UNREGISTERED', ...)
 it('meldet fehler bei 500 und bei Netzfehler, ohne zu werfen', ...)
 ```
 
-- [ ] **Step 2: Run it** → FAIL
-- [ ] **Step 3: Implement** `fcm.ts`.
-- [ ] **Step 4: Run it** → PASS
-- [ ] **Step 5: Commit** – `feat(backend): FCM HTTP v1 ohne neue Abhaengigkeit`
+- [x] **Step 2: Run it** → FAIL
+- [x] **Step 3: Implement** `fcm.ts`.
+- [x] **Step 4: Run it** → PASS
+- [x] **Step 5: Commit** – `feat(backend): FCM HTTP v1 ohne neue Abhaengigkeit`
 
 ---
 
@@ -351,7 +361,7 @@ it('meldet fehler bei 500 und bei Netzfehler, ohne zu werfen', ...)
   - `POST /api/mitteilungen/test` (Body `{ token, plattform }`, **vorübergehend** für TestFlight) → schickt eine Mitteilung `art: 'gleis-ab'` mit den Beispieltexten aus 4a; 204 · 502 bei `fehler`/`token-ungueltig` · 503 ohne Versand
 - CORS: `methods: ['GET', 'POST', 'PUT', 'DELETE']`. Ratengrenzen: `'/api/mitteilungen/reise': 20`, `'/api/mitteilungen/test': 2`.
 
-- [ ] **Step 1: Write the failing tests** (mit `buildApp(..., { clients: { reisewachen, fcmVersand } })` und `app.inject`)
+- [x] **Step 1: Write the failing tests** (mit `buildApp(..., { clients: { reisewachen, fcmVersand } })` und `app.inject`)
 
 ```ts
 it('nimmt eine gueltige Anmeldung mit 204 an', ...)
@@ -362,10 +372,10 @@ it('beantwortet den CORS-Preflight fuer PUT und DELETE von capacitor://localhost
 it('nimmt nie einen Text vom Aufrufer an', ...) // Body mit titel/text → wird ignoriert, Mitteilungstext stammt aus Task 2
 ```
 
-- [ ] **Step 2: Run it** → FAIL
-- [ ] **Step 3: Implement** Route und Verdrahtung (`new Reisewachen({ bahnhof: ueberwachung, haltestellen: haltestellenLive }, versand, { log })`, nur wenn `versand` nicht `null`; `onClose` → `beende()`).
-- [ ] **Step 4: Run the whole backend suite and lint** – `npm test && npm run lint` → alles grün
-- [ ] **Step 5: Commit** – `feat(backend): Routen fuer Reisewachen und Testmitteilung`
+- [x] **Step 2: Run it** → FAIL
+- [x] **Step 3: Implement** Route und Verdrahtung (`new Reisewachen({ bahnhof: ueberwachung, haltestellen: haltestellenLive }, versand, { log })`, nur wenn `versand` nicht `null`; `onClose` → `beende()`).
+- [x] **Step 4: Run the whole backend suite and lint** – `npm test && npm run lint` → alles grün
+- [x] **Step 5: Commit** – `feat(backend): Routen fuer Reisewachen und Testmitteilung`
 
 ---
 
