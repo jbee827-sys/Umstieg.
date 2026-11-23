@@ -28,3 +28,16 @@ describe('Ueberwachung: Platzreservierung', () => {
     expect(u.hatKapazitaetFuer('8000105')).toBe(true);
   });
 });
+
+describe('Ueberwachung.stand', () => {
+  it('liefert den letzten Tafelstand eines Schluessels, leer vor dem ersten Abruf', async () => {
+    const eintrag = { zug: 'RE 3352', zeitSoll: '16:23', gleisSoll: '6', ziel: 'Schwedt (Oder)' };
+    const u = new Ueberwachung(async () => [eintrag], 30_000, undefined, 2);
+    expect(u.stand('8011160')).toEqual([]);
+    const ab = u.abonniere('8011160', [], () => {});
+    await u.pruefeJetzt('8011160');
+    expect(u.stand('8011160')).toEqual([eintrag]);
+    ab();
+    expect(u.stand('8011160')).toEqual([]);
+  });
+});

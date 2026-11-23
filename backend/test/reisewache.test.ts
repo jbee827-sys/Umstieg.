@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  abgleich,
   beurteile,
   endeAm,
   erinnerung,
@@ -11,6 +12,7 @@ import {
 } from '../src/core/reisewache.js';
 import type { LiveEreignis } from '../src/core/ueberwachung.js';
 import type { Mitteilung } from '../src/core/mitteilungstexte.js';
+import type { TafelEintrag } from '../src/core/typen.js';
 
 // Beispielreise (Konzept 4a): ICE 1134 an 16:01 Gleis 8, RE 3352 ("RE 3") ab
 // 16:23 Gleis 6, Gehzeit 240 s, Berlin Hbf. Am 23.11. gilt MEZ (+01:00).
@@ -312,5 +314,65 @@ describe('Zeiten der Wache', () => {
     expect(wachAb(neuerZustand({ ...REISE, an: { ...REISE.an!, ist: um('16:10') } }))).toEqual(zeit('14:40:00'));
     const { an: _an, ...ohneAn } = REISE;
     expect(wachAb(neuerZustand(ohneAn))).toEqual(zeit('14:53:00'));
+  });
+});
+
+describe('abgleich beim Aufwachen', () => {
+  const tafel = (t: Partial<TafelEintrag> & { zug: string; zeitSoll: string }): TafelEintrag => ({
+    gleisSoll: '',
+    ziel: '',
+    ...t,
+  });
+
+  it('meldet, was sich vor dem ersten Abruf schon geaendert hatte', () => {
+    const r = abgleich(
+      neuerZustand(REISE),
+      [
+        // Der ICE steht in beiden Tafeln; zaehlen darf nur die Ankunft 16:01.
+        tafel({ zug: 'ICE 1134', zeitSoll: '16:01', zeitIst: '16:09', gleisSoll: '8' }),
+        tafel({ zug: 'ICE 1134', zeitSoll: '16:04', zeitIst: '16:30', gleisSoll: '8' }),
+        tafel({ zug: 'RE 3352', zeitSoll: '16:23', gleisSoll: '6', gleisIst: '5' }),
+        tafel({ zug: 'S 5', zeitSoll: '16:10', zeitIst: '16:40', gleisSoll: '1' }),
+      ],
+      ['an', 'ab'],
+      VORHER,
+    );
+    expect(kurz(r.mitteilungen)).toEqual([
+      ['zeit-an', 'ICE 1134: 16:09 statt 16:01', '14 Min. zum Umsteigen'],
+      ['gleis-ab', 'Gleis 5 statt 6', 'RE 3 nach Schwedt (Oder), ab 16:23'],
+    ]);
+    expect(r.gefunden).toEqual(['an', 'ab']);
+    expect(erinnerung(r.zustand, VORHER)!.am).toEqual(zeit('16:04:00'));
+  });
+
+  it('schweigt, wenn die Tafel zum Stand der Anmeldung passt, und meldet fehlende Zuege nicht als gefunden', () => {
+    const r = abgleich(
+      neuerZustand(REISE),
+      [tafel({ zug: 'RE 3352', zeitSoll: '16:23', gleisSoll: '6' })],
+      ['an', 'ab'],
+      VORHER,
+    );
+    expect(r.mitteilungen).toEqual([]);
+    expect(r.gefunden).toEqual(['ab']);
+  });
+
+  it('meldet einen Ausfall, der vor dem ersten Abruf schon feststand', () => {
+    const r = abgleich(
+      neuerZustand(REISE),
+      [tafel({ zug: 'RE 3352', zeitSoll: '16:23', gleisSoll: '6', ausfall: true })],
+      ['ab'],
+      VORHER,
+    );
+    expect(kurz(r.mitteilungen)).toEqual([['ausfall-ab', 'RE 3 fällt aus', 'Andere Verbindung wählen']]);
+  });
+
+  it('meldet einen Gleiswechsel nicht doppelt, wenn der Live-Strom ihn danach noch einmal bringt', () => {
+    const z = abgleich(
+      neuerZustand(REISE),
+      [tafel({ zug: 'RE 3352', zeitSoll: '16:23', gleisSoll: '6', gleisIst: '5' })],
+      ['ab'],
+      VORHER,
+    ).zustand;
+    expect(beurteile(z, ev('gleiswechsel', 'RE 3352', '6', '5'), 'ab', VORHER).mitteilungen).toEqual([]);
   });
 });

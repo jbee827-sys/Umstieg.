@@ -120,6 +120,16 @@ export class Ueberwachung {
     };
   }
 
+  /**
+   * Letzter abgerufener Tafelstand eines Schluessels (leer vor dem ersten
+   * Abruf oder ohne Abonnenten). Die Reisewache gleicht damit beim Aufwachen
+   * ab, was sich VOR ihrem ersten Abruf geaendert hat - als Ereignis kommt
+   * das nie an, gemeldet werden nur Unterschiede zwischen zwei Abrufen.
+   */
+  stand(schluessel: string): TafelEintrag[] {
+    return [...(this.jeEva.get(schluessel)?.letzterStand.values() ?? [])];
+  }
+
   /** Meldet einen Abonnenten an; Rückgabe ist die Abmeldefunktion. */
   abonniere(eva: string, zuege: string[], sende: (e: LiveEreignis) => void): () => void {
     let eintrag = this.jeEva.get(eva);

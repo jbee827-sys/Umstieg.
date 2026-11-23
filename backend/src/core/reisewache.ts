@@ -12,6 +12,7 @@ import {
   type Status,
   type TextZug,
 } from './mitteilungstexte.js';
+import type { TafelEintrag } from './typen.js';
 import type { LiveEreignis } from './ueberwachung.js';
 import { berlinUhrzeit, berlinZeitpunktNahe } from './zeit.js';
 
@@ -226,7 +227,8 @@ function verspaetung(z: WachZustand, e: LiveEreignis, seite: Seite, jetztMs: num
 
 function gleiswechsel(z: WachZustand, e: LiveEreignis, seite: Seite, jetztMs: number): Beurteilung {
   const s = z[seite];
-  if (!s || !e.neu) return { zustand: z, mitteilungen: [] };
+  // Schon bekannt (etwa aus dem Abgleich beim Aufwachen): nicht noch einmal melden.
+  if (!s || !e.neu || e.neu === s.gleis) return { zustand: z, mitteilungen: [] };
   const alt = e.alt ?? s.gleis;
   const neu = mitSeite(z, seite, { ...s, gleis: e.neu }, { gehzeitVeraltet: true });
   const text = textGleis(textZug(neu[seite]!), seite, z.reise.haltWort, alt, e.neu);
@@ -315,6 +317,50 @@ export function seiteVon(z: WachZustand, e: LiveEreignis, quelle?: 'arr' | 'dep'
   }
   if (e.typ === 'gleiswechsel' && e.alt === z.an!.gleis && e.alt !== z.ab.gleis) return 'an';
   return 'ab';
+}
+
+/**
+ * Abgleich beim Aufwachen: Die Ueberwachung meldet nur Aenderungen zwischen
+ * zwei Abrufen. Was sich zwischen Anmeldung und erstem Abruf geaendert hat -
+ * eine morgens angemeldete Abendreise wacht erst 90 Min. vor der Ankunft auf -,
+ * kaeme nie als Ereignis an. Deshalb vergleicht die Wache den ersten Stand der
+ * Tafel einmal mit ihrem eigenen und behandelt jede Abweichung wie ein
+ * Live-Ereignis (gleiche Regeln, gleiche Drosselung).
+ *
+ * Ein Zug wird ueber Name UND Sollzeit gefunden: Ein durchfahrender Zug steht
+ * mit Ankunft und Abfahrt in der Tafel. `gefunden` nennt die Seiten, deren Zug
+ * in der Tafel stand - fehlt einer noch (Tafelfenster), versucht die Wache es
+ * beim naechsten Abruf wieder.
+ */
+export function abgleich(
+  z: WachZustand,
+  tafel: TafelEintrag[],
+  seiten: Seite[],
+  jetzt: Date,
+): Beurteilung & { gefunden: Seite[] } {
+  const zeitstempel = jetzt.toISOString();
+  const mitteilungen: Mitteilung[] = [];
+  const gefunden: Seite[] = [];
+  let zustand = z;
+  const wende = (e: LiveEreignis, seite: Seite): void => {
+    const r = beurteile(zustand, e, seite, jetzt);
+    zustand = r.zustand;
+    mitteilungen.push(...r.mitteilungen);
+  };
+  for (const seite of seiten) {
+    const s = zustand[seite];
+    if (!s) continue;
+    const eintrag = tafel.find((t) => t.zug === s.zug.name && t.zeitSoll === uhr(Date.parse(s.zug.soll)));
+    if (!eintrag) continue;
+    gefunden.push(seite);
+    const zug = s.zug.name;
+    const zeit = eintrag.zeitIst ?? eintrag.zeitSoll;
+    if (zeit !== uhr(s.aktuellMs)) wende({ typ: 'verspaetung', zug, alt: uhr(s.aktuellMs), neu: zeit, zeitstempel }, seite);
+    const gleis = eintrag.gleisIst ?? eintrag.gleisSoll;
+    if (gleis && gleis !== s.gleis) wende({ typ: 'gleiswechsel', zug, alt: s.gleis, neu: gleis, zeitstempel }, seite);
+    if (eintrag.ausfall) wende({ typ: 'ausfall', zug, zeitstempel }, seite);
+  }
+  return { zustand, mitteilungen, gefunden };
 }
 
 /** Ab wann die Wache die Tafel abfragt: 90 Min. vor der Ankunft (ohne Ankunftszug: vor der Abfahrt). */
