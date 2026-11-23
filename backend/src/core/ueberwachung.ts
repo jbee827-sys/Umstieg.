@@ -49,6 +49,12 @@ interface EvaEintrag {
 
 export class Ueberwachung {
   private readonly jeEva = new Map<string, EvaEintrag>();
+  /**
+   * Vorab belegte Plaetze (Reisewachen): Schluessel -> Zahl der Reservierungen.
+   * Ein Zaehler statt einer Menge, damit zwei Wachen auf derselben EVA den Platz
+   * erst nach beiden Freigaben loslassen.
+   */
+  private readonly reserviert = new Map<string, number>();
 
   constructor(
     private readonly tafelFn: TafelAbrufFn,
@@ -73,8 +79,7 @@ export class Ueberwachung {
    * (Konzeptkorrektur 1). Die Grenze gilt deshalb nur fuer NEUE Nummern.
    */
   hatKapazitaetFuer(eva: string): boolean {
-    if (this.jeEva.has(eva)) return true;
-    return this.jeEva.size < this.maxEvas;
+    return this.hatKapazitaetFuerAlle([eva]);
   }
 
   /**
@@ -83,10 +88,36 @@ export class Ueberwachung {
    * Ein Strom des Haltestellenpfads beobachtet Ankunfts- UND
    * Abfahrtshaltestelle. Einzeln geprueft haette jede den letzten freien Platz
    * fuer sich beansprucht - und die zweite die Grenze ueberschritten.
+   * Belegt ist die Vereinigung aus ueberwachten und reservierten Schluesseln:
+   * Ein Schluessel, der beides ist, zaehlt nur einmal.
    */
   hatKapazitaetFuerAlle(schluessel: string[]): boolean {
-    const neu = new Set(schluessel.filter((s) => !this.jeEva.has(s)));
-    return this.jeEva.size + neu.size <= this.maxEvas;
+    const belegt = new Set([...this.jeEva.keys(), ...this.reserviert.keys()]);
+    const neu = new Set(schluessel.filter((s) => !belegt.has(s)));
+    return belegt.size + neu.size <= this.maxEvas;
+  }
+
+  /**
+   * Haelt Plaetze frei, ohne zu pollen (Reisewachen).
+   *
+   * Eine Wache pollt erst spaeter, soll aber ihren Platz sicher haben, sobald
+   * sie angenommen wurde. Rueckgabe ist die Freigabe; sie wirkt nur einmal,
+   * damit ein doppelter Aufruf keine fremde Reservierung desselben Schluessels
+   * wegnimmt.
+   */
+  reserviere(schluessel: string[]): () => void {
+    const einmalig = [...new Set(schluessel)];
+    for (const s of einmalig) this.reserviert.set(s, (this.reserviert.get(s) ?? 0) + 1);
+    let frei = false;
+    return () => {
+      if (frei) return;
+      frei = true;
+      for (const s of einmalig) {
+        const rest = (this.reserviert.get(s) ?? 0) - 1;
+        if (rest > 0) this.reserviert.set(s, rest);
+        else this.reserviert.delete(s);
+      }
+    };
   }
 
   /** Meldet einen Abonnenten an; Rückgabe ist die Abmeldefunktion. */
