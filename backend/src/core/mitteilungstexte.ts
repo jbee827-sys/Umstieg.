@@ -40,8 +40,10 @@ export function textZeitAn(an: TextZug, alt: string, neu: string, umstiegMin: nu
   return { titel: `${an.anzeige}: ${neu} statt ${alt}`, text: `${umstiegMin} Min. zum Umsteigen` };
 }
 
-export function textZeitAb(ab: TextZug, alt: string, neu: string): Text {
-  return { titel: `${ab.anzeige}: ${neu} statt ${alt}`, text: 'Anschluss erreichbar' };
+// `knapp`: Die Ampel steht schon auf Rot und bleibt es - dann ging keine
+// eigene Rot-Mitteilung hinaus, und "erreichbar" waere schlicht falsch.
+export function textZeitAb(ab: TextZug, alt: string, neu: string, knapp = false): Text {
+  return { titel: `${ab.anzeige}: ${neu} statt ${alt}`, text: knapp ? 'Anschluss knapp' : 'Anschluss erreichbar' };
 }
 
 export function textGleis(

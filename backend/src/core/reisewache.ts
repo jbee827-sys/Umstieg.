@@ -217,7 +217,7 @@ function verspaetung(z: WachZustand, e: LiveEreignis, seite: Seite, jetztMs: num
           zeiten.neu,
           Math.max(0, Math.round((geschickt.ab.aktuellMs - neuMs) / MINUTE_MS)),
         )
-      : textZeitAb(textZug(s), zeiten.alt, zeiten.neu);
+      : textZeitAb(textZug(s), zeiten.alt, zeiten.neu, nachher === 'rot');
   return {
     zustand: geschickt,
     mitteilungen: [mitteilung(geschickt, seite === 'an' ? 'zeit-an' : 'zeit-ab', seite, text, jetztMs, zeiten)],

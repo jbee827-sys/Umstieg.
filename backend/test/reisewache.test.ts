@@ -98,6 +98,18 @@ describe('beurteile – Verspaetungen', () => {
     ]);
   });
 
+  it('sagt "Anschluss knapp", wenn die Abfahrt spaeter wird und die Ampel rot bleibt', () => {
+    const gelb = neuerZustand({ ...REISE, an: { ...REISE.an!, ist: um('16:16') } });
+    const { je, zustand } = lauf(gelb, [
+      [ev('verspaetung', 'ICE 1134', '16:16', '16:23'), 'an', VORHER], // gelb → rot
+    ]);
+    expect(je).toEqual([[['rot', 'Anschluss knapp', 'RE 3 in 0 Min. ab Gleis 6']]]);
+    // 16:26 - 16:23 = 3 Min. Umstieg < 4 Min. Gehzeit: bleibt rot, aber 3 Min. neue Abfahrt.
+    const r = beurteile(zustand, ev('verspaetung', 'RE 3352', '16:23', '16:26'), 'ab', VORHER);
+    expect(kurz(r.mitteilungen)).toEqual([['zeit-ab', 'RE 3: 16:26 statt 16:23', 'Anschluss knapp']]);
+    expect(r.mitteilungen[0].daten).toMatchObject({ status: 'knapp' });
+  });
+
   it('schickt bei einer Verspaetung, die Rot ausloest, nur die Rot-Mitteilung', () => {
     // Nach der Ankunft zaehlt die Restzeit ab jetzt: 16:23:00 - 16:20:20 = 2:40 → aufgerundet 3.
     const r = beurteile(neuerZustand(REISE), ev('verspaetung', 'ICE 1134', '16:01', '16:20'), 'an', zeit('16:20:20'));

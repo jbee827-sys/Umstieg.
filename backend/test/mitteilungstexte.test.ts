@@ -37,6 +37,11 @@ describe('Mitteilungstexte nach Konzept 4a', () => {
     expect(textAusfall({ ...RE3, anzeige: 'Bus 245' })).toEqual({ titel: 'Bus 245 fällt aus', text: 'Andere Verbindung wählen' });
   });
 
+  it('sagt bei roter Ampel nicht „Anschluss erreichbar“', () => {
+    expect(textZeitAb(RE3, '16:23', '16:26', true)).toEqual({ titel: 'RE 3: 16:26 statt 16:23', text: 'Anschluss knapp' });
+    expect(textZeitAb(RE3, '16:23', '16:26', false).text).toBe('Anschluss erreichbar');
+  });
+
   it('nennt an einer Haltestelle den Steig statt des Gleises', () => {
     const bus: TextZug = { anzeige: 'Bus 245', uhr: '16:23', gleis: 'A', richtung: 'Zoo' };
     expect(textRot(bus, 3, 'Steig')).toEqual({ titel: 'Anschluss knapp', text: 'Bus 245 in 3 Min. ab Steig A' });
