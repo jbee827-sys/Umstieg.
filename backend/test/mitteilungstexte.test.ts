@@ -37,6 +37,15 @@ describe('Mitteilungstexte nach Konzept 4a', () => {
     expect(textAusfall({ ...RE3, anzeige: 'Bus 245' })).toEqual({ titel: 'Bus 245 fällt aus', text: 'Andere Verbindung wählen' });
   });
 
+  it('nennt an einer Haltestelle den Steig statt des Gleises', () => {
+    const bus: TextZug = { anzeige: 'Bus 245', uhr: '16:23', gleis: 'A', richtung: 'Zoo' };
+    expect(textRot(bus, 3, 'Steig')).toEqual({ titel: 'Anschluss knapp', text: 'Bus 245 in 3 Min. ab Steig A' });
+    expect(textErinnerung('Alexanderplatz', bus, 'Steig')).toEqual({
+      titel: 'Gleich in Alexanderplatz',
+      text: 'Bus 245: 16:23 ab Steig A',
+    });
+  });
+
   it('kein Satzpunkt, kein „Noch“, kein „Bitte“ in irgendeinem Text', () => {
     for (const t of alleBeispieltexte) expect(t.text).not.toMatch(/\.$|^Noch|Bitte/);
   });

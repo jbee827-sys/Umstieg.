@@ -26,12 +26,14 @@ export interface TextZug {
 
 type Text = { titel: string; text: string };
 
-export function textRot(ab: TextZug, minuten: number): Text {
-  return { titel: 'Anschluss knapp', text: `${ab.anzeige} in ${minuten} Min. ab Gleis ${ab.gleis}` };
+// `haltWort` zuletzt und mit Vorgabe 'Gleis': An einer Bushaltestelle hiesse
+// es sonst "ab Gleis A" fuer einen Bussteig.
+export function textRot(ab: TextZug, minuten: number, haltWort: 'Gleis' | 'Steig' = 'Gleis'): Text {
+  return { titel: 'Anschluss knapp', text: `${ab.anzeige} in ${minuten} Min. ab ${haltWort} ${ab.gleis}` };
 }
 
-export function textErinnerung(bahnhofName: string, ab: TextZug): Text {
-  return { titel: `Gleich in ${bahnhofName}`, text: `${ab.anzeige}: ${ab.uhr} ab Gleis ${ab.gleis}` };
+export function textErinnerung(bahnhofName: string, ab: TextZug, haltWort: 'Gleis' | 'Steig' = 'Gleis'): Text {
+  return { titel: `Gleich in ${bahnhofName}`, text: `${ab.anzeige}: ${ab.uhr} ab ${haltWort} ${ab.gleis}` };
 }
 
 export function textZeitAn(an: TextZug, alt: string, neu: string, umstiegMin: number): Text {
