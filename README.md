@@ -20,7 +20,122 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 22.11.2026)
+## Hier weitermachen (Stand 23.11.2026, abends)
+
+### Mitteilungen über Firebase – Backend fertig, wartet auf Julians Firebase-Einrichtung
+
+**Zweig:** `feat/mitteilungen` (von `main` `c49b181`), nur lokal, **nicht
+gepusht, nicht ausgeliefert**. `main`, Vercel und Fly unverändert auf `c49b181`.
+
+**Build (23.11.2026):**
+
+| | Lint | Build | Tests |
+|---|---|---|---|
+| Backend | grün | grün | 1233/1233 (82 Dateien) |
+| Frontend (unverändert gegenüber `main`) | grün | grün | 1232/1232 (105 Dateien) |
+
+**Plan:** [`docs/superpowers/plans/2026-11-23-mitteilungen-firebase.md`](./docs/superpowers/plans/2026-11-23-mitteilungen-firebase.md)
+(Tasks 1–6 abgehakt). Konzept: `Umstieg_Konzepte/11-konzept-mitteilungen-firebase.md`
+(freigegeben 23.11.2026).
+
+**Erledigt (Tasks 1–6, Backend):**
+
+- `core/ueberwachung.ts`: `reserviere()` – eine Wache belegt ihren Platz
+  schon beim Anmelden; `stand()` – letzter Tafelstand je Schlüssel.
+- `core/zeit.ts`: `berlinZeitpunktNahe()` – „00:10“ nach 23:52 fällt auf den
+  Folgetag.
+- `core/mitteilungstexte.ts`: Texte wörtlich nach Konzept 4a, `daten` für die
+  aufgeklappte Ansicht.
+- `core/reisewache.ts`: reine Entscheidung – Drosselung, Rot nur beim Wechsel
+  auf Rot (nie durch die Uhr), nach Gleiswechsel kein Rot mehr, Erinnerung
+  5 Min. vor der aktuellen Ankunft, Aufwachen 90 Min. vorher, Ende Abfahrt
+  + 2 Min. bzw. 8 h.
+- `core/reisewachen.ts`: Lebenszyklus – Abos, Zeitgeber, Grenzen (300 Wachen,
+  10 je Adresse), Versand; ungültiges Token beendet die Wache. Protokoll nur
+  als Stundensummen (`ereignis: 'mitteilungen'`), nie Token, Zug, Bahnhof.
+- `clients/fcm.ts`: FCM HTTP v1 mit `node:crypto` + `fetch`, keine neue
+  Abhängigkeit. Dienstkonto aus `FIREBASE_SERVICE_ACCOUNT` (JSON roh oder Base64).
+- `routes/mitteilungen.ts`: `PUT`/`DELETE /api/mitteilungen/reise`,
+  vorübergehend `POST /api/mitteilungen/test` (**vor der Einreichung
+  entfernen**). Ohne Dienstkonto startet der Server wie bisher, `PUT`
+  antwortet 503 `nicht-eingerichtet`, die App bleibt bei lokalen Mitteilungen.
+  CORS jetzt mit `PUT`/`DELETE`; Grenzen 20 bzw. 2 je Minute und Adresse.
+
+**Abweichungen vom Konzept/Plan:**
+
+- Drosselung **ab 2 Min.** (Julian, 23.11.2026): 3 → 4 → 5 → 8 Min. ergibt
+  **drei** Mitteilungen. Das frühere Beispiel „zwei“ passte nicht zur Regel.
+- Neu: **Abgleich beim Aufwachen.** Die Überwachung meldet nur Änderungen
+  zwischen zwei Abrufen; was sich zwischen Anmeldung und erstem Abruf
+  geändert hatte (Abendreise, morgens angemeldet), kam nie an. Die Wache
+  vergleicht deshalb den ersten Tafelstand mit ihrem eigenen.
+- `INVALID_ARGUMENT` von FCM beendet die Wache nur, wenn es das
+  Registrierungstoken meint – sonst würde ein Fehler in unserer Nachricht
+  alle Wachen beenden.
+
+**Als Nächstes:**
+
+1. **Julian: Firebase einrichten** – Anleitung direkt hierunter. Danach
+   Claude Bescheid geben; Claude prüft ohne Werte zu zeigen: Bundle-ID in der
+   Plist, beide Secrets vorhanden (nur Namen), Dienstkonto bekommt bei Google
+   ein Zugangstoken (ohne eine Mitteilung zu senden).
+2. **Task 7:** Firebase in der iOS-App (`@capacitor-firebase/messaging`,
+   `AppDelegate`, Entitlements, Workflow schreibt die Plist aus dem Secret).
+3. **Tasks 8–11:** An-/Abmelden in der App mit lokalem Rückfall, Nachtragen
+   und Antippen, aufgeklappte Ansicht (Content Extension, App-ID
+   `online.umstieg.app.mitteilung`), Datenschutz/NOTICE/Anleitung.
+4. **Task 12** nur auf Julians ausdrückliche Anweisung: Backend-Deploy,
+   `main` nachziehen, iOS-Bau, Testmitteilung und echte Fahrt am iPhone.
+
+#### Anleitung: Firebase einrichten (Julian)
+
+Die Firebase-Oberfläche ändert sich gelegentlich – heißt ein Menüpunkt anders,
+Claude fragen.
+
+1. **Projekt anlegen:** [console.firebase.google.com](https://console.firebase.google.com)
+   → *Projekt erstellen*, Name z. B. `Umstieg`. **Google Analytics
+   ausschalten.** In den *Projekteinstellungen* die
+   **Datenverarbeitungsbedingungen** annehmen (Google wird Auftragsverarbeiter).
+2. **iOS-App hinzufügen:** Projektübersicht → Apple-Symbol. Bundle-ID
+   **`online.umstieg.app`**, Spitzname z. B. `Umstieg.`.
+   **`GoogleService-Info.plist` herunterladen** →
+   `E:\jbeer\.secrets\GoogleService-Info.plist`. Die übrigen Schritte des
+   Assistenten (SDK, Startcode) überspringen – das ist Task 7.
+3. **APNs-Schlüssel (Apple):** [developer.apple.com](https://developer.apple.com/account)
+   → Certificates, Identifiers & Profiles → *Keys* → **+**. Name
+   `Umstieg Push`, Haken **Apple Push Notifications service (APNs)**,
+   Umgebung **Sandbox & Production**, Beschränkung **Team Scoped (All
+   Topics)**. Die **`.p8`-Datei lässt sich nur einmal herunterladen** → gleich
+   nach `E:\jbeer\.secrets\`. **Key-ID** und **Team-ID** notieren.
+4. **Push an der App-ID (Apple):** *Identifiers* → `online.umstieg.app` →
+   Haken **Push Notifications** → Speichern. (Die Cloud-Signatur legt
+   Fähigkeiten nicht zuverlässig selbst an – vgl. App Group, 10.11.2026.)
+5. **APNs-Schlüssel in Firebase:** Zahnrad → *Projekteinstellungen* → Reiter
+   *Cloud Messaging* → *Apple-App-Konfiguration* →
+   *APNs-Authentifizierungsschlüssel* → `.p8`, Key-ID, Team-ID hochladen. Dort
+   prüfen: **Firebase Cloud Messaging API (V1)** ist aktiviert.
+6. **Dienstkonto für den Server:** *Projekteinstellungen* → *Dienstkonten* →
+   *Neuen privaten Schlüssel generieren* →
+   `E:\jbeer\.secrets\firebase-dienstkonto.json`. (Volle Rechte am
+   Firebase-Projekt; vertretbar, weil das Projekt nur Mitteilungen dient.
+   Strenger: eigenes Dienstkonto in der Google Cloud Console mit nur
+   „Firebase Cloud Messaging API Admin“.)
+7. **Secrets einspielen** (PowerShell, je ein Befehl, kein Wert auf dem Schirm):
+   - Fly, wirksam mit dem nächsten Backend-Deploy:
+     ```powershell
+     "FIREBASE_SERVICE_ACCOUNT=" + [Convert]::ToBase64String([IO.File]::ReadAllBytes("E:\jbeer\.secrets\firebase-dienstkonto.json")) | flyctl secrets import --stage --app umstieg-backend
+     ```
+   - GitHub (Cloud-Bau): Base64 in die Zwischenablage legen
+     ```powershell
+     [Convert]::ToBase64String([IO.File]::ReadAllBytes("E:\jbeer\.secrets\GoogleService-Info.plist")) | Set-Clipboard
+     ```
+     dann Repo → *Settings → Secrets and variables → Actions → New repository
+     secret*, Name **`GOOGLE_SERVICE_INFO_PLIST`**, Inhalt einfügen.
+
+Lokal mit Firebase: `FIREBASE_SERVICE_ACCOUNT` muss in der Umgebung des
+Backends stehen; ohne läuft alles wie bisher, nur ohne Mitteilungen.
+
+## Davor: Stand 22.11.2026
 
 **Stand der Zweige:** `main` (lokal und `origin`) und `feat/linienanzeige`
 stehen auf `c49b181`. Frontend live auf www.umstieg.online (Vercel „Ready“),
@@ -83,16 +198,15 @@ Bahnhof per offiziellem Namen“ weiter unten):
    iPhone eine Reise aus dem DB Navigator teilen und prüfen, ob die Züge
    gewählt werden und Live-Meldungen ankommen. Bau 4 (Lauf 16, `7841f8f`)
    hat Julian am 22.11.2026 geprüft: „passt alles“.
-2. **Mitteilungen bei gesperrtem Handy – Konzept steht, alle Fragen
-   entschieden, Freigabe durch Julian offen** (siehe „Mitteilungen über
-   Firebase“ direkt unter dieser Liste).
+2. **Mitteilungen bei gesperrtem Handy** – freigegeben 23.11.2026, Backend
+   fertig; Stand und Anleitung ganz oben unter „Hier weitermachen“.
 3. **Vor der App-Store-Einreichung:** die vorübergehende „Teilen-Diagnose“
    unter Einstellungen entfernen. Die übrigen Punkte stehen unter „iOS-App“ →
    „Offene Punkte bis zur Einreichung“.
 4. Danach die „Weiteren offenen Punkte“ unten (Sichtprüfung der Läden,
    Prüfregel `simulation-bild.ts`, Frankfurt 1 → 1a, …).
 
-### Mitteilungen über Firebase (Konzept 22./23.11.2026, Freigabe offen)
+### Mitteilungen über Firebase (Konzept 22./23.11.2026, freigegeben 23.11.2026)
 
 **Konzept:** `Umstieg_Konzepte/11-konzept-mitteilungen-firebase.md`
 (außerhalb des Repos). Ziel: Mitteilungen kommen auch an, wenn die App
@@ -120,7 +234,7 @@ die lokal geplante Erinnerung kommt (auf der alten Zeit, auch bei Verspätung).
 
 - Verspätungen gedrosselt: nur ab **2 Min.** Unterschied zur zuletzt
   geschickten oder wenn die Ampel die Farbe wechselt (3 → 4 → 5 → 8 Min. =
-  zwei Mitteilungen).
+  drei Mitteilungen; am 23.11.2026 berichtigt, vorher stand hier „zwei“).
 - „Reisewache“ im Backend (`core/reisewache.ts`) nutzt die vorhandene
   `Ueberwachung`; Daten nur im RAM, spätestens nach 8 h weg; Abfrage erst ab
   90 Min. vor Ankunft (Timetables-Quote). Route `PUT`/`DELETE
@@ -170,7 +284,8 @@ statt 16:23“, „Anschluss erreichbar“); **aufgeklappt** eine eigene Ansicht
 Status „Erreichbar“/„Knapp“/„Fällt aus“ mit „Stand …“ und den Aktionen „Weg zu
 Gleis …“ / „Reise öffnen“. Texte und Maße im Konzept, Abschnitt 4a.
 
-**Nächster Schritt:** Julian gibt das Konzept frei, dann Umsetzungsplan.
+**Nächster Schritt:** erledigt – Konzept freigegeben, Plan geschrieben,
+Backend gebaut (siehe ganz oben unter „Hier weitermachen“).
 
 **Ausgeliefert am 11.11.2026: „Etwas melden“** (Backend und Frontend,
 `main` auf `31cfbe8`, live auf www.umstieg.online geprüft):
