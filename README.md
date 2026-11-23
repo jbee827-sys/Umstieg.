@@ -83,15 +83,16 @@ Bahnhof per offiziellem Namen“ weiter unten):
    iPhone eine Reise aus dem DB Navigator teilen und prüfen, ob die Züge
    gewählt werden und Live-Meldungen ankommen. Bau 4 (Lauf 16, `7841f8f`)
    hat Julian am 22.11.2026 geprüft: „passt alles“.
-2. **Mitteilungen bei gesperrtem Handy – Konzept steht, eine Frage offen**
-   (siehe „Mitteilungen über Firebase“ direkt unter dieser Liste).
+2. **Mitteilungen bei gesperrtem Handy – Konzept steht, alle Fragen
+   entschieden, Freigabe durch Julian offen** (siehe „Mitteilungen über
+   Firebase“ direkt unter dieser Liste).
 3. **Vor der App-Store-Einreichung:** die vorübergehende „Teilen-Diagnose“
    unter Einstellungen entfernen. Die übrigen Punkte stehen unter „iOS-App“ →
    „Offene Punkte bis zur Einreichung“.
 4. Danach die „Weiteren offenen Punkte“ unten (Sichtprüfung der Läden,
    Prüfregel `simulation-bild.ts`, Frankfurt 1 → 1a, …).
 
-### Mitteilungen über Firebase (Konzept 22.11.2026, noch nicht freigegeben)
+### Mitteilungen über Firebase (Konzept 22./23.11.2026, Freigabe offen)
 
 **Konzept:** `Umstieg_Konzepte/11-konzept-mitteilungen-firebase.md`
 (außerhalb des Repos). Ziel: Mitteilungen kommen auch an, wenn die App
@@ -143,7 +144,7 @@ vier Lücken:
    Platz beim `PUT`; ohne Platz 503, die App bleibt lokal.
 2. **Was zeigt die App nach dem Antippen?** Die App kennt Ereignisse nicht,
    die der Server meldete, während sie angehalten war – Meldungsseite leer,
-   Weg zum alten Gleis. **Offen, Julian entscheidet:**
+   Weg zum alten Gleis. **Entschieden: A (Julian, 23.11.2026).** Zur Wahl standen:
    A) Mitteilung trägt das Ereignis als Daten mit, die App trägt es als
    Meldung ein und bietet den neuen Weg an; beim Öffnen ohne Antippen liest
    sie zugestellte Mitteilungen aus (Plugin-Fähigkeit beim Bau prüfen) –
@@ -161,8 +162,7 @@ vier Lücken:
 Selbst entscheidbar laut Prüfer: Tagesbezug der HH:MM-Zeiten, Ist-Zeit beim
 Anmelden, Zustand bei erneutem `PUT`, Erinnerung höchstens einmal.
 
-**Nächster Schritt:** Julian beantwortet Frage 2 und gibt das Konzept frei,
-dann Umsetzungsplan.
+**Nächster Schritt:** Julian gibt das Konzept frei, dann Umsetzungsplan.
 
 **Ausgeliefert am 11.11.2026: „Etwas melden“** (Backend und Frontend,
 `main` auf `31cfbe8`, live auf www.umstieg.online geprüft):
