@@ -77,10 +77,10 @@ type Beurteilung = { zustand: WachZustand; mitteilungen: Mitteilung[] };
 const MINUTE_MS = 60_000;
 
 /**
- * Drosselung: Eine neue Zeit geht hinaus, wenn sie MEHR als 2 Min. von der
- * zuletzt geschickten abweicht. Das Beispiel aus dem Konzept, von Julian
- * bestaetigt, legt die Grenze fest: 3 → 4 → 5 → 8 Min. ergibt ZWEI
- * Mitteilungen (3 und 8). Mit "ab 2 Min." ginge auch die 5 hinaus (5 - 3 = 2).
+ * Drosselung: Eine neue Zeit geht hinaus, wenn sie MINDESTENS 2 Min. von der
+ * zuletzt geschickten abweicht (Julian, 23.11.2026: "ab 2 Minuten"). Das
+ * Beispiel im Konzept (3 → 4 → 5 → 8 = zwei Mitteilungen) passte nicht zu
+ * dieser Regel; es gilt die Regel: 3, 5 und 8 gehen hinaus.
  */
 const DROSSEL_MS = 2 * MINUTE_MS;
 const ERINNERUNG_VOR_MS = 5 * MINUTE_MS;
@@ -206,7 +206,7 @@ function verspaetung(z: WachZustand, e: LiveEreignis, seite: Seite, jetztMs: num
   if (nachher === 'rot' && vorher !== 'rot' && vorher !== null) {
     return { zustand: geschickt, mitteilungen: [rot(geschickt, jetztMs, zeiten)] };
   }
-  if (Math.abs(neuMs - s.geschicktMs) <= DROSSEL_MS && vorher === nachher) {
+  if (Math.abs(neuMs - s.geschicktMs) < DROSSEL_MS && vorher === nachher) {
     return { zustand: bekannt, mitteilungen: [] };
   }
   const text =

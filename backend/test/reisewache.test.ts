@@ -51,7 +51,7 @@ function lauf(z: WachZustand, schritte: Schritt[]): { zustand: WachZustand; je: 
 const VORHER = zeit('15:30:00');
 
 describe('beurteile – Verspaetungen', () => {
-  it('drosselt Verspaetungen: 3 → 4 → 5 → 8 Min. ergeben zwei Mitteilungen', () => {
+  it('drosselt Verspaetungen ab 2 Min.: 3 → 4 → 5 → 8 Min. ergeben drei Mitteilungen', () => {
     const { je } = lauf(neuerZustand(REISE), [
       [ev('verspaetung', 'RE 3352', '16:23', '16:26'), 'ab', VORHER],
       [ev('verspaetung', 'RE 3352', '16:26', '16:27'), 'ab', VORHER],
@@ -61,7 +61,8 @@ describe('beurteile – Verspaetungen', () => {
     expect(je).toEqual([
       [['zeit-ab', 'RE 3: 16:26 statt 16:23', 'Anschluss erreichbar']],
       [],
-      [],
+      // 16:28 liegt genau 2 Min. nach der zuletzt geschickten 16:26 (Julian, 23.11.2026: "ab 2 Minuten")
+      [['zeit-ab', 'RE 3: 16:28 statt 16:23', 'Anschluss erreichbar']],
       [['zeit-ab', 'RE 3: 16:31 statt 16:23', 'Anschluss erreichbar']],
     ]);
   });

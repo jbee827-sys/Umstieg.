@@ -226,7 +226,7 @@ Regeln, die die Tests festhalten (aus der Spec):
 - [ ] **Step 1: Write the failing tests** (Beispielreise: ICE 1134 an 16:01 Gleis 8, RE 3352/„RE 3“ ab 16:23 Gleis 6, Gehzeit 240 s, Berlin Hbf)
 
 ```ts
-it('drosselt Verspaetungen: 3 → 4 → 5 → 8 Min. ergeben zwei Mitteilungen', ...)   // Ereignisse 16:26, 16:27, 16:28, 16:31 → geschickt 16:26 und 16:31
+it('drosselt Verspaetungen ab 2 Min.: 3 → 4 → 5 → 8 Min. ergeben drei Mitteilungen', ...)   // Ereignisse 16:26, 16:27, 16:28, 16:31 → geschickt 16:26, 16:28 und 16:31 (Julian 23.11.: „ab 2 Minuten“)
 it('schickt eine Verspaetung unter 2 Min., wenn die Ampel die Farbe wechselt', ...)
 it('meldet Rot nur beim Wechsel von gruen/gelb auf rot, nicht wenn es rot bleibt', ...)
 it('schickt bei einer Verspaetung, die Rot ausloest, nur die Rot-Mitteilung', ...)
