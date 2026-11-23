@@ -162,6 +162,14 @@ vier Lücken:
 Selbst entscheidbar laut Prüfer: Tagesbezug der HH:MM-Zeiten, Ist-Zeit beim
 Anmelden, Zustand bei erneutem `PUT`, Erinnerung höchstens einmal.
 
+**Gestaltung (Julian, 23.11.2026):** Entwürfe in
+`Umstieg_Konzepte/11-mitteilungen-entwuerfe.html`. Banner **nur Text** ohne
+Füllwörter („Anschluss knapp“, „ICE 1134: 16:09 statt 16:01“, „RE 3: 16:31
+statt 16:23“, „Anschluss erreichbar“); **aufgeklappt** eine eigene Ansicht
+(Notification Content Extension, Swift) mit großer Meldung, Restzeit | Weg,
+Status „Erreichbar“/„Knapp“/„Fällt aus“ mit „Stand …“ und den Aktionen „Weg zu
+Gleis …“ / „Reise öffnen“. Texte und Maße im Konzept, Abschnitt 4a.
+
 **Nächster Schritt:** Julian gibt das Konzept frei, dann Umsetzungsplan.
 
 **Ausgeliefert am 11.11.2026: „Etwas melden“** (Backend und Frontend,
