@@ -52,6 +52,9 @@ import { erzeugeHaltestellenClient, type HaltestellenClient } from './clients/ha
 import { erzeugeMotisKern } from './clients/motis.js';
 import { erzeugeMotisPausen } from './clients/motis-pausen.js';
 import { erzeugeAnfragezaehler } from './core/anfragezaehler.js';
+import { erzeugeFcmVersand } from './clients/fcm.js';
+import { Reisewachen, type Versand } from './core/reisewachen.js';
+import { registriereMitteilungsRouten } from './routes/mitteilungen.js';
 
 export interface AppClients extends ApiClients {
   /** Überwachung ist injizierbar, damit Tests die Polls selbst auslösen können. */
@@ -68,6 +71,13 @@ export interface AppClients extends ApiClients {
    * 503); fehlt das Feld, entscheiden die SMTP-Werte der Umgebung.
    */
   mailversand?: Mailversand | null;
+  /**
+   * Versand ueber Firebase (Konzept Mitteilungen 6.1). `null` = ausdruecklich
+   * keiner; fehlt das Feld, entscheidet `FIREBASE_SERVICE_ACCOUNT`.
+   */
+  fcmVersand?: Versand | null;
+  /** Reisewachen - injizierbar fuer Tests; ohne Angabe aus Ueberwachung und Versand gebaut. */
+  reisewachen?: Reisewachen | null;
 }
 
 /**
@@ -119,6 +129,11 @@ const GRENZEN: Record<string, number> = {
   // es keine Spam-Schleuder wird. Eine gemeinsame Obergrenze fuer alle
   // Aufrufer ist laut Spec 2026-11-10 fuer spaeter vorgemerkt.
   '/api/meldung': 2,
+  // Reisewache (Konzept Mitteilungen 6.1): An- und Abmelden teilen sich den
+  // Zaehler. Die App meldet bei jedem Oeffnen neu an, gedrosselt auf 10 s.
+  '/api/mitteilungen/reise': 20,
+  // Testmitteilung fuer TestFlight - jede ist ein Banner auf einem Handy.
+  '/api/mitteilungen/test': 2,
 };
 
 /** Fuer alles, was keine eigene Grenze hat. */
@@ -192,16 +207,17 @@ export function buildApp(
   //
   // In Produktion liegt das Frontend auf Vercel und das Backend auf einer
   // anderen Domain. CORS_ORIGIN nennt die erlaubten Herkuenfte, kommagetrennt
-  // (Produktionsdomain plus ggf. Vercel-Vorschau-URLs). Die API ist
-  // ausschliesslich lesend, deshalb reicht GET.
+  // (Produktionsdomain plus ggf. Vercel-Vorschau-URLs, `capacitor://localhost`
+  // fuer die App).
   const erlaubteHerkuenfte = (process.env.CORS_ORIGIN ?? '')
     .split(',')
     .map((h) => h.trim())
     .filter(Boolean);
   if (erlaubteHerkuenfte.length > 0) {
-    // POST nur fuer /api/zaehle (Nutzungszaehlung der App, routes/zaehler.ts)
-    // und /api/meldung („Etwas melden", routes/meldung.ts).
-    app.register(cors, { origin: erlaubteHerkuenfte, methods: ['GET', 'POST'] });
+    // POST fuer /api/zaehle (Nutzungszaehlung der App, routes/zaehler.ts),
+    // /api/meldung („Etwas melden", routes/meldung.ts) und die Testmitteilung;
+    // PUT und DELETE fuer das An- und Abmelden der Reise (routes/mitteilungen.ts).
+    app.register(cors, { origin: erlaubteHerkuenfte, methods: ['GET', 'POST', 'PUT', 'DELETE'] });
   }
 
   /**
@@ -486,6 +502,20 @@ export function buildApp(
       sicherheit,
       haltestellenLive,
     );
+
+    // Mitteilungen ueber Firebase (Konzept Mitteilungen 6.1). Ohne Dienstkonto
+    // startet der Server wie bisher; die Anmeldung antwortet dann 503 und die
+    // App bleibt bei ihren lokalen Mitteilungen.
+    const fcmVersand = clients.fcmVersand !== undefined ? clients.fcmVersand : erzeugeFcmVersand(process.env);
+    let reisewachen = clients.reisewachen ?? null;
+    if (clients.reisewachen === undefined && fcmVersand) {
+      const eigene = new Reisewachen({ bahnhof: ueberwachung, haltestellen: haltestellenLive }, fcmVersand, {
+        log: instanz.log,
+      });
+      instanz.addHook('onClose', async () => eigene.beende());
+      reisewachen = eigene;
+    }
+    registriereMitteilungsRouten(instanz, reisewachen, fcmVersand);
   });
 
   return app;
