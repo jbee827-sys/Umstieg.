@@ -115,22 +115,38 @@ Claude fragen.
    *APNs-Authentifizierungsschlüssel* → `.p8`, Key-ID, Team-ID hochladen. Dort
    prüfen: **Firebase Cloud Messaging API (V1)** ist aktiviert.
 6. **Dienstkonto für den Server:** *Projekteinstellungen* → *Dienstkonten* →
-   *Neuen privaten Schlüssel generieren* →
-   `E:\jbeer\.secrets\firebase-dienstkonto.json`. (Volle Rechte am
+   *Neuen privaten Schlüssel generieren* → in den Tresor. Liegt dort seit
+   24.11.2026 unter Googles Namen
+   `E:\jbeer\.secrets\umstieg-6c980-firebase-adminsdk-fbsvc-03a752df6b.json`
+   (Firebase-Projekt `umstieg-6c980`). (Volle Rechte am
    Firebase-Projekt; vertretbar, weil das Projekt nur Mitteilungen dient.
    Strenger: eigenes Dienstkonto in der Google Cloud Console mit nur
    „Firebase Cloud Messaging API Admin“.)
-7. **Secrets einspielen** (PowerShell, je ein Befehl, kein Wert auf dem Schirm):
-   - Fly, wirksam mit dem nächsten Backend-Deploy:
-     ```powershell
-     "FIREBASE_SERVICE_ACCOUNT=" + [Convert]::ToBase64String([IO.File]::ReadAllBytes("E:\jbeer\.secrets\firebase-dienstkonto.json")) | flyctl secrets import --stage --app umstieg-backend
+7. **Secrets einspielen** (kein Wert auf dem Schirm). Achtung: Ein `!`-Befehl
+   in Claude Code läuft in **Bash**, nicht in PowerShell – die
+   PowerShell-Fassung scheitert dort an `[Convert]` (24.11.2026). Und ein
+   falscher Dateiname führt nicht zu einem Abbruch: `flyctl` merkt dann ein
+   **leeres** Secret vor (ebenfalls 24.11.2026 passiert, danach richtig
+   überschrieben).
+   - Fly, wirksam mit dem nächsten Backend-Deploy (**erledigt 24.11.2026**,
+     Status „Staged“):
+     ```bash
+     printf 'FIREBASE_SERVICE_ACCOUNT=%s\n' "$(base64 -w0 /e/jbeer/.secrets/umstieg-6c980-firebase-adminsdk-fbsvc-03a752df6b.json)" | flyctl secrets import --stage --app umstieg-backend
      ```
    - GitHub (Cloud-Bau): Base64 in die Zwischenablage legen
-     ```powershell
-     [Convert]::ToBase64String([IO.File]::ReadAllBytes("E:\jbeer\.secrets\GoogleService-Info.plist")) | Set-Clipboard
+     ```bash
+     base64 -w0 /e/jbeer/.secrets/GoogleService-Info.plist | clip
      ```
      dann Repo → *Settings → Secrets and variables → Actions → New repository
      secret*, Name **`GOOGLE_SERVICE_INFO_PLIST`**, Inhalt einfügen.
+
+**Geprüft am 24.11.2026 (Claude, ohne Werte):** Plist mit Bundle-ID
+`online.umstieg.app`, Projekt `umstieg-6c980`; Dienstkonto vollständig
+(`project_id`, `client_email`, `private_key` als PEM); Token-Tausch bei Google
+HTTP 200, Zugangstoken erhalten (keine Mitteilung verschickt); Fly-Secret
+`FIREBASE_SERVICE_ACCOUNT` „Staged“. APNs-Schlüssel `AuthKey_3C994DV5L4.p8`
+im Tresor. Das GitHub-Secret kann Claude nicht prüfen (`gh` ist nicht
+installiert) – Julian schaut unter *Settings → Secrets*.
 
 Lokal mit Firebase: `FIREBASE_SERVICE_ACCOUNT` muss in der Umgebung des
 Backends stehen; ohne läuft alles wie bisher, nur ohne Mitteilungen.
