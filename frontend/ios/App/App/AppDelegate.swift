@@ -1,4 +1,5 @@
 import UIKit
+import UserNotifications
 import Capacitor
 
 @UIApplicationMain
@@ -7,8 +8,40 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        registriereReiseKategorie()
         return true
+    }
+
+    // MARK: - Mitteilungen ueber Firebase (Konzept Mitteilungen 6.2)
+    //
+    // Firebase selbst startet das Plugin @capacitor-firebase/messaging, und
+    // zwar nur, wenn GoogleService-Info.plist im Bundle liegt. Ohne sie (Bau
+    // ohne Secret) laeuft die App mit lokalen Mitteilungen wie bisher.
+
+    /// Kategorie `reise`: Der Server setzt sie an jede Mitteilung (`aps.category`).
+    /// Sie verbindet die Mitteilung mit der aufgeklappten Ansicht (Content
+    /// Extension) und traegt zwei Aktionen. Die Beschriftung von `weg` setzt die
+    /// Ansicht je Mitteilung neu („Weg zu Gleis 5“ / „Andere Verbindung waehlen“).
+    /// Niemand sonst ruft `setNotificationCategories` - die lokalen
+    /// Mitteilungen nutzen keine Aktionen (`registerActionTypes` wird nie gerufen).
+    private func registriereReiseKategorie() {
+        let weg = UNNotificationAction(identifier: "weg", title: "Weg zum Gleis", options: [.foreground])
+        let oeffnen = UNNotificationAction(identifier: "oeffnen", title: "Reise öffnen", options: [.foreground])
+        let reise = UNNotificationCategory(identifier: "reise", actions: [weg, oeffnen], intentIdentifiers: [], options: [])
+        UNUserNotificationCenter.current().setNotificationCategories([reise])
+    }
+
+    /// APNs-Token und Fehler an das Firebase-Plugin weiterreichen (Plugin-README, iOS-Setup).
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)
+    }
+
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
+    }
+
+    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        NotificationCenter.default.post(name: Notification.Name("didReceiveRemoteNotification"), object: completionHandler, userInfo: userInfo)
     }
 
     func applicationWillResignActive(_ application: UIApplication) {

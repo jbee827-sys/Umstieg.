@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- App Group fuer die Teilen-Erweiterung (UebergabeSpeicher.swift). -->
+<!-- App Group fuer die Teilen-Erweiterung (UebergabeSpeicher.swift).
+     aps-environment: Push ueber Firebase/APNs (Konzept Mitteilungen 6.2). Immer
+     production - die App wird nur fuer TestFlight/App Store signiert. -->
 <plist version="1.0">
 <dict>
+	<key>aps-environment</key>
+	<string>production</string>
 	<key>com.apple.security.application-groups</key>
 	<array>
 		<string>group.online.umstieg.app</string>

@@ -19,3 +19,7 @@ frontend/.entwurf/
 # Echte Tickets und Rechnungen: enthalten Namen, Anschrift, Auftragsnummer
 # und Zahlungsmittel. Zum Entwickeln noetig, im Repo nie.
 Beispiel Ticket/
+# iOS: Symlinks schreibt `npx cap sync ios` (packageOptions im capacitor.config.ts);
+# GoogleService-Info.plist kommt im Cloud-Bau aus dem Secret GOOGLE_SERVICE_INFO_PLIST
+frontend/ios/App/CapApp-SPM/symlinks/
+frontend/ios/App/App/GoogleService-Info.plist

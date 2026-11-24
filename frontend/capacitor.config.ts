@@ -30,6 +30,22 @@ const config: CapacitorConfig = {
       launchAutoHide: true,
       showSpinner: false,
     },
+    // Mitteilungen ueber Firebase (Konzept Mitteilungen 6.2): Ist die App
+    // offen, kein Banner - die Meldung steht dann schon in der App.
+    FirebaseMessaging: {
+      presentationOptions: [],
+    },
+  },
+  experimental: {
+    ios: {
+      spm: {
+        // Gegen die SwiftPM-Namenskollision (Plugin-README,
+        // capawesome-team/capacitor-firebase#959). Braucht Capacitor CLI 8.4+.
+        packageOptions: {
+          '@capacitor-firebase/messaging': { symlink: true },
+        },
+      },
+    },
   },
 }
 

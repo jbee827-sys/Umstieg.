@@ -60,6 +60,22 @@ jobs:
       - name: Web-Bau ins iOS-Projekt
         run: npx cap sync ios
 
+      - name: Firebase-Konfiguration
+        # Konzept Mitteilungen 6.2: GoogleService-Info.plist kommt aus dem
+        # Secret (Base64), nie aus dem Repository. Ohne Secret baut der
+        # Simulator-Job trotzdem - die App laeuft dann ohne Firebase.
+        env:
+          GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
+        run: |
+          if [ -n "$GOOGLE_SERVICE_INFO_PLIST" ]; then
+            printf '%s' "$GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > ios/App/App/GoogleService-Info.plist
+            plutil -lint ios/App/App/GoogleService-Info.plist
+            test "$(plutil -extract BUNDLE_ID raw ios/App/App/GoogleService-Info.plist)" = online.umstieg.app
+            echo "FIREBASE_PLIST=1" >> "$GITHUB_ENV"
+          else
+            echo "::warning::Secret GOOGLE_SERVICE_INFO_PLIST fehlt - Bau ohne Firebase"
+          fi
+
       - name: Xcode
         run: xcodebuild -version && xcrun simctl list runtimes
 
@@ -82,6 +98,17 @@ jobs:
           test -f "$APP/PlugIns/Teilen.appex/Info.plist"
           plutil -extract NSExtension.NSExtensionPointIdentifier raw "$APP/PlugIns/Teilen.appex/Info.plist" | grep -qx com.apple.share-services
           echo "Teilen.appex eingebettet"
+
+      - name: Firebase im App-Paket
+        # Der Skript-Schritt "Firebase-Konfiguration" im Xcode-Projekt kopiert
+        # die Plist nur, wenn sie da ist. Auto-Init muss aus sein (Konzept 6.2).
+        run: |
+          APP="$RUNNER_TEMP/abgeleitet/Build/Products/Debug-iphonesimulator/App.app"
+          test "$(plutil -extract FirebaseMessagingAutoInitEnabled raw "$APP/Info.plist")" = false
+          if [ "${FIREBASE_PLIST:-}" = 1 ]; then
+            test -f "$APP/GoogleService-Info.plist"
+            echo "GoogleService-Info.plist eingebettet"
+          fi
 
       - name: Bildschirmfotos
         # Erster Lauf (24.10.2026): 13,5 Minuten fuer 12 Fotos samt Start zweier Simulatoren.
@@ -157,6 +184,20 @@ jobs:
       - name: Web-Bau ins iOS-Projekt
         run: npx cap sync ios
 
+      - name: Firebase-Konfiguration
+        # Fuer TestFlight Pflicht: Ohne Plist kaemen keine Mitteilungen vom
+        # Server an, und der Bau sahe trotzdem fertig aus.
+        env:
+          GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
+        run: |
+          if [ -z "$GOOGLE_SERVICE_INFO_PLIST" ]; then
+            echo "::error::Geheimnis GOOGLE_SERVICE_INFO_PLIST fehlt - Einrichtung siehe README (Firebase einrichten)"
+            exit 1
+          fi
+          printf '%s' "$GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > ios/App/App/GoogleService-Info.plist
+          plutil -lint ios/App/App/GoogleService-Info.plist
+          test "$(plutil -extract BUNDLE_ID raw ios/App/App/GoogleService-Info.plist)" = online.umstieg.app
+
       - name: Archiv
         run: |
           xcodebuild archive \
@@ -174,6 +215,15 @@ jobs:
             CURRENT_PROJECT_VERSION="$BUILDNUMMER" \
             $VERSION_ANGABE
 
+      - name: Push im Archiv
+        # Ohne aps-environment in der Signatur liefert iOS kein APNs-Token -
+        # dann fehlt der Haken "Push Notifications" an der App-ID.
+        run: |
+          APP="$RUNNER_TEMP/Umstieg.xcarchive/Products/Applications/App.app"
+          test -f "$APP/GoogleService-Info.plist"
+          codesign -d --entitlements :- "$APP" 2>/dev/null | grep -q aps-environment
+          echo "Firebase-Plist und aps-environment im Archiv"
+
       - name: Upload zu App Store Connect
         run: |
           xcodebuild -exportArchive \
@@ -187,4 +237,4 @@ jobs:
 
       - name: Schluessel entfernen
         if: always()
-        run: rm -rf "$RUNNER_TEMP/asc"
+        run: rm -rf "$RUNNER_TEMP/asc" ios/App/App/GoogleService-Info.plist
