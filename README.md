@@ -79,8 +79,29 @@ gepusht, nicht ausgeliefert**. `main`, Vercel und Fly unverändert auf `c49b181`
    Claude Bescheid geben; Claude prüft ohne Werte zu zeigen: Bundle-ID in der
    Plist, beide Secrets vorhanden (nur Namen), Dienstkonto bekommt bei Google
    ein Zugangstoken (ohne eine Mitteilung zu senden).
-2. **Task 7:** Firebase in der iOS-App (`@capacitor-firebase/messaging`,
-   `AppDelegate`, Entitlements, Workflow schreibt die Plist aus dem Secret).
+2. **Task 7 – lokal erledigt 24.11.2026 (`040cf33`), Cloud-Bau steht aus:**
+   `@capacitor-firebase/messaging` 8.6.0, `aps-environment` = production,
+   `FirebaseMessagingAutoInitEnabled` = NO, kein Banner bei offener App,
+   Kategorie `reise` (Aktionen `weg`, `oeffnen`) im `AppDelegate`, APNs-Token
+   an das Plugin. Abweichungen vom Plan:
+   - Das **JS-Paket `firebase` ist nicht installiert** – es ist für das Plugin
+     optional und nur fürs Web nötig.
+   - `FirebaseApp.configure()` ruft **das Plugin** auf, nur wenn die Plist im
+     Bundle liegt – nicht der `AppDelegate`.
+   - Die Plist kommt über einen **Skript-Schritt „Firebase-Konfiguration“** im
+     Xcode-Projekt ins Bundle (nur wenn vorhanden). Ein fester Eintrag als
+     Ressource ließe jeden Bau ohne Secret scheitern.
+   - **`Package.swift` von Hand** um das Plugin ergänzt
+     (`symlinks/CapacitorFirebaseMessaging`, wie es die CLI schreibt): Unter
+     Windows scheitert `npx cap sync ios` am Symlink (EPERM, bräuchte den
+     Entwicklermodus). Im Cloud-Bau schreibt `cap sync` die Datei auf dem Mac
+     neu; die Symlinks sind in `.gitignore`.
+   - Workflow: Simulator-Job baut auch ohne Secret (Warnung) und prüft Auto-Init
+     aus und, wenn vorhanden, die Plist im Bundle. Der TestFlight-Job
+     **verlangt** `GOOGLE_SERVICE_INFO_PLIST` und prüft im Archiv Plist und
+     `aps-environment`.
+   - Offen: Push des Zweigs und ein Simulator-Lauf (*Actions → iOS → Run
+     workflow* auf `feat/mitteilungen`) – nur auf Julians Anweisung.
 3. **Tasks 8–11:** An-/Abmelden in der App mit lokalem Rückfall, Nachtragen
    und Antippen, aufgeklappte Ansicht (Content Extension, App-ID
    `online.umstieg.app.mitteilung`), Datenschutz/NOTICE/Anleitung.

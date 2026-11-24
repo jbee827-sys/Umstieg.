@@ -32,7 +32,7 @@ Tasks 1–6 erledigt (Backend komplett, 1233 Tests grün). Abweichungen vom Plan
 - `fcm.ts`: `INVALID_ARGUMENT` beendet die Wache nur, wenn FCM das Registrierungstoken meint – sonst würde ein Fehler in unserer Nachricht alle Wachen beenden. `FIREBASE_SERVICE_ACCOUNT` roh oder Base64.
 - Testmitteilung trägt `daten.test = '1'` (App trägt sie nicht als Meldung nach).
 
-Weiter mit Task 7 (wartet auf Julians Firebase-Einrichtung: `GoogleService-Info.plist`).
+Task 7 lokal erledigt (24.11.2026, `040cf33`), Abweichungen in der README unter „Hier weitermachen“. Offen: Cloud-Bau (Push nur auf Julians Anweisung). Weiter mit Task 8.
 
 ## Review Focus
 
@@ -394,10 +394,10 @@ Vorgaben:
 - `App.entitlements`: `aps-environment` = `production`. `Info.plist`: `FirebaseMessagingAutoInitEnabled` = `NO`.
 - Workflow: Schritt vor „Archiv“ (und vor dem Simulator-Bau) schreibt `GoogleService-Info.plist` aus dem Secret `GOOGLE_SERVICE_INFO_PLIST` (Base64) nach `frontend/ios/App/App/`, wenn das Secret gesetzt ist; der Simulator-Job läuft auch ohne. `GoogleService-Info.plist` in `.gitignore`.
 
-- [ ] **Step 1: Install and sync** – `cd frontend && npm install @capacitor-firebase/messaging firebase && npm run build:app && npx cap sync ios` → `Package.swift` enthält das Plugin
-- [ ] **Step 2: Apply the iOS and workflow changes above**
-- [ ] **Step 3: Verify web side unchanged** – `npm test && npm run lint && npm run build` → grün
-- [ ] **Step 4: Commit** – `feat(app): Firebase Messaging einrichten (ohne Analytics, Auto-Init aus)`
+- [x] **Step 1: Install and sync** – `cd frontend && npm install @capacitor-firebase/messaging firebase && npm run build:app && npx cap sync ios` → `Package.swift` enthält das Plugin
+- [x] **Step 2: Apply the iOS and workflow changes above**
+- [x] **Step 3: Verify web side unchanged** – `npm test && npm run lint && npm run build` → grün
+- [x] **Step 4: Commit** – `feat(app): Firebase Messaging einrichten (ohne Analytics, Auto-Init aus)`
 - [ ] **Step 5: Cloud-Bau prüfen** – erst nach Julians Freigabe pushen; Simulator-Job muss grün sein (Status über `api.github.com/repos/jbee827-sys/Umstieg./actions/runs`).
 
 ---
