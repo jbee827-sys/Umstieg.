@@ -62,7 +62,15 @@ import {
   wirdRot,
 } from './plattform/mitteilungen'
 import { useZugabgleich } from './reise/useZugabgleich'
-import { erinnerungVomServer, hoereAufPushStand, meldeAbUndVergiss, meldeAnWennNoetig } from './plattform/push'
+import {
+  erinnerungVomServer,
+  hoereAufAntippen,
+  hoereAufPushStand,
+  holeZugestellte,
+  meldeAbUndVergiss,
+  meldeAnWennNoetig,
+  type ZugestellteMeldung,
+} from './plattform/push'
 import { reiseFuerWache } from './plattform/reiseanmeldung'
 import { abfahrtUm, ampelFarbe, umstiegVon } from './navigation/ampel'
 import type { Ampelfarbe } from './api/typen'
@@ -136,6 +144,14 @@ const STUFEN_VORBEHALT: Record<number, string> = {
 const AUF_REISE: Bildschirm[] = ['dashboard', 'navigation', 'meldungen']
 
 /** 'HH:MM' → heutiger Zeitpunkt; kurz nach Mitternacht zählt eine frühe Abfahrt als morgen. */
+/**
+ * Wiedererkennen einer Meldung, die als Mitteilung UND ueber den Live-Strom
+ * kam (Konzept Mitteilungen 6.2): `zug|typ|neu`.
+ */
+function schluesselVon(e: LiveEreignis): string {
+  return `${e.zug}|${e.typ}|${e.neu ?? ''}`
+}
+
 function heuteUm(hhmm: string): Date {
   return abfahrtUm(hhmm, Date.now())
 }
@@ -755,6 +771,71 @@ function App() {
   // ab (Browserpruefung). Welche Seite gerade offen ist, lesen die Behandler
   // ueber `bildschirmRef`.
   const aufReise = AUF_REISE.includes(bildschirm)
+
+  // Server-Mitteilungen nachtragen (Konzept Mitteilungen 6.2, Entscheidung
+  // A): Ein Ereignis aus einer Mitteilung geht durch DIESELBE Behandlung wie
+  // eines aus dem Live-Strom - der Live-Effekt legt sie in `ereignisRef`. Was
+  // ankommt, bevor der Effekt steht (Kaltstart per Antippen), wartet.
+  const ereignisRef = useRef<((roh: LiveEreignis) => void) | null>(null)
+  const nachzutragen = useRef<LiveEreignis[]>([])
+  const trageNach = useCallback((e: LiveEreignis) => {
+    const schluessel = schluesselVon(e)
+    const schonDa =
+      meldungenRef.current.some((m) => schluesselVon(m.ereignis) === schluessel) ||
+      nachzutragen.current.some((w) => schluesselVon(w) === schluessel)
+    if (schonDa) return
+    if (ereignisRef.current) ereignisRef.current(e)
+    else nachzutragen.current.push(e)
+  }, [])
+  /** Fuer den Live-Effekt: Behandlung bekanntgeben, Wartendes abarbeiten, beim Abbau zuruecknehmen. */
+  const mitNachtrag = useCallback((verarbeite: (roh: LiveEreignis) => void, beende: () => void) => {
+    ereignisRef.current = verarbeite
+    for (const e of nachzutragen.current.splice(0)) verarbeite(e)
+    return () => {
+      beende()
+      if (ereignisRef.current === verarbeite) ereignisRef.current = null
+    }
+  }, [])
+
+  // Zuerst die noch zugestellten Mitteilungen - beim Oeffnen und bei jedem
+  // Zurueckkommen in den Vordergrund.
+  useEffect(() => {
+    if (!aufReise || vorfuehrungLaeuft()) return
+    const hole = () =>
+      void holeZugestellte().then((liste) => {
+        for (const m of liste) if (m.ereignis) trageNach(m.ereignis)
+      })
+    hole()
+    const beiSichtbar = () => {
+      if (document.visibilityState === 'visible') hole()
+    }
+    document.addEventListener('visibilitychange', beiSichtbar)
+    return () => document.removeEventListener('visibilitychange', beiSichtbar)
+  }, [aufReise, trageNach])
+
+  // Angetippt: eintragen und dorthin, wo die Mitteilung hinfuehrt. Bei der
+  // Aktion „Weg zu Gleis …" nach einem Gleiswechsel wartet der Wechsel auf
+  // den Vorschlag (die Route wird erst gerechnet) - `wegNachVorschlag`.
+  const wegNachVorschlag = useRef<string | null>(null)
+  const antippenRef = useRef<(m: ZugestellteMeldung) => void>(() => undefined)
+  useEffect(() => {
+    antippenRef.current = (m: ZugestellteMeldung) => {
+      if (vorfuehrungLaeuft() || !routeRef.current) return
+      if (m.ereignis) trageNach(m.ereignis)
+      if (m.verbindung && m.aktion === 'weg') {
+        setBildschirm('eingabe')
+        return
+      }
+      if (m.ereignis?.typ === 'gleiswechsel') {
+        if (m.aktion === 'weg') wegNachVorschlag.current = schluesselVon(m.ereignis)
+        setBildschirm('meldungen')
+        return
+      }
+      setBildschirm(m.aktion === 'weg' ? 'navigation' : 'dashboard')
+    }
+  })
+  useEffect(() => hoereAufAntippen((m) => antippenRef.current(m)), [])
+
   // Zuege aus einem Reisetext, die beim Import noch nicht in der Tafel
   // standen, unterwegs weiter suchen - sonst erkennt der Live-Strom sie nie.
   useZugabgleich(werte, aufReise && !vorfuehrungLaeuft(), setWerte)
@@ -796,13 +877,7 @@ function App() {
     // Ereignisse tragen die Fahrt-ID; welche der beiden Fahrten gemeint ist,
     // entscheidet, was sich aendert.
     if (wahl) {
-      return verbindeHaltestelleLive({
-        an: wahl.ankunft.ort,
-        ab: wahl.anschluss.ort,
-        fahrtAn: wahl.ankunft.fahrt.fahrtId,
-        fahrtAb: wahl.anschluss.fahrt.fahrtId,
-        onWiederverbunden: () => void berechne(werte),
-        onEreignis: (roh) => {
+      const verarbeiteEreignis = (roh: LiveEreignis) => {
           if (zustand(roh)) return
           const seite =
             roh.zug === wahl.anschluss.fahrt.fahrtId
@@ -883,16 +958,21 @@ function App() {
               )
             })
             .catch(() => undefined)
-        },
-      })
+      }
+      return mitNachtrag(
+        verarbeiteEreignis,
+        verbindeHaltestelleLive({
+          an: wahl.ankunft.ort,
+          ab: wahl.anschluss.ort,
+          fahrtAn: wahl.ankunft.fahrt.fahrtId,
+          fahrtAb: wahl.anschluss.fahrt.fahrtId,
+          onWiederverbunden: () => void berechne(werte),
+          onEreignis: verarbeiteEreignis,
+        }),
+      )
     }
 
-    return verbindeLive({
-      eva: werte.eva,
-      zugAn: werte.zugAnName,
-      zugAb: werte.zugAbName,
-      onWiederverbunden: () => void berechne(werte),
-      onEreignis: (roh) => {
+    const verarbeiteEreignis = (roh: LiveEreignis) => {
         if (zustand(roh)) return
         // Der Strom meldet beide Zuege. Ohne die Seite wurde eine verspaetete
         // ANKUNFT bis zum 18.10.2026 zur neuen Abfahrtszeit des Anschlusses -
@@ -966,9 +1046,34 @@ function App() {
             ),
           )
           .catch(() => undefined)
-      },
-    })
-  }, [aufReise, werte, berechne])
+    }
+    return mitNachtrag(
+      verarbeiteEreignis,
+      verbindeLive({
+        eva: werte.eva,
+        zugAn: werte.zugAnName,
+        zugAb: werte.zugAbName,
+        onWiederverbunden: () => void berechne(werte),
+        onEreignis: verarbeiteEreignis,
+      }),
+    )
+  }, [aufReise, werte, berechne, mitNachtrag])
+
+  // „Weg zu Gleis …" aus einer Mitteilung: sobald der Vorschlag gerechnet
+  // ist, uebernehmen und den Weg oeffnen. Scheitert die Rechnung, bleibt
+  // die Meldungsseite offen - dort steht, dass es keinen Weg gibt.
+  const uebernimmRef = useRef(uebernimmVorschlag)
+  useEffect(() => {
+    uebernimmRef.current = uebernimmVorschlag
+  })
+  useEffect(() => {
+    const gesucht = wegNachVorschlag.current
+    if (!gesucht) return
+    const meldung = meldungen.find((m) => schluesselVon(m.ereignis) === gesucht)
+    if (!meldung?.vorschlag) return
+    wegNachVorschlag.current = null
+    uebernimmRef.current(meldung, 'navigation')
+  }, [meldungen])
 
   const zurueckVonRechtsseite = () => schliesseRechtsseite(PFAD[bildschirm])
   if (rechtsseite === 'impressum') return <Impressum onZurueck={zurueckVonRechtsseite} />
@@ -996,6 +1101,25 @@ function App() {
       ) : null}
     </>
   )
+
+  function uebernimmVorschlag(angenommen: Meldung, danach: Bildschirm) {
+    if (!angenommen.vorschlag) return
+    const uebernommen = angenommen.vorschlag
+    setWerte(uebernommen.werte)
+    setRoute(uebernommen.route)
+    // Der Gehzeit-Speicher gehoerte zum ALTEN Gleis. Ihn stehen zu
+    // lassen hiesse, an Standort- und Variantenknoepfen Minuten zu
+    // zeigen, die fuer eine Route gerechnet wurden, die es nicht mehr
+    // gibt. Neu anfangen, mit der einen Zahl, die belegt ist.
+    gehzeitenRef.current = {}
+    setGehzeiten({})
+    merkeGehzeit(uebernommen.werte.variante, uebernommen.werte.abschnitt, uebernommen.route.gehzeitSek)
+    setGewaehlteVariante(uebernommen.werte.variante)
+    setGewaehlterStandort(uebernommen.werte.abschnitt)
+    setVersatz(0)
+    setMeldungen((liste) => markiereUebernommen(liste, angenommen.nr))
+    setBildschirm(danach)
+  }
 
   function bestaetigeAnkunft() {
     // Angekommen heisst: Dieser Umstieg ist erledigt. Die Eingabe dafuer
@@ -1067,28 +1191,7 @@ function App() {
           stand={stand}
           restSek={restSek}
           unerreichbar={vorschau?.unerreichbar}
-          onUebernehmen={(angenommen) => {
-            if (!angenommen.vorschlag) return
-            const uebernommen = angenommen.vorschlag
-            setWerte(uebernommen.werte)
-            setRoute(uebernommen.route)
-            // Der Gehzeit-Speicher gehoerte zum ALTEN Gleis. Ihn stehen zu
-            // lassen hiesse, an Standort- und Variantenknoepfen Minuten zu
-            // zeigen, die fuer eine Route gerechnet wurden, die es nicht mehr
-            // gibt. Neu anfangen, mit der einen Zahl, die belegt ist.
-            gehzeitenRef.current = {}
-            setGehzeiten({})
-            merkeGehzeit(
-              uebernommen.werte.variante,
-              uebernommen.werte.abschnitt,
-              uebernommen.route.gehzeitSek,
-            )
-            setGewaehlteVariante(uebernommen.werte.variante)
-            setGewaehlterStandort(uebernommen.werte.abschnitt)
-            setVersatz(0)
-            setMeldungen((liste) => markiereUebernommen(liste, angenommen.nr))
-            setBildschirm('dashboard')
-          }}
+          onUebernehmen={(angenommen) => uebernimmVorschlag(angenommen, 'dashboard')}
         />
         <Navileiste
           aktuell={bildschirm}

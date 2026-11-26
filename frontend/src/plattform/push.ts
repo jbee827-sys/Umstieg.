@@ -1,5 +1,6 @@
 import { FirebaseMessaging } from './firebase'
 import { meldeReiseAb, meldeReiseAn, schickeTestmitteilung, type ReiseAnmeldung } from '../api/mitteilungen'
+import type { LiveEreignis } from '../api/typen'
 import { vorfuehrungLaeuft } from '../einfuehrung/zustand'
 import { istApp } from './istApp'
 import { vergissErinnerung } from './mitteilungen'
@@ -161,5 +162,91 @@ export async function testmitteilung(): Promise<boolean> {
     return t ? await schickeTestmitteilung(t) : false
   } catch {
     return false
+  }
+}
+
+// --- Nachtragen und Antippen (Konzept Mitteilungen 6.2, Entscheidung A) ---
+
+/** Eine Server-Mitteilung, angetippt oder noch im Mitteilungszentrum. */
+export interface ZugestellteMeldung {
+  /** Das Ereignis fuer die Meldungsliste - `null` bei Rot und Erinnerung (die stehen schon auf der Uebersicht). */
+  ereignis: LiveEreignis | null
+  /** `art` aus den Daten (`gleis-ab`, `rot`, ...). */
+  art: string
+  /** Angetippte Aktion; fehlt beim Antippen der Mitteilung selbst. */
+  aktion?: 'weg' | 'oeffnen'
+  /** Der Anschluss faellt aus: Die Aktion heisst dann „Andere Verbindung waehlen“. */
+  verbindung: boolean
+}
+
+const TYP_ZU_ART: Record<string, LiveEreignis['typ']> = { zeit: 'verspaetung', gleis: 'gleiswechsel', ausfall: 'ausfall' }
+
+const text = (x: unknown): string | undefined => (typeof x === 'string' && x !== '' ? x : undefined)
+
+/**
+ * Macht aus den `data` einer Mitteilung (`mitteilungsDaten` im Backend) ein
+ * `LiveEreignis` - so, als waere es ueber den Live-Strom gekommen.
+ */
+export function ereignisAusDaten(daten: Record<string, unknown>): LiveEreignis | null {
+  const art = text(daten.art)
+  const zug = text(daten.zug)
+  const treffer = art && /^(zeit|gleis|ausfall)-(an|ab)$/.exec(art)
+  if (!treffer || !zug) return null
+  const alt = text(daten.alt)
+  const neu = text(daten.neu)
+  return {
+    typ: TYP_ZU_ART[treffer[1]],
+    zug,
+    seite: treffer[2] as 'an' | 'ab',
+    ...(alt ? { alt } : {}),
+    ...(neu ? { neu } : {}),
+    zeitstempel: new Date().toISOString(),
+  }
+}
+
+function alsMeldung(daten: unknown, aktion?: 'weg' | 'oeffnen'): ZugestellteMeldung | null {
+  if (typeof daten !== 'object' || daten === null) return null
+  const d = daten as Record<string, unknown>
+  const art = text(d.art)
+  // Nur unsere: Die Testmitteilung und Fremdes tragen kein Reiseereignis.
+  if (!art || !/^(rot|erinnerung|(zeit|gleis|ausfall)-(an|ab))$/.test(art)) return null
+  return { ereignis: ereignisAusDaten(d), art, ...(aktion ? { aktion } : {}), verbindung: d.aktion === 'verbindung' }
+}
+
+/** Antippen einer Mitteilung oder einer ihrer Aktionen. Wegwischen zaehlt nicht. */
+export function hoereAufAntippen(f: (m: ZugestellteMeldung) => void): () => void {
+  if (!istApp()) return () => undefined
+  let weg: (() => void) | null = null
+  let beendet = false
+  FirebaseMessaging.addListener('notificationActionPerformed', ({ actionId, notification }) => {
+    if (actionId === 'dismiss') return
+    const aktion = actionId === 'weg' || actionId === 'oeffnen' ? actionId : undefined
+    const m = alsMeldung(notification.data, aktion)
+    if (m) f(m)
+  })
+    .then((h) => {
+      weg = () => void h.remove()
+      if (beendet) weg()
+    })
+    .catch(() => undefined)
+  return () => {
+    beendet = true
+    weg?.()
+  }
+}
+
+/**
+ * Was noch im Mitteilungszentrum liegt - beim Oeffnen ohne Antippen. Raeumt
+ * es danach: Was in der App steht, braucht dort niemand mehr.
+ */
+export async function holeZugestellte(): Promise<ZugestellteMeldung[]> {
+  if (!istApp()) return []
+  try {
+    const { notifications } = await FirebaseMessaging.getDeliveredNotifications()
+    const liste = notifications.map((n) => alsMeldung(n.data)).filter((m): m is ZugestellteMeldung => m !== null)
+    if (liste.length > 0) await FirebaseMessaging.removeAllDeliveredNotifications()
+    return liste
+  } catch {
+    return []
   }
 }

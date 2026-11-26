@@ -10,6 +10,8 @@ const nativ = vi.hoisted(() => ({
   getToken: vi.fn(),
   listener: {} as Record<string, (e: unknown) => void>,
   addListener: vi.fn(),
+  zugestellt: vi.fn(),
+  raeume: vi.fn(),
   an: vi.fn(),
   ab: vi.fn(),
   test: vi.fn(),
@@ -30,6 +32,8 @@ vi.mock('./firebase', () => ({
     requestPermissions: nativ.request,
     getToken: nativ.getToken,
     addListener: nativ.addListener,
+    getDeliveredNotifications: nativ.zugestellt,
+    removeAllDeliveredNotifications: nativ.raeume,
   },
 }))
 
@@ -71,6 +75,8 @@ beforeEach(async () => {
   nativ.an.mockResolvedValue('ok')
   nativ.ab.mockResolvedValue(undefined)
   nativ.test.mockResolvedValue(true)
+  nativ.zugestellt.mockResolvedValue({ notifications: [] })
+  nativ.raeume.mockResolvedValue(undefined)
   // Jede Pruefung mit frischem Modulzustand (Token, Drossel, aktiv). Die
   // Hoerer am gemeinsamen `document` merken, sonst antworteten die alten
   // Modulkopien mit.
@@ -243,5 +249,107 @@ describe('Testmitteilung', () => {
     nativ.erlaubnis = 'denied'
     expect(await p.testmitteilung()).toBe(false)
     expect(nativ.test).not.toHaveBeenCalled()
+  })
+})
+
+const GLEIS_DATEN = {
+  art: 'gleis-ab',
+  zug: 'RE 3352',
+  anzeige: 'RE 3',
+  seite: 'ab',
+  alt: '3',
+  neu: '5',
+  gleisAlt: '3',
+  gleisNeu: '5',
+  restMin: '9',
+  gehMin: '4',
+  status: 'erreichbar',
+  stand: '16:01',
+  aktion: 'weg',
+  aktionGleis: '5',
+  // was iOS sonst noch in `userInfo` legt
+  aps: { alert: { title: 'Gleis 5 statt 3' } },
+  'gcm.message_id': '1',
+}
+
+describe('Ereignis aus einer Mitteilung', () => {
+  it('macht aus den Daten einer Gleis-Mitteilung ein Gleiswechsel-Ereignis der richtigen Seite', () => {
+    expect(p.ereignisAusDaten(GLEIS_DATEN)).toEqual({
+      typ: 'gleiswechsel',
+      zug: 'RE 3352',
+      seite: 'ab',
+      alt: '3',
+      neu: '5',
+      zeitstempel: '2026-11-26T14:00:00.000Z',
+    })
+    expect(p.ereignisAusDaten({ ...GLEIS_DATEN, art: 'zeit-an', seite: 'an', alt: '15:52', neu: '15:58' })).toMatchObject({
+      typ: 'verspaetung',
+      seite: 'an',
+      alt: '15:52',
+      neu: '15:58',
+    })
+    const ausfall = p.ereignisAusDaten({ art: 'ausfall-ab', zug: 'f-ab', seite: 'ab' })
+    expect(ausfall).toMatchObject({ typ: 'ausfall', zug: 'f-ab', seite: 'ab' })
+    expect(ausfall).not.toHaveProperty('neu')
+  })
+
+  it('macht aus Rot, Erinnerung und Fremdem kein Ereignis', () => {
+    expect(p.ereignisAusDaten({ ...GLEIS_DATEN, art: 'rot' })).toBeNull()
+    expect(p.ereignisAusDaten({ ...GLEIS_DATEN, art: 'erinnerung' })).toBeNull()
+    expect(p.ereignisAusDaten({ art: 'test' })).toBeNull()
+    expect(p.ereignisAusDaten({ ...GLEIS_DATEN, zug: undefined })).toBeNull()
+  })
+})
+
+describe('antippen', () => {
+  it('meldet das Antippen mit Ereignis und Aktion', async () => {
+    const f = vi.fn()
+    p.hoereAufAntippen(f)
+    await abwarten()
+    nativ.listener.notificationActionPerformed({ actionId: 'weg', notification: { data: GLEIS_DATEN } })
+    expect(f).toHaveBeenCalledWith({
+      ereignis: expect.objectContaining({ typ: 'gleiswechsel', neu: '5' }),
+      art: 'gleis-ab',
+      aktion: 'weg',
+      verbindung: false,
+    })
+    nativ.listener.notificationActionPerformed({ actionId: 'tap', notification: { data: { ...GLEIS_DATEN, art: 'rot', aktion: 'verbindung' } } })
+    expect(f).toHaveBeenLastCalledWith({ ereignis: null, art: 'rot', verbindung: true })
+  })
+
+  it('uebergeht Wegwischen und fremde Mitteilungen', async () => {
+    const f = vi.fn()
+    p.hoereAufAntippen(f)
+    await abwarten()
+    nativ.listener.notificationActionPerformed({ actionId: 'dismiss', notification: { data: GLEIS_DATEN } })
+    nativ.listener.notificationActionPerformed({ actionId: 'tap', notification: { data: { foo: 'bar' } } })
+    expect(f).not.toHaveBeenCalled()
+  })
+
+  it('hoert im Browser nicht hin', async () => {
+    nativ.app = false
+    p.hoereAufAntippen(vi.fn())
+    await abwarten()
+    expect(nativ.addListener).not.toHaveBeenCalled()
+  })
+})
+
+describe('zugestellte Mitteilungen', () => {
+  it('liest das Mitteilungszentrum und raeumt es', async () => {
+    nativ.zugestellt.mockResolvedValue({
+      notifications: [{ data: GLEIS_DATEN }, { data: { ...GLEIS_DATEN, art: 'erinnerung' } }, { data: {} }],
+    })
+    const liste = await p.holeZugestellte()
+    expect(liste).toHaveLength(2)
+    expect(liste[0]).toMatchObject({ art: 'gleis-ab', ereignis: { typ: 'gleiswechsel' } })
+    expect(liste[1]).toMatchObject({ art: 'erinnerung', ereignis: null })
+    expect(nativ.raeume).toHaveBeenCalled()
+  })
+
+  it('liefert im Browser und bei einem Fehler nichts', async () => {
+    nativ.zugestellt.mockRejectedValue(new Error('nicht da'))
+    expect(await p.holeZugestellte()).toEqual([])
+    nativ.app = false
+    expect(await p.holeZugestellte()).toEqual([])
   })
 })
