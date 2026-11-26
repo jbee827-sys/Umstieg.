@@ -209,6 +209,9 @@ export function ereignisAusDaten(daten: Record<string, unknown>): LiveEreignis |
 function alsMeldung(daten: unknown, aktion?: 'weg' | 'oeffnen'): ZugestellteMeldung | null {
   if (typeof daten !== 'object' || daten === null) return null
   const d = daten as Record<string, unknown>
+  // Die Testmitteilung (`test: '1'`) traegt einen erfundenen Gleiswechsel -
+  // er gehoert in keine echte Reise.
+  if (d.test === '1') return null
   const art = text(d.art)
   // Nur unsere: Die Testmitteilung und Fremdes tragen kein Reiseereignis.
   if (!art || !/^(rot|erinnerung|(zeit|gleis|ausfall)-(an|ab))$/.test(art)) return null

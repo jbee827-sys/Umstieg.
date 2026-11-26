@@ -333,6 +333,18 @@ describe('antippen', () => {
     expect(f).toHaveBeenLastCalledWith({ ereignis: null, art: 'rot', verbindung: true })
   })
 
+  // Das Backend markiert die Testmitteilung mit `test: '1'` (routes/mitteilungen.ts) -
+  // ihr erfundener Gleiswechsel darf nie als Meldung in eine echte Reise.
+  it('traegt die Testmitteilung nie als Meldung ein', async () => {
+    const f = vi.fn()
+    p.hoereAufAntippen(f)
+    await abwarten()
+    nativ.listener.notificationActionPerformed({ actionId: 'tap', notification: { data: { ...GLEIS_DATEN, test: '1' } } })
+    expect(f).not.toHaveBeenCalled()
+    nativ.zugestellt.mockResolvedValue({ notifications: [{ data: { ...GLEIS_DATEN, test: '1' } }] })
+    expect(await p.holeZugestellte()).toEqual([])
+  })
+
   it('uebergeht Wegwischen und fremde Mitteilungen', async () => {
     const f = vi.fn()
     p.hoereAufAntippen(f)

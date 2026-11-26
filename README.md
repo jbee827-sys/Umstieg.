@@ -29,7 +29,7 @@ Julian, 26.11.2026: **„Mitteilungen in 1.0 – deploye“.**
 | | Stand |
 |---|---|
 | Backend (Tasks 1–6) | **auf Fly ausgeliefert** am 26.11.2026 aus `feat/mitteilungen` `932b453` (`flyctl deploy backend --ha=false`, eine Maschine, Release v39). Geprüft: `/api/health` 200, `FIREBASE_SERVICE_ACCOUNT` „Deployed“, `POST /api/mitteilungen/test` mit erfundenem Token → 502 `token-ungueltig` (FCM erreicht, nichts verschickt) |
-| App (Tasks 7–11) | auf `feat/mitteilungen` committet; `origin/feat/mitteilungen` steht auf `932b453` (Task 7), **Tasks 8–11 nicht gepusht**. Frontend 1278/1278 Tests (110 Dateien), Lint und Bau grün; Backend 1233/1233 |
+| App (Tasks 7–11) | auf `feat/mitteilungen` committet; `origin/feat/mitteilungen` steht auf `932b453` (Task 7), **Tasks 8–11 nicht gepusht**. Frontend 1279/1279 Tests (110 Dateien), Lint und Bau grün; Backend 1233/1233 |
 | `main`, Vercel | unverändert auf `c49b181` |
 | iOS | **Bau 5** = Lauf 18 aus `main` `c49b181` in TestFlight (26.11.2026, ohne Mitteilungen; Lauf 17 abgebrochen) |
 
@@ -83,6 +83,91 @@ speichern (Datenschutztext ändern) – Julians Entscheidung.
    Teilen-Diagnose entfernen, Backend neu ausliefern; App-Datenschutz in
    App Store Connect um *Geräte-ID* und *Andere Daten* ergänzen
    (`docs/app-store-eintrag.md`).
+
+#### Testanleitung Bau 5 (TestFlight, Lauf 18, `main` `c49b181`)
+
+**Bau 5 enthält noch keine Server-Mitteilungen** – Firebase, `push.ts` und
+die Erweiterung „Mitteilung“ liegen nur auf `feat/mitteilungen`. Mitteilungen
+kommen in Bau 5 wie bisher nur lokal (solange iOS die App laufen lässt) plus
+die Erinnerung 5 Min. vor Ankunft. Geprüft wird, was seit Bau 4 neu ist:
+
+1. **Linie statt Zugnummer:** Eine Reise mit S-Bahn oder RE wählen. In Tafel,
+   Übersicht und Meldungen steht „S 15“, „RE 3“ – nicht „S 15632“. ICE/IC
+   behalten ihre Nummer.
+2. **S15 am Berliner Hbf:** Berlin Hbf wählen, Abfahrten öffnen – die S15
+   (Gleis 22, tief) steht in der Tafel (außer bei Sperrung der Stadtbahn).
+3. **Reise-Import mit Zugabgleich:** Im DB Navigator eine Verbindung mit
+   Umstieg (am besten RE/RB/S-Bahn) → *Teilen* → „Umstieg.“ → App öffnen →
+   „Reise importieren“ → Bestätigen. Erwartet: Bahnhof gewählt, **Züge in
+   der Tafel markiert**, Übersicht mit Ampel.
+4. **Live-Meldungen der importierten Reise:** Dieselbe Reise offen lassen;
+   ändert sich Gleis oder Zeit, erscheint die Störmeldung oben und unter
+   „Meldungen“. (War vor `c49b181` bei RE/RB/S-Bahn-Importen stumm.) Liegt
+   der Anschluss beim Import noch außerhalb der Tafel (> ~2 h), findet die
+   App ihn unterwegs (alle 3 Min.).
+5. Befunde mit Foto nach `E:\Claude-code\Fehlerbilder\` und hier eintragen.
+
+#### Testanleitung Mitteilungen über Firebase (ab Bau 6)
+
+Voraussetzung: Bau 6 aus `main` nach dem Fast-Forward von `feat/mitteilungen`
+(Schritte 1–2 oben), Backend v39 läuft schon. Am besten zuerst die App
+löschen und neu aus TestFlight installieren, damit iOS die
+Mitteilungs-Erlaubnis frisch fragt.
+
+**A. Grundlage (5 Min., am Schreibtisch)**
+
+1. App öffnen, eine beliebige Reise starten (Bahnhof, zwei Züge aus der
+   Tafel, „Umstieg starten“). iOS fragt nach Mitteilungen → **Erlauben**.
+2. *Eingabe → Einstellungen → Mitteilungen → „Testmitteilung senden“* →
+   „Verschickt …“ erscheint → **sofort das Handy sperren**.
+   Erwartet nach wenigen Sekunden auf dem Sperrbildschirm: **„Gleis 5 statt
+   6“ – „RE 3 nach Schwedt (Oder), ab 16:23“**, mit Ton.
+   Kommt „Nicht verschickt“: Mitteilungen in iOS erlaubt? Netz? Dann
+   Claude Bescheid geben (Fly-Protokoll `testmitteilung`).
+3. Die Mitteilung **lange drücken** → aufgeklappte Ansicht: Titel groß,
+   „6 → **5**“ (6 durchgestrichen), „9 Min. bis zur Abfahrt | 4 Min. Weg“,
+   grüner Punkt „Erreichbar“, rechts „Stand hh:mm“; darunter die Knöpfe
+   **„Weg zu Gleis 5“** und **„Reise öffnen“**. Hell und dunkel prüfen.
+   Fehlt die Ansicht (nur Systemtext): Erweiterung nicht geladen → Foto.
+4. Antippen der Testmitteilung öffnet die App – es entsteht **keine** Meldung
+   „RE 3 Gleis 5“ in der laufenden Reise (die Testmitteilung ist markiert).
+
+**B. Erinnerung vom Server (verlässlich prüfbar)**
+
+5. Eine Reise wählen, deren **Ankunft 10–30 Min. in der Zukunft** liegt
+   (Zug muss nicht wirklich gefahren werden). Reise starten, Übersicht
+   kurz offen lassen, dann **App wegwischen oder Handy sperren und liegen
+   lassen**.
+6. Erwartet 5 Min. vor der Ankunft: **„Gleich in ‹Bahnhof›“ – „RE 3: 16:23
+   ab Gleis 5“**, genau **einmal** (nicht zusätzlich die lokale „In 5
+   Minuten kommst du …“ – kommt die doppelt, ist die Abschaltung der lokalen
+   Mitteilungen kaputt).
+
+**C. Echte Fahrt (unterwegs, Handy gesperrt)**
+
+7. Reise vor der Fahrt starten, Handy einstecken. Mögliche Mitteilungen:
+   neue Abfahrts-/Ankunftszeit (ab 2 Min. Unterschied), Gleiswechsel,
+   Ausfall, „Anschluss knapp“ (nur beim Wechsel auf Rot), Erinnerung.
+   Jede höchstens einmal je Änderung, keine doppelt.
+8. Eine Gleiswechsel-Mitteilung **antippen** → App öffnet „Meldungen“ mit
+   Vorschlag für den neuen Weg. Über **„Weg zu Gleis …“** (lange drücken)
+   → App übernimmt den Weg und öffnet die Wegseite.
+9. App öffnen, ohne eine Mitteilung anzutippen → die Mitteilungen aus dem
+   Mitteilungszentrum stehen als Meldungen in der App, das
+   Mitteilungszentrum ist danach leer.
+10. „Angekommen“ bestätigen → danach kommt zu dieser Reise nichts mehr.
+
+**D. Rückfall**
+
+11. *iOS-Einstellungen → Umstieg. → Mitteilungen* aus → Reise starten → es
+    kommt nichts (auch kein Fehler in der App). Wieder an → beim nächsten
+    Öffnen meldet die App die Reise neu an.
+
+Bekannte Grenze: Hat iOS die App beendet (lange gesperrt), öffnet das
+Antippen eine leere Eingabe statt der Reise (siehe „Offen“ oben). Die
+Mitteilungen selbst kommen trotzdem. Befunde mit Uhrzeit notieren – Claude
+kann im Fly-Protokoll die Stundensummen (`ereignis: 'mitteilungen'`) dazu
+ansehen.
 
 ## Davor: Stand 23./24.11.2026 – Mitteilungen, Backend und Einrichtung
 
