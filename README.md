@@ -20,12 +20,66 @@ Web-App, die für einen Umstiegsbahnhof den konkreten Weg vom Ankunftsgleis zum 
 - **Frontend:** React + Vite + TypeScript. Design siehe unten. Mobil zuerst.
 - **Betrieb:** Frontend statisch auf **Vercel**, Backend als dauerhaft laufender **Container** (Fly.io). Bewusst getrennt – SSE, EVA-Poller und Graph-Cache brauchen einen Prozess mit Gedächtnis, den Serverless nicht garantiert. Siehe [`docs/deployment.md`](./docs/deployment.md).
 
-## Hier weitermachen (Stand 23.11.2026, abends)
+## Hier weitermachen (Stand 26.11.2026, abends)
 
-### Mitteilungen über Firebase – Backend fertig, wartet auf Julians Firebase-Einrichtung
+### Mitteilungen über Firebase – in 1.0, App-Seite fertig, Cloud-Bau steht aus
 
-**Zweig:** `feat/mitteilungen` (von `main` `c49b181`), nur lokal, **nicht
-gepusht, nicht ausgeliefert**. `main`, Vercel und Fly unverändert auf `c49b181`.
+Julian, 26.11.2026: **„Mitteilungen in 1.0 – deploye“.**
+
+| | Stand |
+|---|---|
+| Backend (Tasks 1–6) | **auf Fly ausgeliefert** am 26.11.2026 aus `feat/mitteilungen` `932b453` (`flyctl deploy backend --ha=false`, eine Maschine, Release v39). Geprüft: `/api/health` 200, `FIREBASE_SERVICE_ACCOUNT` „Deployed“, `POST /api/mitteilungen/test` mit erfundenem Token → 502 `token-ungueltig` (FCM erreicht, nichts verschickt) |
+| App (Tasks 7–11) | auf `feat/mitteilungen` committet; `origin/feat/mitteilungen` steht auf `932b453` (Task 7), **Tasks 8–11 nicht gepusht**. Frontend 1277/1277 Tests (110 Dateien), Lint und Bau grün; Backend 1233/1233 |
+| `main`, Vercel | unverändert auf `c49b181` |
+| iOS | **Bau 5** = Lauf 18 aus `main` `c49b181` in TestFlight (26.11.2026, ohne Mitteilungen; Lauf 17 abgebrochen) |
+
+**Neu in der App (Tasks 8–11):**
+
+- `plattform/push.ts`: Reise beim Server an-/abmelden (gedrosselt 10 s,
+  erneut beim Zurückkommen in den Vordergrund und bei neuem Token, ab bei
+  „Angekommen“). Solange sie angemeldet ist, schweigen die lokalen
+  Mitteilungen; scheitert die Anmeldung, bleiben sie der Rückfall.
+  `plattform/reiseanmeldung.ts` baut die Reise aus den Eingabewerten
+  (Bahnhofs- und Haltestellenpfad). Neue Felder `zugAnVon`/`zugAbNach`
+  (Herkunft/Ziel aus der Tafel) für „RE 3 nach Stralsund, ab 16:05“.
+- Nachtragen und Antippen: Ereignisse aus Mitteilungen laufen durch dieselbe
+  Behandlung wie der Live-Strom (`ereignisRef` in `App.tsx`), Doppelte über
+  `zug|typ|neu` verworfen. Antippen: Gleiswechsel → Meldungen, „Weg zu
+  Gleis …“ → Vorschlag übernehmen und Weg öffnen, sonst Übersicht.
+- Erweiterung `ios/App/Mitteilung/` (Content Extension): aufgeklappte
+  Ansicht mit Gleis groß, Minuten, Ampel, Stand; Archivo als TTF.
+  **Swift ist nur im Cloud-Bau übersetzbar** – erst der Simulator-Job zeigt,
+  ob sie baut.
+- Das Plugin wird über `plattform/firebase.ts` (`registerPlugin`) angesprochen,
+  nicht über den Paket-Einstieg – der zog `firebase/messaging` nach und ließ
+  Bau und 9 Testdateien scheitern.
+- Datenschutz (Abschnitt „App“ → Mitteilungen, Kurzfassung),
+  `PrivacyInfo.xcprivacy` (+ Geräte-ID, + Andere Daten), Store-Vorlage,
+  `NOTICE` (Firebase SDK, Capawesome, Apache 2.0), `docs/app-ios.md`.
+- Vorübergehend für TestFlight: Knopf *Einstellungen → Mitteilungen →
+  „Testmitteilung senden“* – vor der Einreichung entfernen (Liste in
+  `docs/app-ios.md`).
+
+**Als Nächstes (jeweils nur auf Julians Anweisung):**
+
+1. **Push von `feat/mitteilungen`** und Simulator-Lauf (*Actions → iOS → Run
+   workflow* auf `feat/mitteilungen`): prüft Swift, `Mitteilung.appex`,
+   Firebase-Plist und Auto-Init.
+2. Ist der grün: **`main` per Fast-Forward nachziehen** (Vercel baut die
+   Website neu – dort ändert sich nur der Datenschutztext) und **Bau 6**
+   über *Run workflow* auf `main`. Falls das Archiv „No profiles for
+   'online.umstieg.app.mitteilung'“ meldet: App-ID im Portal anlegen.
+3. **Am iPhone (Julian):** Testmitteilung bei gesperrtem Handy; lange
+   drücken → aufgeklappte Ansicht; Antippen → Meldung in der App; dann eine
+   echte Fahrt mit gesperrtem Handy. Befunde hier eintragen.
+4. Vor der Einreichung: Testmitteilung (App und Backend) und
+   Teilen-Diagnose entfernen, Backend neu ausliefern; App-Datenschutz in
+   App Store Connect um *Geräte-ID* und *Andere Daten* ergänzen
+   (`docs/app-store-eintrag.md`).
+
+## Davor: Stand 23./24.11.2026 – Mitteilungen, Backend und Einrichtung
+
+**Zweig:** `feat/mitteilungen` (von `main` `c49b181`); damals nur lokal.
 
 **Build (23.11.2026):**
 

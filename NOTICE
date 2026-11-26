@@ -86,11 +86,33 @@ Mitgelieferte Schriften
 
 Anders als die obigen Daten liegen die Schriftdateien IM Repository:
 
-- Archivo (frontend/src/assets/fonts/*.woff2)
+- Archivo (frontend/src/assets/fonts/*.woff2, seit 26.11.2026 auch als
+  frontend/ios/App/Mitteilung/Archivo.ttf in der Mitteilungs-Erweiterung der
+  iOS-App - dieselbe Schrift, nur ins TTF-Format umgewandelt)
   Copyright 2020 The Archivo Project Authors
   https://github.com/Omnibus-Type/Archivo
   SIL Open Font License 1.1 - Volltext in
-  frontend/src/assets/fonts/OFL.txt
+  frontend/src/assets/fonts/OFL.txt und
+  frontend/ios/App/Mitteilung/OFL.txt
 
   Lokal ausgeliefert statt ueber Google Fonts: Ein @import von
   fonts.googleapis.com uebertraegt die IP jedes Besuchers an Google.
+
+Mitgelieferte Software in der iOS-App (Mitteilungen)
+====================================================
+
+Seit dem 26.11.2026 schickt die iOS-App Mitteilungen ueber Firebase Cloud
+Messaging (Konzept Mitteilungen). Dafuer stecken im App-Paket:
+
+- @capacitor-firebase/messaging (Capawesome)
+  https://github.com/capawesome-team/capacitor-firebase
+  Apache License 2.0
+- Firebase Apple SDK (Google), eingebunden ueber das Paket oben, nur der
+  Teil fuer Cloud Messaging - kein Analytics, kein Crashlytics
+  https://github.com/firebase/firebase-ios-sdk
+  Apache License 2.0
+  mit seinen Abhaengigkeiten GoogleUtilities, GoogleDataTransport und
+  Promises (Google, Apache License 2.0) sowie nanopb (Petteri Aimonen,
+  zlib-Lizenz, https://github.com/nanopb/nanopb)
+
+Volltext der Apache License 2.0: https://www.apache.org/licenses/LICENSE-2.0

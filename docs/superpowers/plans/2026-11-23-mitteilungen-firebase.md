@@ -430,7 +430,7 @@ export function testmitteilung(): Promise<boolean>;
 
 Regeln: `reiseFuerWache` → `null` ohne Anschlusszug, bei `zugAbAusText`/`zugAnAusText` (der betroffene Zug fehlt dann; ohne Anschluss → `null`), ohne Gehzeit. Zeiten als ISO über dieselbe Tagesregel wie `heuteUm`/`abfahrtUm`. Haltestellenpfad aus `werte.haltestellen`. `push.ts`: nur `istApp()` und nicht `vorfuehrungLaeuft()`; Erlaubnis über das Plugin erst bei laufender Reise; Token-Wechsel → neu anmelden; `visibilitychange` → sichtbar → neu anmelden (gleiche Reise, Drossel umgehen). `mitteilungen.ts`: `teileMit` und `planeErinnerung` tun nichts, solange `pushAktiv()`; wird Push aktiv, `vergissErinnerung()`. Einstellungen: vorübergehender Knopf „Testmitteilung senden“ (nur `istApp()`), mit Kommentar „vor der Einreichung entfernen“ wie die Teilen-Diagnose.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it('baut die Anmeldung fuer den Bahnhofspfad mit Tafelnamen, Linie, ISO-Zeiten und Gehzeit', ...)
@@ -444,10 +444,10 @@ it('tut im Browser und in der Einfuehrungstour nichts', ...)
 it('meldet bei Reiseende ab', ...)
 ```
 
-- [ ] **Step 2: Run them** – `cd frontend && npx vitest run src/api/mitteilungen.test.ts src/plattform` → FAIL
-- [ ] **Step 3: Implement** die drei Dateien und die Änderungen in `mitteilungen.ts`, `App.tsx`, `Eingabe.tsx`.
-- [ ] **Step 4: Run the whole frontend suite, lint, build** – `npm test && npm run lint && npm run build` → grün
-- [ ] **Step 5: Commit** – `feat(app): Reise beim Server an- und abmelden, lokale Mitteilungen als Rueckfall`
+- [x] **Step 2: Run them** – `cd frontend && npx vitest run src/api/mitteilungen.test.ts src/plattform` → FAIL
+- [x] **Step 3: Implement** die drei Dateien und die Änderungen in `mitteilungen.ts`, `App.tsx`, `Eingabe.tsx`.
+- [x] **Step 4: Run the whole frontend suite, lint, build** – `npm test && npm run lint && npm run build` → grün
+- [x] **Step 5: Commit** – `feat(app): Reise beim Server an- und abmelden, lokale Mitteilungen als Rueckfall`
 
 ---
 
@@ -474,7 +474,7 @@ export function holeZugestellte(): Promise<ZugestellteMeldung[]>;           // l
 
 Regeln: `verspaetung`/`gleiswechsel`/`ausfall` aus `daten.art` (`zeit-*`, `gleis-*`, `ausfall-*`), `seite` aus `daten.seite`, `zeitstempel` = jetzt. Doppelte verwerfen über `zug + typ + neu` gegen die vorhandenen Meldungen (der Live-Strom kann dieselbe schon geliefert haben). Antippen: Gleiswechsel → Bildschirm `meldungen`, sonst `dashboard`; Aktion `weg` → den Vorschlag der eingetragenen Meldung übernehmen und `navigation` öffnen. Beim Öffnen und bei `visibilitychange` → sichtbar: `holeZugestellte()` nachtragen. Fehlt `getDeliveredNotifications` im Plugin (Task 7, Step 1), entfällt nur dieser Teil; im Commit vermerken.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it('macht aus den Daten einer Gleis-Mitteilung ein Gleiswechsel-Ereignis der richtigen Seite', ...)
@@ -484,10 +484,10 @@ it('traegt eine Meldung nicht doppelt ein, die der Live-Strom schon brachte', ..
 it('oeffnet bei der Aktion weg den Weg zum neuen Gleis', ...)
 ```
 
-- [ ] **Step 2: Run them** → FAIL
-- [ ] **Step 3: Implement** – erst die Live-Behandlung in `verarbeiteEreignis` herausziehen (bestehende App-Tests müssen unverändert grün bleiben), dann das Nachtragen.
-- [ ] **Step 4: Run the whole frontend suite, lint, build** → grün
-- [ ] **Step 5: Commit** – `feat(app): Server-Mitteilungen als Meldungen nachtragen, Antippen oeffnet die Reise`
+- [x] **Step 2: Run them** → FAIL
+- [x] **Step 3: Implement** – erst die Live-Behandlung in `verarbeiteEreignis` herausziehen (bestehende App-Tests müssen unverändert grün bleiben), dann das Nachtragen.
+- [x] **Step 4: Run the whole frontend suite, lint, build** → grün
+- [x] **Step 5: Commit** – `feat(app): Server-Mitteilungen als Meldungen nachtragen, Antippen oeffnet die Reise`
 
 ---
 
@@ -509,9 +509,9 @@ Gestaltung (Spec 4a, Entwurf `11-mitteilungen-entwuerfe.html`, Farben aus `desig
 - Aktionen dynamisch über `extensionContext?.notificationActions`: `weg` → „Weg zu Gleis `aktionGleis`“ bzw. bei `aktion = verbindung` „Andere Verbindung wählen“; `oeffnen` → „Reise öffnen“.
 - `Archivo.ttf` aus `frontend/src/assets/fonts/archivo-latin.woff2` umwandeln (fonttools mit brotli in einer venv unter `.superpowers/`, nicht im Repo); `OFL.txt` mitliefern.
 
-- [ ] **Step 1: Add the target and files above**
-- [ ] **Step 2: Extend the workflow check** – `test -f "$APP/PlugIns/Mitteilung.appex/Info.plist"` und `plutil -extract NSExtension.NSExtensionPointIdentifier raw … | grep -qx com.apple.usernotifications.content-extension`
-- [ ] **Step 3: Commit** – `feat(app): aufgeklappte Mitteilung mit Live-Stand (Content Extension)`
+- [x] **Step 1: Add the target and files above**
+- [x] **Step 2: Extend the workflow check** – `test -f "$APP/PlugIns/Mitteilung.appex/Info.plist"` und `plutil -extract NSExtension.NSExtensionPointIdentifier raw … | grep -qx com.apple.usernotifications.content-extension`
+- [x] **Step 3: Commit** – `feat(app): aufgeklappte Mitteilung mit Live-Stand (Content Extension)`
 - [ ] **Step 4: Cloud-Bau** – nach Julians Freigabe pushen; Simulator-Job grün inkl. Prüfung `Mitteilung.appex`. Julian legt vorher die App-ID `online.umstieg.app.mitteilung` an, falls die Cloud-Signatur sie nicht selbst anlegt (wie bei `Teilen`).
 
 ---
@@ -528,11 +528,11 @@ Inhalt (Spec 7 und 8):
 - `docs/app-ios.md`: Julians Einrichtung 1–6 aus Spec 8 als Schrittfolge, dazu Secret `GOOGLE_SERVICE_INFO_PLIST` (Base64) und Fly-Secret `FIREBASE_SERVICE_ACCOUNT`; Testmitteilung und ihr Entfernen vor der Einreichung.
 - `README.md`: Stand und nächste Schritte.
 
-- [ ] **Step 1: Write the failing test** – `Datenschutz.test.tsx`: Abschnitt „Mitteilungen“ nennt „Firebase“, „Google“, „8 Stunden“.
-- [ ] **Step 2: Run it** → FAIL
-- [ ] **Step 3: Update all files above**
-- [ ] **Step 4: Run frontend suite, lint, build** → grün
-- [ ] **Step 5: Commit** – `docs: Mitteilungen ueber Firebase - Datenschutz, Hinweise, Einrichtung`
+- [x] **Step 1: Write the failing test** – `Datenschutz.test.tsx`: Abschnitt „Mitteilungen“ nennt „Firebase“, „Google“, „8 Stunden“.
+- [x] **Step 2: Run it** → FAIL
+- [x] **Step 3: Update all files above**
+- [x] **Step 4: Run frontend suite, lint, build** → grün
+- [x] **Step 5: Commit** – `docs: Mitteilungen ueber Firebase - Datenschutz, Hinweise, Einrichtung`
 
 ---
 

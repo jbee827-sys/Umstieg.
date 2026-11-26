@@ -44,6 +44,11 @@ import { BETREIBER } from '../rechtliches/betreiber'
 //   backend/test/datenschutz.test.ts („schreibt weder Text noch Adresse einer
 //   Meldung ins Protokoll") und components/Eingabe.etwas-melden.test.tsx;
 //   App-Datenschutz: ios/App/App/PrivacyInfo.xcprivacy
+// - Server-Mitteilungen der App, seit 26.11.2026 (Konzept Mitteilungen 7):
+//   plattform/push.ts und api/mitteilungen.ts (Token + Reise, nie ohne
+//   iOS-Erlaubnis), backend/src/core/reisewachen.ts (nur RAM, Ende nach
+//   Abfahrt + 2 Min. bzw. 8 h, Protokoll nur Summen) und clients/fcm.ts,
+//   abgesichert in plattform/push.test.ts und backend/test/reisewachen.test.ts
 // - Backend ohne Zugriffsprotokoll: backend/src/app.ts
 //   (disableRequestLogging), abgesichert in backend/test/datenschutz.test.ts
 // - Ratenbegrenzung und Sicherheitsprotokoll: backend/src/app.ts (GRENZEN,
@@ -82,7 +87,10 @@ export function Datenschutz({ onZurueck }: { onZurueck?: () => void }) {
           lange, wie dieser Browser-Tab offen ist (in der App: bis iOS die App
           beendet). Dein Standort wird nur mit deiner Erlaubnis verwendet,
           bereits auf deinem Gerät auf etwa 110 Meter gerundet und nirgends
-          gespeichert. Schreibst du uns über „Etwas melden“, kommt deine
+          gespeichert. Erlaubst du der App Mitteilungen, meldet sie deine
+          laufende Reise bei unserem Server an und lässt die Mitteilungen über
+          Google Firebase zustellen (siehe „Die App für iPhone und iPad“).
+          Schreibst du uns über „Etwas melden“, kommt deine
           Nachricht – und deine E-Mail-Adresse, wenn du sie angibst – per
           E-Mail bei uns an.
         </p>
@@ -362,12 +370,38 @@ export function Datenschutz({ onZurueck }: { onZurueck?: () => void }) {
         <p>
           <strong>Mitteilungen:</strong> Läuft eine Reise, fragt iOS einmal, ob
           die App Mitteilungen senden darf – etwa wenn dein Anschluss das Gleis
-          wechselt oder fünf Minuten vor deiner Ankunft. Diese Mitteilungen
-          entstehen auf deinem Gerät aus den Daten, die die App ohnehin hat. Es
-          gibt keinen Push-Dienst: Weder wir noch Apple erhalten dafür eine
-          Gerätekennung oder den Inhalt. Die geplante Erinnerung löscht die App
-          mit „Angekommen“. Widerruf in den Einstellungen von iOS unter
-          „Umstieg.“ → „Mitteilungen“.
+          wechselt, die Zeit knapp wird oder fünf Minuten vor deiner Ankunft.
+          Damit sie auch bei gesperrtem Handy ankommen, meldet die App die
+          laufende Reise bei unserem Server an: eine Gerätekennung für
+          Mitteilungen (das „Token“) und die Reise selbst – Bahnhof oder
+          Haltestellen, Züge, Gleise, Zeiten und die Gehzeit deines Wegs. Der
+          Server beobachtet damit die Abfahrtstafel und schickt eine
+          Mitteilung, wenn sich etwas ändert. Er hält diese Angaben nur im
+          Arbeitsspeicher, bis kurz nach der Abfahrt deines Anschlusses und
+          höchstens 8 Stunden; mit „Angekommen“ meldet die App die Reise ab,
+          und sie sind sofort weg. Auf Platte und ins Protokoll kommt davon
+          nichts – dort stehen nur Summen je Stunde ohne Kennung.
+        </p>
+        <p>
+          Verschickt werden die Mitteilungen über <strong>Firebase Cloud
+          Messaging</strong> von Google, das sie über den Mitteilungsdienst von
+          Apple an dein Gerät zustellt. Google erhält dafür als unser
+          Auftragsverarbeiter die Gerätekennung und den Text jeder Mitteilung
+          (Zug, Gleis, Uhrzeit, Bahnhof); das Firebase-Modul in der App bildet
+          dazu eine Installationskennung. Google verarbeitet die Daten auch in
+          den USA; abgesichert ist das durch das EU-US Data Privacy Framework.
+          Google Analytics, Crashlytics oder andere Firebase-Dienste nutzt die
+          App nicht. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO – die
+          Mitteilungen sind eine Funktion, die du mit der Erlaubnis in iOS
+          einschaltest.
+        </p>
+        <p>
+          Ohne diese Erlaubnis entsteht keine Gerätekennung, und nichts wird
+          angemeldet. Kommt die Anmeldung nicht zustande, entstehen die
+          Mitteilungen wie bisher auf deinem Gerät aus den Daten, die die App
+          ohnehin hat – dann nur, solange iOS die App laufen lässt, und die
+          geplante Erinnerung vor der Ankunft. Widerruf in den Einstellungen
+          von iOS unter „Umstieg.“ → „Mitteilungen“.
         </p>
         <p>
           <strong>Verbindung teilen:</strong> Teilst du eine Verbindung aus

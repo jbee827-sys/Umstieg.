@@ -17,6 +17,7 @@ gilt, fragt `istApp()` (`frontend/src/plattform/istApp.ts`).
 | Bildschirmfotos | `.github/scripts/ios-bildschirmfotos.sh`; Artefakt `ios-bildschirmfotos` am Actions-Lauf |
 | Export für App Store Connect | `frontend/ios/ExportOptions.plist` |
 | Teilen-Erweiterung (Paket 7) | `frontend/ios/App/Teilen/`, App Group `group.online.umstieg.app` (`UebergabeSpeicher.swift`), Plugin `UebergabePlugin.swift`, Web-Seite `src/plattform/uebergabe.ts` |
+| Mitteilungen über Firebase (26.11.2026) | `src/plattform/push.ts` (An-/Abmelden, Nachtragen, Antippen), `src/plattform/firebase.ts` (Plugin), `src/plattform/reiseanmeldung.ts`; Erweiterung `frontend/ios/App/Mitteilung/` (aufgeklappte Ansicht); Backend `core/reisewachen.ts`, `clients/fcm.ts` |
 
 Unterschiede zur Web-Fassung:
 
@@ -128,3 +129,58 @@ Voraussetzung: Mitgliedschaft im Apple Developer Program ist freigeschaltet.
 
 Die Buildnummer ist die Laufnummer des Actions-Ablaufs und steigt damit von
 selbst.
+
+## Mitteilungen über Firebase (26.11.2026)
+
+Konzept: `Umstieg_Konzepte/11-konzept-mitteilungen-firebase.md`, Plan:
+`docs/superpowers/plans/2026-11-23-mitteilungen-firebase.md`.
+
+Läuft eine Reise und hat iOS die Mitteilungen erlaubt, meldet die App sie
+beim Backend an (`PUT /api/mitteilungen/reise`, Token + Reise). Das Backend
+beobachtet die Tafel und schickt über FCM; die Wache lebt nur im
+Arbeitsspeicher bis Abfahrt + 2 Min., höchstens 8 h. Die App meldet bei
+jedem Zurückkommen in den Vordergrund neu an (ein Deploy löscht alle
+Wachen) und bei „Angekommen“ ab. Solange die Anmeldung steht, schweigen die
+lokalen Mitteilungen; scheitert sie, sind sie der Rückfall.
+
+**Einrichtung (Julian, einmalig – erledigt am 24.11.2026):**
+
+1. Firebase-Projekt ohne Google Analytics anlegen, Datenverarbeitungs-
+   bedingungen annehmen (Projekt `umstieg-6c980`).
+2. iOS-App mit Bundle-ID `online.umstieg.app` hinzufügen,
+   `GoogleService-Info.plist` herunterladen → `E:\jbeer\.secrets\`.
+3. APNs-Schlüssel (`.p8`, Sandbox & Production, Team Scoped) auf
+   developer.apple.com anlegen → Tresor; in Firebase unter *Cloud
+   Messaging → Apple-App-Konfiguration* mit Key-ID und Team-ID hochladen.
+4. Bei der App-ID `online.umstieg.app` die Fähigkeit **Push Notifications**
+   einschalten.
+5. Dienstkonto-Schlüssel (JSON) erzeugen → Tresor, als Fly-Secret
+   `FIREBASE_SERVICE_ACCOUNT` (JSON roh oder Base64) auf `umstieg-backend`.
+6. `GoogleService-Info.plist` als Base64 ins GitHub-Secret
+   **`GOOGLE_SERVICE_INFO_PLIST`** (der Workflow schreibt sie vor dem Bau
+   nach `ios/App/App/`; der TestFlight-Job bricht ohne sie ab).
+
+Die Befehle für 5 und 6 stehen im README unter „Anleitung: Firebase
+einrichten“ – in **Bash**, nicht in PowerShell.
+
+**Erweiterung „Mitteilung“** (Content Extension, Bundle-ID
+`online.umstieg.app.mitteilung`): zeigt beim langen Drücken den Stand aus
+den `data` der Mitteilung. Die App-ID legt die Cloud-Signatur in der Regel
+selbst an; meldet das Archiv „No profiles for
+'online.umstieg.app.mitteilung'“, sie im Portal anlegen (wie bei
+`online.umstieg.app.teilen`). Schrift: `Archivo.ttf` (aus der
+Web-Schrift umgewandelt, OFL).
+
+**Plugin ohne Firebase-JS:** `src/plattform/firebase.ts` registriert das
+native Plugin selbst (`registerPlugin`). Der Einstieg des npm-Pakets lädt
+eine Web-Fassung mit `firebase/messaging`, die nur das Web bräuchte – das
+Paket `firebase` ist bewusst nicht installiert.
+
+**Testmitteilung (vorübergehend):** *Einstellungen → Mitteilungen →
+„Testmitteilung senden“* in der App ruft `POST /api/mitteilungen/test`. Ist
+die App offen, zeigt iOS kein Banner (`presentationOptions: []`) – zum
+Prüfen tippen und sofort das Handy sperren. **Vor der Einreichung
+entfernen:** den Knopf in `components/Eingabe.tsx` samt
+`Eingabe.testmitteilung.test.tsx`, `testmitteilung()` in `push.ts`,
+`schickeTestmitteilung()` in `api/mitteilungen.ts` und die Route im Backend
+(`routes/mitteilungen.ts`).

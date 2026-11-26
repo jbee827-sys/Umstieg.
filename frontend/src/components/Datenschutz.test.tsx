@@ -181,10 +181,22 @@ describe('Datenschutz: die App', () => {
     expect(zeige()).toContain('Erst wenn du auf „Standort verwenden“ tippst')
   })
 
-  it('sagt, dass Mitteilungen auf dem Geraet entstehen und es keinen Push-Dienst gibt', () => {
+  // Seit den Server-Mitteilungen (Konzept Mitteilungen 7, 26.11.2026) gibt
+  // es einen Push-Dienst - die alte Zusage darf nicht stehen bleiben.
+  it('nennt Firebase, Google und die Speicherdauer bei den Mitteilungen', () => {
     const text = zeige()
-    expect(text).toContain('entstehen auf deinem Gerät')
-    expect(text).toContain('keinen Push-Dienst')
+    expect(text).toContain('Firebase')
+    expect(text).toContain('Google')
+    expect(text).toContain('8 Stunden')
+    expect(text).toContain('Art. 6 Abs. 1 lit. b DSGVO')
+    expect(text).toContain('Data Privacy Framework')
+    expect(text).not.toContain('keinen Push-Dienst')
+  })
+
+  it('sagt, dass ohne Erlaubnis keine Geraetekennung entsteht und lokale Mitteilungen bleiben', () => {
+    const text = zeige()
+    expect(text).toContain('Ohne diese Erlaubnis entsteht keine Gerätekennung')
+    expect(text).toContain('auf deinem Gerät')
   })
 
   it('sagt, dass die App nur mit Einwilligung zaehlt - und was dabei hinausgeht', () => {

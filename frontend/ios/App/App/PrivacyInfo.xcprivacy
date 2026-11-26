@@ -18,6 +18,13 @@
     Nachricht (Kundensupport) und - nur wenn angegeben - die E-Mail-Adresse.
     Beides freiwillig, nur auf eigenen Tipp, als Mail an unser Postfach.
     Verknuepft: ja - die Adresse steht neben der Nachricht.
+  - Seit dem 26.11.2026 Server-Mitteilungen (plattform/push.ts, Konzept
+    Mitteilungen 7): die Geraetekennung fuer Mitteilungen (FCM-Token) und
+    die laufende Reise (Bahnhof/Haltestellen, Zuege, Gleise, Zeiten,
+    Gehzeit) - nur mit der Mitteilungs-Erlaubnis von iOS, beim Server nur
+    im Arbeitsspeicher bis kurz nach der Abfahrt, hoechstens 8 Stunden.
+    Fuer die App-Funktion, nicht mit der Identitaet verknuepft, kein
+    Tracking. Das Firebase-SDK bringt sein eigenes Manifest mit.
 
   Schnittstellen mit Begruendungspflicht nutzt der eigene Code nicht. Die
   Capacitor-Pakete bringen ihre eigenen Manifeste mit.
@@ -71,6 +78,30 @@
 			<string>NSPrivacyCollectedDataTypeCustomerSupport</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
 			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeDeviceID</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeOtherDataTypes</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
 			<false/>
 			<key>NSPrivacyCollectedDataTypePurposes</key>

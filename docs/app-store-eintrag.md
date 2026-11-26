@@ -53,7 +53,8 @@ umsteigen,bahnhof,anschluss,bahnsteig,zug,weg,aufzug,barrierefrei,verspätung,gl
 > Rot kaum zu schaffen.
 >
 > UNTERWEGS
-> • Mitteilung bei Gleiswechsel oder Ausfall deines Anschlusses
+> • Mitteilung bei Gleiswechsel, neuer Abfahrtszeit oder Ausfall – auch bei
+>   gesperrtem Handy
 > • Erinnerung fünf Minuten vor der Ankunft
 > • Barrierefreie Route mit Aufzug oder Route mit Stopp an WC und Kiosk
 > • Gehtempo wählbar, der Bildschirm bleibt beim Gehen an
@@ -97,8 +98,9 @@ aufbewahrt, als die Anfrage in Echtzeit braucht. Umstieg. bewahrt nichts auf
 Server an Transitous, und dort haben wir keinen Einfluss darauf, ob sie
 protokolliert wird. Deshalb der vorsichtige Vorschlag:
 
-- **Ja, Daten werden erfasst** – vier Arten (die letzten beiden seit dem
-  16.11.2026, für „Etwas melden“ in der App):
+- **Ja, Daten werden erfasst** – sechs Arten (Kontakt und Kundensupport seit
+  dem 16.11.2026, für „Etwas melden“ in der App; Gerätekennung und Andere
+  Daten seit dem 26.11.2026, für die Server-Mitteilungen):
   - *Standort → Genauer Standort*: Verwendung **App-Funktionalität**, mit
     der Identität verknüpft **Nein**, Tracking **Nein**. Nicht „grob“: Die
     App rundet auf drei Nachkommastellen (etwa 110 m), und ab drei Stellen
@@ -112,6 +114,14 @@ protokolliert wird. Deshalb der vorsichtige Vorschlag:
   - *Benutzerinhalte → Kundensupport*: Verwendung **App-Funktionalität**,
     mit der Identität verknüpft **Ja**, Tracking **Nein** (die Nachricht aus
     „Etwas melden“; sie liegt bis zu 12 Monate im Postfach)
+  - *Kennungen → Geräte-ID*: Verwendung **App-Funktionalität**, mit der
+    Identität verknüpft **Nein**, Tracking **Nein** (das FCM-Token für die
+    Mitteilungen; nur mit der Mitteilungs-Erlaubnis von iOS)
+  - *Andere Daten → Andere Datentypen*: Verwendung **App-Funktionalität**,
+    mit der Identität verknüpft **Nein**, Tracking **Nein** (die laufende
+    Reise – Bahnhof, Züge, Gleise, Zeiten –, die der Server bis kurz nach
+    der Abfahrt, höchstens 8 Stunden, im Arbeitsspeicher hält; Google
+    erhält als Auftragsverarbeiter Token und Mitteilungstext)
 
 „Verknüpft: Ja“ ist die vorsichtige Angabe: Wer seine Adresse dazuschreibt,
 ist über sie erkennbar, und die Nachricht steht in derselben Mail. Apple
@@ -122,7 +132,7 @@ aktuellem Wortlaut prüfen. Angeben schadet nicht; Weglassen kann es.
 
 Die strenge Lesart („Daten werden nicht erfasst“) wäre vertretbar, solange
 nur unser Server die Koordinate sieht; mit Transitous als Drittem ist sie es
-nicht sicher. Dieselben vier Angaben stehen in `PrivacyInfo.xcprivacy`.
+nicht sicher. Dieselben sechs Angaben stehen in `PrivacyInfo.xcprivacy`.
 
 ## Exportkonformität
 
@@ -147,10 +157,16 @@ die Verschlüsselung des Systems (HTTPS). Die Frage erscheint dann nicht.
 > access.
 >
 > Native features beyond the website:
-> - Local notifications when the connecting train changes platform or is
+> - Notifications when a train of the journey changes platform or time or is
 >   cancelled, when the connection becomes unlikely (status turns red), and five
 >   minutes before arrival. Permission is requested only once a journey is
->   running.
+>   running. With permission, the app registers the running journey with our
+>   server, which watches the departure board and sends the notifications via
+>   Firebase Cloud Messaging (no Analytics, no other Firebase services); the
+>   journey is held in memory only until shortly after departure (at most 8
+>   hours). Without permission or server, the app falls back to local
+>   notifications. Long-press a notification to see the live status (content
+>   extension).
 > - Location via Core Location ("while using"), requested only after the user
 >   taps "Standort verwenden" with an explanation shown first. Used to detect
 >   the station and the arrival at the platform; rounded on device, not stored.
