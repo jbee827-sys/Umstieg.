@@ -29,7 +29,7 @@ Julian, 26.11.2026: **„Mitteilungen in 1.0 – deploye“.**
 | | Stand |
 |---|---|
 | Backend (Tasks 1–6) | **auf Fly ausgeliefert** am 26.11.2026 aus `feat/mitteilungen` `932b453` (`flyctl deploy backend --ha=false`, eine Maschine, Release v39). Geprüft: `/api/health` 200, `FIREBASE_SERVICE_ACCOUNT` „Deployed“, `POST /api/mitteilungen/test` mit erfundenem Token → 502 `token-ungueltig` (FCM erreicht, nichts verschickt) |
-| App (Tasks 7–11) | auf `feat/mitteilungen` committet; `origin/feat/mitteilungen` steht auf `932b453` (Task 7), **Tasks 8–11 nicht gepusht**. Frontend 1277/1277 Tests (110 Dateien), Lint und Bau grün; Backend 1233/1233 |
+| App (Tasks 7–11) | auf `feat/mitteilungen` committet; `origin/feat/mitteilungen` steht auf `932b453` (Task 7), **Tasks 8–11 nicht gepusht**. Frontend 1278/1278 Tests (110 Dateien), Lint und Bau grün; Backend 1233/1233 |
 | `main`, Vercel | unverändert auf `c49b181` |
 | iOS | **Bau 5** = Lauf 18 aus `main` `c49b181` in TestFlight (26.11.2026, ohne Mitteilungen; Lauf 17 abgebrochen) |
 
@@ -59,6 +59,13 @@ Julian, 26.11.2026: **„Mitteilungen in 1.0 – deploye“.**
 - Vorübergehend für TestFlight: Knopf *Einstellungen → Mitteilungen →
   „Testmitteilung senden“* – vor der Einreichung entfernen (Liste in
   `docs/app-ios.md`).
+
+**Offen, nicht in diesem Paket (Abschlussdurchsicht 26.11.2026):** Die
+Reise liegt in der App im `sessionStorage`. Hat iOS die App beendet (häufig
+nach längerer Zeit gesperrt), öffnet das Antippen einer Mitteilung eine
+leere Eingabe statt der Reise – Banner und aufgeklappte Ansicht zeigen die
+Nachricht trotzdem. Abhilfe wäre, die Reise in der App dauerhaft zu
+speichern (Datenschutztext ändern) – Julians Entscheidung.
 
 **Als Nächstes (jeweils nur auf Julians Anweisung):**
 

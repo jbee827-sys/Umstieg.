@@ -106,8 +106,10 @@ async function melde(immer: boolean): Promise<void> {
       return setzeAktiv(false)
     }
     const ergebnis = await meldeReiseAn(t, 'ios', jetzt)
-    // Waehrend der Anfrage beendet oder ersetzt: Das Ergebnis gilt nicht mehr.
-    if (reise !== jetzt) return
+    // Waehrend der Anfrage beendet oder durch eine ANDERE Reise ersetzt: Das
+    // Ergebnis gilt nicht mehr. Nach Inhalt verglichen, nicht nach Objekt -
+    // die App meldet bei jedem Reiterwechsel dieselbe Reise als neues Objekt.
+    if (!reise || JSON.stringify(reise) !== json) return
     if (ergebnis !== 'ok') angemeldet = null
     setzeAktiv(ergebnis === 'ok')
   } catch {

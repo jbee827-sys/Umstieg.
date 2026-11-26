@@ -1,3 +1,4 @@
+import CoreText
 import UIKit
 import UserNotifications
 import UserNotificationsUI

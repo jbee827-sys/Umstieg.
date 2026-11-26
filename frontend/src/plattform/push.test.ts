@@ -129,6 +129,22 @@ describe('anmelden', () => {
     expect(nativ.an).toHaveBeenCalledTimes(2)
   })
 
+  // Abschlussdurchsicht 26.11.2026: Die App meldet bei jedem Reiterwechsel
+  // ein neues, inhaltlich gleiches Objekt. Kam das waehrend der Anfrage,
+  // verwarf `melde` das Ergebnis - der Server ueberwachte, die App blieb
+  // zusaetzlich lokal: jede Mitteilung doppelt.
+  it('wird aktiv, wenn dieselbe Reise waehrend der Anfrage erneut kommt', async () => {
+    let antworte: (e: 'ok') => void = () => undefined
+    nativ.an.mockImplementationOnce(() => new Promise((fertig) => (antworte = fertig)))
+    p.meldeAnWennNoetig(reise())
+    await abwarten()
+    p.meldeAnWennNoetig(reise())
+    antworte('ok')
+    await abwarten()
+    expect(p.pushAktiv()).toBe(true)
+    expect(nativ.an).toHaveBeenCalledTimes(1)
+  })
+
   it('meldet bei einem neuen Token neu an', async () => {
     p.meldeAnWennNoetig(reise())
     await abwarten()
