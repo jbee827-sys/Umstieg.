@@ -30,6 +30,7 @@ import { ladeDarstellung, waehleDarstellung, type Darstellung } from '../einstel
 import { setzeEinwilligung, useEinwilligung } from '../analytik/einwilligung'
 import { istApp } from '../plattform/istApp'
 import { uebergabeDiagnose, useGeteilterText, verwirfGeteiltenText } from '../plattform/uebergabe'
+import { testmitteilung } from '../plattform/push'
 import { useBreitesLayout } from '../aufbau/breite'
 
 /** Haltestellenpfad (Umstieg 2.0): beide Orte mit der gewählten Fahrt. */
@@ -69,6 +70,13 @@ export interface EingabeWerte {
    */
   zugAnAnzeige?: string
   zugAbAnzeige?: string
+  /**
+   * Herkunft des Ankunftszugs und Ziel des Anschlusses laut Tafel (`ziel`).
+   * Nur fuer die Server-Mitteilungen („RE 3 nach Stralsund, ab 16:05“);
+   * fehlt in aelteren gespeicherten Reisen.
+   */
+  zugAnVon?: string
+  zugAbNach?: string
   /**
    * Reise-Import: Der Zug stammt aus dem Reisetext und fand sich in der Tafel
    * noch nicht - `zugAnName`/`zugAbName` sind dann der Name aus dem Text, und
@@ -198,6 +206,8 @@ export function Eingabe({
   const [meldenOffen, setMeldenOffen] = useState(false)
   // Diagnose der Teilen-Uebergabe (16.11.2026, voruebergehend).
   const [teilenDiagnose, setTeilenDiagnose] = useState<string[] | null>(null)
+  // Testmitteilung (Plan Mitteilungen, Task 8): voruebergehend, vor der Einreichung entfernen.
+  const [testStand, setTestStand] = useState<string | null>(null)
   const meldenKnopfRef = useRef<HTMLButtonElement>(null)
   // In der App: eine Verbindung aus dem Teilen-Menue wartet (Paket 7).
   const geteilt = useGeteilterText()
@@ -666,6 +676,8 @@ export function Eingabe({
         zugAbName: zugAbfahrt?.zug,
         zugAnAnzeige: zugAnkunft?.anzeige,
         zugAbAnzeige: zugAbfahrt?.anzeige,
+        zugAnVon: zugAnkunft?.ziel,
+        zugAbNach: zugAbfahrt?.ziel,
         ...(zugAnkunft?.ausText ? { zugAnAusText: true as const } : {}),
         ...(zugAbfahrt?.ausText ? { zugAbAusText: true as const } : {}),
         ankunftZeit: zugAnkunft ? (zugAnkunft.zeitIst ?? zugAnkunft.zeitSoll) : undefined,
@@ -1256,6 +1268,36 @@ export function Eingabe({
                       {zeile}
                     </span>
                   ))}
+                </p>
+              )}
+            </fieldset>
+          )}
+          {/* Testmitteilung (26.11.2026): VORUEBERGEHEND fuer TestFlight -
+              belegt, dass eine Server-Mitteilung bei gesperrtem Handy
+              ankommt. Vor der Einreichung entfernen (wie die Route
+              POST /api/mitteilungen/test im Backend). */}
+          {istApp() && (
+            <fieldset style={{ border: 0, margin: 0, padding: 0 }} className="feld">
+              <label>Mitteilungen</label>
+              <button
+                type="button"
+                className="knopf-sekundaer"
+                onClick={() => {
+                  setTestStand(null)
+                  void testmitteilung().then((ja) =>
+                    setTestStand(
+                      ja
+                        ? 'Verschickt. Bei offener App zeigt iOS kein Banner – zum Prüfen tippen und gleich das Handy sperren.'
+                        : 'Nicht verschickt – Mitteilungen erlaubt? Netz da?',
+                    ),
+                  )
+                }}
+              >
+                Testmitteilung senden
+              </button>
+              {testStand && (
+                <p className="hinweis-box" role="status">
+                  {testStand}
                 </p>
               )}
             </fieldset>

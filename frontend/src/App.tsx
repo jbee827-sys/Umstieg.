@@ -62,6 +62,8 @@ import {
   wirdRot,
 } from './plattform/mitteilungen'
 import { useZugabgleich } from './reise/useZugabgleich'
+import { erinnerungVomServer, hoereAufPushStand, meldeAbUndVergiss, meldeAnWennNoetig } from './plattform/push'
+import { reiseFuerWache } from './plattform/reiseanmeldung'
 import { abfahrtUm, ampelFarbe, umstiegVon } from './navigation/ampel'
 import type { Ampelfarbe } from './api/typen'
 import {
@@ -378,21 +380,34 @@ function App() {
   // Erinnerung fuenf Minuten vor der Ankunft - geplant, damit sie auch kommt,
   // wenn iOS die App laengst angehalten hat. Neu bei jeder Aenderung von
   // Ankunftszeit oder Anschlussgleis, weg mit der Reise.
+  // Kommt die Erinnerung vom Server (`plattform/push.ts`), faellt die lokale
+  // weg; scheitert eine spaetere Anmeldung, wird sie neu geplant.
   const reiseLaeuft = route !== null
   const erinnerungAnkunft = werte?.ankunftZeit
   const erinnerungBahnhof = werte?.bahnhofName
   const erinnerungGleis = werte?.gleisAb
   const erinnerungZug = werte?.zugAbAnzeige ?? werte?.zugAbName
+  const [erinnerungLokal, setErinnerungLokal] = useState(true)
+  useEffect(() => hoereAufPushStand(() => setErinnerungLokal(!erinnerungVomServer())), [])
   useEffect(() => {
     if (!reiseLaeuft || !erinnerungAnkunft || !erinnerungBahnhof || !erinnerungGleis) return
-    if (vorfuehrungLaeuft()) return
+    if (vorfuehrungLaeuft() || !erinnerungLokal) return
     planeErinnerung({
       ankunft: heuteUm(erinnerungAnkunft),
       bahnhofName: erinnerungBahnhof,
       gleisAb: erinnerungGleis,
       zugAbName: erinnerungZug,
     })
-  }, [reiseLaeuft, erinnerungAnkunft, erinnerungBahnhof, erinnerungGleis, erinnerungZug])
+  }, [reiseLaeuft, erinnerungAnkunft, erinnerungBahnhof, erinnerungGleis, erinnerungZug, erinnerungLokal])
+
+  // Server-Mitteilungen (Konzept Mitteilungen 6.2): Die laufende Reise wird
+  // beim Server angemeldet, bei jeder Aenderung von Zuegen, Gleisen, Zeiten
+  // oder Gehzeit neu (gedrosselt, gleiche Reise = kein Aufruf). Nur in der
+  // App und nie in der Einfuehrungstour - das prueft `push.ts` selbst.
+  useEffect(() => {
+    if (!AUF_REISE.includes(bildschirm) || !route || !werte) return
+    meldeAnWennNoetig(reiseFuerWache(werte, route, new Date()))
+  }, [bildschirm, route, werte])
 
   // Springt die Ampel auf Rot, waehrend die App im Hintergrund ist, sagt es
   // eine Mitteilung. Dieselbe Rechnung wie auf der Uebersicht.
@@ -998,6 +1013,7 @@ function App() {
     setAnkunftVorschlag(false)
     stoppeVerfolgung()
     vergissErinnerung()
+    void meldeAbUndVergiss()
     meldeAnkunftSpuerbar()
     setBildschirm('angekommen')
   }

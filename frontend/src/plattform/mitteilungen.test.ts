@@ -8,9 +8,12 @@ const nativ = vi.hoisted(() => ({
   request: vi.fn(),
   schedule: vi.fn(() => Promise.resolve({ notifications: [] })),
   cancel: vi.fn(() => Promise.resolve()),
+  push: false,
+  pushErinnerung: false,
 }))
 
 vi.mock('./istApp', () => ({ istApp: () => nativ.app }))
+vi.mock('./push', () => ({ pushAktiv: () => nativ.push, erinnerungVomServer: () => nativ.pushErinnerung }))
 vi.mock('@capacitor/local-notifications', () => ({
   LocalNotifications: {
     checkPermissions: nativ.check,
@@ -42,6 +45,8 @@ beforeEach(() => {
   vi.clearAllMocks()
   nativ.app = true
   nativ.display = 'granted'
+  nativ.push = false
+  nativ.pushErinnerung = false
   nativ.check.mockImplementation(() => Promise.resolve({ display: nativ.display }))
   nativ.request.mockImplementation(() => Promise.resolve({ display: 'granted' }))
   sichtbar(false)
@@ -139,5 +144,27 @@ describe('Erinnerung vor der Ankunft', () => {
     expect(m.erinnerungsText({ ankunft, bahnhofName: 'Fulda', gleisAb: '3' })).toBe(
       'In 5 Minuten kommst du in Fulda an – dein Anschluss fährt von Gleis 3.',
     )
+  })
+})
+
+describe('solange die Mitteilungen vom Server kommen', () => {
+  it('schaltet lokale Mitteilungen und die lokale Erinnerung ab, solange Push aktiv ist', async () => {
+    nativ.push = true
+    nativ.pushErinnerung = true
+    m.teileEreignisMit(gleiswechsel)
+    m.teileGefaehrdungMit('6')
+    m.planeErinnerung({ ankunft: new Date(Date.now() + 20 * 60_000), bahnhofName: 'Fulda', gleisAb: '3' })
+    await abwarten()
+    expect(nativ.schedule).not.toHaveBeenCalled()
+    // Eine schon geplante lokale Erinnerung faellt weg - sonst kaeme sie doppelt.
+    expect(nativ.cancel).toHaveBeenCalledWith({ notifications: [{ id: 1 }] })
+  })
+
+  it('plant die lokale Erinnerung, wenn der Server die Ankunft nicht kennt', async () => {
+    nativ.push = true
+    nativ.pushErinnerung = false
+    m.planeErinnerung({ ankunft: new Date(Date.now() + 20 * 60_000), bahnhofName: 'Fulda', gleisAb: '3' })
+    await abwarten()
+    expect(nativ.schedule).toHaveBeenCalledOnce()
   })
 })

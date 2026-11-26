@@ -49,6 +49,13 @@ describe('mitTreffer', () => {
     expect(neu.vonHalt).toBe('Berlin Südkreuz')
     expect(neu.zugAnAusText).toBeUndefined()
   })
+
+  it('nimmt Herkunft und Ziel der Tafel fuer die Server-Mitteilungen', () => {
+    const ice: TafelEintrag = { zug: 'ICE 1134', zeitSoll: '16:01', gleisSoll: '8', ziel: 'Frankfurt' }
+    const neu = mitTreffer({ ...WERTE, zugAnAusText: true }, { an: ice, ab: RE3 })
+    expect(neu.zugAnVon).toBe('Frankfurt')
+    expect(neu.zugAbNach).toBe(RE3.ziel)
+  })
 })
 
 describe('useZugabgleich', () => {

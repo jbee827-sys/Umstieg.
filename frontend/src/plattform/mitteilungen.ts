@@ -2,6 +2,7 @@ import { LocalNotifications } from '@capacitor/local-notifications'
 import type { Ampelfarbe, LiveEreignis } from '../api/typen'
 import { meldungsText } from '../navigation/meldung'
 import { istApp } from './istApp'
+import { erinnerungVomServer, pushAktiv } from './push'
 
 /**
  * Lokale Mitteilungen der App (Plan App Store, Paket 6) - der wichtigste
@@ -10,7 +11,8 @@ import { istApp } from './istApp'
  * Lokal, nicht vom Server: Sie entstehen aus den Live-Daten, die die App
  * ohnehin hat. Das trägt, solange die App offen oder kurz im Hintergrund
  * ist; danach hält iOS sie an, und nur die vorab geplante Erinnerung kommt
- * noch. Server-Mitteilungen wären ein eigenes, späteres Paket.
+ * noch. Ist die Reise beim Server angemeldet (`push.ts`), schweigen sie -
+ * dann kommt alles vom Server, auch bei gesperrtem Handy.
  *
  * Gefragt wird erst, wenn eine Reise läuft - nie beim Start. Ohne Erlaubnis
  * geht alles wie vorher (Richtlinie 4.5.4): Die Meldungen stehen in der App.
@@ -46,7 +48,7 @@ export function bereiteMitteilungenVor(): void {
  * darüber wäre doppelt.
  */
 function teileMit(titel: string, text: string): void {
-  if (!istApp() || document.visibilityState === 'visible') return
+  if (!istApp() || document.visibilityState === 'visible' || pushAktiv()) return
   erlaubt()
     .then((ja) => {
       if (!ja) return
@@ -98,14 +100,16 @@ export function erinnerungAm(ankunft: Date, jetzt: number = Date.now()): Date | 
 
 /**
  * Plant die Erinnerung vor der Ankunft neu - sie kommt auch, wenn iOS die
- * App längst angehalten hat. Eine ältere fällt dabei weg.
+ * App längst angehalten hat. Eine ältere fällt dabei weg, auch wenn die
+ * Erinnerung inzwischen vom Server kommt.
  */
 export function planeErinnerung(erinnerung: Erinnerung): void {
   if (!istApp()) return
   const am = erinnerungAm(erinnerung.ankunft)
   LocalNotifications.cancel({ notifications: [{ id: ERINNERUNG_ID }] })
     .then(async () => {
-      if (!am || !(await erlaubt())) return
+      // Die Wache des Servers erinnert selbst - eine zweite waere doppelt.
+      if (!am || erinnerungVomServer() || !(await erlaubt())) return
       await LocalNotifications.schedule({
         notifications: [
           { id: ERINNERUNG_ID, title: 'Gleich umsteigen', body: erinnerungsText(erinnerung), schedule: { at: am } },

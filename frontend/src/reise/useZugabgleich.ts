@@ -31,12 +31,14 @@ export function mitTreffer(werte: EingabeWerte, treffer: { an?: TafelEintrag; ab
     neu.zugAn = zugnummer(an.zug)
     neu.vonHalt = an.vonHalt
     neu.nachHalt = an.nachHalt
+    neu.zugAnVon = an.ziel
     neu.ankunftZeit = an.zeitIst ?? an.zeitSoll
     delete neu.zugAnAusText
   }
   if (ab) {
     neu.zugAbName = ab.zug
     neu.zugAbAnzeige = ab.anzeige
+    neu.zugAbNach = ab.ziel
     neu.abfahrtZeit = ab.zeitIst ?? ab.zeitSoll
     delete neu.zugAbAusText
   }
