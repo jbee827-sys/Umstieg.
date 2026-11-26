@@ -99,6 +99,17 @@ jobs:
           plutil -extract NSExtension.NSExtensionPointIdentifier raw "$APP/PlugIns/Teilen.appex/Info.plist" | grep -qx com.apple.share-services
           echo "Teilen.appex eingebettet"
 
+      - name: Mitteilungs-Erweiterung im App-Paket
+        # Plan Mitteilungen, Task 10: Ohne sie zeigt das lange Druecken einer
+        # Mitteilung nur den Systemtext - der Bau liefe trotzdem durch.
+        run: |
+          APP="$RUNNER_TEMP/abgeleitet/Build/Products/Debug-iphonesimulator/App.app"
+          test -f "$APP/PlugIns/Mitteilung.appex/Info.plist"
+          plutil -extract NSExtension.NSExtensionPointIdentifier raw "$APP/PlugIns/Mitteilung.appex/Info.plist" | grep -qx com.apple.usernotifications.content-extension
+          plutil -extract NSExtension.NSExtensionAttributes.UNNotificationExtensionCategory raw "$APP/PlugIns/Mitteilung.appex/Info.plist" | grep -qx reise
+          test -f "$APP/PlugIns/Mitteilung.appex/Archivo.ttf"
+          echo "Mitteilung.appex eingebettet"
+
       - name: Firebase im App-Paket
         # Der Skript-Schritt "Firebase-Konfiguration" im Xcode-Projekt kopiert
         # die Plist nur, wenn sie da ist. Auto-Init muss aus sein (Konzept 6.2).
